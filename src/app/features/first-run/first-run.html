@@ -28,6 +28,38 @@
     [error]="odoError()"
   />
 
+  <app-text-field
+    [label]="i18n.t('vin.label')"
+    [(value)]="vin"
+    [error]="vinError()"
+  />
+  <button
+    type="button"
+    class="ghost-btn"
+    [disabled]="vinBusy() || !vin().trim()"
+    (click)="decode()"
+  >
+    {{ vinBusy() ? i18n.t('vin.decoding') : i18n.t('vin.decode') }}
+  </button>
+  @if (vinInfo(); as info) {
+    <p class="vin-meta">
+      @if (info.year || info.make || info.model) {
+        <strong>{{ info.year }} {{ info.make }} {{ info.model }}</strong>
+      }
+      @if (info.recallCount != null) {
+        <span>
+          {{ i18n.t('vin.recalls') }}:
+          {{
+            info.recallCount === 0
+              ? i18n.t('vin.recallsNone')
+              : info.recallCount
+          }}
+        </span>
+      }
+      <span class="hint">{{ i18n.t('vin.recallsCaveat') }}</span>
+    </p>
+  }
+
   <app-primary-button
     [label]="i18n.t('setup.continue')"
     [disabled]="!canContinue()"

@@ -22,9 +22,22 @@ export class Notify {
   }
 
   async notifyDue(item: DueItem, title: string, body: string): Promise<void> {
+    this.show(title, body, item.id);
+  }
+
+  /** Deploy / new-version ping (tag = update so it replaces prior update toasts). */
+  notifyUpdate(title: string, body: string): void {
+    this.show(title, body, 'drivelog-update');
+  }
+
+  private show(title: string, body: string, tag: string): void {
     if (!this.supported() || Notification.permission !== 'granted') {
       return;
     }
-    new Notification(title, { body, tag: item.id });
+    try {
+      new Notification(title, { body, tag });
+    } catch {
+      /* ignore */
+    }
   }
 }

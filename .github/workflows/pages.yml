@@ -23,7 +23,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx ng build --base-href /DriveLog/
-      - run: |
+      - name: SPA fallback for Pages
+        run: |
           # ponytail: GitHub Pages has no SPA fallback; 404.html = index
           cp dist/drivelog/browser/index.html dist/drivelog/browser/404.html
           touch dist/drivelog/browser/.nojekyll
@@ -31,3 +32,20 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: dist/drivelog/browser
+      - name: Deploy summary
+        run: |
+          {
+            echo "## DriveLog published to GitHub Pages"
+            echo ""
+            echo "- Site: https://abdalahshaban07.github.io/DriveLog/"
+            echo "- Commit: \`${GITHUB_SHA}\`"
+            echo "- Users with the PWA installed get an update banner + optional browser notification when \`ngsw\` picks up the new build."
+            echo "- Edit \`public/whats-new.json\` before merge so the in-app What's new list matches this deploy."
+            if [ -f public/whats-new.json ]; then
+              echo ""
+              echo "### whats-new.json"
+              echo '```json'
+              cat public/whats-new.json
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

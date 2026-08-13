@@ -68,6 +68,29 @@
       [error]="dateError()"
       (valueChange)="dateError.set('')"
     />
+
+    <button
+      type="button"
+      class="weather-btn"
+      [disabled]="weatherBusy()"
+      (click)="attachWeather()"
+    >
+      {{
+        weatherBusy()
+          ? i18n.t('vin.decoding')
+          : weather()
+            ? i18n.t('fillUp.weatherAttached')
+            : i18n.t('fillUp.attachWeather')
+      }}
+    </button>
+    @if (weather(); as w) {
+      <p class="weather-chip">
+        {{ w.tempC | number: '1.0-1' }}°C · {{ weatherLabel(w.weatherCode) }}
+      </p>
+    }
+    @if (weatherError()) {
+      <p class="weather-err">{{ weatherError() }}</p>
+    }
   </div>
 
   @if (editId()) {
@@ -102,7 +125,13 @@
           <span class="pill">{{ f.date }}</span>
           {{ f.odometer }} km
         </span>
-        <span>{{ f.liters }} L · {{ f.cost }}</span>
+        <span>
+          {{ f.liters }} L · {{ f.cost }}
+          @if (f.tempC != null && f.weatherCode != null) {
+            · {{ f.tempC | number: '1.0-0' }}°
+            {{ weatherLabel(f.weatherCode) }}
+          }
+        </span>
       </button>
     }
   </section>

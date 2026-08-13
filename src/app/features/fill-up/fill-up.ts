@@ -6,10 +6,14 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Db } from '../../data/db';
+import { currentWeather, getCoords } from '../../data/remote';
 import { todayDateOnly } from '../../domain/dues';
+import { weatherMsgKey } from '../../domain/weather';
 import { I18n } from '../../i18n/i18n';
+import type { MsgKey } from '../../i18n/en';
 import { ConfirmBar } from '../../ui/confirm-bar';
 import { DateField } from '../../ui/date-field';
 import { PageHeader } from '../../ui/page-header';
@@ -31,6 +35,7 @@ type Field = 'odometer' | 'liters' | 'cost';
     DateField,
     PrimaryButton,
     ConfirmBar,
+    DecimalPipe,
   ],
   templateUrl: './fill-up.html',
   styleUrl: './fill-up.scss',
@@ -54,6 +59,14 @@ export class FillUpPage {
   readonly saving = signal(false);
   readonly editId = signal<string | null>(null);
   readonly confirmDelete = signal(false);
+  readonly weatherBusy = signal(false);
+  readonly weatherError = signal('');
+  readonly weather = signal<{
+    lat: number;
+    lon: number;
+    tempC: number;
+    weatherCode: number;
+  } | null>(null);
 
   readonly recent = computed(() =>
     [...this.db.fillUps()].sort((a, b) => b.odometer - a.odometer).slice(0, 20),
@@ -98,10 +111,45 @@ export class FillUpPage {
     this.cost.set(String(existing.cost));
     this.tankFull.set(existing.tankFull);
     this.date.set(existing.date);
+    this.weather.set(
+      existing.tempC != null && existing.weatherCode != null
+        ? {
+            lat: existing.lat ?? 0,
+            lon: existing.lon ?? 0,
+            tempC: existing.tempC,
+            weatherCode: existing.weatherCode,
+          }
+        : null,
+    );
     this.odoError.set('');
     this.litersError.set('');
     this.costError.set('');
     this.dateError.set('');
+    this.weatherError.set('');
+  }
+
+  weatherLabel(code: number): string {
+    return this.i18n.t(weatherMsgKey(code) as MsgKey);
+  }
+
+  async attachWeather(): Promise<void> {
+    this.weatherError.set('');
+    this.weatherBusy.set(true);
+    try {
+      const coords = await getCoords();
+      if (!coords) {
+        this.weatherError.set(this.i18n.t('home.nearbyGpsDenied'));
+        return;
+      }
+      const w = await currentWeather(coords.lat, coords.lon);
+      if (!w) {
+        this.weatherError.set(this.i18n.t('fillUp.weatherFailed'));
+        return;
+      }
+      this.weather.set(w);
+    } finally {
+      this.weatherBusy.set(false);
+    }
   }
 
   fieldLabel(f: Field): string {
@@ -264,6 +312,7 @@ export class FillUpPage {
 
     this.saving.set(true);
     try {
+      const w = this.weather();
       await this.db.saveFillUp({
         id: this.editId() ?? undefined,
         odometer: odo,
@@ -271,6 +320,10 @@ export class FillUpPage {
         cost,
         tankFull: this.tankFull(),
         date,
+        lat: w?.lat,
+        lon: w?.lon,
+        tempC: w?.tempC,
+        weatherCode: w?.weatherCode,
       });
       await this.router.navigateByUrl('/');
     } finally {

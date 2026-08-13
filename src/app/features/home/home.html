@@ -35,6 +35,24 @@
     <p class="saved">{{ i18n.t('home.saved') }}</p>
   }
 
+  @if (vehicleLine()) {
+    <section class="card">
+      <p class="label">{{ i18n.t('home.vehicle') }}</p>
+      <p class="vehicle">{{ vehicleLine() }}</p>
+      @if (db.car()?.recallCount != null) {
+        <p class="hint">
+          {{ i18n.t('vin.recalls') }}:
+          {{
+            db.car()!.recallCount === 0
+              ? i18n.t('vin.recallsNone')
+              : db.car()!.recallCount
+          }}
+        </p>
+        <p class="hint">{{ i18n.t('vin.recallsCaveat') }}</p>
+      }
+    </section>
+  }
+
   <section class="card">
     <p class="label label-row">
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -77,7 +95,52 @@
       </span>
       <strong>{{ formatMoney(monthSpend()) }}</strong>
     </div>
+    @if (lastUnit(); as unit) {
+      <div class="receipt-line">
+        <span>{{ i18n.t('home.lastUnitPrice') }}</span>
+        <strong>{{ formatPerLiter(unit) }}</strong>
+      </div>
+    }
+    @if (lastWeather(); as wx) {
+      <div class="receipt-line">
+        <span>{{ i18n.t('home.lastWeather') }}</span>
+        <strong>
+          {{ wx.tempC | number: '1.0-0' }}°C ·
+          {{ weatherLabel(wx.weatherCode!) }}
+        </strong>
+      </div>
+    }
   </section>
+
+  @if (fuelPrices(); as prices) {
+    <section class="card">
+      <p class="label">{{ i18n.t('home.fuelPrices') }}</p>
+      <p class="hint">{{ prices.countryName }}</p>
+      @if (prices.gasoline != null) {
+        <div class="receipt-line">
+          <span>{{ i18n.t('home.fuelGasoline') }}</span>
+          <strong>{{ formatPerLiter(prices.gasoline) }}</strong>
+        </div>
+      }
+      @if (prices.diesel != null) {
+        <div class="receipt-line">
+          <span>{{ i18n.t('home.fuelDiesel') }}</span>
+          <strong>{{ formatPerLiter(prices.diesel) }}</strong>
+        </div>
+      }
+      @if (lastUnit(); as unit) {
+        <div class="receipt-line">
+          <span>{{ i18n.t('home.fuelYouPaid') }}</span>
+          <strong>{{ formatPerLiter(unit) }}</strong>
+        </div>
+      }
+      <p class="hint attr">
+        <a href="https://openvan.camp" target="_blank" rel="noopener noreferrer">{{
+          i18n.t('home.fuelAttr')
+        }}</a>
+      </p>
+    </section>
+  }
 
   <section class="due">
     <p class="label label-row">
@@ -103,6 +166,72 @@
     } @else {
       <p class="muted">{{ i18n.t('home.nothingDue') }}</p>
     }
+    @if (suggested(); as s) {
+      <p class="label">{{ i18n.t('home.suggestedDue') }}</p>
+      <app-due-row
+        [title]="suggestedTitle()"
+        [meta]="s.dueKm + ' km'"
+        [status]="s.status"
+        [statusLabel]="
+          s.status === 'overdue'
+            ? i18n.t('due.overdue')
+            : s.status === 'dueSoon'
+              ? i18n.t('due.dueSoon')
+              : ''
+        "
+      />
+      <p class="hint">{{ i18n.t('home.suggestedDueHint') }}</p>
+    }
+  </section>
+
+  <section class="card nearby">
+    <p class="label">{{ i18n.t('home.nearby') }}</p>
+    <div class="tabs">
+      <button
+        type="button"
+        [class.active]="nearbyTab() === 'fuel'"
+        (click)="nearbyTab.set('fuel')"
+      >
+        {{ i18n.t('home.nearbyFuel') }}
+      </button>
+      <button
+        type="button"
+        [class.active]="nearbyTab() === 'charge'"
+        (click)="nearbyTab.set('charge')"
+      >
+        {{ i18n.t('home.nearbyCharge') }}
+      </button>
+    </div>
+    <button
+      type="button"
+      class="find"
+      [disabled]="nearbyBusy()"
+      (click)="findNearby()"
+    >
+      {{
+        nearbyBusy() ? i18n.t('vin.decoding') : i18n.t('home.nearbyFind')
+      }}
+    </button>
+    @if (nearbyError()) {
+      <p class="hint">{{ nearbyError() }}</p>
+    }
+    <ul class="poi-list">
+      @for (p of nearbyList(); track p.id) {
+        <li>
+          <a [href]="mapsUrl(p)" target="_blank" rel="noopener noreferrer">
+            <strong>{{ p.name }}</strong>
+            <span>
+              {{ p.distanceKm | number: '1.1-1' }} km
+              @if (p.detail) {
+                · {{ p.detail }}
+              }
+            </span>
+            <span class="maps">{{ i18n.t('home.openMaps') }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+    <p class="hint attr">{{ i18n.t('home.nearbyOsm') }}</p>
   </section>
 
   <a routerLink="/fill-up" class="cta">{{ i18n.t('home.logFillUp') }}</a>

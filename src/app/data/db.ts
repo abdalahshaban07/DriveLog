@@ -213,13 +213,20 @@ export class Db {
     }
   }
 
-  async createCar(nickname: string, initialOdometer: number): Promise<void> {
+  async createCar(
+    nickname: string,
+    initialOdometer: number,
+    extras?: Partial<
+      Pick<Car, 'vin' | 'year' | 'make' | 'model' | 'recallCount'>
+    >,
+  ): Promise<void> {
     const ts = nowIso();
     const car: Car = {
       id: crypto.randomUUID(),
       nickname: nickname.trim(),
       initialOdometer,
       currentOdometer: initialOdometer,
+      ...carVinFields(extras),
       createdAt: ts,
       updatedAt: ts,
     };
@@ -227,6 +234,32 @@ export class Db {
     const settings = this._settings();
     await this.put('settings', { id: 'settings', ...settings });
     this._car.set(car);
+  }
+
+  async updateCar(
+    patch: Partial<
+      Pick<Car, 'nickname' | 'vin' | 'year' | 'make' | 'model' | 'recallCount'>
+    >,
+  ): Promise<void> {
+    const car = this._car();
+    if (!car) {
+      throw new Error('persist.noCar');
+    }
+    const updated: Car = {
+      ...car,
+      ...patch,
+      ...('vin' in patch ||
+      'year' in patch ||
+      'make' in patch ||
+      'model' in patch ||
+      'recallCount' in patch
+        ? carVinFields({ ...car, ...patch })
+        : {}),
+      nickname: patch.nickname != null ? patch.nickname.trim() : car.nickname,
+      updatedAt: nowIso(),
+    };
+    await this.put('car', updated);
+    this._car.set(updated);
   }
 
   async updateSettings(patch: Partial<Settings>): Promise<void> {
@@ -281,6 +314,10 @@ export class Db {
       tankFull: input.tankFull,
       note: input.note?.trim() || undefined,
       date: input.date,
+      lat: input.lat,
+      lon: input.lon,
+      tempC: input.tempC,
+      weatherCode: input.weatherCode,
       createdAt: existing?.createdAt ?? ts,
       updatedAt: ts,
     };
@@ -410,6 +447,21 @@ export class Db {
   }
 }
 
+function carVinFields(
+  o?: Partial<Pick<Car, 'vin' | 'year' | 'make' | 'model' | 'recallCount'>> | null,
+): Pick<Car, 'vin' | 'year' | 'make' | 'model' | 'recallCount'> {
+  return {
+    vin: o?.vin ? String(o.vin) : undefined,
+    year: o?.year ? String(o.year) : undefined,
+    make: o?.make ? String(o.make) : undefined,
+    model: o?.model ? String(o.model) : undefined,
+    recallCount:
+      o?.recallCount == null || !Number.isFinite(Number(o.recallCount))
+        ? undefined
+        : Number(o.recallCount),
+  };
+}
+
 function normalizeCar(raw: unknown): Car {
   const o = raw as Car;
   if (!o?.id || typeof o.nickname !== 'string') {
@@ -420,6 +472,7 @@ function normalizeCar(raw: unknown): Car {
     nickname: String(o.nickname),
     initialOdometer: Number(o.initialOdometer),
     currentOdometer: Number(o.currentOdometer),
+    ...carVinFields(o),
     createdAt: String(o.createdAt),
     updatedAt: String(o.updatedAt),
   };
@@ -438,6 +491,10 @@ function normalizeFillUp(raw: unknown): FillUp {
     tankFull: Boolean(o.tankFull),
     note: o.note ? String(o.note) : undefined,
     date: String(o.date),
+    lat: o.lat == null ? undefined : Number(o.lat),
+    lon: o.lon == null ? undefined : Number(o.lon),
+    tempC: o.tempC == null ? undefined : Number(o.tempC),
+    weatherCode: o.weatherCode == null ? undefined : Number(o.weatherCode),
     createdAt: String(o.createdAt),
     updatedAt: String(o.updatedAt),
   };
@@ -476,6 +533,9 @@ function normalizeSettings(raw: unknown): Settings {
     unitSystem: DEFAULT_UNIT_SYSTEM,
     installBannerDismissed: Boolean(o.installBannerDismissed),
     remindersEnabled: o.remindersEnabled === true,
+    lastSeenWhatsNewId: o.lastSeenWhatsNewId
+      ? String(o.lastSeenWhatsNewId)
+      : undefined,
     licenseExpiry: o.licenseExpiry ? String(o.licenseExpiry) : undefined,
     registrationExpiry: o.registrationExpiry
       ? String(o.registrationExpiry)

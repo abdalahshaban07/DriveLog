@@ -1,0 +1,17 @@
+{
+  "id": "2026-08-13-phase2",
+  "en": [
+    "VIN decode and US recall lookup on setup and settings",
+    "Attach weather to fill-ups (Open-Meteo)",
+    "Egypt national fuel prices vs your last fill",
+    "Nearby petrol and EV chargers with Maps links",
+    "Suggested next maintenance from your intervals"
+  ],
+  "ar": [
+    "فك رقم الشاسيه واستدعاءات أمريكا في الإعداد والإعدادات",
+    "إرفاق الطقس بتعبئة الوقود",
+    "أسعار الوقود الرسمية في مصر مقارنة بآخر تعبئة",
+    "محطات وقود وشحن قريبة مع فتح الخرائط",
+    "اقتراح الصيانة التالية من فتراتك السابقة"
+  ]
+}
