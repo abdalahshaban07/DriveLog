@@ -1,0 +1,8 @@
+<button
+  type="button"
+  class="btn"
+  [disabled]="disabled()"
+  (click)="pressed.emit()"
+>
+  {{ label() }}
+</button>

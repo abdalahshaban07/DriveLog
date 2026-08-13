@@ -1,0 +1,34 @@
+<div class="field">
+  <span class="label" [id]="labelId">{{ label() }}</span>
+  <div class="wrap" [class.wrap--open]="opened()">
+    <button
+      type="button"
+      class="input select"
+      [attr.aria-labelledby]="labelId"
+      aria-haspopup="listbox"
+      [attr.aria-expanded]="opened()"
+      [attr.aria-controls]="listId"
+      [attr.aria-activedescendant]="opened() ? optionId(active()) : null"
+      (click)="toggle()"
+    >
+      {{ currentLabel() }}
+    </button>
+    @if (opened()) {
+      <div class="scrim" (click)="close()"></div>
+      <ul class="menu" role="listbox" [id]="listId" [attr.aria-labelledby]="labelId">
+        @for (opt of options(); track opt.value; let i = $index) {
+          <li
+            role="option"
+            [id]="optionId(i)"
+            [class.menu__item--active]="i === active()"
+            [attr.aria-selected]="opt.value === value()"
+            (click)="choose(opt.value)"
+            (mouseenter)="active.set(i)"
+          >
+            {{ opt.label }}
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</div>

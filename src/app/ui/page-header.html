@@ -1,0 +1,25 @@
+<header class="head">
+  <div class="slot" [attr.aria-hidden]="showBack() ? null : true">
+    @if (showBack()) {
+      <button
+        type="button"
+        class="back"
+        [attr.aria-label]="i18n.t('common.back')"
+        (click)="back.emit()"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M15 6l-6 6 6 6" />
+        </svg>
+      </button>
+    }
+  </div>
+  <div class="copy">
+    @if (eyebrow()) {
+      <p class="label">{{ eyebrow() }}</p>
+    }
+    <h1>{{ title() }}</h1>
+    @if (subtitle()) {
+      <p class="sub">{{ subtitle() }}</p>
+    }
+  </div>
+</header>

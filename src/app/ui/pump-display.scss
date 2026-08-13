@@ -1,0 +1,73 @@
+:host {
+  display: block;
+}
+
+.well {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  text-align: start;
+  padding-block: 10px 12px;
+  padding-inline: var(--space-4);
+  border: 1px solid var(--input-border);
+  border-radius: 12px;
+  background: var(--well);
+  box-shadow: var(--well-inset);
+  cursor: pointer;
+  transition:
+    box-shadow var(--motion) var(--ease),
+    border-color var(--motion) var(--ease);
+}
+
+.well:hover:not(.well--active) {
+  border-color: color-mix(in srgb, var(--text) 18%, transparent);
+}
+
+.well--active {
+  border-color: var(--fuel);
+  box-shadow:
+    var(--well-inset),
+    0 0 0 1px var(--fuel),
+    0 0 20px var(--glow);
+}
+
+.lcd {
+  display: block;
+  padding-block: 2px 4px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  transition:
+    border-color var(--motion) var(--ease),
+    box-shadow var(--motion) var(--ease);
+}
+
+.lcd--on {
+  border-color: color-mix(in srgb, var(--fuel) 50%, transparent);
+  box-shadow: 0 0 14px var(--glow);
+}
+
+.value {
+  display: block;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(2.5rem, 8vw, 3.5rem);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: 0.06em;
+  color: color-mix(in srgb, var(--text) 26%, transparent);
+  border-block-end: 2px solid transparent;
+  transition:
+    color var(--motion) var(--ease),
+    text-shadow var(--motion) var(--ease),
+    border-color var(--motion) var(--ease);
+}
+
+.lcd--on .value {
+  color: var(--fuel);
+  text-shadow: 0 0 18px var(--glow);
+  border-block-end-color: var(--fuel);
+}
+
+.hint {
+  color: var(--stop);
+  font-size: 0.85rem;
+}

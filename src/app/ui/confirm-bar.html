@@ -1,0 +1,30 @@
+@if (modal()) {
+  <div class="scrim" (click)="cancelled.emit()"></div>
+}
+<div
+  class="bar"
+  [attr.role]="modal() ? 'dialog' : 'group'"
+  [attr.aria-modal]="modal() ? 'true' : null"
+  [attr.aria-labelledby]="msgId"
+  [attr.tabindex]="modal() ? -1 : null"
+>
+  <p [id]="msgId">{{ message() }}</p>
+  <div class="actions">
+    <button type="button" class="ghost" (click)="cancelled.emit()">
+      {{ cancelLabel() }}
+    </button>
+    @if (secondaryLabel()) {
+      <button type="button" class="secondary" (click)="secondary.emit()">
+        {{ secondaryLabel() }}
+      </button>
+    }
+    <button
+      type="button"
+      class="danger"
+      [class.ok]="!destructive()"
+      (click)="confirmed.emit()"
+    >
+      {{ confirmLabel() }}
+    </button>
+  </div>
+</div>

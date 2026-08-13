@@ -1,0 +1,108 @@
+.pump-head {
+  position: relative;
+}
+
+.pump-head app-page-header {
+  display: block;
+}
+
+.pump-mark {
+  position: absolute;
+  inset-inline-start: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  /* ponytail: sits in page-header --head-back slot */
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: var(--fuel);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 6px var(--glow));
+}
+
+.hint {
+  margin: 0;
+  color: var(--muted);
+}
+
+.console {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.console__face {
+  display: grid;
+  gap: 6px;
+}
+
+.secondary {
+  display: grid;
+  gap: var(--space-3);
+}
+.native {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+.danger {
+  min-height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--stop) 20%, transparent);
+  color: var(--stop);
+  font-weight: 700;
+}
+.save-wrap {
+  position: sticky;
+  inset-block-end: 0;
+  z-index: 2;
+  padding-block: 8px;
+  background: var(--bg);
+}
+.list {
+  display: grid;
+  gap: 8px;
+}
+.history {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--tap);
+  padding: 14px var(--space-4);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  text-align: start;
+  cursor: pointer;
+  transition:
+    background var(--motion) var(--ease),
+    border-color var(--motion) var(--ease);
+}
+
+.history:hover {
+  border-color: color-mix(in srgb, var(--fuel) 40%, var(--hairline));
+  background: color-mix(in srgb, var(--fuel) 8%, var(--surface));
+}

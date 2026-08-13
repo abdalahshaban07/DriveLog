@@ -1,0 +1,17 @@
+<div
+  class="due-card"
+  [class.due-card--overdue]="status() === 'overdue'"
+  [class.due-card--soon]="status() === 'dueSoon'"
+>
+  <div>
+    <div class="title">{{ title() }}</div>
+    <div class="meta">{{ meta() }}</div>
+  </div>
+  <div
+    class="status"
+    [class.status--stop]="status() === 'overdue'"
+    [class.status--muted]="status() === 'dueSoon'"
+  >
+    {{ statusLabel() }}
+  </div>
+</div>

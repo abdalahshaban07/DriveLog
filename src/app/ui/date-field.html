@@ -1,0 +1,79 @@
+<div class="field">
+  <label class="label" [attr.for]="inputId">{{ label() }}</label>
+  <span class="wrap" [class.wrap--open]="opened()">
+    <input
+      class="input date"
+      type="date"
+      [id]="inputId"
+      [value]="value()"
+      [attr.aria-invalid]="!!error()"
+      [attr.aria-describedby]="describedBy()"
+      [attr.aria-expanded]="opened()"
+      [attr.aria-controls]="opened() ? calId : null"
+      (change)="onChange($event)"
+      (click)="onInputClick($event)"
+      (keydown)="onInputKey($event)"
+    />
+    <button
+      type="button"
+      class="cal-btn"
+      tabindex="-1"
+      aria-hidden="true"
+      (click)="toggle($event)"
+    ></button>
+    @if (opened()) {
+      <div class="scrim" (click)="close()"></div>
+      <div
+        class="cal"
+        role="dialog"
+        [id]="calId"
+        [attr.lang]="i18n.language()"
+        [attr.dir]="i18n.dir()"
+        [attr.aria-label]="label()"
+      >
+        <div class="cal__nav">
+          <button type="button" class="cal__shift" (click)="shift(-1)">‹</button>
+          <span class="cal__month">{{ monthLabel() }}</span>
+          <button type="button" class="cal__shift" (click)="shift(1)">›</button>
+        </div>
+        <div class="cal__week">
+          @for (w of weekdays(); track $index) {
+            <span>{{ w }}</span>
+          }
+        </div>
+        <div class="cal__days">
+          @for (day of cells(); track $index) {
+            @if (day === null) {
+              <span class="cal__pad"></span>
+            } @else {
+              <button
+                type="button"
+                class="cal__day"
+                [class.cal__day--on]="isSelected(day)"
+                [class.cal__day--today]="isToday(day)"
+                [attr.aria-current]="isSelected(day) ? 'date' : null"
+                (click)="pick(day)"
+              >
+                {{ dayLabels()[day - 1] }}
+              </button>
+            }
+          }
+        </div>
+        <div class="cal__foot">
+          <button type="button" (click)="clear()">
+            {{ i18n.t('date.clear') }}
+          </button>
+          <button type="button" (click)="today()">
+            {{ i18n.t('date.today') }}
+          </button>
+        </div>
+      </div>
+    }
+  </span>
+  @if (hint()) {
+    <span class="hint" [id]="hintId">{{ hint() }}</span>
+  }
+  @if (error()) {
+    <span class="err" [id]="errorId">{{ error() }}</span>
+  }
+</div>

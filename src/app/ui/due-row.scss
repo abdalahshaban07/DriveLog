@@ -1,0 +1,21 @@
+.title {
+  font-weight: 600;
+}
+.due-card--overdue .title {
+  color: var(--stop);
+}
+.meta {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.status {
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  color: var(--muted);
+}
+.status--stop {
+  color: var(--stop);
+}
+.status--muted {
+  color: var(--muted);
+}

@@ -1,0 +1,109 @@
+<div class="stack">
+  <div class="pump-head">
+    <svg class="pump-mark" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M6 21V8.2A2.2 2.2 0 0 1 8.2 6h5.6A2.2 2.2 0 0 1 16 8.2V21" />
+      <path d="M6 21h10" />
+      <path d="M8.5 10h7" />
+      <path d="M16 12.5h1.4a1.6 1.6 0 0 1 1.6 1.6v2.2a1.5 1.5 0 1 0 3 0V11L19.4 8.2" />
+    </svg>
+    <app-page-header
+      [title]="editId() ? i18n.t('fillUp.edit') : i18n.t('fillUp.title')"
+    />
+  </div>
+
+  <p class="hint">
+    {{ i18n.t('fillUp.lastOdo') }}: {{ db.car()?.currentOdometer ?? '—' }}
+  </p>
+
+  <div class="console">
+    <div class="console__face">
+      <app-pump-display
+        kind="odometer"
+        [label]="i18n.t('fillUp.odometer')"
+        [value]="odometer()"
+        [active]="active() === 'odometer'"
+        [hint]="odoError()"
+        (selected)="active.set('odometer')"
+      />
+      <app-pump-display
+        kind="liters"
+        [label]="i18n.t('fillUp.liters')"
+        [value]="liters()"
+        [active]="active() === 'liters'"
+        [hint]="litersError()"
+        (selected)="active.set('liters')"
+      />
+      <app-pump-display
+        kind="cost"
+        [label]="i18n.t('fillUp.cost')"
+        [value]="cost()"
+        [active]="active() === 'cost'"
+        [hint]="costError()"
+        (selected)="active.set('cost')"
+      />
+    </div>
+
+    <label class="sr-only" for="native-fill">{{ fieldLabel(active()) }}</label>
+    <input
+      id="native-fill"
+      class="native"
+      inputmode="decimal"
+      [value]="raw(active())"
+      (input)="onNative($event)"
+    />
+
+    <app-pump-keypad (keyed)="onKey($event)" />
+  </div>
+
+  <div class="secondary">
+    <app-tank-toggle
+      [(value)]="tankFull"
+      [onLabel]="i18n.t('fillUp.tankFull')"
+      [offLabel]="i18n.t('fillUp.tankPartial')"
+    />
+
+    <app-date-field
+      [label]="i18n.t('fillUp.date')"
+      [(value)]="date"
+      [error]="dateError()"
+      (valueChange)="dateError.set('')"
+    />
+  </div>
+
+  @if (editId()) {
+    <button type="button" class="danger" (click)="askDelete()">
+      {{ i18n.t('fillUp.delete') }}
+    </button>
+  }
+
+  <div class="save-wrap">
+    <app-primary-button
+      [label]="i18n.t('fillUp.save')"
+      [disabled]="!canSave()"
+      (pressed)="save()"
+    />
+  </div>
+
+  @if (confirmDelete()) {
+    <app-confirm-bar
+      [message]="i18n.t('fillUp.deleteWarn')"
+      [confirmLabel]="i18n.t('fillUp.delete')"
+      [cancelLabel]="i18n.t('common.cancel')"
+      (confirmed)="doDelete()"
+      (cancelled)="confirmDelete.set(false)"
+    />
+  }
+
+  <section class="list">
+    <p class="label">{{ i18n.t('fillUp.title') }}</p>
+    @for (f of recent(); track f.id) {
+      <button type="button" class="history" (click)="load(f.id)">
+        <span class="label-row">
+          <span class="pill">{{ f.date }}</span>
+          {{ f.odometer }} km
+        </span>
+        <span>{{ f.liters }} L · {{ f.cost }}</span>
+      </button>
+    }
+  </section>
+</div>

@@ -1,0 +1,27 @@
+<label class="field">
+  <span class="label">{{ label() }}</span>
+  @if (multiline()) {
+    <textarea
+      class="input"
+      rows="3"
+      [value]="value()"
+      [attr.aria-invalid]="!!error()"
+      [attr.aria-describedby]="error() ? errorId : null"
+      (input)="onInput($event)"
+      (blur)="touch.emit()"
+    ></textarea>
+  } @else {
+    <input
+      class="input"
+      [type]="type()"
+      [value]="value()"
+      [attr.aria-invalid]="!!error()"
+      [attr.aria-describedby]="error() ? errorId : null"
+      (input)="onInput($event)"
+      (blur)="touch.emit()"
+    />
+  }
+  @if (error()) {
+    <span class="err" [id]="errorId">{{ error() }}</span>
+  }
+</label>

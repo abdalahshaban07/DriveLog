@@ -1,0 +1,20 @@
+<label class="field">
+  <span class="label">{{ label() }}</span>
+  <input
+    class="input input--num"
+    type="text"
+    inputmode="decimal"
+    enterkeyhint="next"
+    autocomplete="off"
+    spellcheck="false"
+    [value]="value()"
+    [attr.aria-invalid]="!!error()"
+    [attr.aria-describedby]="error() ? errorId : null"
+    (beforeinput)="onBeforeInput($event)"
+    (input)="onInput($event)"
+    (blur)="touch.emit()"
+  />
+  @if (error()) {
+    <span class="err" [id]="errorId">{{ error() }}</span>
+  }
+</label>

@@ -1,0 +1,20 @@
+<div class="seg tank" role="group" [attr.aria-label]="value() ? onLabel() : offLabel()">
+  <button
+    type="button"
+    class="seg__btn"
+    [class.tank__on]="value()"
+    [attr.aria-pressed]="value()"
+    (click)="value.set(true)"
+  >
+    {{ onLabel() }}
+  </button>
+  <button
+    type="button"
+    class="seg__btn"
+    [class.tank__off]="!value()"
+    [attr.aria-pressed]="!value()"
+    (click)="value.set(false)"
+  >
+    {{ offLabel() }}
+  </button>
+</div>

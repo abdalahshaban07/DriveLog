@@ -1,0 +1,141 @@
+<div class="stack settings">
+  <app-page-header [title]="i18n.t('settings.title')" />
+
+  <section class="card list">
+    <app-select-field
+      class="as-row"
+      [label]="i18n.t('settings.theme')"
+      [options]="themeOptions()"
+      [value]="theme()"
+      (valueChange)="onTheme($event)"
+    />
+    <app-select-field
+      class="as-row"
+      [label]="i18n.t('settings.language')"
+      [options]="langOptions()"
+      [value]="i18n.language()"
+      (valueChange)="onLang($event)"
+    />
+    <app-select-field
+      class="as-row"
+      [label]="i18n.t('settings.currency')"
+      [options]="currencyOptions()"
+      [value]="currency()"
+      (valueChange)="onCurrency($event)"
+    />
+  </section>
+
+  <section class="card list">
+    <app-date-field
+      class="as-row"
+      [label]="i18n.t('settings.license')"
+      [value]="license()"
+      (valueChange)="onLicense($event)"
+    />
+    <app-date-field
+      class="as-row"
+      [label]="i18n.t('settings.registration')"
+      [value]="registration()"
+      (valueChange)="onRegistration($event)"
+    />
+  </section>
+
+  <section class="card list">
+    <a class="line" routerLink="/settings/types">
+      <span class="line__text">
+        <strong>{{ i18n.t('settings.types') }}</strong>
+      </span>
+      <svg class="line__go" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 6l6 6-6 6" />
+      </svg>
+    </a>
+
+    <button type="button" class="line" (click)="exportBackup()">
+      <span class="line__text">
+        <strong>{{ i18n.t('settings.export') }}</strong>
+      </span>
+    </button>
+
+    <label class="line line--file">
+      <span class="line__text">
+        <strong>{{ i18n.t('settings.import') }}</strong>
+        @if (importFileName()) {
+          <span class="line__sub">{{ importFileName() }}</span>
+        }
+      </span>
+      @if (!importFileName()) {
+        <span class="line__meta">{{ i18n.t('settings.chooseFile') }}</span>
+      }
+      <input
+        id="backup-import"
+        class="line__input"
+        type="file"
+        accept="application/json,.json"
+        aria-describedby="backup-import-hint"
+        (change)="onFile($event)"
+      />
+      <span id="backup-import-hint" class="sr-only">{{
+        i18n.t('settings.importHint')
+      }}</span>
+    </label>
+
+    @if (importError()) {
+      <p class="error">{{ importError() }}</p>
+    }
+    @if (importOk()) {
+      <p class="ok">{{ i18n.t('backup.done') }}</p>
+    }
+  </section>
+
+  <section class="card list">
+    <label class="line">
+      <span class="line__text" [id]="remindersLbl">{{
+        i18n.t('settings.reminders')
+      }}</span>
+      <span class="switch">
+        <input
+          type="checkbox"
+          class="switch__input"
+          role="switch"
+          [checked]="remindersEnabled()"
+          [attr.aria-checked]="remindersEnabled()"
+          [attr.aria-labelledby]="remindersLbl"
+          (change)="onReminders($event)"
+        />
+        <span class="switch__track" aria-hidden="true"></span>
+      </span>
+    </label>
+
+    @if (remindersEnabled()) {
+      <p class="line line--hint">{{ i18n.t('settings.expiryHint') }}</p>
+      @if (notifyPerm() === 'default') {
+        <button type="button" class="line" (click)="enableNotify()">
+          <span class="line__text">
+            <strong>{{ i18n.t('settings.enableNotifications') }}</strong>
+          </span>
+          <span class="line__meta">{{ notifyStatus() }}</span>
+        </button>
+      } @else {
+        <div class="line">
+          <span class="line__text">
+            <strong>{{ i18n.t('settings.notifications') }}</strong>
+          </span>
+          <span class="line__meta">{{ notifyStatus() }}</span>
+        </div>
+      }
+    }
+  </section>
+
+  @if (pendingImport()) {
+    <app-confirm-bar
+      [message]="i18n.t('backup.confirm')"
+      [confirmLabel]="i18n.t('backup.replace')"
+      [secondaryLabel]="i18n.t('backup.merge')"
+      [cancelLabel]="i18n.t('backup.cancel')"
+      [destructive]="false"
+      (confirmed)="runImport('replace')"
+      (secondary)="runImport('merge')"
+      (cancelled)="pendingImport.set(null)"
+    />
+  }
+</div>

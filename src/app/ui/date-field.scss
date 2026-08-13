@@ -1,0 +1,227 @@
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+
+.wrap {
+  position: relative;
+  display: grid;
+}
+
+.wrap--open {
+  z-index: 8;
+}
+
+.wrap::after {
+  content: '';
+  position: absolute;
+  inset-inline-end: 16px;
+  inset-block-start: 50%;
+  width: 1.25rem;
+  height: 1.25rem;
+  translate: 0 -50%;
+  pointer-events: none;
+  background: var(--muted);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M7 2h2v2h6V2h2v2h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3V2zm13 8H4v10h16V10z'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M7 2h2v2h6V2h2v2h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3V2zm13 8H4v10h16V10z'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+.date {
+  padding-inline: 16px 44px;
+}
+
+.wrap:has(.date:hover)::after,
+.wrap:has(.date:focus-visible)::after,
+.wrap--open::after {
+  background: var(--fuel);
+}
+
+.date::-webkit-calendar-picker-indicator {
+  display: none;
+}
+
+.cal-btn {
+  position: absolute;
+  inset-inline-end: 8px;
+  inset-block-start: 50%;
+  z-index: 1;
+  width: 2.5rem;
+  height: 2.5rem;
+  translate: 0 -50%;
+  border: 0;
+  background: transparent;
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+}
+
+.cal {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: calc(100% + 6px);
+  z-index: 2;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--fuel) 28%, transparent);
+  background: var(--surface);
+  box-shadow:
+    0 16px 40px color-mix(in srgb, var(--bg) 80%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--well) 80%, transparent);
+}
+
+/* ponytail: settings list-row chrome; fill-up/maintenance stay stacked fields */
+:host.as-row {
+  cursor: pointer;
+  transition: background var(--motion) var(--ease);
+}
+
+:host.as-row .field {
+  position: relative;
+  display: block;
+  gap: 0;
+  min-height: var(--tap);
+}
+
+:host.as-row .label {
+  position: absolute;
+  inset-inline-start: var(--space-4);
+  inset-block-start: 50%;
+  z-index: 1;
+  translate: 0 -50%;
+  pointer-events: none;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text);
+}
+
+:host.as-row .date {
+  min-height: var(--tap);
+  padding-inline: 42% 2.75rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: end;
+  color: var(--muted);
+}
+
+:host.as-row .wrap::after {
+  inset-inline-end: var(--space-4);
+}
+
+:host.as-row .cal-btn {
+  inset-inline-end: var(--space-2);
+}
+
+:host.as-row .date:hover,
+:host.as-row .date:focus,
+:host.as-row .date:focus-visible {
+  border-color: transparent;
+  box-shadow: none;
+  outline: none;
+}
+
+:host.as-row:hover {
+  background: color-mix(in srgb, var(--well) 55%, transparent);
+}
+
+:host.as-row:focus-within {
+  outline: 2px solid var(--fuel);
+  outline-offset: -2px;
+}
+
+:host.as-row .hint {
+  padding-inline: var(--space-4);
+  padding-block-end: var(--space-2);
+}
+
+.cal__nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cal__month {
+  flex: 1;
+  text-align: center;
+  font-weight: 700;
+}
+
+.cal__shift {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text);
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.cal__week,
+.cal__days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+  text-align: center;
+}
+
+.cal__week {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.cal__day,
+.cal__pad {
+  min-height: 40px;
+}
+
+.cal__day {
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.cal__day--today {
+  box-shadow: inset 0 0 0 1px var(--muted);
+}
+
+.cal__day--on {
+  background: color-mix(in srgb, var(--fuel) 22%, transparent);
+  box-shadow: inset 0 0 0 1px var(--fuel);
+}
+
+.cal__foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cal__foot button {
+  min-height: 44px;
+  padding-inline: 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}

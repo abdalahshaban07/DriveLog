@@ -1,0 +1,101 @@
+<div class="stack">
+  <app-page-header [title]="i18n.t('maint.title')" />
+
+  <section class="card stack">
+    <app-select-field
+      [label]="i18n.t('maint.type')"
+      [options]="typeOptions()"
+      [value]="typeSelectValue()"
+      (valueChange)="onTypeValue($event)"
+    />
+
+    <app-text-field
+      [label]="i18n.t('maint.centerName')"
+      [(value)]="centerName"
+    />
+    <app-text-field
+      [label]="i18n.t('maint.technicianName')"
+      [(value)]="technicianName"
+    />
+    <app-text-field [label]="i18n.t('maint.partBrand')" [(value)]="partBrand" />
+
+    <div class="row">
+      <app-numeric-field
+        [label]="i18n.t('maint.partCost')"
+        [value]="partCost()"
+        (valueChange)="onPartCost($event)"
+      />
+      <app-numeric-field
+        [label]="i18n.t('maint.laborCost')"
+        [value]="laborCost()"
+        (valueChange)="onLaborCost($event)"
+      />
+    </div>
+
+    <app-numeric-field [label]="i18n.t('maint.cost')" [(value)]="cost" />
+    <app-numeric-field [label]="i18n.t('maint.odometer')" [(value)]="odometer" />
+
+    <app-date-field [label]="i18n.t('maint.date')" [(value)]="date" />
+    <app-numeric-field [label]="i18n.t('maint.dueKm')" [(value)]="dueKm" />
+    <app-date-field [label]="i18n.t('maint.dueDate')" [(value)]="dueDate" />
+    <app-text-field
+      [label]="i18n.t('maint.note')"
+      [(value)]="note"
+      [multiline]="true"
+    />
+
+    <app-primary-button
+      [label]="i18n.t('maint.save')"
+      [disabled]="saving()"
+      (pressed)="save()"
+    />
+  </section>
+
+  <section class="list">
+    <p class="label">{{ i18n.t('maint.list') }}</p>
+    @if (db.maintenance().length === 0) {
+      <p class="muted">{{ i18n.t('maint.empty') }}</p>
+    }
+    @for (m of db.maintenance(); track m.id) {
+      <article
+        class="due-card"
+        [class.due-card--overdue]="rowStatus(m.id) === 'overdue'"
+        [class.due-card--soon]="rowStatus(m.id) === 'dueSoon'"
+      >
+        <div>
+          <strong>{{ rowLabel(m) }}</strong>
+          <p class="meta">
+            <span class="pill">{{ m.date }}</span>
+            {{ m.odometer }} km · {{ m.cost }}
+          </p>
+          @if (rowStatusLabel(m.id); as status) {
+            <p
+              class="flag"
+              [class.flag--stop]="rowStatus(m.id) === 'overdue'"
+            >
+              {{ status }}
+            </p>
+          }
+        </div>
+        <div class="actions">
+          <button type="button" (click)="edit(m)">
+            {{ i18n.t('common.edit') }}
+          </button>
+          <button type="button" class="danger" (click)="askDelete(m.id)">
+            {{ i18n.t('maint.delete') }}
+          </button>
+        </div>
+      </article>
+    }
+  </section>
+
+  @if (pendingDelete()) {
+    <app-confirm-bar
+      [message]="i18n.t('maint.deleteConfirm')"
+      [confirmLabel]="i18n.t('maint.delete')"
+      [cancelLabel]="i18n.t('common.cancel')"
+      (confirmed)="doDelete()"
+      (cancelled)="pendingDelete.set(null)"
+    />
+  }
+</div>

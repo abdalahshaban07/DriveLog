@@ -1,0 +1,102 @@
+.frame {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  max-inline-size: var(--shell);
+  margin-inline: auto;
+  background: var(--bg);
+  color: var(--text);
+}
+.main {
+  padding: var(--space-5) var(--space-5) var(--space-6);
+  overflow: auto;
+}
+.main--setup {
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+}
+.nav {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 4px;
+  height: calc(var(--tap) + 8px + 8px + 1px + env(safe-area-inset-bottom, 0px));
+  padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+  overflow: hidden;
+  border-block-start: 1px solid
+    color-mix(in srgb, var(--muted) 20%, transparent);
+  background: var(--surface);
+  position: sticky;
+  inset-block-end: 0;
+}
+.nav a {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  height: var(--tap);
+  min-height: var(--tap);
+  max-height: var(--tap);
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-radius: 14px;
+  text-align: center;
+  padding: 0 var(--space-1);
+  cursor: pointer;
+  transition:
+    color var(--motion) var(--ease),
+    background var(--motion) var(--ease);
+}
+.nav a > span {
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+.nav svg {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.nav a.active {
+  color: var(--fuel);
+  background: transparent;
+}
+.nav a.active svg {
+  filter: drop-shadow(0 0 6px var(--glow));
+}
+.update {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--surface);
+  border-block-end: 1px solid
+    color-mix(in srgb, var(--muted) 20%, transparent);
+}
+.update button {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--fuel);
+  color: var(--cta-text);
+  font-weight: 700;
+}
+.loading {
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+}

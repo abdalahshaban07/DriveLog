@@ -1,0 +1,40 @@
+.list {
+  display: grid;
+  gap: 10px;
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.flag {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.flag--stop {
+  color: var(--stop);
+}
+.muted {
+  color: var(--muted);
+}
+.actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+.actions button {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-weight: 600;
+}
+.danger {
+  color: var(--stop) !important;
+}

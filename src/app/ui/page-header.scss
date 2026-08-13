@@ -1,0 +1,73 @@
+:host {
+  display: block;
+  --head-back: 32px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-block-end: 4px;
+}
+
+.slot {
+  flex: 0 0 var(--head-back);
+  inline-size: var(--head-back);
+  min-inline-size: var(--head-back);
+}
+
+.copy {
+  display: grid;
+  gap: 6px;
+  min-inline-size: 0;
+  flex: 1;
+}
+
+.back {
+  display: grid;
+  place-items: center;
+  inline-size: var(--tap);
+  block-size: var(--tap);
+  /* 56px hit; layout stays --head-back. Start overflow into page pad, end into gap. */
+  margin-inline-start: calc(var(--head-back) - var(--tap) + var(--space-2));
+  margin-inline-end: calc(-1 * var(--space-2));
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--muted);
+}
+
+.back:hover,
+.back:active {
+  color: var(--text);
+}
+
+.back svg {
+  inline-size: 24px;
+  block-size: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+:host-context([dir='rtl']) .back svg {
+  transform: scaleX(-1);
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.label,
+.sub {
+  margin: 0;
+}
+
+.sub {
+  color: var(--muted);
+}

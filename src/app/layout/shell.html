@@ -1,0 +1,67 @@
+@if (db.ready()) {
+  <div class="frame">
+    @if (updateReady()) {
+      <div class="update" role="status">
+        <span>{{ i18n.t('update.available') }}</span>
+        <button type="button" (click)="reload()">
+          {{ i18n.t('update.reload') }}
+        </button>
+      </div>
+    }
+    <main class="main" [class.main--setup]="!showNav()">
+      <router-outlet />
+    </main>
+    @if (showNav()) {
+      <nav class="nav" [attr.aria-label]="i18n.t('nav.primary')">
+        <a
+          routerLink="/"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          ariaCurrentWhenActive="page"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4.5 11.2 12 4.5l7.5 6.7V20a.8.8 0 0 1-.8.8h-4.4v-5.4H9.7V20.8H5.3a.8.8 0 0 1-.8-.8z" />
+          </svg>
+          <span>{{ i18n.t('nav.home') }}</span>
+        </a>
+        <a
+          routerLink="/fill-up"
+          routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="4.5" y="6" width="9" height="14.5" rx="1.4" />
+            <path d="M7 6V4.6A1.1 1.1 0 0 1 8.1 3.5h2.8A1.1 1.1 0 0 1 12 4.6V6" />
+            <path d="M13.5 9.5h2.2l2.6 2.6V17a1.4 1.4 0 1 0 2.8 0v-5.2L18.3 9" />
+          </svg>
+          <span>{{ i18n.t('nav.fillUp') }}</span>
+        </a>
+        <a
+          routerLink="/maintenance"
+          routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M14.8 4.6a3.4 3.4 0 0 0-4.4 4.4L5.2 14.2a2.2 2.2 0 1 0 3.1 3.1l5.2-5.2a3.4 3.4 0 0 0 4.4-4.4l-2.3 2.3-2.2-2.2z" />
+          </svg>
+          <span>{{ i18n.t('nav.maintenance') }}</span>
+        </a>
+        <a
+          routerLink="/settings"
+          routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 8h14" />
+            <path d="M5 16h14" />
+            <circle cx="9" cy="8" r="1.8" />
+            <circle cx="15" cy="16" r="1.8" />
+          </svg>
+          <span>{{ i18n.t('nav.settings') }}</span>
+        </a>
+      </nav>
+    }
+  </div>
+} @else {
+  <p class="loading">…</p>
+}

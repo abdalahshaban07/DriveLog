@@ -1,0 +1,19 @@
+<div class="pad" role="group" [attr.aria-label]="i18n.t('keypad.label')">
+  @for (key of keys; track key) {
+    <button
+      type="button"
+      class="key"
+      [attr.aria-label]="ariaFor(key)"
+      (click)="press(key)"
+    >
+      @if (key === 'back') {
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8 5 3 12l5 7h13V5z" />
+          <path d="m14 9-4 6M10 9l4 6" />
+        </svg>
+      } @else {
+        {{ display(key) }}
+      }
+    </button>
+  }
+</div>

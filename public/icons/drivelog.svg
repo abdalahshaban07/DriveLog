@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="DriveLog">
+  <rect width="32" height="32" fill="#0B0D10"/>
+  <rect x="8" y="7" width="12" height="18" rx="2.5" fill="#E8A317"/>
+  <rect x="18" y="9" width="6" height="13" rx="2.5" fill="#E8A317"/>
+  <rect x="10.5" y="9" width="7" height="4.5" rx="1" fill="#07080A"/>
+</svg>

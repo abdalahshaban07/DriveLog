@@ -1,0 +1,17 @@
+.btn {
+  width: 100%;
+  min-height: var(--tap);
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--fuel);
+  color: var(--cta-text);
+  font-weight: 700;
+  font-size: 1.05rem;
+  transition: transform var(--motion) var(--ease);
+}
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.btn:disabled {
+  opacity: 0.4;
+}

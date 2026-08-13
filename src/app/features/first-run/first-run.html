@@ -1,0 +1,36 @@
+<div class="stack">
+  <app-page-header
+    [eyebrow]="i18n.t('app.subtitle')"
+    [title]="i18n.t('setup.title')"
+  />
+
+  <app-select-field
+    [label]="i18n.t('setup.language')"
+    [options]="langOptions()"
+    [value]="language()"
+    (valueChange)="onLang($event)"
+  />
+
+  <app-select-field
+    [label]="i18n.t('setup.currency')"
+    [options]="currencyOptions()"
+    [(value)]="currency"
+  />
+
+  <app-text-field
+    [label]="i18n.t('setup.nickname')"
+    [formField]="setupForm.nickname"
+    [error]="nickError()"
+  />
+  <app-numeric-field
+    [label]="i18n.t('setup.odometer')"
+    [formField]="setupForm.odometer"
+    [error]="odoError()"
+  />
+
+  <app-primary-button
+    [label]="i18n.t('setup.continue')"
+    [disabled]="!canContinue()"
+    (pressed)="submit()"
+  />
+</div>

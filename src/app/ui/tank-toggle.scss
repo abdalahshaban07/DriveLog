@@ -1,0 +1,19 @@
+:host {
+  display: block;
+}
+
+.tank {
+  box-shadow: var(--well-inset);
+}
+
+.tank__on {
+  background: color-mix(in srgb, var(--ok) 18%, var(--surface));
+  color: var(--ok);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ok) 45%, transparent);
+}
+
+.tank__off {
+  background: color-mix(in srgb, var(--muted) 16%, var(--surface));
+  color: var(--muted);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--muted) 40%, transparent);
+}

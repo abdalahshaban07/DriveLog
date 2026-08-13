@@ -1,0 +1,156 @@
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+
+.wrap {
+  position: relative;
+  display: grid;
+}
+
+.wrap--open {
+  z-index: 8;
+}
+
+.wrap::after {
+  content: '';
+  position: absolute;
+  inset-inline-end: 18px;
+  inset-block-start: 50%;
+  width: 8px;
+  height: 8px;
+  border-inline-end: 2px solid var(--muted);
+  border-block-end: 2px solid var(--muted);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+  transition:
+    border-color 120ms ease,
+    transform 120ms ease;
+}
+
+.wrap--open::after {
+  border-color: var(--fuel);
+  transform: translateY(-20%) rotate(225deg);
+}
+
+.select {
+  padding-inline: 16px 44px;
+  cursor: pointer;
+}
+
+.wrap:has(.select:hover)::after,
+.wrap:has(.select:focus-visible)::after,
+.wrap--open::after {
+  border-color: var(--fuel);
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+}
+
+.menu {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: calc(100% + 6px);
+  z-index: 2;
+  margin: 0;
+  padding: 6px;
+  max-height: min(20rem, 50vh);
+  overflow: auto;
+  list-style: none;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--fuel) 28%, transparent);
+  background: var(--surface);
+  box-shadow:
+    0 16px 40px color-mix(in srgb, var(--bg) 80%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--well) 80%, transparent);
+  scrollbar-color: var(--muted) var(--well);
+}
+
+.menu li {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 12px;
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.menu li[aria-selected='true'] {
+  color: var(--fuel);
+}
+
+.menu__item--active {
+  background: color-mix(in srgb, var(--fuel) 16%, transparent);
+  color: var(--text);
+}
+
+.menu__item--active[aria-selected='true'] {
+  color: var(--fuel);
+}
+
+/* ponytail: settings list-row chrome; fill-up/maintenance stay stacked fields */
+:host.as-row {
+  cursor: pointer;
+  transition: background var(--motion) var(--ease);
+}
+
+:host.as-row .field {
+  position: relative;
+  display: block;
+  gap: 0;
+  min-height: var(--tap);
+}
+
+:host.as-row .label {
+  position: absolute;
+  inset-inline-start: var(--space-4);
+  inset-block-start: 50%;
+  z-index: 1;
+  translate: 0 -50%;
+  pointer-events: none;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text);
+}
+
+:host.as-row .select {
+  min-height: var(--tap);
+  padding-inline: 42% 1.75rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: end;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:host.as-row .wrap::after {
+  inset-inline-end: var(--space-4);
+}
+
+:host.as-row .select:hover,
+:host.as-row .select:focus,
+:host.as-row .select:focus-visible {
+  border-color: transparent;
+  box-shadow: none;
+  outline: none;
+}
+
+:host.as-row:hover {
+  background: color-mix(in srgb, var(--well) 55%, transparent);
+}
+
+:host.as-row:focus-within {
+  outline: 2px solid var(--fuel);
+  outline-offset: -2px;
+}
