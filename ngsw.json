@@ -1,0 +1,79 @@
+{
+  "configVersion": 1,
+  "timestamp": 1786644600860,
+  "index": "/DriveLog/index.html",
+  "assetGroups": [
+    {
+      "name": "app",
+      "installMode": "prefetch",
+      "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "urls": [
+        "/DriveLog/favicon.ico",
+        "/DriveLog/index.html",
+        "/DriveLog/main-L6MXU2GM.js",
+        "/DriveLog/manifest.webmanifest",
+        "/DriveLog/styles-RGPJ2D6J.css"
+      ],
+      "patterns": []
+    },
+    {
+      "name": "assets",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "urls": [
+        "/DriveLog/icons/drivelog.svg",
+        "/DriveLog/icons/icon-128x128.png",
+        "/DriveLog/icons/icon-144x144.png",
+        "/DriveLog/icons/icon-152x152.png",
+        "/DriveLog/icons/icon-192x192.png",
+        "/DriveLog/icons/icon-384x384.png",
+        "/DriveLog/icons/icon-512x512.png",
+        "/DriveLog/icons/icon-72x72.png",
+        "/DriveLog/icons/icon-96x96.png"
+      ],
+      "patterns": []
+    }
+  ],
+  "dataGroups": [],
+  "hashTable": {
+    "/DriveLog/favicon.ico": "d9aefa4982732cd6a42a8d5d8354d9daa590585b",
+    "/DriveLog/icons/drivelog.svg": "80e3fdc6826a316e40aef2ca6c1f206811209037",
+    "/DriveLog/icons/icon-128x128.png": "b5f03236451585c007f7993d9fa3ea4de34cfe43",
+    "/DriveLog/icons/icon-144x144.png": "eec26f93687dd44c56c6c9d99a73401d6e58fe88",
+    "/DriveLog/icons/icon-152x152.png": "0ec51a7012902b7bd1a9a9aa3c1cc1aa9efa27ab",
+    "/DriveLog/icons/icon-192x192.png": "b6315ed6bbfd03aa3cb721831a7b0a4f8b40d15d",
+    "/DriveLog/icons/icon-384x384.png": "0088fc82ca902ac59dea3098e1012a5ba0055932",
+    "/DriveLog/icons/icon-512x512.png": "7c78f2f5980921f8a225e3fd8435dd701d48feca",
+    "/DriveLog/icons/icon-72x72.png": "7719e38c33686f6d909df448d77b245ff051d08b",
+    "/DriveLog/icons/icon-96x96.png": "e31714c0bd22b700be4cdf0c2221c13c3edf3a1e",
+    "/DriveLog/index.html": "4e246906afe666e16a938e8b888f3ce37aca13c5",
+    "/DriveLog/main-L6MXU2GM.js": "2b193aa1ce2c8df43ed8d5809dca88bf955da7a0",
+    "/DriveLog/manifest.webmanifest": "fd80f370d95a41a600d3d87a76c62626b53b90b4",
+    "/DriveLog/styles-RGPJ2D6J.css": "bd8f3ed92cebf265b3800d6ddf2844f1f0aae6a2"
+  },
+  "navigationUrls": [
+    {
+      "positive": true,
+      "regex": "^\\/.*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*\\.[^/]*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*\\/.*$"
+    }
+  ],
+  "navigationRequestStrategy": "performance"
+}
