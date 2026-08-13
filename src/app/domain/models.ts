@@ -16,6 +16,12 @@ export interface Car {
   /** Immutable setup reading. */
   initialOdometer: number;
   currentOdometer: number;
+  vin?: string;
+  year?: string;
+  make?: string;
+  model?: string;
+  /** US-market NHTSA count; null/undefined = not fetched. */
+  recallCount?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -28,6 +34,10 @@ export interface FillUp {
   tankFull: boolean;
   note?: string;
   date: DateOnly;
+  lat?: number;
+  lon?: number;
+  tempC?: number;
+  weatherCode?: number;
   createdAt: string;
   updatedAt: string;
 }

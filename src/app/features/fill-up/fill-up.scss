@@ -106,3 +106,26 @@
   border-color: color-mix(in srgb, var(--fuel) 40%, var(--hairline));
   background: color-mix(in srgb, var(--fuel) 8%, var(--surface));
 }
+
+.weather-btn {
+  min-height: 44px;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  padding: 0 14px;
+}
+.weather-btn:disabled {
+  opacity: 0.6;
+}
+.weather-chip {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.weather-err {
+  margin: 0;
+  color: var(--stop);
+  font-size: 0.9rem;
+}

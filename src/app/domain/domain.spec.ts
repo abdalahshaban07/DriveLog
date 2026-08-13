@@ -185,3 +185,10 @@ describe('maintenance fields', () => {
     runMaintenanceFieldsSelfCheck();
   });
 });
+
+describe('phase2', () => {
+  it('vin, country, weather, openvan, overpass, intervals', async () => {
+    const { runPhase2SelfCheck } = await import('./phase2.check');
+    runPhase2SelfCheck();
+  });
+});

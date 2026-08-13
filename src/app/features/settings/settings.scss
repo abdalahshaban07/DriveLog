@@ -197,3 +197,21 @@ label.line:hover,
   margin: 0;
   padding: var(--space-2) var(--space-4);
 }
+
+.vin-card {
+  padding: var(--space-3) 0;
+}
+.vin-card app-text-field {
+  display: block;
+  padding-inline: var(--space-4);
+  padding-block: var(--space-2);
+}
+.vin-meta {
+  margin: 0;
+  padding: var(--space-1) var(--space-4);
+  font-size: 0.9rem;
+}
+.vin-meta.hint {
+  color: var(--muted);
+  font-size: 0.85rem;
+}

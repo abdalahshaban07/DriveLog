@@ -1,8 +1,10 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
+import { decodeVin, recallsFor } from '../../data/remote';
 import { listCurrencyOptions, validCurrency } from '../../domain/currencies';
 import { THEMES, type BackupFile, type Theme } from '../../domain/models';
+import { isValidVin, normalizeVin } from '../../domain/vin';
 import { I18n } from '../../i18n/i18n';
 import { InstallPwa } from '../../pwa/install-pwa';
 import { Notify } from '../../pwa/notify';
@@ -10,10 +12,11 @@ import { ConfirmBar } from '../../ui/confirm-bar';
 import { DateField } from '../../ui/date-field';
 import { PageHeader } from '../../ui/page-header';
 import { SelectField } from '../../ui/select-field';
+import { TextField } from '../../ui/text-field';
 
 @Component({
   selector: 'app-settings',
-  imports: [PageHeader, SelectField, DateField, ConfirmBar, RouterLink],
+  imports: [PageHeader, SelectField, DateField, ConfirmBar, RouterLink, TextField],
   templateUrl: './settings.html',
   styleUrl: './settings.scss',
 })
@@ -49,6 +52,10 @@ export class SettingsPage {
   readonly importFileName = signal('');
   readonly importError = signal('');
   readonly importOk = signal(false);
+  readonly vin = signal(this.db.car()?.vin ?? '');
+  readonly vinBusy = signal(false);
+  readonly vinError = signal('');
+  readonly carMeta = computed(() => this.db.car());
 
   notifyStatus(): string {
     const p = this.notifyPerm();
@@ -151,5 +158,52 @@ export class SettingsPage {
 
   async doInstall(): Promise<void> {
     await this.install.promptInstall();
+  }
+
+  async decodeVin(): Promise<void> {
+    const v = normalizeVin(this.vin());
+    this.vin.set(v);
+    this.vinError.set('');
+    if (!v) {
+      await this.db.updateCar({
+        vin: undefined,
+        year: undefined,
+        make: undefined,
+        model: undefined,
+        recallCount: undefined,
+      });
+      return;
+    }
+    if (!isValidVin(v)) {
+      this.vinError.set(this.i18n.t('vin.invalid'));
+      return;
+    }
+    this.vinBusy.set(true);
+    try {
+      const decoded = await decodeVin(v);
+      if (!decoded) {
+        await this.db.updateCar({ vin: v });
+        this.vinError.set(this.i18n.t('vin.failed'));
+        return;
+      }
+      let recallCount: number | undefined;
+      if (decoded.make && decoded.model && decoded.year) {
+        const n = await recallsFor(decoded.make, decoded.model, decoded.year);
+        recallCount = n ?? undefined;
+      }
+      await this.db.updateCar({
+        vin: v,
+        year: decoded.year,
+        make: decoded.make,
+        model: decoded.model,
+        recallCount,
+      });
+    } finally {
+      this.vinBusy.set(false);
+    }
+  }
+
+  nhtsaUrl(vin: string): string {
+    return `https://www.nhtsa.gov/recalls?vin=${encodeURIComponent(vin)}`;
   }
 }

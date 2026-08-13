@@ -40,4 +40,66 @@
 .hint {
   color: var(--muted);
   font-size: 0.9rem;
+  margin: 0;
+}
+.attr a {
+  color: var(--muted);
+}
+.vehicle {
+  margin: 0;
+  font-weight: 700;
+}
+.nearby {
+  display: grid;
+  gap: 10px;
+}
+.tabs {
+  display: flex;
+  gap: 8px;
+}
+.tabs button {
+  flex: 1;
+  min-height: 40px;
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font-weight: 600;
+}
+.tabs button.active {
+  background: color-mix(in srgb, var(--fuel) 18%, var(--surface));
+  border-color: var(--fuel);
+}
+.find {
+  min-height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--fuel);
+  color: var(--cta-text);
+  font-weight: 700;
+}
+.find:disabled {
+  opacity: 0.6;
+}
+.poi-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.poi-list a {
+  display: grid;
+  gap: 2px;
+  padding: 12px;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+  background: var(--surface);
+}
+.poi-list .maps {
+  color: var(--fuel);
+  font-size: 0.85rem;
+  font-weight: 600;
 }

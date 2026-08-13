@@ -1,0 +1,22 @@
+.ghost-btn {
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text);
+  font-weight: 600;
+  padding: 0 14px;
+}
+.ghost-btn:disabled {
+  opacity: 0.5;
+}
+.vin-meta {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  font-size: 0.95rem;
+}
+.vin-meta .hint {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
