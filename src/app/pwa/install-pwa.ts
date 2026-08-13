@@ -1,11 +1,17 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { filter } from 'rxjs';
+import { I18n } from '../i18n/i18n';
+import { Notify } from './notify';
+import { WhatsNew } from './whats-new';
 
 @Injectable({ providedIn: 'root' })
 export class InstallPwa {
   private deferred: BeforeInstallPromptEvent | null = null;
   private readonly updates = inject(SwUpdate);
+  private readonly notify = inject(Notify);
+  private readonly i18n = inject(I18n);
+  private readonly whatsNew = inject(WhatsNew);
   readonly canPrompt = signal(false);
   readonly installed = signal(this.detectInstalled());
   readonly updateReady = signal(false);
@@ -29,6 +35,7 @@ export class InstallPwa {
       this.deferred = null;
     });
     this.watchUpdates();
+    void this.whatsNew.load();
   }
 
   detectInstalled(): boolean {
@@ -70,7 +77,26 @@ export class InstallPwa {
     }
     this.updates.versionUpdates
       .pipe(filter((e): e is VersionReadyEvent => e.type === 'VERSION_READY'))
-      .subscribe(() => this.updateReady.set(true));
+      .subscribe(() => {
+        this.updateReady.set(true);
+        // Notes file may still be the old cached one until reload.
+        this.notify.notifyUpdate(
+          this.i18n.t('update.available'),
+          this.i18n.t('update.notifyBody'),
+        );
+      });
+
+    // ponytail: poll while tab open so gh-pages deploys surface without a hard refresh
+    const tick = () => {
+      void this.updates.checkForUpdate().catch(() => undefined);
+    };
+    tick();
+    setInterval(tick, 5 * 60 * 1000);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        tick();
+      }
+    });
   }
 }
 

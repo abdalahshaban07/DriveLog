@@ -11,6 +11,7 @@ import { filter, map, startWith } from 'rxjs';
 import { Db } from '../data/db';
 import { I18n } from '../i18n/i18n';
 import { InstallPwa } from '../pwa/install-pwa';
+import { WhatsNew } from '../pwa/whats-new';
 
 @Component({
   selector: 'app-shell',
@@ -22,6 +23,7 @@ import { InstallPwa } from '../pwa/install-pwa';
 export class Shell {
   readonly i18n = inject(I18n);
   readonly db = inject(Db);
+  readonly whatsNew = inject(WhatsNew);
   private readonly router = inject(Router);
   private readonly install = inject(InstallPwa);
 
@@ -36,8 +38,15 @@ export class Shell {
 
   readonly showNav = computed(() => !this.url().startsWith('/setup'));
   readonly updateReady = computed(() => this.install.updateReady());
+  readonly showWhatsNew = computed(
+    () => this.showNav() && this.whatsNew.visible() && !this.updateReady(),
+  );
 
   reload(): void {
     void this.install.applyUpdate();
+  }
+
+  dismissWhatsNew(): void {
+    void this.whatsNew.dismiss();
   }
 }

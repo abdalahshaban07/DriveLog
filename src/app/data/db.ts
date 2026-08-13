@@ -533,6 +533,9 @@ function normalizeSettings(raw: unknown): Settings {
     unitSystem: DEFAULT_UNIT_SYSTEM,
     installBannerDismissed: Boolean(o.installBannerDismissed),
     remindersEnabled: o.remindersEnabled === true,
+    lastSeenWhatsNewId: o.lastSeenWhatsNewId
+      ? String(o.lastSeenWhatsNewId)
+      : undefined,
     licenseExpiry: o.licenseExpiry ? String(o.licenseExpiry) : undefined,
     registrationExpiry: o.registrationExpiry
       ? String(o.registrationExpiry)

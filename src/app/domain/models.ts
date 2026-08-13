@@ -69,6 +69,8 @@ export interface Settings {
   unitSystem: UnitSystem;
   installBannerDismissed: boolean;
   remindersEnabled: boolean;
+  /** Last dismissed whats-new.json id (deploy notes). */
+  lastSeenWhatsNewId?: string;
   licenseExpiry?: DateOnly;
   registrationExpiry?: DateOnly;
   customMaintenanceTypes?: string[];

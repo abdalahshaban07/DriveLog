@@ -8,6 +8,21 @@
         </button>
       </div>
     }
+    @if (showWhatsNew()) {
+      <div class="whats-new" role="status">
+        <div class="whats-new__body">
+          <strong>{{ i18n.t('update.whatsNew') }}</strong>
+          <ul>
+            @for (line of whatsNew.lines(); track line) {
+              <li>{{ line }}</li>
+            }
+          </ul>
+        </div>
+        <button type="button" (click)="dismissWhatsNew()">
+          {{ i18n.t('update.dismiss') }}
+        </button>
+      </div>
+    }
     <main class="main" [class.main--setup]="!showNav()">
       <router-outlet />
     </main>
