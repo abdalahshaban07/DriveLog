@@ -1,9 +1,11 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
+import { filter } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class InstallPwa {
   private deferred: BeforeInstallPromptEvent | null = null;
-  private waitingWorker: ServiceWorker | null = null;
+  private readonly updates = inject(SwUpdate);
   readonly canPrompt = signal(false);
   readonly installed = signal(this.detectInstalled());
   readonly updateReady = signal(false);
@@ -26,7 +28,7 @@ export class InstallPwa {
       this.canPrompt.set(false);
       this.deferred = null;
     });
-    this.watchServiceWorker();
+    this.watchUpdates();
   }
 
   detectInstalled(): boolean {
@@ -51,35 +53,24 @@ export class InstallPwa {
     this.canPrompt.set(false);
   }
 
-  applyUpdate(): void {
-    if (this.waitingWorker) {
-      this.waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+  async applyUpdate(): Promise<void> {
+    if (this.updates.isEnabled) {
+      try {
+        await this.updates.activateUpdate();
+      } catch {
+        // ponytail: activate can fail if SW already gone; reload still picks up cache
+      }
     }
     window.location.reload();
   }
 
-  private watchServiceWorker(): void {
-    if (!('serviceWorker' in navigator)) {
+  private watchUpdates(): void {
+    if (!this.updates.isEnabled) {
       return;
     }
-    void navigator.serviceWorker.ready.then((reg) => {
-      if (reg.waiting) {
-        this.waitingWorker = reg.waiting;
-        this.updateReady.set(true);
-      }
-      reg.addEventListener('updatefound', () => {
-        const worker = reg.installing;
-        if (!worker) {
-          return;
-        }
-        worker.addEventListener('statechange', () => {
-          if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-            this.waitingWorker = reg.waiting;
-            this.updateReady.set(true);
-          }
-        });
-      });
-    });
+    this.updates.versionUpdates
+      .pipe(filter((e): e is VersionReadyEvent => e.type === 'VERSION_READY'))
+      .subscribe(() => this.updateReady.set(true));
   }
 }
 

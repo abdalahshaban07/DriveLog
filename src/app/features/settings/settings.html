@@ -87,6 +87,36 @@
     }
   </section>
 
+  @if (!install.installed()) {
+    <section class="card list">
+      @if (install.canPrompt()) {
+        <button type="button" class="line" (click)="doInstall()">
+          <span class="line__text">
+            <strong>{{ i18n.t('settings.install') }}</strong>
+          </span>
+        </button>
+      } @else if (install.isIos) {
+        <div class="line">
+          <span class="line__text">
+            <strong>{{ i18n.t('settings.install') }}</strong>
+            <span class="line__sub">{{
+              install.isSafari
+                ? i18n.t('install.ios')
+                : i18n.t('install.iosChrome')
+            }}</span>
+          </span>
+        </div>
+      } @else {
+        <div class="line">
+          <span class="line__text">
+            <strong>{{ i18n.t('settings.install') }}</strong>
+            <span class="line__sub">{{ i18n.t('install.androidFallback') }}</span>
+          </span>
+        </div>
+      }
+    </section>
+  }
+
   <section class="card list">
     <label class="line">
       <span class="line__text" [id]="remindersLbl">{{

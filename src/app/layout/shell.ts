@@ -38,6 +38,6 @@ export class Shell {
   readonly updateReady = computed(() => this.install.updateReady());
 
   reload(): void {
-    this.install.applyUpdate();
+    void this.install.applyUpdate();
   }
 }

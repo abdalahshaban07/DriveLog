@@ -4,6 +4,7 @@ import { Db } from '../../data/db';
 import { listCurrencyOptions, validCurrency } from '../../domain/currencies';
 import { THEMES, type BackupFile, type Theme } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
+import { InstallPwa } from '../../pwa/install-pwa';
 import { Notify } from '../../pwa/notify';
 import { ConfirmBar } from '../../ui/confirm-bar';
 import { DateField } from '../../ui/date-field';
@@ -18,6 +19,7 @@ import { SelectField } from '../../ui/select-field';
 })
 export class SettingsPage {
   readonly i18n = inject(I18n);
+  readonly install = inject(InstallPwa);
   readonly notify = inject(Notify);
   private readonly db = inject(Db);
 
@@ -145,5 +147,9 @@ export class SettingsPage {
   async enableNotify(): Promise<void> {
     await this.notify.requestPermission();
     this.notifyPerm.set(this.notify.permission());
+  }
+
+  async doInstall(): Promise<void> {
+    await this.install.promptInstall();
   }
 }

@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { provideServiceWorker } from '@angular/service-worker';
 import { App } from './app';
 import { routes } from './app.routes';
 import { Db } from './data/db';
@@ -10,6 +11,7 @@ describe('App', () => {
       imports: [App],
       providers: [
         provideRouter(routes),
+        provideServiceWorker('ngsw-worker.js', { enabled: false }),
         {
           provide: Db,
           useValue: {
