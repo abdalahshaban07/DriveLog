@@ -22,9 +22,17 @@ export type CountryFuelPrices = {
   countryCode: string;
   countryName: string;
   currency: string;
-  gasoline: number | null;
+  /** Egypt solar (سولار); often diesel-grade. */
+  solar: number | null;
   diesel: number | null;
+  gasoline92: number | null;
+  gasoline95: number | null;
+  /** Legacy alias → gasoline92 when only a single gasoline grade exists. */
+  gasoline: number | null;
 };
+
+/** Overpass search radii (m). Expand until results, cap 50 km. */
+const NEARBY_RADII_M = [5_000, 15_000, 30_000, 50_000] as const;
 
 export type NearbyPoi = {
   id: number;
@@ -37,9 +45,13 @@ export type NearbyPoi = {
   detail?: string;
 };
 
-async function fetchJson(url: string, init?: RequestInit): Promise<unknown | null> {
+async function fetchJson(
+  url: string,
+  init?: RequestInit,
+  timeoutMs = TIMEOUT_MS,
+): Promise<unknown | null> {
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const res = await fetch(url, { ...init, signal: ctrl.signal });
     if (!res.ok) {
@@ -176,14 +188,23 @@ export function parseCountryFuelPrices(
     return null;
   }
   const p = prices as Record<string, unknown>;
-  const gas = numOrNull(p['gasoline'] ?? p['gasoline_regular']);
+  const solar = numOrNull(p['solar']);
   const diesel = numOrNull(p['diesel'] ?? p['diesel_regular']);
+  const gasoline92 = numOrNull(
+    p['gasoline_92'] ?? p['gasoline_regular'] ?? p['gasoline'],
+  );
+  const gasoline95 = numOrNull(
+    p['gasoline_95'] ?? p['gasoline_premium'] ?? p['gasoline_super'] ?? p['premium'],
+  );
   return {
     countryCode: String(r['country_code'] ?? cc),
     countryName: String(r['country_name'] ?? cc),
     currency: String(r['local_currency'] ?? ''),
-    gasoline: gas,
+    solar,
     diesel,
+    gasoline92,
+    gasoline95,
+    gasoline: gasoline92,
   };
 }
 
@@ -300,18 +321,42 @@ export function parseNearbyPoi(
   return list.sort((a, b) => a.distanceKm - b.distanceKm).slice(0, 10);
 }
 
-export async function nearbyPoi(origin: Coords): Promise<NearbyPoi[]> {
-  const q = `[out:json][timeout:15];
+export async function nearbyPoi(
+  origin: Coords,
+  preferKind?: 'fuel' | 'charge',
+): Promise<NearbyPoi[]> {
+  let last: NearbyPoi[] = [];
+  for (const radiusM of NEARBY_RADII_M) {
+    last = await fetchNearbyAt(origin, radiusM);
+    const hit = preferKind
+      ? last.filter((p) => p.kind === preferKind)
+      : last;
+    if (hit.length) {
+      return last;
+    }
+  }
+  return last;
+}
+
+async function fetchNearbyAt(
+  origin: Coords,
+  radiusM: number,
+): Promise<NearbyPoi[]> {
+  const q = `[out:json][timeout:25];
 (
-  node["amenity"="fuel"](around:5000,${origin.lat},${origin.lon});
-  node["amenity"="charging_station"](around:5000,${origin.lat},${origin.lon});
+  node["amenity"="fuel"](around:${radiusM},${origin.lat},${origin.lon});
+  node["amenity"="charging_station"](around:${radiusM},${origin.lat},${origin.lon});
 );
 out;`;
-  const raw = await fetchJson('https://overpass-api.de/api/interpreter', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `data=${encodeURIComponent(q)}`,
-  });
+  const raw = await fetchJson(
+    'https://overpass-api.de/api/interpreter',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `data=${encodeURIComponent(q)}`,
+    },
+    25_000,
+  );
   return parseNearbyPoi(raw, origin);
 }
 

@@ -127,16 +127,28 @@
         <div class="skeleton skeleton--row" aria-hidden="true"></div>
       } @else if (fuelPrices(); as prices) {
         <div class="list-reveal">
-          @if (prices.gasoline != null) {
+          @if (prices.solar != null) {
             <div class="data-row">
-              <span>{{ i18n.t('home.fuelGasoline') }}</span>
-              <strong>{{ formatPerLiter(prices.gasoline) }}</strong>
+              <span>{{ i18n.t('home.fuelSolar') }}</span>
+              <strong>{{ formatPerLiter(prices.solar) }}</strong>
             </div>
           }
           @if (prices.diesel != null) {
             <div class="data-row">
               <span>{{ i18n.t('home.fuelDiesel') }}</span>
               <strong>{{ formatPerLiter(prices.diesel) }}</strong>
+            </div>
+          }
+          @if (prices.gasoline92 != null) {
+            <div class="data-row">
+              <span>{{ i18n.t('home.fuel92') }}</span>
+              <strong>{{ formatPerLiter(prices.gasoline92) }}</strong>
+            </div>
+          }
+          @if (prices.gasoline95 != null) {
+            <div class="data-row">
+              <span>{{ i18n.t('home.fuel95') }}</span>
+              <strong>{{ formatPerLiter(prices.gasoline95) }}</strong>
             </div>
           }
           @if (lastUnit(); as unit) {
