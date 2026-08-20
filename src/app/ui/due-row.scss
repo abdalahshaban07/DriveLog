@@ -1,21 +1,41 @@
+:host {
+  display: block;
+}
+
 .title {
   font-weight: 600;
+  font-size: 1rem;
+  line-height: 1.3;
 }
+
 .due-card--overdue .title {
   color: var(--stop);
 }
+
+.due-card--soon {
+  box-shadow:
+    var(--shadow-soft),
+    inset 0 0 0 1px color-mix(in srgb, var(--fuel) 18%, transparent);
+}
+
 .meta {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  margin-block-start: 2px;
 }
+
 .status {
   font-variant-numeric: tabular-nums;
   text-align: end;
+  font-weight: 700;
+  font-size: 0.95rem;
   color: var(--muted);
 }
+
 .status--stop {
   color: var(--stop);
 }
+
 .status--muted {
-  color: var(--muted);
+  color: var(--fuel);
 }
