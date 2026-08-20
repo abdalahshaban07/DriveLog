@@ -84,6 +84,23 @@ export function runPhase2SelfCheck(): void {
   assert(prices?.gasoline92 === 22.25 && prices.gasoline95 === 24, 'openvan 92/95');
   assert(prices?.gasoline === 22.25, 'openvan gasoline alias');
 
+  // Public API shape for EG: diesel + gasoline + premium (no solar / octane keys).
+  const egApi = parseCountryFuelPrices(
+    {
+      data: {
+        EG: {
+          country_code: 'EG',
+          country_name: 'Egypt',
+          local_currency: 'EGP',
+          prices: { diesel: 15.75, gasoline: 19.0, premium: 21.0 },
+        },
+      },
+    },
+    'EG',
+  );
+  assert(egApi?.solar === 15.75 && egApi.diesel == null, 'EG diesel→solar');
+  assert(egApi?.gasoline92 === 19 && egApi.gasoline95 === 21, 'EG gasoline/premium');
+
   const pois = parseNearbyPoi(
     {
       elements: [
@@ -99,11 +116,18 @@ export function runPhase2SelfCheck(): void {
           lon: 31.25,
           tags: { amenity: 'charging_station', name: 'EV Hub' },
         },
+        {
+          id: 3,
+          type: 'way',
+          center: { lat: 30.045, lon: 31.235 },
+          tags: { amenity: 'fuel', name: 'Total', brand: 'Total' },
+        },
       ],
     },
     { lat: 30.04, lon: 31.23 },
   );
-  assert(pois.length === 2 && pois[0]!.kind === 'fuel', 'overpass poi');
+  assert(pois.length === 3 && pois.some((p) => p.id === 3), 'overpass way center');
+  assert(pois[0]!.kind === 'fuel', 'overpass poi');
 
   const maint: Maintenance[] = [
     {

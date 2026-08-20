@@ -1,5 +1,5 @@
 const TIMEOUT_MS = 8000;
-const PRICE_CACHE_KEY = 'drivelog.fuelPrices';
+const PRICE_CACHE_KEY = 'drivelog.fuelPrices.v2';
 const PRICE_TTL_MS = 6 * 60 * 60 * 1000;
 
 export type Coords = { lat: number; lon: number };
@@ -188,14 +188,32 @@ export function parseCountryFuelPrices(
     return null;
   }
   const p = prices as Record<string, unknown>;
-  const solar = numOrNull(p['solar']);
-  const diesel = numOrNull(p['diesel'] ?? p['diesel_regular']);
-  const gasoline92 = numOrNull(
-    p['gasoline_92'] ?? p['gasoline_regular'] ?? p['gasoline'],
-  );
-  const gasoline95 = numOrNull(
-    p['gasoline_95'] ?? p['gasoline_premium'] ?? p['gasoline_super'] ?? p['premium'],
-  );
+  const solarRaw = pickPrice(p, ['solar', 'diesel_solar', 'gasoil']);
+  const dieselRaw = pickPrice(p, ['diesel', 'diesel_regular', 'diesel_premium']);
+  const gasoline92 = pickPrice(p, [
+    'gasoline_92',
+    'octane_92',
+    'ron_92',
+    'gasoline_regular',
+    'gasoline',
+  ]);
+  const gasoline95 = pickPrice(p, [
+    'gasoline_95',
+    'octane_95',
+    'ron_95',
+    'gasoline_premium',
+    'gasoline_super',
+    'premium',
+  ]);
+  // Egypt site labels diesel-grade as Solar; public API often only sets diesel (+ gasoline/premium).
+  const solar = solarRaw ?? (cc === 'EG' ? dieselRaw : null);
+  const diesel =
+    dieselRaw == null
+      ? null
+      : cc === 'EG' && solarRaw == null
+        ? null
+        : dieselRaw;
+
   return {
     countryCode: String(r['country_code'] ?? cc),
     countryName: String(r['country_name'] ?? cc),
@@ -206,6 +224,16 @@ export function parseCountryFuelPrices(
     gasoline95,
     gasoline: gasoline92,
   };
+}
+
+function pickPrice(p: Record<string, unknown>, keys: string[]): number | null {
+  for (const k of keys) {
+    const n = numOrNull(p[k]);
+    if (n != null) {
+      return n;
+    }
+  }
+  return null;
 }
 
 function numOrNull(v: unknown): number | null {
@@ -284,19 +312,25 @@ export function parseNearbyPoi(
       continue;
     }
     const e = el as Record<string, unknown>;
-    const lat = Number(e['lat']);
-    const lon = Number(e['lon']);
+    const center = e['center'] as { lat?: unknown; lon?: unknown } | undefined;
+    const lat = Number(e['lat'] ?? center?.lat);
+    const lon = Number(e['lon'] ?? center?.lon);
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
       continue;
     }
     const tags = (e['tags'] ?? {}) as Record<string, string>;
     const amenity = tags['amenity'];
     const kind: 'fuel' | 'charge' | null =
-      amenity === 'fuel' ? 'fuel' : amenity === 'charging_station' ? 'charge' : null;
+      amenity === 'fuel' || tags['shop'] === 'fuel'
+        ? 'fuel'
+        : amenity === 'charging_station'
+          ? 'charge'
+          : null;
     if (!kind) {
       continue;
     }
-    const name = tags['name'] || tags['brand'] || (kind === 'fuel' ? 'Petrol' : 'Charger');
+    const name =
+      tags['name'] || tags['brand'] || tags['operator'] || (kind === 'fuel' ? 'Gas station' : 'Charger');
     const detail =
       kind === 'fuel'
         ? [tags['fuel:diesel'] === 'yes' ? 'diesel' : '', tags['fuel:octane_95'] === 'yes' ? '95' : '']
@@ -342,12 +376,17 @@ async function fetchNearbyAt(
   origin: Coords,
   radiusM: number,
 ): Promise<NearbyPoi[]> {
+  // Nodes + ways (stations often mapped as areas); shop=fuel covers a few brand footprints.
   const q = `[out:json][timeout:25];
 (
   node["amenity"="fuel"](around:${radiusM},${origin.lat},${origin.lon});
+  way["amenity"="fuel"](around:${radiusM},${origin.lat},${origin.lon});
+  node["shop"="fuel"](around:${radiusM},${origin.lat},${origin.lon});
+  way["shop"="fuel"](around:${radiusM},${origin.lat},${origin.lon});
   node["amenity"="charging_station"](around:${radiusM},${origin.lat},${origin.lon});
+  way["amenity"="charging_station"](around:${radiusM},${origin.lat},${origin.lon});
 );
-out;`;
+out center;`;
   const raw = await fetchJson(
     'https://overpass-api.de/api/interpreter',
     {

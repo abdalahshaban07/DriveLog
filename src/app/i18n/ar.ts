@@ -30,7 +30,7 @@ export const ar: Record<MsgKey, string> = {
   'home.fuelYouPaid': 'آخر ما دفعت',
   'home.fuelAttr': 'الأسعار: OpenVan.camp',
   'home.nearby': 'بالقرب',
-  'home.nearbyFuel': 'وقود',
+  'home.nearbyFuel': 'محطات بنزين',
   'home.nearbyCharge': 'شحن',
   'home.nearbyFind': 'ابحث بالقرب',
   'home.nearbyEmpty': 'لا يوجد شيء قريب',
