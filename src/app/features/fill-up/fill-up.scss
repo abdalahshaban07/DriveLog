@@ -47,6 +47,11 @@
   gap: var(--space-3);
 }
 
+.list {
+  display: grid;
+  gap: 8px;
+}
+
 .native,
 .sr-only {
   position: absolute;

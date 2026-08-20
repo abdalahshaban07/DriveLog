@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
 import { decodeVin, recallsFor } from '../../data/remote';
@@ -16,6 +16,7 @@ import { TextField } from '../../ui/text-field';
 
 @Component({
   selector: 'app-settings',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PageHeader, SelectField, DateField, ConfirmBar, RouterLink, TextField],
   templateUrl: './settings.html',
   styleUrl: './settings.scss',
@@ -28,9 +29,7 @@ export class SettingsPage {
 
   readonly remindersLbl = 'settings-reminders';
   readonly theme = computed(() => this.db.settings().theme);
-  readonly remindersEnabled = computed(
-    () => this.db.settings().remindersEnabled === true,
-  );
+  readonly remindersEnabled = computed(() => this.db.settings().remindersEnabled === true);
   readonly notifyPerm = signal(this.notify.permission());
   readonly themeOptions = computed(() =>
     THEMES.map((value) => ({

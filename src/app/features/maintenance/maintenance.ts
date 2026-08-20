@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Db } from '../../data/db';
 import { buildDueItems, todayDateOnly } from '../../domain/dues';
 import { costFromPartLabor, normalizeCustomTypes } from '../../domain/maintenance-fields';
@@ -22,15 +22,8 @@ const CUSTOM_PREFIX = 'custom:';
 
 @Component({
   selector: 'app-maintenance',
-  imports: [
-    PageHeader,
-    SelectField,
-    TextField,
-    NumericField,
-    DateField,
-    PrimaryButton,
-    ConfirmBar,
-  ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [PageHeader, SelectField, TextField, NumericField, DateField, PrimaryButton, ConfirmBar],
   templateUrl: './maintenance.html',
   styleUrl: './maintenance.scss',
 })
@@ -54,6 +47,8 @@ export class MaintenancePage {
   readonly laborCost = signal('');
   readonly saving = signal(false);
   readonly pendingDelete = signal<string | null>(null);
+  readonly odoError = signal('');
+  readonly costError = signal('');
 
   readonly typeSelectValue = computed(() => {
     const label = this.otherLabel();
@@ -206,6 +201,20 @@ export class MaintenancePage {
     this.partBrand.set('');
     this.partCost.set('');
     this.laborCost.set('');
+    this.odoError.set('');
+    this.costError.set('');
+  }
+
+  formatMoney(value: number): string {
+    try {
+      return new Intl.NumberFormat(this.i18n.language(), {
+        style: 'currency',
+        currency: this.db.settings().currency,
+        maximumFractionDigits: 2,
+      }).format(value);
+    } catch {
+      return `${value} ${this.db.settings().currency}`;
+    }
   }
 
   async save(): Promise<void> {
@@ -216,7 +225,18 @@ export class MaintenancePage {
     const dueDate = this.dueDate().trim() || undefined;
     const partCostRaw = this.partCost().trim();
     const laborCostRaw = this.laborCost().trim();
-    if (!Number.isFinite(odometer) || odometer < 0 || !Number.isFinite(cost)) {
+    this.odoError.set('');
+    this.costError.set('');
+    let invalid = false;
+    if (!Number.isFinite(odometer) || odometer < 0) {
+      this.odoError.set(this.i18n.t('maint.err.odometer'));
+      invalid = true;
+    }
+    if (!Number.isFinite(cost)) {
+      this.costError.set(this.i18n.t('maint.err.cost'));
+      invalid = true;
+    }
+    if (invalid) {
       return;
     }
     this.saving.set(true);

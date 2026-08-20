@@ -10,7 +10,7 @@ function themeChrome(theme: Theme): {
 } {
   switch (theme) {
     case 'light':
-      return { colorScheme: 'light', color: '#f1e6d0' };
+      return { colorScheme: 'light', color: '#e8ecf1' };
     case 'dark':
       return { colorScheme: 'dark', color: '#0b0d10' };
     case 'contrast':
@@ -46,9 +46,7 @@ export class I18n {
       root.dataset['theme'] = theme;
       root.style.colorScheme = chrome.colorScheme;
       document.title = this.t('app.name');
-      document
-        .querySelector('meta[name="theme-color"]')
-        ?.setAttribute('content', chrome.color);
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', chrome.color);
     });
   }
 

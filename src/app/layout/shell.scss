@@ -17,6 +17,15 @@
   padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
 }
 
+.boot-error {
+  padding: var(--space-3) var(--space-4);
+  background: color-mix(in srgb, var(--stop) 16%, var(--surface));
+  border-block-end: 1px solid color-mix(in srgb, var(--stop) 40%, var(--hairline));
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
 .nav {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -33,6 +42,7 @@
 }
 
 .nav a {
+  position: relative;
   display: flex;
   flex-direction: column;
   flex-wrap: nowrap;
@@ -45,7 +55,7 @@
   overflow: hidden;
   text-decoration: none;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--type-nav);
   font-weight: 600;
   letter-spacing: 0.02em;
   border-radius: 14px;
@@ -84,6 +94,16 @@
 .nav a.active {
   color: var(--fuel);
   background: var(--well);
+}
+
+.nav a.active::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 4px;
+  inset-inline: 28%;
+  block-size: 3px;
+  border-radius: 999px;
+  background: var(--fuel);
 }
 
 .update,
@@ -137,6 +157,18 @@
   padding: 24px;
   text-align: center;
   color: var(--muted);
+}
+
+@media (min-width: 768px) {
+  .main {
+    padding-inline: var(--space-6);
+  }
+}
+
+@media (min-width: 1280px) {
+  .frame {
+    max-inline-size: var(--shell-wide);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -54,7 +54,15 @@ button {
 }
 .danger {
   background: var(--stop);
-  color: #1a0a0a;
+  color: var(--cta-text);
+}
+button:active {
+  transform: scale(0.98);
+}
+@media (prefers-reduced-motion: reduce) {
+  button:active {
+    transform: none;
+  }
 }
 .ok {
   background: var(--fuel);

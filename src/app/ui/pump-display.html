@@ -4,6 +4,8 @@
   [class.well--active]="active()"
   [attr.aria-label]="label()"
   [attr.aria-pressed]="active()"
+  [attr.aria-invalid]="hint() ? true : null"
+  [attr.aria-describedby]="hint() ? hintId : null"
   (click)="selected.emit()"
 >
   <span class="label label-row">
@@ -33,6 +35,6 @@
     <span class="value">{{ value() || '—' }}</span>
   </span>
   @if (hint()) {
-    <span class="hint">{{ hint() }}</span>
+    <span class="hint" [id]="hintId" role="alert">{{ hint() }}</span>
   }
 </button>

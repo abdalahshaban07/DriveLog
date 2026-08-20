@@ -132,6 +132,18 @@ export class FillUpPage {
     return this.i18n.t(weatherMsgKey(code) as MsgKey);
   }
 
+  formatMoney(value: number): string {
+    try {
+      return new Intl.NumberFormat(this.i18n.language(), {
+        style: 'currency',
+        currency: this.db.settings().currency,
+        maximumFractionDigits: 2,
+      }).format(value);
+    } catch {
+      return `${value} ${this.db.settings().currency}`;
+    }
+  }
+
   async attachWeather(): Promise<void> {
     this.weatherError.set('');
     this.weatherBusy.set(true);

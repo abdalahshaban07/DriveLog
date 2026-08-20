@@ -157,7 +157,11 @@
 
 .around {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-3);
+}
+
+.around > .label {
+  margin: 0;
 }
 
 .around__sub {
@@ -201,12 +205,11 @@
 
 .grade-tile--paid {
   grid-column: 1 / -1;
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--fuel) 16%, var(--surface)),
-      var(--well)
-    );
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--fuel) 16%, var(--surface)),
+    var(--well)
+  );
   border-color: color-mix(in srgb, var(--fuel) 45%, var(--hairline));
 }
 
@@ -229,20 +232,6 @@
   white-space: nowrap;
 }
 
-.data-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding-block: 10px;
-  border-bottom: 1px solid color-mix(in srgb, var(--muted) 20%, transparent);
-  font-variant-numeric: tabular-nums;
-}
-
-.data-row:last-child {
-  border-bottom: 0;
-}
-
 .tabs {
   display: flex;
   gap: 8px;
@@ -256,9 +245,6 @@
   background: transparent;
   color: var(--text);
   font-weight: 600;
-  transition:
-    background var(--motion) var(--ease),
-    border-color var(--motion) var(--ease);
 }
 
 .tabs button.active {
@@ -296,7 +282,6 @@
   text-decoration: none;
   color: inherit;
   background: var(--well);
-  transition: border-color var(--motion) var(--ease);
 }
 
 .poi-list .maps {
@@ -305,26 +290,8 @@
   font-weight: 600;
 }
 
-.vehicle-disclosure {
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius);
-  border: 1px solid var(--hairline);
-  color: var(--muted);
-}
-
-.vehicle-disclosure summary {
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.vehicle-disclosure[open] {
-  background: var(--surface);
-  color: var(--text);
-}
-
 .vehicle {
-  margin: var(--space-2) 0 0;
+  margin: 0;
   font-weight: 700;
 }
 
@@ -335,6 +302,31 @@
 
   .snapshot__cell {
     text-align: start;
+  }
+}
+
+@media (min-width: 768px) {
+  .around {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+
+  .around > .label {
+    grid-column: 1 / -1;
+  }
+
+  .hero:has(.hero-number) {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-2) var(--space-5);
+    align-items: center;
+  }
+
+  .hero:has(.hero-number) .hero__cta {
+    grid-column: 2;
+    grid-row: 1 / span 4;
+    margin-block-start: 0;
+    min-inline-size: 10rem;
   }
 }
 

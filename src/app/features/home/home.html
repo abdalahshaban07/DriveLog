@@ -9,11 +9,7 @@
           </button>
         } @else if (install.isIos) {
           <p class="hint">
-            {{
-              install.isSafari
-                ? i18n.t('install.ios')
-                : i18n.t('install.iosChrome')
-            }}
+            {{ install.isSafari ? i18n.t('install.ios') : i18n.t('install.iosChrome') }}
           </p>
         } @else {
           <p class="hint">{{ i18n.t('install.androidFallback') }}</p>
@@ -47,9 +43,7 @@
     } @else {
       <p class="hero__empty">{{ i18n.t('home.needFull') }}</p>
     }
-    <a routerLink="/fill-up" class="cta hero__cta">{{
-      i18n.t('home.logFillUp')
-    }}</a>
+    <a routerLink="/fill-up" class="cta hero__cta">{{ i18n.t('home.logFillUp') }}</a>
   </section>
 
   <section
@@ -74,9 +68,7 @@
       </div>
     } @else if (lastWeather(); as wx) {
       <div class="snapshot__cell">
-        <span class="snapshot__value">
-          {{ wx.tempC | number: '1.0-0' }}°C
-        </span>
+        <span class="snapshot__value"> {{ wx.tempC | number: '1.0-0' }}°C </span>
         <span class="snapshot__label">{{ weatherLabel(wx.weatherCode!) }}</span>
       </div>
     }
@@ -103,7 +95,7 @@
     @if (suggested(); as s) {
       <app-due-row
         [title]="suggestedTitle()"
-        [meta]="s.dueKm + ' km'"
+        [meta]="s.dueKm + ' ' + i18n.t('common.km')"
         [status]="s.status"
         [statusLabel]="
           s.status === 'overdue'
@@ -117,14 +109,21 @@
     }
   </section>
 
-  <section class="around card home__stagger" style="--i: 4">
-    <p class="label">{{ i18n.t('home.nearby') }}</p>
+  <section class="around home__stagger" style="--i: 4" [attr.aria-label]="i18n.t('home.aroundYou')">
+    <p class="label">{{ i18n.t('home.aroundYou') }}</p>
 
-    <div class="around__fuel">
+    <div class="around__fuel card">
       <p class="around__sub">{{ i18n.t('home.fuelPrices') }}</p>
       @if (pricesBusy()) {
         <div class="skeleton skeleton--row" aria-hidden="true"></div>
         <div class="skeleton skeleton--row" aria-hidden="true"></div>
+      } @else if (pricesError()) {
+        <div class="error-state">
+          <span>{{ pricesError() }}</span>
+          <button type="button" class="ghost" (click)="loadPrices()">
+            {{ i18n.t('home.nearbyFind') }}
+          </button>
+        </div>
       } @else if (fuelPrices(); as prices) {
         <div class="grade-board list-reveal" role="list">
           @if (prices.solar != null) {
@@ -165,14 +164,17 @@
           · {{ prices.countryName }}
         </p>
       } @else {
-        <div class="empty-state">{{ i18n.t('home.fuelPrices') }}</div>
+        <div class="empty-state">{{ i18n.t('home.fuelEmpty') }}</div>
       }
     </div>
 
-    <div class="around__poi">
-      <div class="tabs">
+    <div class="around__poi card">
+      <p class="around__sub">{{ i18n.t('home.nearby') }}</p>
+      <div class="tabs" role="tablist" [attr.aria-label]="i18n.t('home.nearby')">
         <button
           type="button"
+          role="tab"
+          [attr.aria-selected]="nearbyTab() === 'fuel'"
           [class.active]="nearbyTab() === 'fuel'"
           (click)="nearbyTab.set('fuel')"
         >
@@ -180,21 +182,16 @@
         </button>
         <button
           type="button"
+          role="tab"
+          [attr.aria-selected]="nearbyTab() === 'charge'"
           [class.active]="nearbyTab() === 'charge'"
           (click)="nearbyTab.set('charge')"
         >
           {{ i18n.t('home.nearbyCharge') }}
         </button>
       </div>
-      <button
-        type="button"
-        class="find"
-        [disabled]="nearbyBusy()"
-        (click)="findNearby()"
-      >
-        {{
-          nearbyBusy() ? i18n.t('vin.decoding') : i18n.t('home.nearbyFind')
-        }}
+      <button type="button" class="find" [disabled]="nearbyBusy()" (click)="findNearby()">
+        {{ nearbyBusy() ? i18n.t('vin.decoding') : i18n.t('home.nearbyFind') }}
       </button>
       @if (nearbyBusy()) {
         <div class="skeleton skeleton--row" aria-hidden="true"></div>
@@ -213,7 +210,7 @@
               <a [href]="mapsUrl(p)" target="_blank" rel="noopener noreferrer">
                 <strong>{{ p.name }}</strong>
                 <span>
-                  {{ p.distanceKm | number: '1.1-1' }} km
+                  {{ p.distanceKm | number: '1.1-1' }} {{ i18n.t('common.km') }}
                   @if (p.detail) {
                     · {{ p.detail }}
                   }
@@ -229,20 +226,18 @@
   </section>
 
   @if (vehicleLine()) {
-    <details class="vehicle-disclosure home__stagger" style="--i: 5">
+    <details class="disclosure vehicle-disclosure home__stagger" style="--i: 5">
       <summary>{{ i18n.t('home.vehicle') }}</summary>
-      <p class="vehicle">{{ vehicleLine() }}</p>
-      @if (db.car()?.recallCount != null) {
-        <p class="hint">
-          {{ i18n.t('vin.recalls') }}:
-          {{
-            db.car()!.recallCount === 0
-              ? i18n.t('vin.recallsNone')
-              : db.car()!.recallCount
-          }}
-        </p>
-        <p class="hint">{{ i18n.t('vin.recallsCaveat') }}</p>
-      }
+      <div class="disclosure__body">
+        <p class="vehicle">{{ vehicleLine() }}</p>
+        @if (db.car()?.recallCount != null) {
+          <p class="hint">
+            {{ i18n.t('vin.recalls') }}:
+            {{ db.car()!.recallCount === 0 ? i18n.t('vin.recallsNone') : db.car()!.recallCount }}
+          </p>
+          <p class="hint">{{ i18n.t('vin.recallsCaveat') }}</p>
+        }
+      </div>
     </details>
   }
 </div>

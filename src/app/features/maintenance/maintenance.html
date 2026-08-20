@@ -1,7 +1,17 @@
-<div class="stack">
+<div class="stack page-narrow">
   <app-page-header [title]="i18n.t('maint.title')" />
 
-  <section class="card stack">
+  @if (editId()) {
+    <div class="edit-banner" role="status">
+      <span>{{ i18n.t('maint.editing') }}</span>
+      <button type="button" class="ghost" (click)="resetForm()">
+        {{ i18n.t('maint.cancelEdit') }}
+      </button>
+    </div>
+  }
+
+  <section class="card stack" [attr.aria-label]="i18n.t('maint.essentials')">
+    <p class="label">{{ i18n.t('maint.essentials') }}</p>
     <app-select-field
       [label]="i18n.t('maint.type')"
       [options]="typeOptions()"
@@ -9,52 +19,47 @@
       (valueChange)="onTypeValue($event)"
     />
 
-    <app-text-field
-      [label]="i18n.t('maint.centerName')"
-      [(value)]="centerName"
+    <app-numeric-field
+      [label]="i18n.t('maint.odometer')"
+      [(value)]="odometer"
+      [error]="odoError()"
     />
-    <app-text-field
-      [label]="i18n.t('maint.technicianName')"
-      [(value)]="technicianName"
-    />
-    <app-text-field [label]="i18n.t('maint.partBrand')" [(value)]="partBrand" />
-
-    <div class="row">
-      <app-numeric-field
-        [label]="i18n.t('maint.partCost')"
-        [value]="partCost()"
-        (valueChange)="onPartCost($event)"
-      />
-      <app-numeric-field
-        [label]="i18n.t('maint.laborCost')"
-        [value]="laborCost()"
-        (valueChange)="onLaborCost($event)"
-      />
-    </div>
-
-    <app-numeric-field [label]="i18n.t('maint.cost')" [(value)]="cost" />
-    <app-numeric-field [label]="i18n.t('maint.odometer')" [(value)]="odometer" />
-
     <app-date-field [label]="i18n.t('maint.date')" [(value)]="date" />
-    <app-numeric-field [label]="i18n.t('maint.dueKm')" [(value)]="dueKm" />
-    <app-date-field [label]="i18n.t('maint.dueDate')" [(value)]="dueDate" />
-    <app-text-field
-      [label]="i18n.t('maint.note')"
-      [(value)]="note"
-      [multiline]="true"
-    />
-
-    <app-primary-button
-      [label]="i18n.t('maint.save')"
-      [disabled]="saving()"
-      (pressed)="save()"
-    />
+    <app-text-field [label]="i18n.t('maint.note')" [(value)]="note" [multiline]="true" />
   </section>
+
+  <details class="disclosure">
+    <summary>{{ i18n.t('maint.advanced') }}</summary>
+    <div class="disclosure__body stack">
+      <app-text-field [label]="i18n.t('maint.centerName')" [(value)]="centerName" />
+      <app-text-field [label]="i18n.t('maint.technicianName')" [(value)]="technicianName" />
+      <app-text-field [label]="i18n.t('maint.partBrand')" [(value)]="partBrand" />
+
+      <div class="row">
+        <app-numeric-field
+          [label]="i18n.t('maint.partCost')"
+          [value]="partCost()"
+          (valueChange)="onPartCost($event)"
+        />
+        <app-numeric-field
+          [label]="i18n.t('maint.laborCost')"
+          [value]="laborCost()"
+          (valueChange)="onLaborCost($event)"
+        />
+      </div>
+
+      <app-numeric-field [label]="i18n.t('maint.cost')" [(value)]="cost" [error]="costError()" />
+      <app-numeric-field [label]="i18n.t('maint.dueKm')" [(value)]="dueKm" />
+      <app-date-field [label]="i18n.t('maint.dueDate')" [(value)]="dueDate" />
+    </div>
+  </details>
+
+  <app-primary-button [label]="i18n.t('maint.save')" [disabled]="saving()" (pressed)="save()" />
 
   <section class="list">
     <p class="label">{{ i18n.t('maint.list') }}</p>
     @if (db.maintenance().length === 0) {
-      <p class="muted">{{ i18n.t('maint.empty') }}</p>
+      <p class="empty-state">{{ i18n.t('maint.empty') }}</p>
     }
     @for (m of db.maintenance(); track m.id) {
       <article
@@ -66,13 +71,10 @@
           <strong>{{ rowLabel(m) }}</strong>
           <p class="meta">
             <span class="pill">{{ m.date }}</span>
-            {{ m.odometer }} km · {{ m.cost }}
+            {{ m.odometer }} {{ i18n.t('common.km') }} · {{ formatMoney(m.cost) }}
           </p>
           @if (rowStatusLabel(m.id); as status) {
-            <p
-              class="flag"
-              [class.flag--stop]="rowStatus(m.id) === 'overdue'"
-            >
+            <p class="flag" [class.flag--stop]="rowStatus(m.id) === 'overdue'">
               {{ status }}
             </p>
           }

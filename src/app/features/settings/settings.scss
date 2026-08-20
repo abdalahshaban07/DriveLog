@@ -1,10 +1,23 @@
 .settings {
   gap: var(--space-3);
+  max-inline-size: 28rem;
+  margin-inline: auto;
+  width: 100%;
 }
 
 :host .card {
   padding: 0;
   box-shadow: var(--shadow-soft);
+}
+
+.section-label {
+  margin: 0;
+  padding: var(--space-3) var(--space-4) var(--space-1);
+  font-size: var(--type-label);
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
 }
 
 .list {

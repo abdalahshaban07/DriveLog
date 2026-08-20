@@ -14,4 +14,5 @@ export class PumpDisplay {
   readonly hint = input('');
   readonly active = input(false);
   readonly selected = output<void>();
+  readonly hintId = `pump-h-${crypto.randomUUID().slice(0, 8)}`;
 }
