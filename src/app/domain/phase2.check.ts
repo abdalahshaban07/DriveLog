@@ -68,13 +68,21 @@ export function runPhase2SelfCheck(): void {
           country_code: 'EG',
           country_name: 'Egypt',
           local_currency: 'EGP',
-          prices: { gasoline: 19.5, diesel: 15.0 },
+          prices: {
+            solar: 20.5,
+            diesel: 20.5,
+            gasoline_92: 22.25,
+            gasoline_95: 24.0,
+            gasoline: 22.25,
+          },
         },
       },
     },
     'EG',
   );
-  assert(prices?.gasoline === 19.5 && prices.diesel === 15, 'openvan EG');
+  assert(prices?.solar === 20.5 && prices.diesel === 20.5, 'openvan solar/diesel');
+  assert(prices?.gasoline92 === 22.25 && prices.gasoline95 === 24, 'openvan 92/95');
+  assert(prices?.gasoline === 22.25, 'openvan gasoline alias');
 
   const pois = parseNearbyPoi(
     {

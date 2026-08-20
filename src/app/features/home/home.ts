@@ -130,7 +130,7 @@ export class HomePage {
         this.nearbyAll.set([]);
         return;
       }
-      const list = await nearbyPoi(coords);
+      const list = await nearbyPoi(coords, this.nearbyTab());
       this.nearbyAll.set(list);
       if (!list.length) {
         this.nearbyError.set(this.i18n.t('home.nearbyEmpty'));

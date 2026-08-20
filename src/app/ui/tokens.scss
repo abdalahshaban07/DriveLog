@@ -206,7 +206,7 @@ body {
       color-mix(in srgb, var(--aura-2) 40%, transparent),
       transparent 50%
     );
-  background-attachment: fixed;
+  /* ponytail: no background-attachment:fixed — janks scroll on mobile */
   color: var(--text);
   font-family:
     'Outfit',
@@ -542,33 +542,22 @@ textarea.input {
 }
 
 .list-reveal > * {
-  animation: list-in var(--motion) var(--ease) both;
+  animation: list-in 120ms ease-out both;
 }
 
-.list-reveal > *:nth-child(1) {
-  animation-delay: 0ms;
+.list-reveal > *:nth-child(n + 2) {
+  animation-delay: 24ms;
 }
-.list-reveal > *:nth-child(2) {
-  animation-delay: 40ms;
-}
-.list-reveal > *:nth-child(3) {
-  animation-delay: 80ms;
-}
-.list-reveal > *:nth-child(4) {
-  animation-delay: 120ms;
-}
-.list-reveal > *:nth-child(5) {
-  animation-delay: 160ms;
+.list-reveal > *:nth-child(n + 4) {
+  animation-delay: 48ms;
 }
 
 @keyframes list-in {
   from {
     opacity: 0;
-    transform: translateY(4px);
   }
   to {
     opacity: 1;
-    transform: none;
   }
 }
 
