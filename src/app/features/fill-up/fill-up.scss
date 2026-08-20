@@ -30,10 +30,11 @@
 .console {
   display: grid;
   gap: var(--space-3);
-  padding: var(--space-3);
+  padding: var(--space-4);
   border: 1px solid var(--hairline);
   border-radius: var(--radius);
   background: var(--surface);
+  box-shadow: var(--shadow-soft);
 }
 
 .console__face {
@@ -45,16 +46,8 @@
   display: grid;
   gap: var(--space-3);
 }
-.native {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  border: 0;
-}
+
+.native,
 .sr-only {
   position: absolute;
   width: 1px;
@@ -65,25 +58,36 @@
   clip: rect(0, 0, 0, 0);
   border: 0;
 }
+
 .danger {
   min-height: 44px;
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: color-mix(in srgb, var(--stop) 20%, transparent);
   color: var(--stop);
   font-weight: 700;
+  transition:
+    background var(--motion) var(--ease),
+    transform var(--motion) var(--ease);
 }
+
+.danger:active {
+  transform: scale(0.98);
+}
+
 .save-wrap {
   position: sticky;
   inset-block-end: 0;
   z-index: 2;
   padding-block: 8px;
-  background: var(--bg);
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
 }
+
 .list {
   display: grid;
   gap: 8px;
 }
+
 .history {
   display: flex;
   justify-content: space-between;
@@ -97,9 +101,11 @@
   color: var(--text);
   text-align: start;
   cursor: pointer;
+  box-shadow: var(--shadow-soft);
   transition:
     background var(--motion) var(--ease),
-    border-color var(--motion) var(--ease);
+    border-color var(--motion) var(--ease),
+    box-shadow var(--motion) var(--ease);
 }
 
 .history:hover {
@@ -107,25 +113,45 @@
   background: color-mix(in srgb, var(--fuel) 8%, var(--surface));
 }
 
+.history:active {
+  box-shadow: none;
+}
+
 .weather-btn {
   min-height: 44px;
   border: 1px solid var(--hairline);
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: var(--surface);
   color: var(--text);
   font-weight: 600;
   padding: 0 14px;
+  transition:
+    border-color var(--motion) var(--ease),
+    background var(--motion) var(--ease);
 }
+
+.weather-btn:hover {
+  border-color: color-mix(in srgb, var(--fuel) 35%, var(--hairline));
+}
+
 .weather-btn:disabled {
   opacity: 0.6;
 }
+
 .weather-chip {
   margin: 0;
   color: var(--muted);
   font-size: 0.9rem;
 }
+
 .weather-err {
   margin: 0;
   color: var(--stop);
   font-size: 0.9rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .danger:active {
+    transform: none;
+  }
 }

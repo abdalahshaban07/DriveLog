@@ -59,8 +59,10 @@
 
 h1 {
   margin: 0;
-  font-size: 1.6rem;
+  font-size: 1.625rem;
   font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
 }
 
 .label,
@@ -68,6 +70,27 @@ h1 {
   margin: 0;
 }
 
+.label {
+  letter-spacing: 0.04em;
+}
+
 .sub {
   color: var(--muted);
+  font-weight: 500;
+}
+
+.back {
+  transition:
+    color var(--motion) var(--ease),
+    transform var(--motion) var(--ease);
+}
+
+.back:active {
+  transform: scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .back:active {
+    transform: none;
+  }
 }

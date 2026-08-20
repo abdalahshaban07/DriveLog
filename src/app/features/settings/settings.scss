@@ -4,6 +4,7 @@
 
 :host .card {
   padding: 0;
+  box-shadow: var(--shadow-soft);
 }
 
 .list {
@@ -30,7 +31,9 @@
   font: inherit;
   text-align: start;
   text-decoration: none;
-  transition: background var(--motion) var(--ease);
+  transition:
+    background var(--motion) var(--ease),
+    transform var(--motion) var(--ease);
 }
 
 label.line {
@@ -42,6 +45,11 @@ button.line:hover,
 label.line:hover,
 .line--file:hover {
   background: color-mix(in srgb, var(--well) 55%, transparent);
+}
+
+a.line:active,
+button.line:active {
+  transform: scale(0.99);
 }
 
 .line__text {
@@ -201,17 +209,27 @@ label.line:hover,
 .vin-card {
   padding: var(--space-3) 0;
 }
+
 .vin-card app-text-field {
   display: block;
   padding-inline: var(--space-4);
   padding-block: var(--space-2);
 }
+
 .vin-meta {
   margin: 0;
   padding: var(--space-1) var(--space-4);
   font-size: 0.9rem;
 }
+
 .vin-meta.hint {
   color: var(--muted);
   font-size: 0.85rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  a.line:active,
+  button.line:active {
+    transform: none;
+  }
 }

@@ -1,22 +1,52 @@
+:host .stack {
+  gap: var(--space-5);
+}
+
+:host .card {
+  box-shadow: var(--shadow-soft);
+}
+
 .ghost-btn {
   min-height: 44px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
   background: transparent;
   color: var(--text);
   font-weight: 600;
   padding: 0 14px;
+  transition:
+    border-color var(--motion) var(--ease),
+    background var(--motion) var(--ease),
+    transform var(--motion) var(--ease);
 }
+
+.ghost-btn:hover {
+  border-color: color-mix(in srgb, var(--fuel) 35%, var(--hairline));
+  background: color-mix(in srgb, var(--fuel) 6%, var(--surface));
+}
+
+.ghost-btn:active {
+  transform: scale(0.98);
+}
+
 .ghost-btn:disabled {
   opacity: 0.5;
 }
+
 .vin-meta {
   display: grid;
   gap: 4px;
   margin: 0;
   font-size: 0.95rem;
 }
+
 .vin-meta .hint {
   color: var(--muted);
   font-size: 0.85rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ghost-btn:active {
+    transform: none;
+  }
 }

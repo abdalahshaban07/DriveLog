@@ -42,3 +42,14 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+/skills-lock.json
+/.agents
+/.claude
+/.cursor
+/.gemini
+/.github
+/.vscode
+/GEMINI.md
+/.rules
+/AGENTS.md
+/CLAUDE.md

@@ -1,16 +1,10 @@
-<div class="stack">
-  <app-page-header
-    [eyebrow]="i18n.t('app.name')"
-    [title]="carName()"
-    [subtitle]="i18n.t('app.subtitle')"
-  />
-
+<div class="stack home">
   @if (showInstall()) {
-    <div class="card banner">
+    <div class="install-strip" role="status">
       <p>{{ i18n.t('install.banner') }}</p>
-      <div class="banner-actions">
+      <div class="install-strip__actions">
         @if (install.canPrompt()) {
-          <button type="button" class="install" (click)="doInstall()">
+          <button type="button" class="install-strip__go" (click)="doInstall()">
             {{ i18n.t('install.button') }}
           </button>
         } @else if (install.isIos) {
@@ -32,124 +26,64 @@
   }
 
   @if (db.savedFlash()) {
-    <p class="saved">{{ i18n.t('home.saved') }}</p>
+    <p class="saved home__stagger" style="--i: 0">{{ i18n.t('home.saved') }}</p>
   }
 
-  @if (vehicleLine()) {
-    <section class="card">
-      <p class="label">{{ i18n.t('home.vehicle') }}</p>
-      <p class="vehicle">{{ vehicleLine() }}</p>
-      @if (db.car()?.recallCount != null) {
-        <p class="hint">
-          {{ i18n.t('vin.recalls') }}:
-          {{
-            db.car()!.recallCount === 0
-              ? i18n.t('vin.recallsNone')
-              : db.car()!.recallCount
-          }}
-        </p>
-        <p class="hint">{{ i18n.t('vin.recallsCaveat') }}</p>
-      }
-    </section>
-  }
-
-  <section class="card">
-    <p class="label label-row">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M5 16a7 7 0 1 1 14 0" />
-        <path d="M12 16 9 11" />
-        <circle cx="12" cy="16" r="1.4" />
-      </svg>
-      {{ i18n.t('home.economy') }}
-    </p>
+  <section class="hero home__stagger" style="--i: 1">
+    <p class="hero__car">{{ carName() }}</p>
     @if (economy(); as eco) {
-      <p class="hero-number">{{ eco.litersPer100Km | number: '1.1-2' }}</p>
+      <p class="hero-number hero__value">
+        {{ eco.litersPer100Km | number: '1.1-2' }}
+      </p>
+      <p class="hero__unit">{{ i18n.t('home.economy') }}</p>
       @if (overallL100(); as overall) {
-        <div class="receipt-line">
-          <span>{{ i18n.t('home.overall') }}</span>
-          <strong>{{ overall | number: '1.1-2' }}</strong>
-        </div>
+        <p class="hero__micro">
+          {{ i18n.t('home.overall') }}
+          {{ overall | number: '1.1-2' }}
+        </p>
       }
-      <div class="receipt-line">
-        <span class="label-row">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M7 4h10v16l-2-1.2-2 1.2-2-1.2-2 1.2-2-1.2z" />
-            <path d="M9 9h6M9 12h6" />
-          </svg>
-          {{ i18n.t('home.costPerKm') }}
-        </span>
-        <strong>{{ formatMoney(eco.costPerKm) }}</strong>
-      </div>
     } @else if (db.fillUps().length === 0) {
-      <p>{{ i18n.t('home.logFirst') }}</p>
+      <p class="hero__empty">{{ i18n.t('home.logFirst') }}</p>
     } @else {
-      <p>{{ i18n.t('home.needFull') }}</p>
+      <p class="hero__empty">{{ i18n.t('home.needFull') }}</p>
     }
-    <div class="receipt-line">
-      <span class="label-row">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <rect x="4" y="6" width="16" height="14" rx="2" />
-          <path d="M8 4v4M16 4v4M4 11h16" />
-        </svg>
-        {{ i18n.t('home.monthSpend') }}
-      </span>
-      <strong>{{ formatMoney(monthSpend()) }}</strong>
+    <a routerLink="/fill-up" class="cta hero__cta">{{
+      i18n.t('home.logFillUp')
+    }}</a>
+  </section>
+
+  <section
+    class="snapshot home__stagger"
+    style="--i: 2"
+    [attr.aria-label]="i18n.t('home.monthSpend')"
+  >
+    <div class="snapshot__cell">
+      <span class="snapshot__value">{{ formatMoney(monthSpend()) }}</span>
+      <span class="snapshot__label">{{ i18n.t('home.monthSpend') }}</span>
     </div>
-    @if (lastUnit(); as unit) {
-      <div class="receipt-line">
-        <span>{{ i18n.t('home.lastUnitPrice') }}</span>
-        <strong>{{ formatPerLiter(unit) }}</strong>
+    @if (economy(); as eco) {
+      <div class="snapshot__cell">
+        <span class="snapshot__value">{{ formatMoney(eco.costPerKm) }}</span>
+        <span class="snapshot__label">{{ i18n.t('home.costPerKm') }}</span>
       </div>
     }
-    @if (lastWeather(); as wx) {
-      <div class="receipt-line">
-        <span>{{ i18n.t('home.lastWeather') }}</span>
-        <strong>
-          {{ wx.tempC | number: '1.0-0' }}°C ·
-          {{ weatherLabel(wx.weatherCode!) }}
-        </strong>
+    @if (lastUnit(); as unit) {
+      <div class="snapshot__cell">
+        <span class="snapshot__value">{{ formatPerLiter(unit) }}</span>
+        <span class="snapshot__label">{{ i18n.t('home.lastUnitPrice') }}</span>
+      </div>
+    } @else if (lastWeather(); as wx) {
+      <div class="snapshot__cell">
+        <span class="snapshot__value">
+          {{ wx.tempC | number: '1.0-0' }}°C
+        </span>
+        <span class="snapshot__label">{{ weatherLabel(wx.weatherCode!) }}</span>
       </div>
     }
   </section>
 
-  @if (fuelPrices(); as prices) {
-    <section class="card">
-      <p class="label">{{ i18n.t('home.fuelPrices') }}</p>
-      <p class="hint">{{ prices.countryName }}</p>
-      @if (prices.gasoline != null) {
-        <div class="receipt-line">
-          <span>{{ i18n.t('home.fuelGasoline') }}</span>
-          <strong>{{ formatPerLiter(prices.gasoline) }}</strong>
-        </div>
-      }
-      @if (prices.diesel != null) {
-        <div class="receipt-line">
-          <span>{{ i18n.t('home.fuelDiesel') }}</span>
-          <strong>{{ formatPerLiter(prices.diesel) }}</strong>
-        </div>
-      }
-      @if (lastUnit(); as unit) {
-        <div class="receipt-line">
-          <span>{{ i18n.t('home.fuelYouPaid') }}</span>
-          <strong>{{ formatPerLiter(unit) }}</strong>
-        </div>
-      }
-      <p class="hint attr">
-        <a href="https://openvan.camp" target="_blank" rel="noopener noreferrer">{{
-          i18n.t('home.fuelAttr')
-        }}</a>
-      </p>
-    </section>
-  }
-
-  <section class="due">
-    <p class="label label-row">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="12" cy="12" r="8" />
-        <path d="M12 8v5l3 2" />
-      </svg>
-      {{ i18n.t('home.nextDue') }}
-    </p>
+  <section class="due home__stagger" style="--i: 3">
+    <p class="label">{{ i18n.t('home.nextDue') }}</p>
     @if (due(); as d) {
       <app-due-row
         [title]="dueTitle(d)"
@@ -164,10 +98,9 @@
         "
       />
     } @else {
-      <p class="muted">{{ i18n.t('home.nothingDue') }}</p>
+      <p class="empty-state">{{ i18n.t('home.nothingDue') }}</p>
     }
     @if (suggested(); as s) {
-      <p class="label">{{ i18n.t('home.suggestedDue') }}</p>
       <app-due-row
         [title]="suggestedTitle()"
         [meta]="s.dueKm + ' km'"
@@ -184,55 +117,120 @@
     }
   </section>
 
-  <section class="card nearby">
+  <section class="around card home__stagger" style="--i: 4">
     <p class="label">{{ i18n.t('home.nearby') }}</p>
-    <div class="tabs">
-      <button
-        type="button"
-        [class.active]="nearbyTab() === 'fuel'"
-        (click)="nearbyTab.set('fuel')"
-      >
-        {{ i18n.t('home.nearbyFuel') }}
-      </button>
-      <button
-        type="button"
-        [class.active]="nearbyTab() === 'charge'"
-        (click)="nearbyTab.set('charge')"
-      >
-        {{ i18n.t('home.nearbyCharge') }}
-      </button>
-    </div>
-    <button
-      type="button"
-      class="find"
-      [disabled]="nearbyBusy()"
-      (click)="findNearby()"
-    >
-      {{
-        nearbyBusy() ? i18n.t('vin.decoding') : i18n.t('home.nearbyFind')
-      }}
-    </button>
-    @if (nearbyError()) {
-      <p class="hint">{{ nearbyError() }}</p>
-    }
-    <ul class="poi-list">
-      @for (p of nearbyList(); track p.id) {
-        <li>
-          <a [href]="mapsUrl(p)" target="_blank" rel="noopener noreferrer">
-            <strong>{{ p.name }}</strong>
-            <span>
-              {{ p.distanceKm | number: '1.1-1' }} km
-              @if (p.detail) {
-                · {{ p.detail }}
-              }
-            </span>
-            <span class="maps">{{ i18n.t('home.openMaps') }}</span>
-          </a>
-        </li>
+
+    <div class="around__fuel">
+      <p class="around__sub">{{ i18n.t('home.fuelPrices') }}</p>
+      @if (pricesBusy()) {
+        <div class="skeleton skeleton--row" aria-hidden="true"></div>
+        <div class="skeleton skeleton--row" aria-hidden="true"></div>
+      } @else if (fuelPrices(); as prices) {
+        <div class="list-reveal">
+          @if (prices.gasoline != null) {
+            <div class="data-row">
+              <span>{{ i18n.t('home.fuelGasoline') }}</span>
+              <strong>{{ formatPerLiter(prices.gasoline) }}</strong>
+            </div>
+          }
+          @if (prices.diesel != null) {
+            <div class="data-row">
+              <span>{{ i18n.t('home.fuelDiesel') }}</span>
+              <strong>{{ formatPerLiter(prices.diesel) }}</strong>
+            </div>
+          }
+          @if (lastUnit(); as unit) {
+            <div class="data-row">
+              <span>{{ i18n.t('home.fuelYouPaid') }}</span>
+              <strong>{{ formatPerLiter(unit) }}</strong>
+            </div>
+          }
+        </div>
+        <p class="hint attr">
+          <a href="https://openvan.camp" target="_blank" rel="noopener noreferrer">{{
+            i18n.t('home.fuelAttr')
+          }}</a>
+          · {{ prices.countryName }}
+        </p>
+      } @else {
+        <div class="empty-state">{{ i18n.t('home.fuelPrices') }}</div>
       }
-    </ul>
-    <p class="hint attr">{{ i18n.t('home.nearbyOsm') }}</p>
+    </div>
+
+    <div class="around__poi">
+      <div class="tabs">
+        <button
+          type="button"
+          [class.active]="nearbyTab() === 'fuel'"
+          (click)="nearbyTab.set('fuel')"
+        >
+          {{ i18n.t('home.nearbyFuel') }}
+        </button>
+        <button
+          type="button"
+          [class.active]="nearbyTab() === 'charge'"
+          (click)="nearbyTab.set('charge')"
+        >
+          {{ i18n.t('home.nearbyCharge') }}
+        </button>
+      </div>
+      <button
+        type="button"
+        class="find"
+        [disabled]="nearbyBusy()"
+        (click)="findNearby()"
+      >
+        {{
+          nearbyBusy() ? i18n.t('vin.decoding') : i18n.t('home.nearbyFind')
+        }}
+      </button>
+      @if (nearbyBusy()) {
+        <div class="skeleton skeleton--row" aria-hidden="true"></div>
+        <div class="skeleton skeleton--row" aria-hidden="true"></div>
+      } @else if (nearbyError()) {
+        <div class="error-state">
+          <span>{{ nearbyError() }}</span>
+          <button type="button" class="ghost" (click)="findNearby()">
+            {{ i18n.t('home.nearbyFind') }}
+          </button>
+        </div>
+      } @else if (nearbyList().length) {
+        <ul class="poi-list list-reveal">
+          @for (p of nearbyList(); track p.id) {
+            <li>
+              <a [href]="mapsUrl(p)" target="_blank" rel="noopener noreferrer">
+                <strong>{{ p.name }}</strong>
+                <span>
+                  {{ p.distanceKm | number: '1.1-1' }} km
+                  @if (p.detail) {
+                    · {{ p.detail }}
+                  }
+                </span>
+                <span class="maps">{{ i18n.t('home.openMaps') }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+      }
+      <p class="hint attr">{{ i18n.t('home.nearbyOsm') }}</p>
+    </div>
   </section>
 
-  <a routerLink="/fill-up" class="cta">{{ i18n.t('home.logFillUp') }}</a>
+  @if (vehicleLine()) {
+    <details class="vehicle-disclosure home__stagger" style="--i: 5">
+      <summary>{{ i18n.t('home.vehicle') }}</summary>
+      <p class="vehicle">{{ vehicleLine() }}</p>
+      @if (db.car()?.recallCount != null) {
+        <p class="hint">
+          {{ i18n.t('vin.recalls') }}:
+          {{
+            db.car()!.recallCount === 0
+              ? i18n.t('vin.recallsNone')
+              : db.car()!.recallCount
+          }}
+        </p>
+        <p class="hint">{{ i18n.t('vin.recallsCaveat') }}</p>
+      }
+    </details>
+  }
 </div>

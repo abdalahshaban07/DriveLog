@@ -31,14 +31,13 @@ import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { InstallPwa } from '../../pwa/install-pwa';
 import { DueRow } from '../../ui/due-row';
-import { PageHeader } from '../../ui/page-header';
 
 type NearbyTab = 'fuel' | 'charge';
 
 @Component({
   selector: 'app-home',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, PageHeader, DueRow, DecimalPipe],
+  imports: [RouterLink, DueRow, DecimalPipe],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
