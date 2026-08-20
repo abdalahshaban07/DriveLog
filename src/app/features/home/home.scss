@@ -173,6 +173,62 @@
   gap: var(--space-2);
 }
 
+.grade-board {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.grade-tile {
+  display: grid;
+  gap: 6px;
+  padding: var(--space-3);
+  border-radius: calc(var(--radius) - 4px);
+  background:
+    radial-gradient(
+      120% 80% at 100% 0%,
+      color-mix(in srgb, var(--fuel) 10%, transparent),
+      transparent 55%
+    ),
+    var(--well);
+  border: 1px solid var(--hairline);
+  min-inline-size: 0;
+}
+
+.grade-tile--accent {
+  border-color: color-mix(in srgb, var(--fuel) 35%, var(--hairline));
+}
+
+.grade-tile--paid {
+  grid-column: 1 / -1;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--fuel) 16%, var(--surface)),
+      var(--well)
+    );
+  border-color: color-mix(in srgb, var(--fuel) 45%, var(--hairline));
+}
+
+.grade-tile__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.grade-tile__price {
+  margin: 0;
+  font-size: clamp(1rem, 3.8vw, 1.25rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .data-row {
   display: flex;
   justify-content: space-between;

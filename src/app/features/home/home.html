@@ -126,35 +126,35 @@
         <div class="skeleton skeleton--row" aria-hidden="true"></div>
         <div class="skeleton skeleton--row" aria-hidden="true"></div>
       } @else if (fuelPrices(); as prices) {
-        <div class="list-reveal">
+        <div class="grade-board list-reveal" role="list">
           @if (prices.solar != null) {
-            <div class="data-row">
-              <span>{{ i18n.t('home.fuelSolar') }}</span>
-              <strong>{{ formatPerLiter(prices.solar) }}</strong>
+            <div class="grade-tile" role="listitem">
+              <span class="grade-tile__label">{{ i18n.t('home.fuelSolar') }}</span>
+              <strong class="grade-tile__price">{{ formatPerLiter(prices.solar) }}</strong>
             </div>
           }
           @if (prices.diesel != null) {
-            <div class="data-row">
-              <span>{{ i18n.t('home.fuelDiesel') }}</span>
-              <strong>{{ formatPerLiter(prices.diesel) }}</strong>
+            <div class="grade-tile" role="listitem">
+              <span class="grade-tile__label">{{ i18n.t('home.fuelDiesel') }}</span>
+              <strong class="grade-tile__price">{{ formatPerLiter(prices.diesel) }}</strong>
             </div>
           }
           @if (prices.gasoline92 != null) {
-            <div class="data-row">
-              <span>{{ i18n.t('home.fuel92') }}</span>
-              <strong>{{ formatPerLiter(prices.gasoline92) }}</strong>
+            <div class="grade-tile grade-tile--accent" role="listitem">
+              <span class="grade-tile__label">{{ i18n.t('home.fuel92') }}</span>
+              <strong class="grade-tile__price">{{ formatPerLiter(prices.gasoline92) }}</strong>
             </div>
           }
           @if (prices.gasoline95 != null) {
-            <div class="data-row">
-              <span>{{ i18n.t('home.fuel95') }}</span>
-              <strong>{{ formatPerLiter(prices.gasoline95) }}</strong>
+            <div class="grade-tile grade-tile--accent" role="listitem">
+              <span class="grade-tile__label">{{ i18n.t('home.fuel95') }}</span>
+              <strong class="grade-tile__price">{{ formatPerLiter(prices.gasoline95) }}</strong>
             </div>
           }
           @if (lastUnit(); as unit) {
-            <div class="data-row">
-              <span>{{ i18n.t('home.fuelYouPaid') }}</span>
-              <strong>{{ formatPerLiter(unit) }}</strong>
+            <div class="grade-tile grade-tile--paid" role="listitem">
+              <span class="grade-tile__label">{{ i18n.t('home.fuelYouPaid') }}</span>
+              <strong class="grade-tile__price">{{ formatPerLiter(unit) }}</strong>
             </div>
           }
         </div>

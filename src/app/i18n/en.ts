@@ -28,7 +28,7 @@ export const en = {
   'home.fuelYouPaid': 'You last paid',
   'home.fuelAttr': 'Prices: OpenVan.camp',
   'home.nearby': 'Nearby',
-  'home.nearbyFuel': 'Petrol',
+  'home.nearbyFuel': 'Gas stations',
   'home.nearbyCharge': 'Charge',
   'home.nearbyFind': 'Find nearby',
   'home.nearbyEmpty': 'Nothing found nearby',
