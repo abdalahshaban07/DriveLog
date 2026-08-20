@@ -1,11 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
 import {
@@ -18,11 +12,7 @@ import {
   type NearbyPoi,
 } from '../../data/remote';
 import { countryFromCurrency } from '../../domain/country';
-import {
-  latestEconomy,
-  monthFuelSpend,
-  overallLitersPer100Km,
-} from '../../domain/economy';
+import { latestEconomy, monthFuelSpend, overallLitersPer100Km } from '../../domain/economy';
 import { buildDueItems, nextDueItem } from '../../domain/dues';
 import { suggestMaintenanceDues } from '../../domain/interval';
 import type { DueItem } from '../../domain/models';
@@ -46,15 +36,13 @@ export class HomePage {
   readonly db = inject(Db);
   readonly install = inject(InstallPwa);
 
-  readonly carName = computed(
-    () => this.db.car()?.nickname || this.i18n.t('app.name'),
-  );
+  readonly carName = computed(() => this.db.car()?.nickname || this.i18n.t('app.name'));
   readonly economy = computed(() => latestEconomy(this.db.fillUps()));
   readonly overallL100 = computed(() => overallLitersPer100Km(this.db.fillUps()));
   readonly monthSpend = computed(() => monthFuelSpend(this.db.fillUps()));
   readonly lastUnit = computed(() => {
-    const fills = [...this.db.fillUps()].sort((a, b) =>
-      b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
+    const fills = [...this.db.fillUps()].sort(
+      (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
     );
     const last = fills[0];
     if (!last) {
@@ -92,19 +80,17 @@ export class HomePage {
     return suggestMaintenanceDues(this.db.maintenance(), car.currentOdometer)[0] ?? null;
   });
   readonly showInstall = computed(
-    () =>
-      !this.install.installed() && !this.db.settings().installBannerDismissed,
+    () => !this.install.installed() && !this.db.settings().installBannerDismissed,
   );
 
   readonly fuelPrices = signal<CountryFuelPrices | null>(null);
   readonly pricesBusy = signal(false);
+  readonly pricesError = signal('');
   readonly nearbyTab = signal<NearbyTab>('fuel');
   readonly nearbyBusy = signal(false);
   readonly nearbyError = signal('');
   readonly nearbyAll = signal<NearbyPoi[]>([]);
-  readonly nearbyList = computed(() =>
-    this.nearbyAll().filter((p) => p.kind === this.nearbyTab()),
-  );
+  readonly nearbyList = computed(() => this.nearbyAll().filter((p) => p.kind === this.nearbyTab()));
 
   constructor() {
     void this.loadPrices();
@@ -112,9 +98,17 @@ export class HomePage {
 
   async loadPrices(): Promise<void> {
     this.pricesBusy.set(true);
+    this.pricesError.set('');
     try {
       const cc = countryFromCurrency(this.db.settings().currency);
-      this.fuelPrices.set(await countryFuelPrices(cc));
+      const prices = await countryFuelPrices(cc);
+      this.fuelPrices.set(prices);
+      if (!prices) {
+        this.pricesError.set('');
+      }
+    } catch {
+      this.fuelPrices.set(null);
+      this.pricesError.set(this.i18n.t('home.fuelError'));
     } finally {
       this.pricesBusy.set(false);
     }
@@ -197,7 +191,7 @@ export class HomePage {
       parts.push(d.dueDate);
     }
     if (d.dueKm != null) {
-      parts.push(`${d.dueKm} km`);
+      parts.push(`${d.dueKm} ${this.i18n.t('common.km')}`);
     }
     return parts.join(' · ');
   }

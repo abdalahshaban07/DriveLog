@@ -1,7 +1,8 @@
 <div class="stack settings">
   <app-page-header [title]="i18n.t('settings.title')" />
 
-  <section class="card list">
+  <section class="card list" [attr.aria-label]="i18n.t('settings.appearance')">
+    <p class="section-label">{{ i18n.t('settings.appearance') }}</p>
     <app-select-field
       class="as-row"
       [label]="i18n.t('settings.theme')"
@@ -25,7 +26,8 @@
     />
   </section>
 
-  <section class="card list">
+  <section class="card list" [attr.aria-label]="i18n.t('settings.vehicleSection')">
+    <p class="section-label">{{ i18n.t('settings.vehicleSection') }}</p>
     <app-date-field
       class="as-row"
       [label]="i18n.t('settings.license')"
@@ -40,22 +42,12 @@
     />
   </section>
 
-  <section class="card list vin-card">
-    <app-text-field
-      [label]="i18n.t('settings.vin')"
-      [(value)]="vin"
-      [error]="vinError()"
-    />
-    <button
-      type="button"
-      class="line"
-      [disabled]="vinBusy()"
-      (click)="decodeVin()"
-    >
+  <section class="card list vin-card" [attr.aria-label]="i18n.t('settings.vin')">
+    <p class="section-label">{{ i18n.t('settings.vin') }}</p>
+    <app-text-field [label]="i18n.t('settings.vin')" [(value)]="vin" [error]="vinError()" />
+    <button type="button" class="line" [disabled]="vinBusy()" (click)="decodeVin()">
       <span class="line__text">
-        <strong>{{
-          vinBusy() ? i18n.t('vin.decoding') : i18n.t('vin.decode')
-        }}</strong>
+        <strong>{{ vinBusy() ? i18n.t('vin.decoding') : i18n.t('vin.decode') }}</strong>
       </span>
     </button>
     @if (carMeta(); as car) {
@@ -67,21 +59,12 @@
       @if (car.recallCount != null) {
         <p class="vin-meta">
           {{ i18n.t('vin.recalls') }}:
-          {{
-            car.recallCount === 0
-              ? i18n.t('vin.recallsNone')
-              : car.recallCount
-          }}
+          {{ car.recallCount === 0 ? i18n.t('vin.recallsNone') : car.recallCount }}
         </p>
       }
       <p class="vin-meta hint">{{ i18n.t('vin.recallsCaveat') }}</p>
       @if (car.vin) {
-        <a
-          class="line"
-          [href]="nhtsaUrl(car.vin)"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a class="line" [href]="nhtsaUrl(car.vin)" target="_blank" rel="noopener noreferrer">
           <span class="line__text">
             <strong>{{ i18n.t('vin.nhtsaLink') }}</strong>
           </span>
@@ -90,7 +73,8 @@
     }
   </section>
 
-  <section class="card list">
+  <section class="card list" [attr.aria-label]="i18n.t('settings.dataSection')">
+    <p class="section-label">{{ i18n.t('settings.dataSection') }}</p>
     <a class="line" routerLink="/settings/types">
       <span class="line__text">
         <strong>{{ i18n.t('settings.types') }}</strong>
@@ -124,9 +108,7 @@
         aria-describedby="backup-import-hint"
         (change)="onFile($event)"
       />
-      <span id="backup-import-hint" class="sr-only">{{
-        i18n.t('settings.importHint')
-      }}</span>
+      <span id="backup-import-hint" class="sr-only">{{ i18n.t('settings.importHint') }}</span>
     </label>
 
     @if (importError()) {
@@ -150,9 +132,7 @@
           <span class="line__text">
             <strong>{{ i18n.t('settings.install') }}</strong>
             <span class="line__sub">{{
-              install.isSafari
-                ? i18n.t('install.ios')
-                : i18n.t('install.iosChrome')
+              install.isSafari ? i18n.t('install.ios') : i18n.t('install.iosChrome')
             }}</span>
           </span>
         </div>
@@ -167,11 +147,10 @@
     </section>
   }
 
-  <section class="card list">
+  <section class="card list" [attr.aria-label]="i18n.t('settings.notifySection')">
+    <p class="section-label">{{ i18n.t('settings.notifySection') }}</p>
     <label class="line">
-      <span class="line__text" [id]="remindersLbl">{{
-        i18n.t('settings.reminders')
-      }}</span>
+      <span class="line__text" [id]="remindersLbl">{{ i18n.t('settings.reminders') }}</span>
       <span class="switch">
         <input
           type="checkbox"

@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { form, FormField, required, submit, validate } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { DEFAULT_CURRENCY, DEFAULT_LANGUAGE } from '../../core/config';
@@ -15,6 +15,7 @@ import { TextField } from '../../ui/text-field';
 
 @Component({
   selector: 'app-first-run',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PageHeader, PrimaryButton, NumericField, TextField, SelectField, FormField],
   templateUrl: './first-run.html',
   styleUrl: './first-run.scss',
@@ -37,18 +38,18 @@ export class FirstRunPage {
   } | null>(null);
   readonly setupModel = signal({ nickname: '', odometer: '' });
   readonly setupForm = form(this.setupModel, (p) => {
-    required(p.nickname, { message: () => this.i18n.t('fillUp.err.odometer') });
+    required(p.nickname, { message: () => this.i18n.t('setup.err.nickname') });
     validate(p.nickname, ({ value }) => {
       const v = value();
       return !v || v.trim()
         ? undefined
-        : { kind: 'required', message: this.i18n.t('fillUp.err.odometer') };
+        : { kind: 'required', message: this.i18n.t('setup.err.nickname') };
     });
     validate(p.odometer, ({ value }) => {
       const n = Number(value());
       return Number.isFinite(n) && n > 0
         ? undefined
-        : { kind: 'min', message: this.i18n.t('fillUp.err.odometer') };
+        : { kind: 'min', message: this.i18n.t('setup.err.odometer') };
     });
   });
 
@@ -69,12 +70,12 @@ export class FirstRunPage {
 
   readonly nickError = computed(() => {
     const f = this.setupForm.nickname();
-    return f.touched() && f.invalid() ? this.i18n.t('fillUp.err.odometer') : '';
+    return f.touched() && f.invalid() ? this.i18n.t('setup.err.nickname') : '';
   });
 
   readonly odoError = computed(() => {
     const f = this.setupForm.odometer();
-    return f.touched() && f.invalid() ? this.i18n.t('fillUp.err.odometer') : '';
+    return f.touched() && f.invalid() ? this.i18n.t('setup.err.odometer') : '';
   });
 
   async onLang(value: string): Promise<void> {

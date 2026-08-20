@@ -7,11 +7,22 @@
   color: var(--cta-text);
   font-weight: 700;
   font-size: 1.05rem;
-  transition: transform var(--motion) var(--ease);
+  transition:
+    box-shadow var(--motion) var(--ease),
+    transform var(--motion) var(--ease),
+    filter var(--motion) var(--ease);
+}
+.btn:hover:not(:disabled) {
+  box-shadow: 0 0 16px var(--glow);
 }
 .btn:active:not(:disabled) {
-  transform: translateY(1px);
+  transform: scale(0.98);
 }
 .btn:disabled {
   opacity: 0.4;
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn:active:not(:disabled) {
+    transform: none;
+  }
 }

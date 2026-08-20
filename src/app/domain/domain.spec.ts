@@ -7,8 +7,7 @@ import type { FillUp } from './models';
 import { buildDueItems, nextDueItem, todayDateOnly } from './dues';
 
 function fill(
-  partial: Partial<FillUp> &
-    Pick<FillUp, 'id' | 'odometer' | 'liters' | 'cost' | 'tankFull'>,
+  partial: Partial<FillUp> & Pick<FillUp, 'id' | 'odometer' | 'liters' | 'cost' | 'tankFull'>,
 ): FillUp {
   return {
     date: '2026-01-01',
@@ -42,7 +41,13 @@ describe('odometer', () => {
       fill({ id: 'b', odometer: 11000, liters: 40, cost: 50, tankFull: true }),
     ];
     expect(knownOdometer(9000, fills, [])).toBe(11000);
-    expect(knownOdometer(9000, fills.filter((f) => f.id !== 'b'), [])).toBe(10000);
+    expect(
+      knownOdometer(
+        9000,
+        fills.filter((f) => f.id !== 'b'),
+        [],
+      ),
+    ).toBe(10000);
   });
 });
 
@@ -190,5 +195,18 @@ describe('phase2', () => {
   it('vin, country, weather, openvan, overpass, intervals', async () => {
     const { runPhase2SelfCheck } = await import('./phase2.check');
     runPhase2SelfCheck();
+  });
+});
+
+describe('i18n parity', () => {
+  it('keeps EN and AR keys aligned', async () => {
+    const { en } = await import('../i18n/en');
+    const { ar } = await import('../i18n/ar');
+    const enKeys = Object.keys(en).sort();
+    const arKeys = Object.keys(ar).sort();
+    expect(arKeys).toEqual(enKeys);
+    for (const key of enKeys) {
+      expect(ar[key as keyof typeof ar].trim().length).toBeGreaterThan(0);
+    }
   });
 });

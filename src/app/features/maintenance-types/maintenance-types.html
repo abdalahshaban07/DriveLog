@@ -1,4 +1,4 @@
-<div class="stack">
+<div class="stack page-narrow">
   <app-page-header
     [title]="i18n.t('types.title')"
     [showBack]="true"
@@ -6,11 +6,7 @@
   />
 
   <form class="card stack" (submit)="onSubmit($event)">
-    <app-text-field
-      [label]="i18n.t('types.name')"
-      [(value)]="name"
-      [error]="error()"
-    />
+    <app-text-field [label]="i18n.t('types.name')" [(value)]="name" [error]="error()" />
     <app-primary-button [label]="i18n.t('types.add')" (pressed)="add()" />
   </form>
 
@@ -26,7 +22,7 @@
   <section class="list" [attr.aria-label]="i18n.t('types.customs')">
     <p class="label">{{ i18n.t('types.customs') }}</p>
     @if (customs().length === 0) {
-      <p class="muted">{{ i18n.t('types.empty') }}</p>
+      <p class="empty-state">{{ i18n.t('types.empty') }}</p>
     }
     @for (item of customs(); track item) {
       <article class="due-card">
