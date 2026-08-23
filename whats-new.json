@@ -1,17 +1,17 @@
 {
-  "id": "2026-08-23-v2",
+  "id": "2026-08-23-v2-complete",
   "en": [
-    "Kinetic Pulse visual refresh with system light/dark theme",
-    "Fixed bottom nav with Insights tab",
-    "Fill-up v2: fuel type chips and computed cost",
-    "Two-step setup without VIN",
-    "Insights charts and fill-up history"
+    "Multi-car backup support and car switcher in Settings",
+    "Fill-up history filters, CSV share, and place labels",
+    "Holiday-aware due banners and Frankfurter FX on Home",
+    "Insights economy trend sparkline with draw-in animation",
+    "Dusk theme assist and richer currency labels"
   ],
   "ar": [
-    "تحديث Kinetic Pulse مع مظهر النظام فاتح/داكن",
-    "شريط تنقل سفلي ثابت مع تبويب التحليلات",
-    "تعبئة v2: اختيار نوع الوقود وتكلفة محسوبة",
-    "إعداد من خطوتين بدون رقم الشاسيه",
-    "رسوم التحليلات وسجل التعبئات"
+    "دعم نسخ احتياطي متعدد السيارات ومبدّل السيارة في الإعدادات",
+    "تصفية سجل التعبئات ومشاركة CSV وتسميات الأماكن",
+    "تنبيهات العطل الرسمية وأسعار الصرف على الرئيسية",
+    "مخطط اتجاه الاستهلاك مع رسوم متحركة",
+    "مساعدة مظهر الغسق وتسميات عملات أوضح"
   ]
 }
