@@ -60,27 +60,27 @@
   }
 
   <section
-    class="snapshot home__stagger"
+    class="ledger home__stagger"
     [style.--i]="fillUpDueKm() ? 3 : 2"
     [attr.aria-label]="i18n.t('home.monthSpend')"
   >
-    <div class="snapshot__cell">
-      <span class="snapshot__value">{{ formatMoney(monthSpend()) }}</span>
-      <span class="snapshot__label">{{ i18n.t('home.monthSpend') }}</span>
+    <div class="ledger__primary">
+      <span class="ledger__value">{{ formatMoney(monthSpend()) }}</span>
+      <span class="ledger__label">{{ i18n.t('home.monthSpend') }}</span>
       @if (formatFxSpend(monthSpend()); as usd) {
-        <span class="snapshot__fx hint">{{ i18n.t('home.fxUsd', { amount: usd }) }}</span>
+        <span class="ledger__fx hint">{{ i18n.t('home.fxUsd', { amount: usd }) }}</span>
       }
     </div>
     @if (economy(); as eco) {
-      <div class="snapshot__cell">
-        <span class="snapshot__value">{{ formatMoney(eco.costPerKm) }}</span>
-        <span class="snapshot__label">{{ i18n.t('home.costPerKm') }}</span>
+      <div class="ledger__row">
+        <span class="ledger__value ledger__value--sm">{{ formatMoney(eco.costPerKm) }}</span>
+        <span class="ledger__label">{{ i18n.t('home.costPerKm') }}</span>
       </div>
     }
     @if (lastWeather(); as wx) {
-      <div class="snapshot__cell">
-        <span class="snapshot__value"> {{ wx.tempC | number: '1.0-0' }}°C </span>
-        <span class="snapshot__label">{{ weatherLabel(wx.weatherCode!) }}</span>
+      <div class="ledger__row ledger__row--quiet">
+        <span class="ledger__value ledger__value--sm">{{ wx.tempC | number: '1.0-0' }}°C</span>
+        <span class="ledger__label">{{ weatherLabel(wx.weatherCode!) }}</span>
       </div>
     }
   </section>
@@ -123,7 +123,7 @@
   <section class="around home__stagger" [style.--i]="fillUpDueKm() ? 5 : 4" [attr.aria-label]="i18n.t('home.aroundYou')">
     <p class="label">{{ i18n.t('home.aroundYou') }}</p>
 
-    <div class="around__fuel card">
+    <div class="around__fuel">
       <p class="around__sub">{{ i18n.t('home.fuelPrices') }}</p>
       @if (pricesBusy()) {
         <div class="skeleton skeleton--row" aria-hidden="true"></div>
@@ -173,7 +173,7 @@
       }
     </div>
 
-    <div class="around__poi card">
+    <div class="around__poi">
       <p class="around__sub">{{ i18n.t('home.nearby') }}</p>
       <div class="tabs" role="tablist" [attr.aria-label]="i18n.t('home.nearby')">
         <button

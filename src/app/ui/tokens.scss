@@ -105,7 +105,7 @@ html[data-theme='light'] {
   --fuel: #e8a317;
   --cta-text: #0b0d10;
   --cta: var(--fuel);
-  --radius: 16px;
+  --radius: 12px;
   --tap: 56px;
   --shell: 32rem;
   --space-1: 4px;
@@ -123,83 +123,95 @@ html[data-theme='light'] {
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --nav-height: calc(var(--tap) + 16px + env(safe-area-inset-bottom, 0px));
-  --type-hero: clamp(2.75rem, 12vw, 3.5rem);
-  --type-title: 1.6rem;
-  --type-metric: 1.375rem;
+  --type-hero: clamp(3.25rem, 14vw, 4.25rem);
+  --type-title: 1.5rem;
+  --type-metric: 1.5rem;
   --type-body: 1rem;
-  --type-label: 0.75rem;
-  --type-nav: 0.6875rem;
+  --type-label: 0.6875rem;
+  --type-nav: 0.625rem;
   --shell-wide: 48rem;
-  --bg: #e8ecf1;
-  --surface: #f5f7fa;
-  --well: #d7dee8;
-  --text: #12161c;
+  --bg: #e6eaef;
+  --surface: #f4f6f8;
+  --well: #d5dce6;
+  --text: #0e1218;
   --muted: #5a6573;
   --ok: #1a8f5c;
   --stop: #c44747;
-  --aura-1: #c5d0e0;
-  --aura-2: #a8b8cc;
+  --aura-1: #c0cad8;
+  --aura-2: #9aabbf;
   --glow: color-mix(in srgb, var(--fuel) 28%, transparent);
-  --hairline: color-mix(in srgb, #808c99 35%, transparent);
+  --hairline: color-mix(in srgb, #808c99 28%, transparent);
   --input-border: color-mix(in srgb, var(--muted) 38%, transparent);
-  --well-inset: inset 0 2px 8px color-mix(in srgb, #12161c 8%, transparent);
-  --shadow-soft: 0 1px 2px color-mix(in srgb, #12161c 6%, transparent);
+  --well-inset: inset 0 1px 4px color-mix(in srgb, #12161c 6%, transparent);
+  --shadow-soft: 0 1px 2px color-mix(in srgb, #12161c 4%, transparent);
+  --ink: #141820;
+  --ink-text: #e8ecf1;
+  --ink-muted: #8b95a3;
   color-scheme: light;
 }
 
 html[data-theme='system'] {
-  --bg: #e8ecf1;
-  --surface: #f5f7fa;
-  --well: #d7dee8;
-  --text: #12161c;
+  --bg: #e6eaef;
+  --surface: #f4f6f8;
+  --well: #d5dce6;
+  --text: #0e1218;
   --muted: #5a6573;
   --ok: #1a8f5c;
   --stop: #c44747;
-  --aura-1: #c5d0e0;
-  --aura-2: #a8b8cc;
+  --aura-1: #c0cad8;
+  --aura-2: #9aabbf;
   --glow: color-mix(in srgb, var(--fuel) 28%, transparent);
-  --hairline: color-mix(in srgb, #808c99 35%, transparent);
+  --hairline: color-mix(in srgb, #808c99 28%, transparent);
   --input-border: color-mix(in srgb, var(--muted) 38%, transparent);
-  --well-inset: inset 0 2px 8px color-mix(in srgb, #12161c 8%, transparent);
-  --shadow-soft: 0 1px 2px color-mix(in srgb, #12161c 6%, transparent);
+  --well-inset: inset 0 1px 4px color-mix(in srgb, #12161c 6%, transparent);
+  --shadow-soft: 0 1px 2px color-mix(in srgb, #12161c 4%, transparent);
+  --ink: #141820;
+  --ink-text: #e8ecf1;
+  --ink-muted: #8b95a3;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   html[data-theme='system'] {
-    --bg: #0b0d10;
-    --surface: #15181c;
-    --well: #07080a;
+    --bg: #090b0e;
+    --surface: #12161c;
+    --well: #07090c;
     --text: #eef1f5;
     --muted: #9aa3b0;
     --ok: #3ddc97;
     --stop: #f87171;
-    --aura-1: #1a2230;
-    --aura-2: #121820;
+    --aura-1: #151b24;
+    --aura-2: #0e1218;
     --glow: color-mix(in srgb, var(--fuel) 45%, transparent);
     --hairline: color-mix(in srgb, var(--text) 10%, transparent);
     --input-border: color-mix(in srgb, var(--muted) 22%, transparent);
-    --well-inset: inset 0 2px 10px color-mix(in srgb, #000 42%, transparent);
-    --shadow-soft: 0 1px 2px color-mix(in srgb, #000 40%, transparent);
+    --well-inset: inset 0 1px 6px color-mix(in srgb, #000 35%, transparent);
+    --shadow-soft: 0 1px 2px color-mix(in srgb, #000 35%, transparent);
+    --ink: #06080c;
+    --ink-text: #eef1f5;
+    --ink-muted: #7a8494;
     color-scheme: dark;
   }
 }
 
 html[data-theme='dark'] {
-  --bg: #0b0d10;
-  --surface: #15181c;
-  --well: #07080a;
+  --bg: #090b0e;
+  --surface: #12161c;
+  --well: #07090c;
   --text: #eef1f5;
   --muted: #9aa3b0;
   --ok: #3ddc97;
   --stop: #f87171;
-  --aura-1: #1a2230;
-  --aura-2: #121820;
+  --aura-1: #151b24;
+  --aura-2: #0e1218;
   --glow: color-mix(in srgb, var(--fuel) 45%, transparent);
   --hairline: color-mix(in srgb, var(--text) 10%, transparent);
   --input-border: color-mix(in srgb, var(--muted) 22%, transparent);
-  --well-inset: inset 0 2px 10px color-mix(in srgb, #000 42%, transparent);
-  --shadow-soft: 0 1px 2px color-mix(in srgb, #000 40%, transparent);
+  --well-inset: inset 0 1px 6px color-mix(in srgb, #000 35%, transparent);
+  --shadow-soft: 0 1px 2px color-mix(in srgb, #000 35%, transparent);
+  --ink: #06080c;
+  --ink-text: #eef1f5;
+  --ink-muted: #7a8494;
   color-scheme: dark;
 }
 
@@ -252,14 +264,14 @@ body {
   background-color: var(--bg);
   background-image:
     radial-gradient(
-      120% 80% at 100% 0%,
-      color-mix(in srgb, var(--aura-1) 55%, transparent),
-      transparent 55%
+      100% 60% at 100% 0%,
+      color-mix(in srgb, var(--aura-1) 35%, transparent),
+      transparent 50%
     ),
     radial-gradient(
-      90% 70% at 0% 100%,
-      color-mix(in srgb, var(--aura-2) 40%, transparent),
-      transparent 50%
+      80% 50% at 0% 100%,
+      color-mix(in srgb, var(--aura-2) 25%, transparent),
+      transparent 45%
     );
   /* ponytail: no background-attachment:fixed — janks scroll on mobile */
   color: var(--text);
@@ -309,7 +321,13 @@ a {
   border-radius: var(--radius);
   background: var(--surface);
   border: 1px solid var(--hairline);
-  box-shadow: var(--shadow-soft);
+}
+
+.card--quiet {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .cta {
@@ -403,20 +421,22 @@ a {
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--space-3);
-  padding: var(--space-4);
-  border-radius: var(--radius);
-  background: var(--surface);
-  border: 1px solid var(--hairline);
-  border-inline-start: 3px solid transparent;
-  box-shadow: var(--shadow-soft);
+  padding: var(--space-3) 0;
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+  border-block-end: 1px solid var(--hairline);
+  box-shadow: none;
 }
 
 .due-card--overdue {
-  border-inline-start-color: var(--stop);
+  padding-inline-start: var(--space-3);
+  border-inline-start: 2px solid var(--stop);
 }
 
 .due-card--soon {
-  border-inline-start-color: var(--fuel);
+  padding-inline-start: var(--space-3);
+  border-inline-start: 2px solid var(--fuel);
 }
 
 .row {
@@ -432,8 +452,9 @@ a {
 }
 
 .label {
-  font-size: 12px;
-  letter-spacing: 0.04em;
+  font-size: var(--type-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   font-weight: 600;
   color: var(--muted);
 }
@@ -536,11 +557,12 @@ textarea.input {
 }
 
 .disclosure {
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius);
-  border: 1px solid var(--hairline);
-  background: var(--surface);
-  box-shadow: var(--shadow-soft);
+  padding: var(--space-3) 0;
+  border-radius: 0;
+  border: 0;
+  border-block: 1px solid var(--hairline);
+  background: transparent;
+  box-shadow: none;
   color: var(--text);
 }
 
