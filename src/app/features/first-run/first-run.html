@@ -20,6 +20,18 @@
         [formField]="setupForm.odometer"
         [error]="odoError()"
       />
+      <app-text-field
+        [label]="i18n.t('setup.plate')"
+        [(value)]="plate"
+      />
+      <app-date-field
+        [label]="i18n.t('setup.license')"
+        [(value)]="licenseExpiry"
+      />
+      <app-date-field
+        [label]="i18n.t('setup.registration')"
+        [(value)]="registrationExpiry"
+      />
     </section>
     <app-primary-button
       [label]="i18n.t('setup.continue')"

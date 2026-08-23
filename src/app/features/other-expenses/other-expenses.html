@@ -1,0 +1,76 @@
+<div class="stack other-expenses page-narrow">
+  <app-page-header [title]="i18n.t('otherExpenses.title')" />
+
+  <section class="card stack" [attr.aria-label]="i18n.t('otherExpenses.form')">
+    @if (editId()) {
+      <p class="label">{{ i18n.t('otherExpenses.editing') }}</p>
+    }
+    <app-text-field
+      [label]="i18n.t('otherExpenses.label')"
+      [(value)]="label"
+      [error]="labelError()"
+    />
+    <app-numeric-field
+      [label]="i18n.t('otherExpenses.amount')"
+      [(value)]="amount"
+      [error]="amountError()"
+    />
+    <app-date-field [label]="i18n.t('otherExpenses.date')" [(value)]="date" />
+    <app-text-field
+      [label]="i18n.t('otherExpenses.note')"
+      [(value)]="note"
+      [multiline]="true"
+    />
+    <div class="form-actions">
+      @if (editId()) {
+        <button type="button" class="ghost" (click)="resetForm()">
+          {{ i18n.t('common.cancel') }}
+        </button>
+      }
+      <app-primary-button
+        [label]="i18n.t('otherExpenses.save')"
+        [disabled]="saving()"
+        (pressed)="save()"
+      />
+    </div>
+  </section>
+
+  <h2 class="section-title">{{ i18n.t('otherExpenses.list') }}</h2>
+  @if (list().length === 0) {
+    <p class="empty-state">{{ i18n.t('otherExpenses.empty') }}</p>
+  } @else {
+    <ul class="record-list list-reveal">
+      @for (row of list(); track row.id) {
+        <li class="record-row">
+          <div class="record-row__main">
+            <strong>{{ row.label }}</strong>
+            <span class="record-row__meta">{{ row.date }}</span>
+            @if (row.note) {
+              <span class="record-row__meta">{{ row.note }}</span>
+            }
+          </div>
+          <div class="record-row__side">
+            <strong>{{ formatMoney(row.amount) }}</strong>
+            <div class="record-row__actions">
+              <button type="button" (click)="startEdit(row)">{{ i18n.t('common.edit') }}</button>
+              <button type="button" (click)="askDelete(row.id)">
+                {{ i18n.t('otherExpenses.delete') }}
+              </button>
+            </div>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+
+  @if (pendingDelete()) {
+    <app-confirm-bar
+      [message]="i18n.t('otherExpenses.deleteConfirm')"
+      [confirmLabel]="i18n.t('otherExpenses.delete')"
+      [cancelLabel]="i18n.t('common.cancel')"
+      [destructive]="true"
+      (confirmed)="confirmDelete()"
+      (cancelled)="pendingDelete.set(null)"
+    />
+  }
+</div>

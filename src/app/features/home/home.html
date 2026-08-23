@@ -1,232 +1,218 @@
 <div class="stack home">
-  @if (showInstall()) {
-    <div class="install-strip" role="status">
-      <p>{{ i18n.t('install.banner') }}</p>
-      <div class="install-strip__actions">
-        @if (install.canPrompt()) {
-          <button type="button" class="install-strip__go" (click)="doInstall()">
-            {{ i18n.t('install.button') }}
-          </button>
-        } @else if (install.isIos) {
-          <p class="hint">
-            {{ install.isSafari ? i18n.t('install.ios') : i18n.t('install.iosChrome') }}
-          </p>
-        } @else {
-          <p class="hint">{{ i18n.t('install.androidFallback') }}</p>
-        }
-        <button type="button" class="ghost" (click)="dismissInstall()">
-          {{ i18n.t('install.dismiss') }}
-        </button>
-      </div>
-    </div>
-  }
+  <header class="home__head">
+    <h1 class="home__brand">{{ i18n.t('app.name') }}</h1>
+    <p class="home__sub">{{ i18n.t('app.subtitle') }}</p>
+  </header>
 
-  @if (db.savedFlash()) {
-    <p class="saved home__stagger" style="--i: 0">{{ i18n.t('home.saved') }}</p>
-  }
-
-  <section class="hero home__stagger" style="--i: 1">
-    <p class="hero__car">{{ carName() }}</p>
-    @if (economy(); as eco) {
-      <p class="hero-number hero__value">
-        {{ eco.litersPer100Km | number: '1.1-2' }}
-      </p>
-      <p class="hero__unit">{{ i18n.t('home.economy') }}</p>
-      @if (overallL100(); as overall) {
-        <p class="hero__micro">
-          {{ i18n.t('home.overall') }}
-          {{ overall | number: '1.1-2' }}
-        </p>
-      }
-    } @else if (db.fillUps().length === 0) {
-      <p class="hero__empty">{{ i18n.t('home.logFirst') }}</p>
-    } @else {
-      <p class="hero__empty">{{ i18n.t('home.needFull') }}</p>
-    }
-    <a routerLink="/fill-up" class="cta hero__cta">{{ i18n.t('home.logFillUp') }}</a>
-  </section>
-
-  @if (fillUpDueKm(); as km) {
-    <div class="nudge home__stagger" style="--i: 2" role="status">
-      <span>{{ i18n.t('home.fillUpDue', { km }) }}</span>
-      <a routerLink="/fill-up" class="nudge__cta">{{ i18n.t('home.logFillUp') }}</a>
-    </div>
-  }
-
-  @if (holidayBanner(); as banner) {
-    <div class="nudge nudge--holiday home__stagger" style="--i: 2" role="status">
-      {{ banner }}
-    </div>
-  }
-
-  <section
-    class="ledger home__stagger"
-    [style.--i]="fillUpDueKm() ? 3 : 2"
-    [attr.aria-label]="i18n.t('home.monthSpend')"
-  >
-    <div class="ledger__primary">
-      <span class="ledger__value">{{ formatMoney(monthSpend()) }}</span>
-      <span class="ledger__label">{{ i18n.t('home.monthSpend') }}</span>
-      @if (formatFxSpend(monthSpend()); as usd) {
-        <span class="ledger__fx hint">{{ i18n.t('home.fxUsd', { amount: usd }) }}</span>
-      }
-    </div>
-    @if (economy(); as eco) {
-      <div class="ledger__row">
-        <span class="ledger__value ledger__value--sm">{{ formatMoney(eco.costPerKm) }}</span>
-        <span class="ledger__label">{{ i18n.t('home.costPerKm') }}</span>
-      </div>
-    }
-    @if (lastWeather(); as wx) {
-      <div class="ledger__row ledger__row--quiet">
-        <span class="ledger__value ledger__value--sm">{{ wx.tempC | number: '1.0-0' }}°C</span>
-        <span class="ledger__label">{{ weatherLabel(wx.weatherCode!) }}</span>
-      </div>
-    }
-  </section>
-
-  <section class="due home__stagger" [style.--i]="fillUpDueKm() ? 4 : 3">
-    <p class="label">{{ i18n.t('home.nextDue') }}</p>
-    @if (due(); as d) {
-      <app-due-row
-        [title]="dueTitle(d)"
-        [meta]="dueMeta(d)"
-        [status]="d.status"
-        [statusLabel]="
-          d.status === 'overdue'
-            ? i18n.t('due.overdue')
-            : d.status === 'dueSoon'
-              ? i18n.t('due.dueSoon')
-              : ''
-        "
-      />
-    } @else {
-      <p class="empty-state">{{ i18n.t('home.nothingDue') }}</p>
-    }
-    @if (suggested(); as s) {
-      <app-due-row
-        [title]="suggestedTitle()"
-        [meta]="s.dueKm + ' ' + i18n.t('common.km')"
-        [status]="s.status"
-        [statusLabel]="
-          s.status === 'overdue'
-            ? i18n.t('due.overdue')
-            : s.status === 'dueSoon'
-              ? i18n.t('due.dueSoon')
-              : ''
-        "
-      />
-      <p class="hint">{{ i18n.t('home.suggestedDueHint') }}</p>
-    }
-  </section>
-
-  <section class="around home__stagger" [style.--i]="fillUpDueKm() ? 5 : 4" [attr.aria-label]="i18n.t('home.aroundYou')">
-    <p class="label">{{ i18n.t('home.aroundYou') }}</p>
-
-    <div class="around__fuel">
-      <p class="around__sub">{{ i18n.t('home.fuelPrices') }}</p>
-      @if (pricesBusy()) {
-        <div class="skeleton skeleton--row" aria-hidden="true"></div>
-        <div class="skeleton skeleton--row" aria-hidden="true"></div>
-      } @else if (pricesError()) {
-        <div class="error-state">
-          <span>{{ pricesError() }}</span>
-          <button type="button" class="ghost" (click)="loadPrices()">
-            {{ i18n.t('home.nearbyFind') }}
-          </button>
-        </div>
-      } @else if (fuelPrices(); as prices) {
-        <div class="grade-board list-reveal" role="list">
-          @if (prices.solar != null) {
-            <div class="grade-tile" role="listitem">
-              <span class="grade-tile__label">{{ i18n.t('home.fuelSolar') }}</span>
-              <strong class="grade-tile__price">{{ formatPerLiter(prices.solar) }}</strong>
-            </div>
-          }
-          @if (prices.diesel != null) {
-            <div class="grade-tile" role="listitem">
-              <span class="grade-tile__label">{{ i18n.t('home.fuelDiesel') }}</span>
-              <strong class="grade-tile__price">{{ formatPerLiter(prices.diesel) }}</strong>
-            </div>
-          }
-          @if (prices.gasoline92 != null) {
-            <div class="grade-tile grade-tile--accent" role="listitem">
-              <span class="grade-tile__label">{{ i18n.t('home.fuel92') }}</span>
-              <strong class="grade-tile__price">{{ formatPerLiter(prices.gasoline92) }}</strong>
-            </div>
-          }
-          @if (prices.gasoline95 != null) {
-            <div class="grade-tile grade-tile--accent" role="listitem">
-              <span class="grade-tile__label">{{ i18n.t('home.fuel95') }}</span>
-              <strong class="grade-tile__price">{{ formatPerLiter(prices.gasoline95) }}</strong>
-            </div>
-          }
-        </div>
-        <p class="hint attr">
-          <a href="https://openvan.camp" target="_blank" rel="noopener noreferrer">{{
-            i18n.t('home.fuelAttr')
-          }}</a>
-          · {{ prices.countryName }}
-        </p>
-      } @else {
-        <div class="empty-state">{{ i18n.t('home.fuelEmpty') }}</div>
-      }
-    </div>
-
-    <div class="around__poi">
-      <p class="around__sub">{{ i18n.t('home.nearby') }}</p>
-      <div class="tabs" role="tablist" [attr.aria-label]="i18n.t('home.nearby')">
-        <button
-          type="button"
-          role="tab"
-          [attr.aria-selected]="nearbyTab() === 'fuel'"
-          [class.active]="nearbyTab() === 'fuel'"
-          (click)="nearbyTab.set('fuel')"
-        >
-          {{ i18n.t('home.nearbyFuel') }}
-        </button>
-        <button
-          type="button"
-          role="tab"
-          [attr.aria-selected]="nearbyTab() === 'charge'"
-          [class.active]="nearbyTab() === 'charge'"
-          (click)="nearbyTab.set('charge')"
-        >
-          {{ i18n.t('home.nearbyCharge') }}
-        </button>
-      </div>
-      <button type="button" class="find" [disabled]="nearbyBusy()" (click)="findNearby()">
-        {{ nearbyBusy() ? i18n.t('common.loading') : i18n.t('home.nearbyFind') }}
+  <div class="home-tabs" role="tablist" [attr.aria-label]="i18n.t('home.tabs')">
+    @for (tab of tabOptions; track tab.id) {
+      <button
+        type="button"
+        role="tab"
+        class="home-tabs__btn"
+        [class.home-tabs__btn--on]="view() === tab.id"
+        [attr.aria-selected]="view() === tab.id"
+        (click)="setView(tab.id)"
+      >
+        {{ i18n.t(tab.labelKey) }}
       </button>
-      @if (nearbyBusy()) {
-        <div class="skeleton skeleton--row" aria-hidden="true"></div>
-        <div class="skeleton skeleton--row" aria-hidden="true"></div>
-      } @else if (nearbyError()) {
-        <div class="error-state">
-          <span>{{ nearbyError() }}</span>
-          <button type="button" class="ghost" (click)="findNearby()">
-            {{ i18n.t('home.nearbyFind') }}
-          </button>
+    }
+  </div>
+
+  @if (view() === 'dashboard') {
+    <section class="home-panel" role="tabpanel" [attr.aria-label]="i18n.t('home.tab.dashboard')">
+      @if (db.cars().length) {
+        <div class="carousel" [attr.aria-label]="i18n.t('home.carousel.label')">
+          @for (car of db.cars(); track car.id) {
+            <button
+              type="button"
+              class="carousel__chip"
+              [class.carousel__chip--on]="car.id === activeCarId()"
+              (click)="switchCar(car.id)"
+            >
+              <span class="carousel__name">{{ carLabel(car) }}</span>
+              <span class="carousel__odo">{{ car.currentOdometer | number: '1.0-0' }} {{ i18n.t('common.km') }}</span>
+            </button>
+          }
         </div>
-      } @else if (nearbyList().length) {
-        <ul class="poi-list list-reveal">
-          @for (p of nearbyList(); track p.id) {
-            <li>
-              <a [href]="mapsUrl(p)" target="_blank" rel="noopener noreferrer">
-                <strong>{{ p.name }}</strong>
-                <span>
-                  {{ p.distanceKm | number: '1.1-1' }} {{ i18n.t('common.km') }}
-                  @if (p.detail) {
-                    · {{ p.detail }}
-                  }
-                </span>
-                <span class="maps">{{ i18n.t('home.openMaps') }}</span>
-              </a>
+      }
+
+      <div class="license-row">
+        @let licDays = licenseDays(db.car()?.licenseExpiry);
+        @let regDays = licenseDays(db.car()?.registrationExpiry);
+        <article
+          class="license-card"
+          [class.license-card--overdue]="licenseStatus(licDays) === 'overdue'"
+          [class.license-card--soon]="licenseStatus(licDays) === 'soon'"
+        >
+          <h2 class="license-card__title">{{ i18n.t('due.license') }}</h2>
+          @if (licDays == null) {
+            <p class="license-card__body">{{ i18n.t('home.license.missing') }}</p>
+          } @else {
+            <p class="license-card__days">{{ i18n.t('home.license.days', { days: licDays }) }}</p>
+            <p class="license-card__date">{{ db.car()?.licenseExpiry }}</p>
+          }
+        </article>
+        <article
+          class="license-card"
+          [class.license-card--overdue]="licenseStatus(regDays) === 'overdue'"
+          [class.license-card--soon]="licenseStatus(regDays) === 'soon'"
+        >
+          <h2 class="license-card__title">{{ i18n.t('due.registration') }}</h2>
+          @if (regDays == null) {
+            <p class="license-card__body">{{ i18n.t('home.license.missing') }}</p>
+          } @else {
+            <p class="license-card__days">{{ i18n.t('home.license.days', { days: regDays }) }}</p>
+            <p class="license-card__date">{{ db.car()?.registrationExpiry }}</p>
+          }
+        </article>
+      </div>
+
+      <section class="card period-card">
+        <header class="period-card__head">
+          <div>
+            <h2 class="period-card__title">{{ i18n.t('home.period.title') }}</h2>
+            @if (period(); as p) {
+              <p class="period-card__range">
+                {{ i18n.t('home.period.since', { date: p.startDate }) }}
+              </p>
+            } @else {
+              <p class="period-card__range">{{ i18n.t('home.period.none') }}</p>
+            }
+          </div>
+          <button
+            type="button"
+            class="period-card__new"
+            [disabled]="startingPeriod() || !activeCarId()"
+            (click)="startNewMonth()"
+          >
+            {{ i18n.t('home.period.startNew') }}
+          </button>
+        </header>
+        <div class="period-grid">
+          <div class="period-metric period-metric--fuel">
+            <span class="period-metric__label">{{ i18n.t('charts.cat.fuel') }}</span>
+            <strong>{{ formatMoney(totals().fuel) }}</strong>
+          </div>
+          <div class="period-metric period-metric--maint">
+            <span class="period-metric__label">{{ i18n.t('charts.cat.maintenance') }}</span>
+            <strong>{{ formatMoney(totals().maintenance) }}</strong>
+          </div>
+          <div class="period-metric period-metric--break">
+            <span class="period-metric__label">{{ i18n.t('charts.cat.breakdown') }}</span>
+            <strong>{{ formatMoney(totals().breakdowns) }}</strong>
+          </div>
+          <div class="period-metric period-metric--other">
+            <span class="period-metric__label">{{ i18n.t('charts.cat.other') }}</span>
+            <strong>{{ formatMoney(totals().other) }}</strong>
+          </div>
+        </div>
+        <p class="period-card__total">
+          {{ i18n.t('home.period.total', { amount: formatMoney(totals().total) }) }}
+        </p>
+      </section>
+    </section>
+  }
+
+  @if (view() === 'reports') {
+    <section class="home-panel" role="tabpanel" [attr.aria-label]="i18n.t('home.tab.reports')">
+      @if (reports().length === 0) {
+        <p class="empty-state">{{ i18n.t('reports.empty') }}</p>
+      }
+      @for (card of reports(); track card.id) {
+        <article class="card report-card">
+          <h2 class="report-card__title">{{ reportTitle(card.titleKey) }}</h2>
+          <p class="report-card__body">
+            {{ reportBody(card.bodyKey, card.bodyParams) }}
+          </p>
+        </article>
+      }
+    </section>
+  }
+
+  @if (view() === 'charts') {
+    <section class="home-panel" role="tabpanel" [attr.aria-label]="i18n.t('home.tab.charts')">
+      <div class="filter-row">
+        <label class="filter-row__lbl" for="chart-cat">{{ i18n.t('charts.category') }}</label>
+        <select
+          id="chart-cat"
+          class="filter-row__select"
+          [value]="chartCategory()"
+          (change)="chartCategory.set($any($event.target).value)"
+        >
+          @for (opt of chartCategoryOptions; track opt.id) {
+            <option [value]="opt.id">{{ i18n.t(opt.labelKey) }}</option>
+          }
+        </select>
+      </div>
+      <div class="filter-row">
+        <label class="filter-row__lbl" for="chart-period">{{ i18n.t('charts.period') }}</label>
+        <select
+          id="chart-period"
+          class="filter-row__select"
+          [value]="chartPeriod()"
+          (change)="chartPeriod.set($any($event.target).value)"
+        >
+          @for (opt of chartPeriodOptions; track opt.id) {
+            <option [value]="opt.id">{{ i18n.t(opt.labelKey) }}</option>
+          }
+        </select>
+      </div>
+
+      @let lt = ledgerTotals();
+      @if (lt.total > 0) {
+        <div class="stack-bar" role="img" [attr.aria-label]="i18n.t('charts.stackLabel')">
+          <div class="stack-bar__track">
+            <span
+              class="stack-bar__seg stack-bar__seg--fuel"
+              [style.flex]="barPct(lt.fuel, lt.total)"
+            ></span>
+            <span
+              class="stack-bar__seg stack-bar__seg--maint"
+              [style.flex]="barPct(lt.maintenance, lt.total)"
+            ></span>
+            <span
+              class="stack-bar__seg stack-bar__seg--break"
+              [style.flex]="barPct(lt.breakdown, lt.total)"
+            ></span>
+            <span
+              class="stack-bar__seg stack-bar__seg--other"
+              [style.flex]="barPct(lt.other, lt.total)"
+            ></span>
+          </div>
+          <ul class="stack-legend">
+            <li>{{ i18n.t('charts.cat.fuel') }} · {{ formatMoney(lt.fuel) }}</li>
+            <li>{{ i18n.t('charts.cat.maintenance') }} · {{ formatMoney(lt.maintenance) }}</li>
+            <li>{{ i18n.t('charts.cat.breakdown') }} · {{ formatMoney(lt.breakdown) }}</li>
+            <li>{{ i18n.t('charts.cat.other') }} · {{ formatMoney(lt.other) }}</li>
+          </ul>
+        </div>
+      } @else {
+        <p class="empty-state">{{ i18n.t('charts.empty') }}</p>
+      }
+
+      <h2 class="ledger-title">{{ i18n.t('charts.ledger') }}</h2>
+      @if (ledgerRows().length === 0) {
+        <p class="empty-state">{{ i18n.t('charts.ledgerEmpty') }}</p>
+      } @else {
+        <ul class="ledger list-reveal">
+          @for (row of ledgerRows(); track row.id) {
+            <li class="ledger-row">
+              <div class="ledger-row__main">
+                <span class="ledger-row__cat">{{ categoryLabel(row.category) }}</span>
+                <strong class="ledger-row__title">{{ row.title }}</strong>
+                @if (row.meta) {
+                  <span class="ledger-row__meta">{{ row.meta }}</span>
+                }
+              </div>
+              <div class="ledger-row__side">
+                <strong>{{ formatMoney(row.amount) }}</strong>
+                <time>{{ row.date }}</time>
+              </div>
             </li>
           }
         </ul>
       }
-      <p class="hint attr">{{ i18n.t('home.nearbyOsm') }}</p>
-    </div>
-  </section>
+    </section>
+  }
 </div>

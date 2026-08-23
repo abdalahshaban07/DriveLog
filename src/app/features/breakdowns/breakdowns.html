@@ -1,0 +1,87 @@
+<div class="stack breakdowns page-narrow">
+  <app-page-header [title]="i18n.t('breakdowns.title')" />
+
+  <section class="card stack" [attr.aria-label]="i18n.t('breakdowns.form')">
+    @if (editId()) {
+      <p class="label">{{ i18n.t('breakdowns.editing') }}</p>
+    }
+    <app-text-field
+      [label]="i18n.t('breakdowns.symptom')"
+      [(value)]="symptom"
+      [error]="symptomError()"
+    />
+    <app-numeric-field
+      [label]="i18n.t('breakdowns.cost')"
+      [(value)]="repairCost"
+      [error]="costError()"
+    />
+    <app-numeric-field
+      [label]="i18n.t('breakdowns.odometer')"
+      [(value)]="odometer"
+      [error]="odoError()"
+    />
+    <app-date-field [label]="i18n.t('breakdowns.date')" [(value)]="date" />
+    <app-text-field [label]="i18n.t('breakdowns.shop')" [(value)]="shopName" />
+    <app-select-field
+      [label]="i18n.t('breakdowns.category')"
+      [options]="categoryOptions()"
+      [value]="category()"
+      (valueChange)="category.set($any($event))"
+    />
+    <app-text-field
+      [label]="i18n.t('breakdowns.note')"
+      [(value)]="note"
+      [multiline]="true"
+    />
+    <div class="form-actions">
+      @if (editId()) {
+        <button type="button" class="ghost" (click)="resetForm()">
+          {{ i18n.t('common.cancel') }}
+        </button>
+      }
+      <app-primary-button
+        [label]="i18n.t('breakdowns.save')"
+        [disabled]="saving()"
+        (pressed)="save()"
+      />
+    </div>
+  </section>
+
+  <h2 class="section-title">{{ i18n.t('breakdowns.list') }}</h2>
+  @if (list().length === 0) {
+    <p class="empty-state">{{ i18n.t('breakdowns.empty') }}</p>
+  } @else {
+    <ul class="record-list list-reveal">
+      @for (row of list(); track row.id) {
+        <li class="record-row">
+          <div class="record-row__main">
+            <strong>{{ row.symptom }}</strong>
+            <span class="record-row__meta">
+              {{ categoryLabel(row.category) }} · {{ row.date }}
+            </span>
+          </div>
+          <div class="record-row__side">
+            <strong>{{ formatMoney(row.repairCost) }}</strong>
+            <div class="record-row__actions">
+              <button type="button" (click)="startEdit(row)">{{ i18n.t('common.edit') }}</button>
+              <button type="button" (click)="askDelete(row.id)">
+                {{ i18n.t('breakdowns.delete') }}
+              </button>
+            </div>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+
+  @if (pendingDelete()) {
+    <app-confirm-bar
+      [message]="i18n.t('breakdowns.deleteConfirm')"
+      [confirmLabel]="i18n.t('breakdowns.delete')"
+      [cancelLabel]="i18n.t('common.cancel')"
+      [destructive]="true"
+      (confirmed)="confirmDelete()"
+      (cancelled)="pendingDelete.set(null)"
+    />
+  }
+</div>

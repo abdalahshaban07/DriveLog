@@ -55,6 +55,12 @@
 
   <section class="card list" [attr.aria-label]="i18n.t('settings.vehicleSection')">
     <p class="section-label">{{ i18n.t('settings.vehicleSection') }}</p>
+    <app-text-field
+      class="as-row"
+      [label]="i18n.t('settings.plate')"
+      [value]="plate()"
+      (valueChange)="onPlate($event)"
+    />
     <app-date-field
       class="as-row"
       [label]="i18n.t('settings.license')"
@@ -67,6 +73,44 @@
       [value]="registration()"
       (valueChange)="onRegistration($event)"
     />
+  </section>
+
+  <section class="card list" [attr.aria-label]="i18n.t('settings.assistantSection')">
+    <p class="section-label">{{ i18n.t('settings.assistantSection') }}</p>
+    <label class="line">
+      <span class="line__text" id="assistant-enabled-lbl">{{ i18n.t('settings.assistantEnabled') }}</span>
+      <span class="switch">
+        <input
+          type="checkbox"
+          class="switch__input"
+          role="switch"
+          [checked]="assistantEnabled()"
+          [attr.aria-checked]="assistantEnabled()"
+          aria-labelledby="assistant-enabled-lbl"
+          (change)="onAssistantEnabled($event)"
+        />
+        <span class="switch__track" aria-hidden="true"></span>
+      </span>
+    </label>
+    <app-text-field
+      class="as-row"
+      [label]="i18n.t('settings.assistantApiKey')"
+      [value]="assistantApiKey()"
+      (valueChange)="onAssistantApiKey($event)"
+    />
+    <app-text-field
+      class="as-row"
+      [label]="i18n.t('settings.assistantBaseUrl')"
+      [value]="assistantBaseUrl()"
+      (valueChange)="onAssistantBaseUrl($event)"
+    />
+    <app-text-field
+      class="as-row"
+      [label]="i18n.t('settings.assistantModel')"
+      [value]="assistantModel()"
+      (valueChange)="onAssistantModel($event)"
+    />
+    <p class="line line--hint">{{ i18n.t('settings.assistantHint') }}</p>
   </section>
 
   <section class="card list" [attr.aria-label]="i18n.t('settings.dataSection')">

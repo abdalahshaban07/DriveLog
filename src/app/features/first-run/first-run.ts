@@ -7,6 +7,7 @@ import { detectCountryCurrency } from '../../data/remote';
 import { listCurrencyOptions, validCurrency } from '../../domain/currencies';
 import { THEMES, type Theme } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
+import { DateField } from '../../ui/date-field';
 import { NumericField } from '../../ui/numeric-field';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
@@ -16,7 +17,7 @@ import { TextField } from '../../ui/text-field';
 @Component({
   selector: 'app-first-run',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, PrimaryButton, NumericField, TextField, SelectField, FormField],
+  imports: [PageHeader, PrimaryButton, NumericField, TextField, SelectField, FormField, DateField],
   templateUrl: './first-run.html',
   styleUrl: './first-run.scss',
 })
@@ -29,6 +30,9 @@ export class FirstRunPage {
   readonly language = signal<'en' | 'ar'>(DEFAULT_LANGUAGE);
   readonly theme = signal<Theme>(DEFAULT_THEME);
   readonly currency = signal(DEFAULT_CURRENCY);
+  readonly plate = signal('');
+  readonly licenseExpiry = signal('');
+  readonly registrationExpiry = signal('');
   readonly setupModel = signal({ nickname: '', odometer: '' });
   readonly setupForm = form(this.setupModel, (p) => {
     required(p.nickname, { message: () => this.i18n.t('setup.err.nickname') });
@@ -117,7 +121,11 @@ export class FirstRunPage {
         theme: this.theme(),
         currency: validCurrency(this.currency()),
       });
-      await this.db.createCar(nickname.trim(), Number(odometer));
+      await this.db.createCar(nickname.trim(), Number(odometer), {
+        plate: this.plate().trim() || undefined,
+        licenseExpiry: this.licenseExpiry() || undefined,
+        registrationExpiry: this.registrationExpiry() || undefined,
+      });
       await this.router.navigateByUrl('/');
     });
   }

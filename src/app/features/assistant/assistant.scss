@@ -1,0 +1,43 @@
+.faq__title {
+  margin: 0 0 var(--space-3);
+  font-size: 1rem;
+}
+
+.faq__grid {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.faq__btn {
+  min-height: var(--tap);
+  padding: var(--space-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--surface);
+  text-align: start;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chat {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.chat__row {
+  padding: var(--space-3);
+  border-radius: var(--radius);
+  background: var(--well);
+}
+
+.chat__row--user {
+  background: color-mix(in srgb, var(--cta) 12%, var(--surface));
+}
+
+.chat__row p {
+  margin: 0;
+  white-space: pre-wrap;
+}

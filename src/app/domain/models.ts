@@ -4,6 +4,9 @@ export const THEMES: readonly Theme[] = ['system', 'light', 'dark', 'contrast', 
 export type FuelGrade = 'gasoline92' | 'gasoline95' | 'diesel' | 'solar' | 'custom';
 export type UnitSystem = 'metric';
 export type MaintenanceType = 'oil' | 'filter' | 'tires' | 'brakes' | 'other';
+export type BreakdownCategory = 'mechanical' | 'electrical' | 'other';
+export type MilestoneTaskKind = 'oil' | 'filter' | 'tires' | 'brakes' | 'labor' | 'custom';
+export type ExpenseCategory = 'fuel' | 'maintenance' | 'breakdown' | 'other';
 
 export type DueStatus = 'overdue' | 'dueSoon' | 'future';
 export type DueSource = 'license' | 'registration' | 'maintenance';
@@ -17,6 +20,9 @@ export interface Car {
   /** Immutable setup reading. */
   initialOdometer: number;
   currentOdometer: number;
+  plate?: string;
+  licenseExpiry?: DateOnly;
+  registrationExpiry?: DateOnly;
   vin?: string;
   year?: string;
   make?: string;
@@ -69,6 +75,56 @@ export interface Maintenance {
   updatedAt: string;
 }
 
+export interface ExpensePeriod {
+  id: string;
+  carId: string;
+  startDate: DateOnly;
+  /** Omit = active open period. */
+  endDate?: DateOnly;
+}
+
+export interface Breakdown {
+  id: string;
+  carId: string;
+  symptom: string;
+  repairCost: number;
+  odometer: number;
+  date: DateOnly;
+  shopName?: string;
+  category: BreakdownCategory;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OtherExpense {
+  id: string;
+  carId: string;
+  label: string;
+  amount: number;
+  date: DateOnly;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MaintenanceTask {
+  id: string;
+  kind: MilestoneTaskKind;
+  label?: string;
+  intervalKm?: number;
+  lastDoneKm?: number;
+  maintenanceId?: string;
+}
+
+export interface MaintenanceMilestone {
+  id: string;
+  carId: string;
+  targetKm: number;
+  scheduledDate?: DateOnly;
+  tasks: MaintenanceTask[];
+}
+
 export interface Settings {
   language: Language;
   theme: Theme;
@@ -82,9 +138,22 @@ export interface Settings {
   duskAssistEnabled?: boolean;
   /** Last dismissed whats-new.json id (deploy notes). */
   lastSeenWhatsNewId?: string;
-  licenseExpiry?: DateOnly;
-  registrationExpiry?: DateOnly;
   customMaintenanceTypes?: string[];
+  assistantEnabled?: boolean;
+  assistantApiKey?: string;
+  assistantBaseUrl?: string;
+  assistantModel?: string;
+  /** Cached fuel tip text + day key. */
+  fuelTipText?: string;
+  fuelTipDay?: DateOnly;
+  /**
+   * @deprecated v3 only — migrated onto Car in DB v4.
+   */
+  licenseExpiry?: DateOnly;
+  /**
+   * @deprecated v3 only — migrated onto Car in DB v4.
+   */
+  registrationExpiry?: DateOnly;
 }
 
 export interface DueItem {
@@ -116,6 +185,10 @@ export interface BackupFile {
   settings: Settings;
   fillUps: FillUp[];
   maintenance: Maintenance[];
+  expensePeriods?: ExpensePeriod[];
+  breakdowns?: Breakdown[];
+  otherExpenses?: OtherExpense[];
+  milestones?: MaintenanceMilestone[];
 }
 
 export const MAINTENANCE_TYPES: readonly MaintenanceType[] = [
@@ -125,3 +198,12 @@ export const MAINTENANCE_TYPES: readonly MaintenanceType[] = [
   'brakes',
   'other',
 ] as const;
+
+export const BREAKDOWN_CATEGORIES: readonly BreakdownCategory[] = [
+  'mechanical',
+  'electrical',
+  'other',
+] as const;
+
+export const DEFAULT_ASSISTANT_BASE_URL = 'https://api.openai.com/v1';
+export const DEFAULT_ASSISTANT_MODEL = 'gpt-4o-mini';

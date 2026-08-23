@@ -1,15 +1,18 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Db } from '../../data/db';
-import { publicHolidays } from '../../data/remote';
-import { buildDueItems, todayDateOnly } from '../../domain/dues';
-import { countryFromCurrency } from '../../domain/country';
-import { dueHolidayNudge, type PublicHoliday } from '../../domain/holidays';
-import { costFromPartLabor, normalizeCustomTypes } from '../../domain/maintenance-fields';
+import { todayDateOnly } from '../../domain/dues';
 import {
-  MAINTENANCE_TYPES,
-  type DueStatus,
-  type Maintenance,
-  type MaintenanceType,
+  addMilestoneAfter,
+  completeTask,
+  sortMilestones,
+  taskKmRemaining,
+} from '../../domain/milestones';
+import type {
+  Maintenance,
+  MaintenanceMilestone,
+  MaintenanceTask,
+  MaintenanceType,
+  MilestoneTaskKind,
 } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
@@ -18,15 +21,14 @@ import { DateField } from '../../ui/date-field';
 import { NumericField } from '../../ui/numeric-field';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
-import { SelectField } from '../../ui/select-field';
 import { TextField } from '../../ui/text-field';
 
-const CUSTOM_PREFIX = 'custom:';
+type CompletingTask = { milestoneId: string; taskId: string };
 
 @Component({
   selector: 'app-maintenance',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, SelectField, TextField, NumericField, DateField, PrimaryButton, ConfirmBar],
+  imports: [PageHeader, TextField, NumericField, DateField, PrimaryButton, ConfirmBar],
   templateUrl: './maintenance.html',
   styleUrl: './maintenance.scss',
 })
@@ -34,234 +36,91 @@ export class MaintenancePage {
   readonly i18n = inject(I18n);
   readonly db = inject(Db);
 
-  readonly editId = signal<string | null>(null);
-  readonly type = signal<MaintenanceType>('oil');
-  readonly otherLabel = signal('');
+  readonly completing = signal<CompletingTask | null>(null);
   readonly cost = signal('');
   readonly odometer = signal(String(this.db.car()?.currentOdometer ?? ''));
   readonly date = signal(todayDateOnly());
-  readonly dueKm = signal('');
-  readonly dueDate = signal('');
   readonly note = signal('');
-  readonly centerName = signal('');
-  readonly technicianName = signal('');
-  readonly partBrand = signal('');
-  readonly partCost = signal('');
-  readonly laborCost = signal('');
   readonly saving = signal(false);
+  readonly addingMilestone = signal(false);
   readonly pendingDelete = signal<string | null>(null);
-  readonly listFilter = signal<'all' | 'dueSoon' | 'overdue'>('all');
-  readonly holidays = signal<PublicHoliday[]>([]);
-  readonly holidayBanner = computed(() => {
-    const today = todayDateOnly();
-    for (const item of buildDueItems(
-      this.db.settings(),
-      this.db.maintenance(),
-      this.db.car()?.currentOdometer ?? 0,
-      today,
-    )) {
-      const nudge = dueHolidayNudge(item.dueDate, this.holidays(), today);
-      if (nudge) {
-        return this.i18n.t('maint.holidayDue', { name: nudge.localName, date: nudge.date });
-      }
-    }
-    return null;
-  });
+  readonly editId = signal<string | null>(null);
   readonly odoError = signal('');
   readonly costError = signal('');
 
-  readonly typeSelectValue = computed(() => {
-    const label = this.otherLabel();
-    if (this.type() === 'other' && label) {
-      return `${CUSTOM_PREFIX}${label}`;
+  readonly sortedMilestones = computed(() => sortMilestones(this.db.milestones()));
+  readonly currentOdometer = computed(() => this.db.car()?.currentOdometer ?? 0);
+
+  readonly history = computed(() =>
+    [...this.db.maintenance()].sort(
+      (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
+    ),
+  );
+
+  taskLabel(task: MaintenanceTask): string {
+    if (task.kind === 'custom' && task.label) {
+      return task.label;
     }
-    return this.type();
-  });
-
-  readonly typeOptions = computed(() => {
-    this.i18n.language();
-    const builtins = MAINTENANCE_TYPES.filter((value) => value !== 'other').map((value) => ({
-      value,
-      label: this.typeLabel(value),
-    }));
-    const customs = normalizeCustomTypes([
-      ...(this.db.settings().customMaintenanceTypes ?? []),
-      ...(this.type() === 'other' ? [this.otherLabel()] : []),
-    ]);
-    return [
-      ...builtins,
-      ...customs.map((name) => ({
-        value: `${CUSTOM_PREFIX}${name}`,
-        label: name,
-      })),
-    ];
-  });
-
-  readonly filteredMaintenance = computed(() => {
-    const filter = this.listFilter();
-    if (filter === 'all') {
-      return this.db.maintenance();
-    }
-    return this.db.maintenance().filter((m) => this.rowStatus(m.id) === filter);
-  });
-
-  constructor() {
-    void this.loadHolidays();
+    return this.i18n.t(`milestone.task.${task.kind}` as MsgKey);
   }
 
-  async loadHolidays(): Promise<void> {
-    const cc = countryFromCurrency(this.db.settings().currency);
-    this.holidays.set(await publicHolidays(cc, new Date().getFullYear()));
+  taskRemaining(task: MaintenanceTask, milestone: MaintenanceMilestone): number {
+    return taskKmRemaining(task, milestone, this.currentOdometer());
   }
 
-  readonly dueById = computed(() => {
-    const car = this.db.car();
-    const map = new Map<string, DueStatus>();
-    if (!car) {
-      return map;
-    }
-    for (const item of buildDueItems(
-      this.db.settings(),
-      this.db.maintenance(),
-      car.currentOdometer,
-    )) {
-      if (item.maintenanceId) {
-        map.set(item.maintenanceId, item.status);
-      }
-    }
-    return map;
-  });
-
-  onTypeValue(value: string): void {
-    if (value.startsWith(CUSTOM_PREFIX)) {
-      this.type.set('other');
-      this.otherLabel.set(value.slice(CUSTOM_PREFIX.length));
-      return;
-    }
-    if ((MAINTENANCE_TYPES as readonly string[]).includes(value) && value !== 'other') {
-      this.type.set(value as MaintenanceType);
-      this.otherLabel.set('');
-    }
+  isTaskOpen(task: MaintenanceTask): boolean {
+    return !task.maintenanceId;
   }
 
-  onPartCost(value: string): void {
-    this.partCost.set(value);
-    this.syncCostFromParts();
-  }
-
-  onLaborCost(value: string): void {
-    this.laborCost.set(value);
-    this.syncCostFromParts();
-  }
-
-  private syncCostFromParts(): void {
-    const next = costFromPartLabor(this.partCost(), this.laborCost());
-    if (next != null) {
-      this.cost.set(next);
-    }
-  }
-
-  typeLabel(t: MaintenanceType): string {
-    return this.i18n.t(`maintenance.type.${t}` as MsgKey);
-  }
-
-  rowLabel(m: Maintenance): string {
-    return m.otherLabel || this.typeLabel(m.type);
-  }
-
-  rowStatus(id: string): DueStatus | undefined {
-    return this.dueById().get(id);
-  }
-
-  rowStatusLabel(id: string): string {
-    const status = this.rowStatus(id);
-    switch (status) {
-      case 'overdue':
-        return this.i18n.t('due.overdue');
-      case 'dueSoon':
-        return this.i18n.t('due.dueSoon');
-      case 'future':
-      case undefined:
-        return '';
-      default: {
-        const _never: never = status;
-        return _never;
-      }
-    }
-  }
-
-  edit(m: Maintenance): void {
-    this.editId.set(m.id);
-    this.type.set(m.type);
-    this.otherLabel.set(m.otherLabel ?? '');
-    this.cost.set(String(m.cost));
-    this.odometer.set(String(m.odometer));
-    this.date.set(m.date);
-    this.dueKm.set(m.dueKm == null ? '' : String(m.dueKm));
-    this.dueDate.set(m.dueDate ?? '');
-    this.note.set(m.note ?? '');
-    this.centerName.set(m.centerName ?? '');
-    this.technicianName.set(m.technicianName ?? '');
-    this.partBrand.set(m.partBrand ?? '');
-    this.partCost.set(m.partCost == null ? '' : String(m.partCost));
-    this.laborCost.set(m.laborCost == null ? '' : String(m.laborCost));
-  }
-
-  askDelete(id: string): void {
-    this.pendingDelete.set(id);
-  }
-
-  async doDelete(): Promise<void> {
-    const id = this.pendingDelete();
-    if (!id) {
-      return;
-    }
-    await this.db.deleteMaintenance(id);
-    this.pendingDelete.set(null);
-    if (this.editId() === id) {
-      this.resetForm();
-    }
-  }
-
-  resetForm(): void {
-    this.editId.set(null);
-    this.type.set('oil');
-    this.otherLabel.set('');
+  startComplete(milestoneId: string, taskId: string): void {
+    this.completing.set({ milestoneId, taskId });
     this.cost.set('');
     this.odometer.set(String(this.db.car()?.currentOdometer ?? ''));
     this.date.set(todayDateOnly());
-    this.dueKm.set('');
-    this.dueDate.set('');
     this.note.set('');
-    this.centerName.set('');
-    this.technicianName.set('');
-    this.partBrand.set('');
-    this.partCost.set('');
-    this.laborCost.set('');
     this.odoError.set('');
     this.costError.set('');
   }
 
-  formatMoney(value: number): string {
+  cancelComplete(): void {
+    this.completing.set(null);
+    this.odoError.set('');
+    this.costError.set('');
+  }
+
+  async onScheduledDate(milestone: MaintenanceMilestone, value: string): Promise<void> {
+    await this.db.saveMilestone({
+      ...milestone,
+      scheduledDate: value.trim() || undefined,
+    });
+  }
+
+  async addMilestone(): Promise<void> {
+    const car = this.db.car();
+    if (!car) {
+      return;
+    }
+    this.addingMilestone.set(true);
     try {
-      return new Intl.NumberFormat(this.i18n.language(), {
-        style: 'currency',
-        currency: this.db.settings().currency,
-        maximumFractionDigits: 2,
-      }).format(value);
-    } catch {
-      return `${value} ${this.db.settings().currency}`;
+      const next = addMilestoneAfter(car.id, this.db.milestones(), car.currentOdometer);
+      await this.db.saveMilestone(next);
+    } finally {
+      this.addingMilestone.set(false);
     }
   }
 
-  async save(): Promise<void> {
+  async saveComplete(): Promise<void> {
+    const ctx = this.completing();
+    if (!ctx) {
+      return;
+    }
+    const milestone = this.db.milestones().find((m) => m.id === ctx.milestoneId);
+    const task = milestone?.tasks.find((t) => t.id === ctx.taskId);
+    if (!milestone || !task) {
+      return;
+    }
     const cost = Number(this.cost() || '0');
     const odometer = Number(this.odometer());
-    const dueKmRaw = this.dueKm().trim();
-    const dueKm = dueKmRaw === '' ? undefined : Number(dueKmRaw);
-    const dueDate = this.dueDate().trim() || undefined;
-    const partCostRaw = this.partCost().trim();
-    const laborCostRaw = this.laborCost().trim();
     this.odoError.set('');
     this.costError.set('');
     let invalid = false;
@@ -276,27 +135,79 @@ export class MaintenancePage {
     if (invalid) {
       return;
     }
+    const { type, otherLabel } = taskMaintenanceFields(task);
+    const maintenanceId = crypto.randomUUID();
     this.saving.set(true);
     try {
       await this.db.saveMaintenance({
-        id: this.editId() ?? undefined,
-        type: this.type(),
+        id: maintenanceId,
+        type,
         cost,
         odometer,
         date: this.date(),
-        dueKm,
-        dueDate,
         note: this.note().trim() || undefined,
-        centerName: this.centerName().trim() || undefined,
-        technicianName: this.technicianName().trim() || undefined,
-        partBrand: this.partBrand().trim() || undefined,
-        partCost: partCostRaw === '' ? undefined : Number(partCostRaw),
-        laborCost: laborCostRaw === '' ? undefined : Number(laborCostRaw),
-        otherLabel: this.type() === 'other' ? this.otherLabel().trim() || undefined : undefined,
+        otherLabel,
       });
-      this.resetForm();
+      await this.db.saveMilestone(completeTask(milestone, task.id, maintenanceId, odometer));
+      this.cancelComplete();
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  rowLabel(m: Maintenance): string {
+    if (m.otherLabel) {
+      return m.otherLabel;
+    }
+    return this.i18n.t(`maintenance.type.${m.type}` as MsgKey);
+  }
+
+  askDelete(id: string): void {
+    this.pendingDelete.set(id);
+  }
+
+  async doDelete(): Promise<void> {
+    const id = this.pendingDelete();
+    if (!id) {
+      return;
+    }
+    await this.db.deleteMaintenance(id);
+    this.pendingDelete.set(null);
+    if (this.editId() === id) {
+      this.editId.set(null);
+    }
+  }
+
+  formatMoney(value: number): string {
+    try {
+      return new Intl.NumberFormat(this.i18n.language(), {
+        style: 'currency',
+        currency: this.db.settings().currency,
+        maximumFractionDigits: 2,
+      }).format(value);
+    } catch {
+      return `${value} ${this.db.settings().currency}`;
+    }
+  }
+}
+
+function taskMaintenanceFields(task: MaintenanceTask): {
+  type: MaintenanceType;
+  otherLabel?: string;
+} {
+  switch (task.kind) {
+    case 'oil':
+    case 'filter':
+    case 'tires':
+    case 'brakes':
+      return { type: task.kind };
+    case 'labor':
+      return { type: 'other', otherLabel: 'Labor' };
+    case 'custom':
+      return { type: 'other', otherLabel: task.label?.trim() || 'Custom' };
+    default: {
+      const _never: never = task.kind;
+      return _never;
     }
   }
 }
