@@ -1,41 +1,58 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  HostListener,
   computed,
   inject,
   signal,
 } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
-import { currentWeather, getCoords } from '../../data/remote';
+import { countryFuelPrices, currentWeather, getCoords } from '../../data/remote';
+import {
+  computeFillUpCost,
+  lastFillUnitPriceFromHistory,
+  lastFuelGrade,
+  pickUnitPrice,
+} from '../../domain/fill-up-cost';
+import { countryFromCurrency } from '../../domain/country';
 import { todayDateOnly } from '../../domain/dues';
+import type { FuelGrade } from '../../domain/models';
 import { weatherMsgKey } from '../../domain/weather';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { ConfirmBar } from '../../ui/confirm-bar';
 import { DateField } from '../../ui/date-field';
+import {
+  buildGradeOptions,
+  FuelGradeSelector,
+} from '../../ui/fuel-grade-selector';
+import { NumericField } from '../../ui/numeric-field';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
-import { PumpDisplay } from '../../ui/pump-display';
-import { PumpKeypad } from '../../ui/pump-keypad';
+import { ReceiptPreview } from '../../ui/receipt-preview';
 import { TankToggle } from '../../ui/tank-toggle';
 
-type Field = 'odometer' | 'liters' | 'cost';
+const GRADE_KEYS: Record<FuelGrade, MsgKey> = {
+  gasoline92: 'home.fuel92',
+  gasoline95: 'home.fuel95',
+  diesel: 'home.fuelDiesel',
+  solar: 'home.fuelSolar',
+  custom: 'fillUp.lastPaid',
+};
 
 @Component({
   selector: 'app-fill-up',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     PageHeader,
-    PumpDisplay,
-    PumpKeypad,
+    NumericField,
+    FuelGradeSelector,
+    ReceiptPreview,
     TankToggle,
     DateField,
     PrimaryButton,
     ConfirmBar,
-    DecimalPipe,
+    RouterLink,
   ],
   templateUrl: './fill-up.html',
   styleUrl: './fill-up.scss',
@@ -46,21 +63,21 @@ export class FillUpPage {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
-  readonly active = signal<Field>('odometer');
   readonly odometer = signal('');
   readonly liters = signal('');
-  readonly cost = signal('');
+  readonly fuelGrade = signal<FuelGrade | null>(null);
   readonly tankFull = signal(true);
   readonly date = signal(todayDateOnly());
   readonly dateError = signal('');
   readonly odoError = signal('');
   readonly litersError = signal('');
-  readonly costError = signal('');
   readonly saving = signal(false);
   readonly editId = signal<string | null>(null);
   readonly confirmDelete = signal(false);
   readonly weatherBusy = signal(false);
   readonly weatherError = signal('');
+  readonly pricesBusy = signal(false);
+  readonly fuelPrices = signal<Awaited<ReturnType<typeof countryFuelPrices>>>(null);
   readonly weather = signal<{
     lat: number;
     lon: number;
@@ -68,27 +85,44 @@ export class FillUpPage {
     weatherCode: number;
   } | null>(null);
 
-  readonly recent = computed(() =>
-    [...this.db.fillUps()].sort((a, b) => b.odometer - a.odometer).slice(0, 20),
+  readonly lastUnit = computed(() => lastFillUnitPriceFromHistory(this.db.fillUps()));
+
+  readonly gradeOptions = computed(() =>
+    buildGradeOptions(this.fuelPrices(), GRADE_KEYS),
   );
+
+  readonly unitPrice = computed(() =>
+    pickUnitPrice(this.fuelGrade(), this.fuelPrices(), this.lastUnit()),
+  );
+
+  readonly litersNum = computed(() => Number(this.liters()) || 0);
+
+  readonly computedCost = computed(() => {
+    const liters = Number(this.liters());
+    const unit = this.unitPrice();
+    if (!Number.isFinite(liters) || unit == null) {
+      return 0;
+    }
+    return computeFillUpCost(liters, unit);
+  });
 
   readonly canSave = computed(() => {
     const odo = Number(this.odometer());
     const liters = Number(this.liters());
-    const cost = Number(this.cost() || '0');
     return (
       Number.isFinite(odo) &&
       odo > 0 &&
       Number.isFinite(liters) &&
       liters > 0 &&
-      Number.isFinite(cost) &&
-      cost >= 0 &&
+      this.unitPrice() != null &&
+      this.fuelGrade() != null &&
       /^\d{4}-\d{2}-\d{2}$/.test(this.date()) &&
       !this.saving()
     );
   });
 
   constructor() {
+    void this.loadPrices();
     const id = this.route.snapshot.queryParamMap.get('id');
     if (id) {
       this.load(id);
@@ -97,6 +131,25 @@ export class FillUpPage {
       if (car) {
         this.odometer.set(String(car.currentOdometer));
       }
+      const lastGrade = lastFuelGrade(this.db.fillUps());
+      if (lastGrade) {
+        this.fuelGrade.set(lastGrade);
+      }
+    }
+  }
+
+  async loadPrices(): Promise<void> {
+    this.pricesBusy.set(true);
+    try {
+      const cc = countryFromCurrency(this.db.settings().currency);
+      this.fuelPrices.set(await countryFuelPrices(cc));
+      if (!this.fuelGrade() && this.gradeOptions().length) {
+        this.fuelGrade.set(this.gradeOptions()[0]!.grade);
+      } else if (!this.fuelGrade() && this.lastUnit()) {
+        this.fuelGrade.set('custom');
+      }
+    } finally {
+      this.pricesBusy.set(false);
     }
   }
 
@@ -108,7 +161,7 @@ export class FillUpPage {
     this.editId.set(id);
     this.odometer.set(String(existing.odometer));
     this.liters.set(String(existing.liters));
-    this.cost.set(String(existing.cost));
+    this.fuelGrade.set(existing.fuelGrade ?? 'custom');
     this.tankFull.set(existing.tankFull);
     this.date.set(existing.date);
     this.weather.set(
@@ -123,25 +176,12 @@ export class FillUpPage {
     );
     this.odoError.set('');
     this.litersError.set('');
-    this.costError.set('');
     this.dateError.set('');
     this.weatherError.set('');
   }
 
   weatherLabel(code: number): string {
     return this.i18n.t(weatherMsgKey(code) as MsgKey);
-  }
-
-  formatMoney(value: number): string {
-    try {
-      return new Intl.NumberFormat(this.i18n.language(), {
-        style: 'currency',
-        currency: this.db.settings().currency,
-        maximumFractionDigits: 2,
-      }).format(value);
-    } catch {
-      return `${value} ${this.db.settings().currency}`;
-    }
   }
 
   async attachWeather(): Promise<void> {
@@ -164,102 +204,6 @@ export class FillUpPage {
     }
   }
 
-  fieldLabel(f: Field): string {
-    if (f === 'odometer') {
-      return this.i18n.t('fillUp.odometer');
-    }
-    if (f === 'liters') {
-      return this.i18n.t('fillUp.liters');
-    }
-    return this.i18n.t('fillUp.cost');
-  }
-
-  raw(f: Field): string {
-    if (f === 'odometer') {
-      return this.odometer();
-    }
-    if (f === 'liters') {
-      return this.liters();
-    }
-    return this.cost();
-  }
-
-  setRaw(f: Field, value: string): void {
-    if (f === 'odometer') {
-      this.odometer.set(value);
-      this.odoError.set('');
-    } else if (f === 'liters') {
-      this.liters.set(value);
-      this.litersError.set('');
-    } else {
-      this.cost.set(value);
-      this.costError.set('');
-    }
-  }
-
-  onKey(key: string): void {
-    if (key === 'back') {
-      this.backspace();
-      return;
-    }
-    if (key === '.') {
-      this.appendDot();
-      return;
-    }
-    this.appendDigit(key);
-  }
-
-  appendDigit(d: string): void {
-    const f = this.active();
-    const cur = this.raw(f);
-    if (cur === '0') {
-      this.setRaw(f, d);
-      return;
-    }
-    this.setRaw(f, cur + d);
-  }
-
-  appendDot(): void {
-    const f = this.active();
-    const cur = this.raw(f);
-    if (cur.includes('.')) {
-      return;
-    }
-    this.setRaw(f, (cur || '0') + '.');
-  }
-
-  backspace(): void {
-    const f = this.active();
-    this.setRaw(f, this.raw(f).slice(0, -1));
-  }
-
-  onNative(event: Event): void {
-    const value = (event.target as HTMLInputElement).value.replace(/[^\d.]/g, '');
-    this.setRaw(this.active(), value);
-  }
-
-  @HostListener('window:keydown', ['$event'])
-  onHardwareKey(event: KeyboardEvent): void {
-    const tag = (event.target as HTMLElement | null)?.tagName;
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
-      return;
-    }
-    if (event.key >= '0' && event.key <= '9') {
-      event.preventDefault();
-      this.appendDigit(event.key);
-      return;
-    }
-    if (event.key === '.' || event.key === ',') {
-      event.preventDefault();
-      this.appendDot();
-      return;
-    }
-    if (event.key === 'Backspace') {
-      event.preventDefault();
-      this.backspace();
-    }
-  }
-
   askDelete(): void {
     this.confirmDelete.set(true);
   }
@@ -277,17 +221,18 @@ export class FillUpPage {
   async save(): Promise<void> {
     this.odoError.set('');
     this.litersError.set('');
-    this.costError.set('');
     this.dateError.set('');
 
     const odo = Number(this.odometer());
     const liters = Number(this.liters());
-    const cost = Number(this.cost() || '0');
+    const unit = this.unitPrice();
+    const grade = this.fuelGrade();
     const date = this.date();
     const car = this.db.car();
-    if (!car) {
+    if (!car || unit == null || !grade) {
       return;
     }
+    const cost = computeFillUpCost(liters, unit);
 
     let ok = true;
     if (!Number.isFinite(odo) || odo <= 0) {
@@ -299,7 +244,6 @@ export class FillUpPage {
         .filter((f) => f.id !== this.editId())
         .map((f) => f.odometer);
       const floor = Math.max(car.initialOdometer, ...others, 0);
-      // New fill-ups must be >= current known; edits may not go below remaining max floor.
       const minAllowed = this.editId() ? floor : car.currentOdometer;
       if (odo < minAllowed) {
         this.odoError.set(this.i18n.t('fillUp.err.odometerLow'));
@@ -308,10 +252,6 @@ export class FillUpPage {
     }
     if (!Number.isFinite(liters) || liters <= 0) {
       this.litersError.set(this.i18n.t('fillUp.err.liters'));
-      ok = false;
-    }
-    if (!Number.isFinite(cost) || cost < 0) {
-      this.costError.set(this.i18n.t('fillUp.err.cost'));
       ok = false;
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -330,6 +270,8 @@ export class FillUpPage {
         odometer: odo,
         liters,
         cost,
+        unitPrice: unit,
+        fuelGrade: grade,
         tankFull: this.tankFull(),
         date,
         lat: w?.lat,

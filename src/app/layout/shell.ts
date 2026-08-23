@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import {
   NavigationEnd,
   Router,
@@ -12,11 +12,12 @@ import { Db } from '../data/db';
 import { I18n } from '../i18n/i18n';
 import { InstallPwa } from '../pwa/install-pwa';
 import { WhatsNew } from '../pwa/whats-new';
+import { UpdateModal } from '../ui/update-modal';
 
 @Component({
   selector: 'app-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, UpdateModal],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
 })
@@ -26,6 +27,8 @@ export class Shell {
   readonly whatsNew = inject(WhatsNew);
   private readonly router = inject(Router);
   private readonly install = inject(InstallPwa);
+
+  readonly updateDismissed = signal(false);
 
   private readonly url = toSignal(
     this.router.events.pipe(
@@ -37,16 +40,14 @@ export class Shell {
   );
 
   readonly showNav = computed(() => !this.url().startsWith('/setup'));
-  readonly updateReady = computed(() => this.install.updateReady());
-  readonly showWhatsNew = computed(
-    () => this.showNav() && this.whatsNew.visible() && !this.updateReady(),
-  );
+  readonly updateReady = computed(() => this.install.updateReady() && !this.updateDismissed());
+  readonly modalLines = computed(() => this.whatsNew.lines());
 
   reload(): void {
     void this.install.applyUpdate();
   }
 
-  dismissWhatsNew(): void {
-    void this.whatsNew.dismiss();
+  dismissUpdate(): void {
+    this.updateDismissed.set(true);
   }
 }

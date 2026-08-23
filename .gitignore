@@ -43,6 +43,7 @@ __screenshots__/
 .DS_Store
 Thumbs.db
 /skills-lock.json
+.impeccable/
 /.agents
 /.claude
 /.cursor
@@ -53,3 +54,5 @@ Thumbs.db
 /.rules
 /AGENTS.md
 /CLAUDE.md
+/agent
+bash.exe.stackdump

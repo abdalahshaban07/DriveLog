@@ -1,63 +1,61 @@
 <div class="stack setup page-narrow">
   <app-page-header [eyebrow]="i18n.t('app.subtitle')" [title]="i18n.t('setup.title')" />
 
-  <section class="card stack" [attr.aria-label]="i18n.t('setup.prefs')">
-    <p class="label">{{ i18n.t('setup.prefs') }}</p>
-    <app-select-field
-      [label]="i18n.t('setup.language')"
-      [options]="langOptions()"
-      [value]="language()"
-      (valueChange)="onLang($event)"
-    />
+  <div class="setup__progress" aria-hidden="true">
+    <span [class.setup__dot--on]="step() >= 1"></span>
+    <span class="setup__rail"></span>
+    <span [class.setup__dot--on]="step() >= 2"></span>
+  </div>
 
-    <app-select-field
-      [label]="i18n.t('setup.currency')"
-      [options]="currencyOptions()"
-      [(value)]="currency"
+  @if (step() === 1) {
+    <section class="card stack" [attr.aria-label]="i18n.t('setup.vehicle')">
+      <p class="label">{{ i18n.t('setup.step1') }}</p>
+      <app-text-field
+        [label]="i18n.t('setup.nickname')"
+        [formField]="setupForm.nickname"
+        [error]="nickError()"
+      />
+      <app-numeric-field
+        [label]="i18n.t('setup.odometer')"
+        [formField]="setupForm.odometer"
+        [error]="odoError()"
+      />
+    </section>
+    <app-primary-button
+      [label]="i18n.t('setup.continue')"
+      [disabled]="!canContinue()"
+      (pressed)="goStep2()"
     />
-  </section>
-
-  <section class="card stack" [attr.aria-label]="i18n.t('setup.vehicle')">
-    <p class="label">{{ i18n.t('setup.vehicle') }}</p>
-    <app-text-field
-      [label]="i18n.t('setup.nickname')"
-      [formField]="setupForm.nickname"
-      [error]="nickError()"
-    />
-    <app-numeric-field
-      [label]="i18n.t('setup.odometer')"
-      [formField]="setupForm.odometer"
-      [error]="odoError()"
-    />
-
-    <app-text-field [label]="i18n.t('vin.label')" [(value)]="vin" [error]="vinError()" />
-    <button
-      type="button"
-      class="ghost-btn"
-      [disabled]="vinBusy() || !vin().trim()"
-      (click)="decode()"
-    >
-      {{ vinBusy() ? i18n.t('vin.decoding') : i18n.t('vin.decode') }}
-    </button>
-    @if (vinInfo(); as info) {
-      <p class="vin-meta">
-        @if (info.year || info.make || info.model) {
-          <strong>{{ info.year }} {{ info.make }} {{ info.model }}</strong>
-        }
-        @if (info.recallCount != null) {
-          <span>
-            {{ i18n.t('vin.recalls') }}:
-            {{ info.recallCount === 0 ? i18n.t('vin.recallsNone') : info.recallCount }}
-          </span>
-        }
-        <span class="hint">{{ i18n.t('vin.recallsCaveat') }}</span>
-      </p>
-    }
-  </section>
-
-  <app-primary-button
-    [label]="i18n.t('setup.continue')"
-    [disabled]="!canContinue()"
-    (pressed)="submit()"
-  />
+  } @else {
+    <section class="card stack" [attr.aria-label]="i18n.t('setup.prefs')">
+      <p class="label">{{ i18n.t('setup.step2') }}</p>
+      <app-select-field
+        [label]="i18n.t('settings.theme')"
+        [options]="themeOptions()"
+        [value]="theme()"
+        (valueChange)="onTheme($event)"
+      />
+      <app-select-field
+        [label]="i18n.t('setup.language')"
+        [options]="langOptions()"
+        [value]="language()"
+        (valueChange)="onLang($event)"
+      />
+      <app-select-field
+        [label]="i18n.t('setup.currency')"
+        [options]="currencyOptions()"
+        [(value)]="currency"
+      />
+    </section>
+    <div class="setup__actions">
+      <button type="button" class="ghost-btn" (click)="backStep1()">
+        {{ i18n.t('common.back') }}
+      </button>
+      <app-primary-button
+        [label]="i18n.t('setup.finish')"
+        [disabled]="!canContinue()"
+        (pressed)="submit()"
+      />
+    </div>
+  }
 </div>

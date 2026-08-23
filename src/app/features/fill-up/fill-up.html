@@ -1,75 +1,56 @@
 <div class="stack fill-up page-narrow">
-  <div class="pump-head">
-    <svg class="pump-mark" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M6 21V8.2A2.2 2.2 0 0 1 8.2 6h5.6A2.2 2.2 0 0 1 16 8.2V21" />
-      <path d="M6 21h10" />
-      <path d="M8.5 10h7" />
-      <path d="M16 12.5h1.4a1.6 1.6 0 0 1 1.6 1.6v2.2a1.5 1.5 0 1 0 3 0V11L19.4 8.2" />
-    </svg>
-    <app-page-header [title]="editId() ? i18n.t('fillUp.edit') : i18n.t('fillUp.title')" />
-  </div>
+  <app-page-header [title]="editId() ? i18n.t('fillUp.edit') : i18n.t('fillUp.title')" />
 
   <p class="hint">
     {{ i18n.t('fillUp.lastOdo') }}: {{ db.car()?.currentOdometer ?? '—' }}
     {{ i18n.t('common.km') }}
   </p>
 
-  <div class="console">
-    <div class="console__face">
-      <app-pump-display
-        kind="odometer"
-        [label]="i18n.t('fillUp.odometer')"
-        [value]="odometer()"
-        [active]="active() === 'odometer'"
-        [hint]="odoError()"
-        (selected)="active.set('odometer')"
-      />
-      <app-pump-display
-        kind="liters"
-        [label]="i18n.t('fillUp.liters')"
-        [value]="liters()"
-        [active]="active() === 'liters'"
-        [hint]="litersError()"
-        (selected)="active.set('liters')"
-      />
-      <app-pump-display
-        kind="cost"
-        [label]="i18n.t('fillUp.cost')"
-        [value]="cost()"
-        [active]="active() === 'cost'"
-        [hint]="costError()"
-        (selected)="active.set('cost')"
-      />
-    </div>
+  <app-numeric-field
+    [label]="i18n.t('fillUp.odometer')"
+    [(value)]="odometer"
+    [error]="odoError()"
+  />
 
-    <label class="sr-only" for="native-fill">{{ fieldLabel(active()) }}</label>
-    <input
-      id="native-fill"
-      class="native"
-      inputmode="decimal"
-      [value]="raw(active())"
-      (input)="onNative($event)"
+  <app-numeric-field
+    [label]="i18n.t('fillUp.liters')"
+    [(value)]="liters"
+    [error]="litersError()"
+  />
+
+  @if (pricesBusy()) {
+    <div class="skeleton skeleton--row" aria-hidden="true"></div>
+  } @else {
+    <app-fuel-grade-selector
+      [prices]="fuelPrices()"
+      [fallbackPrice]="lastUnit()"
+      [options]="gradeOptions()"
+      [(value)]="fuelGrade"
     />
+  }
 
-    <app-pump-keypad (keyed)="onKey($event)" />
-  </div>
+  <app-receipt-preview
+    [liters]="litersNum()"
+    [unitPrice]="unitPrice()"
+    [currency]="db.settings().currency"
+  />
 
-  <details class="disclosure" open>
+  <app-tank-toggle
+    [(value)]="tankFull"
+    [onLabel]="i18n.t('fillUp.tankFull')"
+    [offLabel]="i18n.t('fillUp.tankPartial')"
+  />
+
+  <app-date-field
+    [label]="i18n.t('fillUp.date')"
+    [(value)]="date"
+    [error]="dateError()"
+    (valueChange)="dateError.set('')"
+  />
+
+  <details class="disclosure">
     <summary>{{ i18n.t('fillUp.details') }}</summary>
     <div class="disclosure__body secondary">
-      <app-tank-toggle
-        [(value)]="tankFull"
-        [onLabel]="i18n.t('fillUp.tankFull')"
-        [offLabel]="i18n.t('fillUp.tankPartial')"
-      />
-
-      <app-date-field
-        [label]="i18n.t('fillUp.date')"
-        [(value)]="date"
-        [error]="dateError()"
-        (valueChange)="dateError.set('')"
-      />
-
       <button
         type="button"
         class="weather-btn"
@@ -78,7 +59,7 @@
       >
         {{
           weatherBusy()
-            ? i18n.t('vin.decoding')
+            ? i18n.t('common.loading')
             : weather()
               ? i18n.t('fillUp.weatherAttached')
               : i18n.t('fillUp.attachWeather')
@@ -86,11 +67,11 @@
       </button>
       @if (weather(); as w) {
         <p class="weather-chip">
-          {{ w.tempC | number: '1.0-1' }}°C · {{ weatherLabel(w.weatherCode) }}
+          {{ w.tempC }}°C · {{ weatherLabel(w.weatherCode) }}
         </p>
       }
       @if (weatherError()) {
-        <p class="weather-err">{{ weatherError() }}</p>
+        <p class="weather-err" role="alert">{{ weatherError() }}</p>
       }
     </div>
   </details>
@@ -119,27 +100,5 @@
     />
   }
 
-  <details class="disclosure">
-    <summary>{{ i18n.t('fillUp.history') }}</summary>
-    <div class="disclosure__body list">
-      @if (recent().length === 0) {
-        <p class="empty-state">{{ i18n.t('home.logFirst') }}</p>
-      }
-      @for (f of recent(); track f.id) {
-        <button type="button" class="history" (click)="load(f.id)">
-          <span class="label-row">
-            <span class="pill">{{ f.date }}</span>
-            {{ f.odometer }} {{ i18n.t('common.km') }}
-          </span>
-          <span>
-            {{ f.liters }} L · {{ formatMoney(f.cost) }}
-            @if (f.tempC != null && f.weatherCode != null) {
-              · {{ f.tempC | number: '1.0-0' }}°
-              {{ weatherLabel(f.weatherCode) }}
-            }
-          </span>
-        </button>
-      }
-    </div>
-  </details>
+  <a routerLink="/history/fill-ups" class="ghost-link">{{ i18n.t('insights.viewHistory') }}</a>
 </div>

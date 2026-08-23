@@ -42,37 +42,6 @@
     />
   </section>
 
-  <section class="card list vin-card" [attr.aria-label]="i18n.t('settings.vin')">
-    <p class="section-label">{{ i18n.t('settings.vin') }}</p>
-    <app-text-field [label]="i18n.t('settings.vin')" [(value)]="vin" [error]="vinError()" />
-    <button type="button" class="line" [disabled]="vinBusy()" (click)="decodeVin()">
-      <span class="line__text">
-        <strong>{{ vinBusy() ? i18n.t('vin.decoding') : i18n.t('vin.decode') }}</strong>
-      </span>
-    </button>
-    @if (carMeta(); as car) {
-      @if (car.year || car.make || car.model) {
-        <p class="vin-meta">
-          <strong>{{ car.year }} {{ car.make }} {{ car.model }}</strong>
-        </p>
-      }
-      @if (car.recallCount != null) {
-        <p class="vin-meta">
-          {{ i18n.t('vin.recalls') }}:
-          {{ car.recallCount === 0 ? i18n.t('vin.recallsNone') : car.recallCount }}
-        </p>
-      }
-      <p class="vin-meta hint">{{ i18n.t('vin.recallsCaveat') }}</p>
-      @if (car.vin) {
-        <a class="line" [href]="nhtsaUrl(car.vin)" target="_blank" rel="noopener noreferrer">
-          <span class="line__text">
-            <strong>{{ i18n.t('vin.nhtsaLink') }}</strong>
-          </span>
-        </a>
-      }
-    }
-  </section>
-
   <section class="card list" [attr.aria-label]="i18n.t('settings.dataSection')">
     <p class="section-label">{{ i18n.t('settings.dataSection') }}</p>
     <a class="line" routerLink="/settings/types">

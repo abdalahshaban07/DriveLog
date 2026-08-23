@@ -1,0 +1,48 @@
+<div class="stack insights">
+  <app-page-header [title]="i18n.t('insights.title')" />
+
+  <div class="seg seg--pill" role="group" [attr.aria-label]="i18n.t('insights.period')">
+    @for (p of periodOptions; track p.id) {
+      <button
+        type="button"
+        class="seg__btn"
+        [class.seg__btn--on]="period() === p.id"
+        (click)="setPeriod(p.id)"
+      >
+        {{ i18n.t(p.labelKey) }}
+      </button>
+    }
+  </div>
+
+  <section class="card metric-card">
+    <span class="label">{{ i18n.t('home.economy') }}</span>
+    @if (economy(); as eco) {
+      <p class="hero-number">{{ eco.litersPer100Km | number: '1.1-2' }}</p>
+      <p class="hint">{{ i18n.t('insights.latestSegment') }}</p>
+    } @else {
+      <p class="empty-state">{{ i18n.t('home.logFirst') }}</p>
+    }
+  </section>
+
+  <section class="card metric-card">
+    <span class="label">{{ i18n.t('home.overall') }}</span>
+    @if (overallL100(); as overall) {
+      <p class="hero-number">{{ overall | number: '1.1-2' }}</p>
+    } @else {
+      <p class="empty-state">{{ i18n.t('home.needFull') }}</p>
+    }
+  </section>
+
+  <section class="card">
+    <span class="label">{{ i18n.t('home.costPerKm') }}</span>
+    <app-sparkline [values]="costTrend()" [label]="i18n.t('home.costPerKm')" />
+  </section>
+
+  <section class="card">
+    <span class="label">{{ i18n.t('insights.monthlySpend') }}</span>
+    <app-sparkline [values]="spendTrend()" [label]="i18n.t('insights.monthlySpend')" />
+    <p class="hint">{{ i18n.t('home.monthSpend') }}: {{ formatMoney(monthSpend()) }}</p>
+  </section>
+
+  <a routerLink="/history/fill-ups" class="cta">{{ i18n.t('insights.viewHistory') }}</a>
+</div>

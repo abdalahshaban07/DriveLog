@@ -412,3 +412,26 @@ export function lastFillUnitPrice(
   }
   return cost / liters;
 }
+
+/** ponytail: ipapi.co free tier, no key; fails offline */
+export async function detectCountryCurrency(): Promise<string | null> {
+  const raw = (await fetchJson('https://ipapi.co/json/')) as {
+    currency?: string;
+  } | null;
+  if (raw?.currency && typeof raw.currency === 'string') {
+    return raw.currency.toUpperCase();
+  }
+  return null;
+}
+
+export async function reverseGeocodeLabel(
+  lat: number,
+  lon: number,
+  lang: 'en' | 'ar',
+): Promise<string | null> {
+  const raw = (await fetchJson(
+    `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=${lang}`,
+    { headers: { 'Accept-Language': lang } },
+  )) as { display_name?: string } | null;
+  return raw?.display_name ? String(raw.display_name).split(',')[0]?.trim() ?? null : null;
+}

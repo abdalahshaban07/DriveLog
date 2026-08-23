@@ -311,6 +311,8 @@ export class Db {
       odometer: input.odometer,
       liters: input.liters,
       cost: input.cost,
+      fuelGrade: input.fuelGrade,
+      unitPrice: input.unitPrice,
       tankFull: input.tankFull,
       note: input.note?.trim() || undefined,
       date: input.date,
@@ -383,7 +385,8 @@ export class Db {
       throw new Error('backup.invalid');
     }
     const obj = raw as Record<string, unknown>;
-    if (obj['version'] !== BACKUP_VERSION) {
+    // ponytail: accept v1 backups; v2 adds optional fill fields only
+    if (obj['version'] !== 1 && obj['version'] !== BACKUP_VERSION) {
       throw new Error('backup.unsupportedVersion');
     }
     if (!Array.isArray(obj['fillUps']) || !Array.isArray(obj['maintenance'])) {
@@ -495,6 +498,8 @@ function normalizeFillUp(raw: unknown): FillUp {
     lon: o.lon == null ? undefined : Number(o.lon),
     tempC: o.tempC == null ? undefined : Number(o.tempC),
     weatherCode: o.weatherCode == null ? undefined : Number(o.weatherCode),
+    fuelGrade: o.fuelGrade ? (o.fuelGrade as FillUp['fuelGrade']) : undefined,
+    unitPrice: o.unitPrice == null ? undefined : Number(o.unitPrice),
     createdAt: String(o.createdAt),
     updatedAt: String(o.updatedAt),
   };

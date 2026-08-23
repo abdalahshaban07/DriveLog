@@ -1,6 +1,40 @@
-:host .stack {
-  gap: var(--space-5);
+.setup__progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  justify-content: center;
 }
+
+.setup__dot--on,
+.setup__progress > span:first-child,
+.setup__progress > span:last-child {
+  inline-size: 10px;
+  block-size: 10px;
+  border-radius: 999px;
+  background: var(--hairline);
+}
+
+.setup__dot--on {
+  background: var(--fuel);
+}
+
+.setup__rail {
+  flex: 1;
+  block-size: 2px;
+  max-inline-size: 4rem;
+  background: var(--hairline);
+}
+
+.setup__actions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.setup__actions app-primary-button {
+  flex: 1;
+}
+
 
 :host .card {
   box-shadow: var(--shadow-soft);

@@ -1,6 +1,7 @@
 export type Language = 'en' | 'ar';
-export type Theme = 'dark' | 'light' | 'contrast' | 'dusk';
-export const THEMES: readonly Theme[] = ['light', 'dark', 'contrast', 'dusk'];
+export type Theme = 'system' | 'dark' | 'light' | 'contrast' | 'dusk';
+export const THEMES: readonly Theme[] = ['system', 'light', 'dark', 'contrast', 'dusk'];
+export type FuelGrade = 'gasoline92' | 'gasoline95' | 'diesel' | 'solar' | 'custom';
 export type UnitSystem = 'metric';
 export type MaintenanceType = 'oil' | 'filter' | 'tires' | 'brakes' | 'other';
 
@@ -32,6 +33,9 @@ export interface FillUp {
   liters: number;
   cost: number;
   tankFull: boolean;
+  fuelGrade?: FuelGrade;
+  /** Snapshot ¢/L at log time */
+  unitPrice?: number;
   note?: string;
   date: DateOnly;
   lat?: number;

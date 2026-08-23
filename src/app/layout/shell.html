@@ -5,29 +5,6 @@
         {{ i18n.t('persist.initFailed') }}
       </div>
     }
-    @if (updateReady()) {
-      <div class="update" role="status">
-        <span>{{ i18n.t('update.available') }}</span>
-        <button type="button" (click)="reload()">
-          {{ i18n.t('update.reload') }}
-        </button>
-      </div>
-    }
-    @if (showWhatsNew()) {
-      <div class="whats-new" role="status">
-        <div class="whats-new__body">
-          <strong>{{ i18n.t('update.whatsNew') }}</strong>
-          <ul>
-            @for (line of whatsNew.lines(); track line) {
-              <li>{{ line }}</li>
-            }
-          </ul>
-        </div>
-        <button type="button" (click)="dismissWhatsNew()">
-          {{ i18n.t('update.dismiss') }}
-        </button>
-      </div>
-    }
     <main class="main" [class.main--setup]="!showNav()">
       <router-outlet />
     </main>
@@ -62,6 +39,16 @@
           </svg>
           <span>{{ i18n.t('nav.maintenance') }}</span>
         </a>
+        <a routerLink="/insights" routerLinkActive="active" ariaCurrentWhenActive="page">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 18V6" />
+            <path d="M4 18h16" />
+            <path d="M8 16V10" />
+            <path d="M12 16V8" />
+            <path d="M16 16v-5" />
+          </svg>
+          <span>{{ i18n.t('nav.insights') }}</span>
+        </a>
         <a routerLink="/settings" routerLinkActive="active" ariaCurrentWhenActive="page">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M5 8h14" />
@@ -72,6 +59,13 @@
           <span>{{ i18n.t('nav.settings') }}</span>
         </a>
       </nav>
+    }
+    @if (updateReady()) {
+      <app-update-modal
+        [lines]="modalLines()"
+        (later)="dismissUpdate()"
+        (updateNow)="reload()"
+      />
     }
   </div>
 } @else {

@@ -17,6 +17,14 @@ function fill(
   };
 }
 
+describe('fill-up cost', () => {
+  it('computes cost from liters and unit price', async () => {
+    const { computeFillUpCost, pickUnitPrice } = await import('./fill-up-cost');
+    expect(computeFillUpCost(42.5, 1.6)).toBe(68);
+    expect(pickUnitPrice('gasoline92', { countryCode: 'EG', countryName: 'Egypt', currency: 'EGP', solar: null, diesel: 1.4, gasoline92: 1.58, gasoline95: 1.62, gasoline: null }, null)).toBe(1.58);
+  });
+});
+
 describe('economy', () => {
   it('matches contract example 9 L/100km and 0.33/km', () => {
     runEconomySelfCheck();
@@ -180,8 +188,8 @@ describe('currencies', () => {
 describe('backup version', () => {
   it('keeps backup version and IDB version as separate constants', async () => {
     const { BACKUP_VERSION, DB_VERSION } = await import('../core/config');
-    expect(BACKUP_VERSION).toBe(1);
-    expect(DB_VERSION).toBe(1);
+    expect(BACKUP_VERSION).toBe(2);
+    expect(DB_VERSION).toBe(2);
   });
 });
 
