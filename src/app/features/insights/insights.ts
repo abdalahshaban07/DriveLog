@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { DecimalPipe } from '@angular/common';
 import { Db } from '../../data/db';
 import { monthFuelSpend, overallLitersPer100Km, latestEconomy } from '../../domain/economy';
-import { costPerKmTrend, spendByMonth } from '../../domain/insights';
+import { costPerKmTrend, economyTrend as economyTrendSeries, spendByMonth } from '../../domain/insights';
 import { I18n } from '../../i18n/i18n';
 import { PageHeader } from '../../ui/page-header';
 import { Sparkline } from '../../ui/charts/sparkline';
@@ -31,6 +31,7 @@ export class InsightsPage {
   readonly monthSpend = computed(() => monthFuelSpend(this.db.fillUps()));
   readonly costTrend = computed(() => costPerKmTrend(this.db.fillUps(), this.period()));
   readonly spendTrend = computed(() => spendByMonth(this.db.fillUps(), this.period()));
+  readonly economyTrend = computed(() => economyTrendSeries(this.db.fillUps(), this.period()));
 
   formatMoney(value: number): string {
     try {

@@ -4,8 +4,8 @@ export const APP_SUBTITLE_EN = 'Fuel, maintenance & reminders';
 export const APP_SUBTITLE_AR = 'الوقود والصيانة والتذكيرات';
 
 export const DB_NAME = 'drivelog';
-export const DB_VERSION = 2;
-export const BACKUP_VERSION = 2;
+export const DB_VERSION = 3;
+export const BACKUP_VERSION = 3;
 
 export const DUE_SOON_DAYS = 14;
 export const DUE_SOON_KM = 500;

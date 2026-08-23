@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  signal,
+  afterNextRender,
+} from '@angular/core';
 
 @Component({
   selector: 'app-sparkline',
@@ -7,6 +14,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
     @if (points().length >= 2) {
       <svg
         class="spark"
+        [class.spark--draw]="draw()"
         [attr.viewBox]="'0 0 ' + width + ' ' + height"
         preserveAspectRatio="none"
         role="img"
@@ -32,6 +40,22 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
       stroke: var(--fuel);
       stroke-width: 2;
       vector-effect: non-scaling-stroke;
+      stroke-dasharray: 280;
+      stroke-dashoffset: 280;
+    }
+    .spark--draw .spark__line {
+      animation: spark-draw var(--motion-slow, 0.55s) var(--ease-out, ease-out) forwards;
+    }
+    @keyframes spark-draw {
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .spark__line {
+        stroke-dashoffset: 0;
+        animation: none;
+      }
     }
     .spark--empty {
       border-radius: calc(var(--radius) - 8px);
@@ -44,6 +68,11 @@ export class Sparkline {
   readonly height = 48;
   readonly values = input<number[]>([]);
   readonly label = input('');
+  readonly draw = signal(false);
+
+  constructor() {
+    afterNextRender(() => this.draw.set(true));
+  }
 
   readonly points = computed(() => this.values().filter((v) => Number.isFinite(v)));
 

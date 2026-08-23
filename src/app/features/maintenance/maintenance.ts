@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Db } from '../../data/db';
+import { publicHolidays } from '../../data/remote';
 import { buildDueItems, todayDateOnly } from '../../domain/dues';
+import { countryFromCurrency } from '../../domain/country';
+import { dueHolidayNudge, type PublicHoliday } from '../../domain/holidays';
 import { costFromPartLabor, normalizeCustomTypes } from '../../domain/maintenance-fields';
 import {
   MAINTENANCE_TYPES,
@@ -47,6 +50,23 @@ export class MaintenancePage {
   readonly laborCost = signal('');
   readonly saving = signal(false);
   readonly pendingDelete = signal<string | null>(null);
+  readonly listFilter = signal<'all' | 'dueSoon' | 'overdue'>('all');
+  readonly holidays = signal<PublicHoliday[]>([]);
+  readonly holidayBanner = computed(() => {
+    const today = todayDateOnly();
+    for (const item of buildDueItems(
+      this.db.settings(),
+      this.db.maintenance(),
+      this.db.car()?.currentOdometer ?? 0,
+      today,
+    )) {
+      const nudge = dueHolidayNudge(item.dueDate, this.holidays(), today);
+      if (nudge) {
+        return this.i18n.t('maint.holidayDue', { name: nudge.localName, date: nudge.date });
+      }
+    }
+    return null;
+  });
   readonly odoError = signal('');
   readonly costError = signal('');
 
@@ -76,6 +96,23 @@ export class MaintenancePage {
       })),
     ];
   });
+
+  readonly filteredMaintenance = computed(() => {
+    const filter = this.listFilter();
+    if (filter === 'all') {
+      return this.db.maintenance();
+    }
+    return this.db.maintenance().filter((m) => this.rowStatus(m.id) === filter);
+  });
+
+  constructor() {
+    void this.loadHolidays();
+  }
+
+  async loadHolidays(): Promise<void> {
+    const cc = countryFromCurrency(this.db.settings().currency);
+    this.holidays.set(await publicHolidays(cc, new Date().getFullYear()));
+  }
 
   readonly dueById = computed(() => {
     const car = this.db.car();

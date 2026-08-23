@@ -1,3 +1,5 @@
+import { parsePublicHolidays, type PublicHoliday } from '../domain/holidays';
+
 const TIMEOUT_MS = 8000;
 const PRICE_CACHE_KEY = 'drivelog.fuelPrices.v2';
 const PRICE_TTL_MS = 6 * 60 * 60 * 1000;
@@ -434,4 +436,231 @@ export async function reverseGeocodeLabel(
     { headers: { 'Accept-Language': lang } },
   )) as { display_name?: string } | null;
   return raw?.display_name ? String(raw.display_name).split(',')[0]?.trim() ?? null : null;
+}
+
+const FX_CACHE_KEY = 'drivelog.fx.v1';
+const FX_TTL_MS = 60 * 60 * 1000;
+const HOLIDAY_CACHE_KEY = 'drivelog.holidays.v1';
+const HOLIDAY_TTL_MS = 24 * 60 * 60 * 1000;
+const SUN_CACHE_KEY = 'drivelog.sun.v1';
+const SUN_TTL_MS = 60 * 60 * 1000;
+const REST_COUNTRIES_CACHE_KEY = 'drivelog.restcountries.v1';
+const REST_COUNTRIES_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+export function parseFxRate(raw: unknown, from: string, to: string): number | null {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  const rates = (raw as { rates?: Record<string, unknown> }).rates;
+  const rate = rates?.[to.toUpperCase()];
+  const n = Number(rate);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/** Frankfurter ECB rates — ponytail: latest only, no historical. */
+export async function fxRate(from: string, to: string): Promise<number | null> {
+  const base = from.toUpperCase();
+  const quote = to.toUpperCase();
+  if (base === quote) {
+    return 1;
+  }
+  const cacheKey = `${base}_${quote}`;
+  try {
+    const cached = sessionStorage.getItem(FX_CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached) as {
+        at: number;
+        by: Record<string, number>;
+      };
+      if (Date.now() - parsed.at < FX_TTL_MS && parsed.by[cacheKey]) {
+        return parsed.by[cacheKey]!;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  const raw = await fetchJson(
+    `https://api.frankfurter.dev/v1/latest?from=${encodeURIComponent(base)}&to=${encodeURIComponent(quote)}`,
+  );
+  const rate = parseFxRate(raw, base, quote);
+  if (rate != null) {
+    try {
+      const prev = sessionStorage.getItem(FX_CACHE_KEY);
+      const parsed = prev
+        ? (JSON.parse(prev) as { at: number; by: Record<string, number> })
+        : { at: Date.now(), by: {} };
+      parsed.at = Date.now();
+      parsed.by[cacheKey] = rate;
+      sessionStorage.setItem(FX_CACHE_KEY, JSON.stringify(parsed));
+    } catch {
+      /* ignore */
+    }
+  }
+  return rate;
+}
+
+export async function publicHolidays(
+  countryCode: string,
+  year: number,
+): Promise<PublicHoliday[]> {
+  const cc = countryCode.toUpperCase();
+  const cacheKey = `${cc}_${year}`;
+  try {
+    const cached = sessionStorage.getItem(HOLIDAY_CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached) as {
+        at: number;
+        by: Record<string, PublicHoliday[]>;
+      };
+      if (Date.now() - parsed.at < HOLIDAY_TTL_MS && parsed.by[cacheKey]) {
+        return parsed.by[cacheKey]!;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  const raw = await fetchJson(
+    `https://date.nager.at/api/v3/PublicHolidays/${year}/${encodeURIComponent(cc)}`,
+  );
+  const list = parsePublicHolidays(raw);
+  try {
+    const prev = sessionStorage.getItem(HOLIDAY_CACHE_KEY);
+    const parsed = prev
+      ? (JSON.parse(prev) as {
+          at: number;
+          by: Record<string, PublicHoliday[]>;
+        })
+      : { at: Date.now(), by: {} };
+    parsed.at = Date.now();
+    parsed.by[cacheKey] = list;
+    sessionStorage.setItem(HOLIDAY_CACHE_KEY, JSON.stringify(parsed));
+  } catch {
+    /* ignore */
+  }
+  return list;
+}
+
+export type SunTimes = { sunset: string; sunrise: string };
+
+export function parseSunTimes(raw: unknown): SunTimes | null {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  const daily = (raw as { daily?: Record<string, unknown> }).daily;
+  if (!daily) {
+    return null;
+  }
+  const sunsetArr = daily['sunset'];
+  const sunriseArr = daily['sunrise'];
+  if (!Array.isArray(sunsetArr) || !Array.isArray(sunriseArr)) {
+    return null;
+  }
+  const sunset = sunsetArr[0];
+  const sunrise = sunriseArr[0];
+  if (typeof sunset !== 'string' || typeof sunrise !== 'string') {
+    return null;
+  }
+  return { sunset, sunrise };
+}
+
+export async function sunTimes(lat: number, lon: number): Promise<SunTimes | null> {
+  const key = `${lat.toFixed(2)}_${lon.toFixed(2)}`;
+  try {
+    const cached = sessionStorage.getItem(SUN_CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached) as {
+        at: number;
+        by: Record<string, SunTimes>;
+      };
+      if (Date.now() - parsed.at < SUN_TTL_MS && parsed.by[key]) {
+        return parsed.by[key]!;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  const q = new URLSearchParams({
+    latitude: String(lat),
+    longitude: String(lon),
+    daily: 'sunrise,sunset',
+    timezone: 'auto',
+  });
+  const times = parseSunTimes(await fetchJson(`https://api.open-meteo.com/v1/forecast?${q}`));
+  if (times) {
+    try {
+      const prev = sessionStorage.getItem(SUN_CACHE_KEY);
+      const parsed = prev
+        ? (JSON.parse(prev) as { at: number; by: Record<string, SunTimes> })
+        : { at: Date.now(), by: {} };
+      parsed.at = Date.now();
+      parsed.by[key] = times;
+      sessionStorage.setItem(SUN_CACHE_KEY, JSON.stringify(parsed));
+    } catch {
+      /* ignore */
+    }
+  }
+  return times;
+}
+
+export type RestCountryCurrency = { code: string; name: string; flag: string };
+
+export function parseRestCountries(raw: unknown): RestCountryCurrency[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  const map = new Map<string, RestCountryCurrency>();
+  for (const row of raw) {
+    if (!row || typeof row !== 'object') {
+      continue;
+    }
+    const o = row as Record<string, unknown>;
+    const flag = typeof o['flag'] === 'string' ? o['flag'] : '';
+    const currencies = o['currencies'];
+    if (!currencies || typeof currencies !== 'object') {
+      continue;
+    }
+    for (const [code, meta] of Object.entries(currencies as Record<string, unknown>)) {
+      const cc = code.toUpperCase();
+      if (!/^[A-Z]{3}$/.test(cc) || map.has(cc)) {
+        continue;
+      }
+      const name =
+        meta && typeof meta === 'object' && typeof (meta as { name?: unknown }).name === 'string'
+          ? String((meta as { name: string }).name)
+          : cc;
+      map.set(cc, { code: cc, name, flag });
+    }
+  }
+  return [...map.values()];
+}
+
+export async function restCountryCurrencies(): Promise<RestCountryCurrency[]> {
+  try {
+    const cached = sessionStorage.getItem(REST_COUNTRIES_CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached) as { at: number; list: RestCountryCurrency[] };
+      if (Date.now() - parsed.at < REST_COUNTRIES_TTL_MS && parsed.list.length) {
+        return parsed.list;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  const raw = await fetchJson(
+    'https://restcountries.com/v3.1/all?fields=name,currencies,flag',
+    undefined,
+    15_000,
+  );
+  const list = parseRestCountries(raw);
+  if (list.length) {
+    try {
+      sessionStorage.setItem(
+        REST_COUNTRIES_CACHE_KEY,
+        JSON.stringify({ at: Date.now(), list }),
+      );
+    } catch {
+      /* ignore */
+    }
+  }
+  return list;
 }

@@ -1,3 +1,4 @@
+import { computeEconomySegments } from './economy';
 import type { FillUp } from './models';
 
 function monthsBack(n: number): string {
@@ -62,4 +63,16 @@ export function spendByMonth(
   return [...map.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([, v]) => Math.round(v));
+}
+
+/** L/100 km per full-tank segment in period order. */
+export function economyTrend(
+  fills: readonly FillUp[],
+  period: '3m' | '6m' | '12m' | 'all',
+): number[] {
+  const start = periodStart(period);
+  const filtered = fills.filter((f) => inPeriod(f, start));
+  return computeEconomySegments(filtered).map(
+    (s) => Math.round(s.litersPer100Km * 10) / 10,
+  );
 }

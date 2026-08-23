@@ -136,6 +136,10 @@ button.line:active {
   font-weight: 400;
 }
 
+.line--danger .line__text strong {
+  color: var(--stop);
+}
+
 .switch {
   position: relative;
   flex-shrink: 0;
@@ -217,27 +221,6 @@ button.line:active {
   color: var(--stop);
   margin: 0;
   padding: var(--space-2) var(--space-4);
-}
-
-.vin-card {
-  padding: var(--space-3) 0;
-}
-
-.vin-card app-text-field {
-  display: block;
-  padding-inline: var(--space-4);
-  padding-block: var(--space-2);
-}
-
-.vin-meta {
-  margin: 0;
-  padding: var(--space-1) var(--space-4);
-  font-size: 0.9rem;
-}
-
-.vin-meta.hint {
-  color: var(--muted);
-  font-size: 0.85rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

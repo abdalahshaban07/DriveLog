@@ -53,6 +53,12 @@
     </div>
   }
 
+  @if (holidayBanner(); as banner) {
+    <div class="nudge nudge--holiday home__stagger" style="--i: 2" role="status">
+      {{ banner }}
+    </div>
+  }
+
   <section
     class="snapshot home__stagger"
     [style.--i]="fillUpDueKm() ? 3 : 2"
@@ -61,6 +67,9 @@
     <div class="snapshot__cell">
       <span class="snapshot__value">{{ formatMoney(monthSpend()) }}</span>
       <span class="snapshot__label">{{ i18n.t('home.monthSpend') }}</span>
+      @if (formatFxSpend(monthSpend()); as usd) {
+        <span class="snapshot__fx hint">{{ i18n.t('home.fxUsd', { amount: usd }) }}</span>
+      }
     </div>
     @if (economy(); as eco) {
       <div class="snapshot__cell">
