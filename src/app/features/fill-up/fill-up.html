@@ -6,57 +6,60 @@
     {{ i18n.t('common.km') }}
   </p>
 
-  <app-numeric-field
-    [label]="i18n.t('fillUp.odometer')"
-    [(value)]="odometer"
-    [error]="odoError()"
-  />
+  <section class="console card" [attr.aria-label]="i18n.t('fillUp.title')">
+    <div class="console__face">
+      <app-numeric-field
+        [label]="i18n.t('fillUp.odometer')"
+        [(value)]="odometer"
+        [error]="odoError()"
+      />
+      <app-numeric-field
+        [label]="i18n.t('fillUp.liters')"
+        [(value)]="liters"
+        [error]="litersError()"
+      />
+    </div>
 
-  <app-numeric-field
-    [label]="i18n.t('fillUp.liters')"
-    [(value)]="liters"
-    [error]="litersError()"
-  />
+    @if (pricesBusy()) {
+      <div class="skeleton skeleton--row" aria-hidden="true"></div>
+    } @else {
+      <app-fuel-grade-selector
+        [prices]="fuelPrices()"
+        [fallbackPrice]="lastUnit()"
+        [options]="gradeOptions()"
+        [(value)]="fuelGrade"
+      />
+    }
 
-  @if (pricesBusy()) {
-    <div class="skeleton skeleton--row" aria-hidden="true"></div>
-  } @else {
-    <app-fuel-grade-selector
-      [prices]="fuelPrices()"
-      [fallbackPrice]="lastUnit()"
-      [options]="gradeOptions()"
-      [(value)]="fuelGrade"
+    <app-receipt-preview
+      [liters]="litersNum()"
+      [unitPrice]="unitPrice()"
+      [currency]="db.settings().currency"
     />
-  }
 
-  <app-receipt-preview
-    [liters]="litersNum()"
-    [unitPrice]="unitPrice()"
-    [currency]="db.settings().currency"
-  />
+    @if (usingLastPaid()) {
+      <p class="cost-hint hint" role="status">
+        {{ i18n.t('fillUp.costOverrideHint') }}
+      </p>
+    }
 
-  @if (usingLastPaid()) {
-    <p class="cost-hint hint" role="status">
-      {{ i18n.t('fillUp.costOverrideHint') }}
-    </p>
-  }
+    <app-tank-toggle
+      [(value)]="tankFull"
+      [onLabel]="i18n.t('fillUp.tankFull')"
+      [offLabel]="i18n.t('fillUp.tankPartial')"
+    />
 
-  <app-tank-toggle
-    [(value)]="tankFull"
-    [onLabel]="i18n.t('fillUp.tankFull')"
-    [offLabel]="i18n.t('fillUp.tankPartial')"
-  />
+    <app-date-field
+      [label]="i18n.t('fillUp.date')"
+      [(value)]="date"
+      [error]="dateError()"
+      (valueChange)="dateError.set('')"
+    />
+  </section>
 
-  <app-date-field
-    [label]="i18n.t('fillUp.date')"
-    [(value)]="date"
-    [error]="dateError()"
-    (valueChange)="dateError.set('')"
-  />
-
-  <details class="disclosure">
+  <details class="disclosure card">
     <summary>{{ i18n.t('fillUp.details') }}</summary>
-    <div class="disclosure__body secondary">
+    <div class="disclosure__body">
       <button
         type="button"
         class="weather-btn"
@@ -106,5 +109,10 @@
     />
   }
 
-  <a routerLink="/history/fill-ups" class="ghost-link">{{ i18n.t('insights.viewHistory') }}</a>
+  <a routerLink="/history/fill-ups" class="history">
+    <span>{{ i18n.t('insights.viewHistory') }}</span>
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M9 6l6 6-6 6" />
+    </svg>
+  </a>
 </div>

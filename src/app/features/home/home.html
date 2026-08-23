@@ -1,8 +1,5 @@
 <div class="stack home">
-  <header class="home__head">
-    <h1 class="home__brand">{{ i18n.t('app.name') }}</h1>
-    <p class="home__sub">{{ i18n.t('app.subtitle') }}</p>
-  </header>
+  <app-page-header [title]="i18n.t('app.name')" [subtitle]="i18n.t('app.subtitle')" />
 
   <div class="home-tabs" role="tablist" [attr.aria-label]="i18n.t('home.tabs')">
     @for (tab of tabOptions; track tab.id) {
@@ -84,11 +81,33 @@
             type="button"
             class="period-card__new"
             [disabled]="startingPeriod() || !activeCarId()"
-            (click)="startNewMonth()"
+            (click)="openPeriodForm()"
           >
             {{ i18n.t('home.period.startNew') }}
           </button>
         </header>
+        @if (showPeriodForm()) {
+          <div class="period-form stack">
+            <app-date-field
+              [label]="i18n.t('home.period.closeDate')"
+              [(value)]="periodCloseDate"
+            />
+            <app-date-field
+              [label]="i18n.t('home.period.newStart')"
+              [(value)]="periodStartDate"
+            />
+            <div class="period-form__actions">
+              <button type="button" class="ghost" (click)="cancelPeriodForm()">
+                {{ i18n.t('common.cancel') }}
+              </button>
+              <app-primary-button
+                [label]="i18n.t('home.period.confirm')"
+                [disabled]="startingPeriod()"
+                (pressed)="confirmNewPeriod()"
+              />
+            </div>
+          </div>
+        }
         <div class="period-grid">
           <div class="period-metric period-metric--fuel">
             <span class="period-metric__label">{{ i18n.t('charts.cat.fuel') }}</span>
@@ -115,7 +134,7 @@
   }
 
   @if (view() === 'reports') {
-    <section class="home-panel" role="tabpanel" [attr.aria-label]="i18n.t('home.tab.reports')">
+    <section class="home-panel reports-panel" role="tabpanel" [attr.aria-label]="i18n.t('home.tab.reports')">
       @if (reports().length === 0) {
         <p class="empty-state">{{ i18n.t('reports.empty') }}</p>
       }

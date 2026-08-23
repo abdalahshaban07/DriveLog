@@ -23,16 +23,17 @@ export function newOpenPeriod(carId: string, startDate: DateOnly = todayDateOnly
   };
 }
 
-/** Close the open period for carId and open a new one from `today`. */
+/** Close the open period for carId and open a new one from `newStartDate`. */
 export function startNewPeriod(
   periods: readonly ExpensePeriod[],
   carId: string,
-  today: DateOnly = todayDateOnly(),
+  newStartDate: DateOnly,
+  closeDate: DateOnly = newStartDate,
 ): ExpensePeriod[] {
   const next = periods.map((p) =>
-    p.carId === carId && !p.endDate ? { ...p, endDate: today } : p,
+    p.carId === carId && !p.endDate ? { ...p, endDate: closeDate } : p,
   );
-  return [...next, newOpenPeriod(carId, today)];
+  return [...next, newOpenPeriod(carId, newStartDate)];
 }
 
 export function inActivePeriod(date: DateOnly, period: ExpensePeriod | null): boolean {

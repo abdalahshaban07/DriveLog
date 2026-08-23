@@ -1,6 +1,7 @@
 :host {
   display: block;
   --head-back: 32px;
+  margin-block-end: var(--page-head-gap, var(--space-4));
 }
 
 .head {

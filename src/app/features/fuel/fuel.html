@@ -8,8 +8,10 @@
     } @else {
       <p class="tip-strip__text">{{ tip() }}</p>
     }
-    @if (!tipLive()) {
+    @if (tipSource() === 'local') {
       <p class="tip-strip__hint">{{ i18n.t('fuel.tipOffline') }}</p>
+    } @else {
+      <p class="tip-strip__hint">{{ i18n.t('fuel.tipOnline') }}</p>
     }
     <button type="button" class="tip-strip__refresh" (click)="loadTip()">
       {{ i18n.t('fuel.tipRefresh') }}

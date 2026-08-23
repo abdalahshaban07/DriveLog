@@ -1,11 +1,10 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  computed,
   inject,
   signal,
 } from '@angular/core';
-import { buildChatMessages, fetchChatCompletion, type ChatMessage } from '../../data/assistant';
+import { fetchChatReply, type ChatMessage } from '../../data/assistant';
 import { Db } from '../../data/db';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
@@ -36,15 +35,14 @@ export class AssistantPage {
     'assistant.faq.breakdown',
   ];
 
-  readonly enabled = computed(
-    () =>
-      this.db.settings().assistantEnabled === true &&
-      !!this.db.settings().assistantApiKey?.trim(),
-  );
-
   askFaq(key: MsgKey): void {
     this.input.set(this.i18n.t(key));
     void this.send();
+  }
+
+  clearChat(): void {
+    this.messages.set([]);
+    this.error.set('');
   }
 
   async send(): Promise<void> {
@@ -53,22 +51,17 @@ export class AssistantPage {
       return;
     }
     this.error.set('');
-    if (!this.enabled()) {
-      this.error.set(this.i18n.t('assistant.disabled'));
-      return;
-    }
     const nextHistory: ChatMessage[] = [...this.messages(), { role: 'user', content: text }];
     this.messages.set(nextHistory);
     this.input.set('');
     this.busy.set(true);
     try {
-      const payload = buildChatMessages(this.db, nextHistory);
-      const result = await fetchChatCompletion(this.db.settings(), payload);
-      if (!result.ok) {
-        this.error.set(this.i18n.t(result.errorKey as MsgKey));
-        return;
-      }
-      this.messages.set([...nextHistory, { role: 'assistant', content: result.text }]);
+      const reply = await fetchChatReply(this.db, text, this.i18n.language(), (k, p) =>
+        this.i18n.t(k as MsgKey, p),
+      );
+      this.messages.set([...nextHistory, { role: 'assistant', content: reply }]);
+    } catch {
+      this.error.set(this.i18n.t('assistant.network'));
     } finally {
       this.busy.set(false);
     }

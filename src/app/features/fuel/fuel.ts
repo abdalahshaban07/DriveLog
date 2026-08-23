@@ -8,6 +8,7 @@ import {
 import { RouterLink } from '@angular/router';
 import { fetchFuelTip } from '../../data/assistant';
 import { Db } from '../../data/db';
+import { contextualFuelTipKey } from '../../domain/local-coach';
 import { fuelDashboardMetrics } from '../../domain/fuel-dashboard';
 import type { FuelGrade } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
@@ -30,7 +31,7 @@ export class FuelPage {
   readonly grade = signal<GradeFilter>('all');
   readonly tip = signal('');
   readonly tipBusy = signal(false);
-  readonly tipLive = signal(false);
+  readonly tipSource = signal<'ai' | 'local'>('local');
 
   readonly gradeOptions: { id: GradeFilter; labelKey: MsgKey }[] = [
     { id: 'all', labelKey: 'fuel.gradeAll' },
@@ -70,12 +71,11 @@ export class FuelPage {
   async loadTip(): Promise<void> {
     this.tipBusy.set(true);
     try {
-      const text = await fetchFuelTip(this.db);
+      const lang = this.i18n.language();
+      const fallback = this.i18n.t(contextualFuelTipKey(this.db));
+      const text = await fetchFuelTip(this.db, lang, (k) => this.i18n.t(k as MsgKey));
       this.tip.set(text);
-      this.tipLive.set(
-        this.db.settings().assistantEnabled === true &&
-          !!this.db.settings().assistantApiKey?.trim(),
-      );
+      this.tipSource.set(text.trim() === fallback.trim() ? 'local' : 'ai');
     } finally {
       this.tipBusy.set(false);
     }

@@ -26,6 +26,13 @@ describe('expense-period', () => {
     expect(activePeriod(rolled, 'c1')?.startDate).toBe('2026-02-01');
   });
 
+  it('allows custom close date separate from new start', () => {
+    const open = newOpenPeriod('c1', '2026-01-01');
+    const rolled = startNewPeriod([open], 'c1', '2026-03-01', '2026-02-15');
+    expect(rolled.find((p) => p.id === open.id)?.endDate).toBe('2026-02-15');
+    expect(activePeriod(rolled, 'c1')?.startDate).toBe('2026-03-01');
+  });
+
   it('sums category totals inside the period only', () => {
     const period = newOpenPeriod('c1', '2026-06-01');
     const fills: FillUp[] = [

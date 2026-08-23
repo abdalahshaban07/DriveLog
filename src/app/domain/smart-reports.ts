@@ -1,12 +1,10 @@
 import { fuelDashboardMetrics } from './fuel-dashboard';
 import { periodTotals, type PeriodTotals } from './expense-period';
-import { nextMilestone, kmRemaining } from './milestones';
 import type {
   Breakdown,
   ExpensePeriod,
   FillUp,
   Maintenance,
-  MaintenanceMilestone,
   OtherExpense,
 } from './models';
 
@@ -38,8 +36,6 @@ export function buildSmartReports(input: {
   breakdowns: readonly Breakdown[];
   other: readonly OtherExpense[];
   period: ExpensePeriod | null;
-  milestones: readonly MaintenanceMilestone[];
-  odometer: number;
 }): SmartReportCard[] {
   const cards: SmartReportCard[] = [];
   const totals = periodTotals(
@@ -81,16 +77,13 @@ export function buildSmartReports(input: {
     });
   }
 
-  const next = nextMilestone(input.milestones, input.odometer);
-  if (next) {
+  const maintInPeriod = input.maintenance.length;
+  if (maintInPeriod > 0) {
     cards.push({
       id: 'maint',
       titleKey: 'reports.maintTitle',
-      bodyKey: 'reports.maint.body',
-      bodyParams: {
-        km: kmRemaining(next.targetKm, input.odometer),
-        target: next.targetKm,
-      },
+      bodyKey: 'reports.maint.count',
+      bodyParams: { count: maintInPeriod },
     });
   } else {
     cards.push({

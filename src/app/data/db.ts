@@ -634,8 +634,17 @@ export class Db {
     this._milestonesAll.set(this._milestonesAll().filter((m) => m.id !== id));
   }
 
-  async startNewPeriod(carId: string): Promise<void> {
-    const next = rollExpensePeriod(this._expensePeriodsAll(), carId);
+  async startNewPeriod(
+    carId: string,
+    newStartDate: string,
+    closeDate?: string,
+  ): Promise<void> {
+    const next = rollExpensePeriod(
+      this._expensePeriodsAll(),
+      carId,
+      newStartDate,
+      closeDate ?? newStartDate,
+    );
     const added = next.filter(
       (p) => !this._expensePeriodsAll().some((existing) => existing.id === p.id),
     );
