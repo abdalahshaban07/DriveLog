@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1787488043765,
+  "timestamp": 1787489794146,
   "index": "/DriveLog/index.html",
   "assetGroups": [
     {
@@ -13,9 +13,9 @@
       "urls": [
         "/DriveLog/favicon.ico",
         "/DriveLog/index.html",
-        "/DriveLog/main-XCOX2X2R.js",
+        "/DriveLog/main-O5TDL534.js",
         "/DriveLog/manifest.webmanifest",
-        "/DriveLog/styles-KWO6AIGD.css",
+        "/DriveLog/styles-7ECX73NC.css",
         "/DriveLog/whats-new.json"
       ],
       "patterns": []
@@ -69,10 +69,10 @@
     "/DriveLog/icons/icon-512x512.png": "7c78f2f5980921f8a225e3fd8435dd701d48feca",
     "/DriveLog/icons/icon-72x72.png": "7719e38c33686f6d909df448d77b245ff051d08b",
     "/DriveLog/icons/icon-96x96.png": "e31714c0bd22b700be4cdf0c2221c13c3edf3a1e",
-    "/DriveLog/index.html": "2c25aa60f853a7ee3673d3e739fb40a677b295ce",
-    "/DriveLog/main-XCOX2X2R.js": "4deecf24e187bc3ae29f76e380ccf2c5086916c0",
+    "/DriveLog/index.html": "f319b4edc8b2d2bd85f2e100d132c22e9027b5fd",
+    "/DriveLog/main-O5TDL534.js": "c16780ac6d7fe14ef7244e06f0916d3a7540e30e",
     "/DriveLog/manifest.webmanifest": "aa2ee5e0bc7413c6dd070155c2e5414cd9b80b4b",
-    "/DriveLog/styles-KWO6AIGD.css": "8376f3555c084036373e4425a74ee13aa38b4414",
+    "/DriveLog/styles-7ECX73NC.css": "b167e89c5f63134205e258d6d5daf86fd638e815",
     "/DriveLog/whats-new.json": "17b7045adde713ab180025379ebdfd3e7f6b8c41"
   },
   "navigationUrls": [
