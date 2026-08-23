@@ -47,6 +47,8 @@ const FALLBACK = [
 
 export type CurrencyOption = { value: string; label: string };
 
+export type RestCurrencyMeta = { code: string; name: string; flag: string };
+
 function intlCodes(): string[] {
   const intl = Intl as typeof Intl & {
     supportedValuesOf?(key: 'currency'): string[];
@@ -63,7 +65,14 @@ export function validCurrency(code: string): string {
   return /^[A-Z]{3}$/.test(current) ? current : DEFAULT_CURRENCY;
 }
 
-export function currencyLabel(code: string, lang: 'en' | 'ar'): string {
+export function currencyLabel(
+  code: string,
+  lang: 'en' | 'ar',
+  rest?: RestCurrencyMeta | null,
+): string {
+  if (rest) {
+    return `${rest.flag} ${code} · ${rest.name}`;
+  }
   try {
     const name = new Intl.DisplayNames([lang], { type: 'currency' }).of(code);
     return name && name !== code ? `${code} · ${name}` : code;
@@ -75,16 +84,21 @@ export function currencyLabel(code: string, lang: 'en' | 'ar'): string {
 export function listCurrencyOptions(
   lang: 'en' | 'ar',
   selected = DEFAULT_CURRENCY,
+  restList: readonly RestCurrencyMeta[] = [],
 ): CurrencyOption[] {
   const fromIntl = intlCodes();
   const codes = new Set(fromIntl.length ? fromIntl : FALLBACK);
   const current = selected.trim().toUpperCase() || DEFAULT_CURRENCY;
   codes.add(current);
   codes.add(DEFAULT_CURRENCY);
+  const restByCode = new Map(restList.map((r) => [r.code, r]));
 
   const list: CurrencyOption[] = [...codes]
     .filter((code) => /^[A-Z]{3}$/.test(code))
-    .map((value) => ({ value, label: currencyLabel(value, lang) }));
+    .map((value) => ({
+      value,
+      label: currencyLabel(value, lang, restByCode.get(value) ?? null),
+    }));
 
   list.sort((a, b) => {
     if (a.value === DEFAULT_CURRENCY) {

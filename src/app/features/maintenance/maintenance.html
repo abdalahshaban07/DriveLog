@@ -58,10 +58,42 @@
 
   <section class="list">
     <p class="label">{{ i18n.t('maint.list') }}</p>
-    @if (db.maintenance().length === 0) {
+
+    @if (holidayBanner(); as banner) {
+      <p class="holiday-banner" role="status">{{ banner }}</p>
+    }
+
+    <div class="seg seg--pill chips" role="group" [attr.aria-label]="i18n.t('maint.filter')">
+      <button
+        type="button"
+        class="seg__btn"
+        [class.seg__btn--on]="listFilter() === 'all'"
+        (click)="listFilter.set('all')"
+      >
+        {{ i18n.t('maint.filterAll') }}
+      </button>
+      <button
+        type="button"
+        class="seg__btn"
+        [class.seg__btn--on]="listFilter() === 'dueSoon'"
+        (click)="listFilter.set('dueSoon')"
+      >
+        {{ i18n.t('due.dueSoon') }}
+      </button>
+      <button
+        type="button"
+        class="seg__btn"
+        [class.seg__btn--on]="listFilter() === 'overdue'"
+        (click)="listFilter.set('overdue')"
+      >
+        {{ i18n.t('due.overdue') }}
+      </button>
+    </div>
+
+    @if (filteredMaintenance().length === 0) {
       <p class="empty-state">{{ i18n.t('maint.empty') }}</p>
     }
-    @for (m of db.maintenance(); track m.id) {
+    @for (m of filteredMaintenance(); track m.id) {
       <article
         class="due-card"
         [class.due-card--overdue]="rowStatus(m.id) === 'overdue'"

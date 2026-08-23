@@ -3,6 +3,15 @@
 
   <section class="card list" [attr.aria-label]="i18n.t('settings.appearance')">
     <p class="section-label">{{ i18n.t('settings.appearance') }}</p>
+    @if (showCarSwitcher()) {
+      <app-select-field
+        class="as-row"
+        [label]="i18n.t('settings.activeCar')"
+        [options]="carOptions()"
+        [value]="db.car()?.id ?? ''"
+        (valueChange)="onCar($event)"
+      />
+    }
     <app-select-field
       class="as-row"
       [label]="i18n.t('settings.theme')"
@@ -24,6 +33,24 @@
       [value]="currency()"
       (valueChange)="onCurrency($event)"
     />
+    <label class="line">
+      <span class="line__text" id="dusk-assist-lbl">{{ i18n.t('settings.duskAssist') }}</span>
+      <span class="switch">
+        <input
+          type="checkbox"
+          class="switch__input"
+          role="switch"
+          [checked]="duskAssistEnabled()"
+          [attr.aria-checked]="duskAssistEnabled()"
+          aria-labelledby="dusk-assist-lbl"
+          (change)="onDuskAssist($event)"
+        />
+        <span class="switch__track" aria-hidden="true"></span>
+      </span>
+    </label>
+    @if (duskHint()) {
+      <p class="line line--hint" role="status">{{ duskHint() }}</p>
+    }
   </section>
 
   <section class="card list" [attr.aria-label]="i18n.t('settings.vehicleSection')">
@@ -86,6 +113,20 @@
     @if (importOk()) {
       <p class="ok">{{ i18n.t('backup.done') }}</p>
     }
+
+    @if (db.hasCar()) {
+      <button type="button" class="line line--danger" (click)="askRemoveCar()">
+        <span class="line__text">
+          <strong>{{ i18n.t('settings.removeCar') }}</strong>
+        </span>
+      </button>
+    }
+
+    <button type="button" class="line line--danger" (click)="askStartFresh()">
+      <span class="line__text">
+        <strong>{{ i18n.t('settings.startFresh') }}</strong>
+      </span>
+    </button>
   </section>
 
   @if (!install.installed()) {
@@ -164,6 +205,17 @@
       (confirmed)="runImport('replace')"
       (secondary)="runImport('merge')"
       (cancelled)="pendingImport.set(null)"
+    />
+  }
+
+  @if (pendingDestructive()) {
+    <app-confirm-bar
+      [message]="destructiveMessage()"
+      [confirmLabel]="destructiveConfirmLabel()"
+      [cancelLabel]="i18n.t('common.cancel')"
+      [destructive]="true"
+      (confirmed)="runDestructive()"
+      (cancelled)="pendingDestructive.set(null)"
     />
   }
 </div>

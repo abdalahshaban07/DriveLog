@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
+import { getCoords, restCountryCurrencies, sunTimes } from '../../data/remote';
 import { listCurrencyOptions, validCurrency } from '../../domain/currencies';
 import { THEMES, type BackupFile, type Theme } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
@@ -10,6 +11,8 @@ import { ConfirmBar } from '../../ui/confirm-bar';
 import { DateField } from '../../ui/date-field';
 import { PageHeader } from '../../ui/page-header';
 import { SelectField } from '../../ui/select-field';
+
+type DestructiveAction = 'removeCar' | 'startFresh';
 
 @Component({
   selector: 'app-settings',
@@ -22,7 +25,8 @@ export class SettingsPage {
   readonly i18n = inject(I18n);
   readonly install = inject(InstallPwa);
   readonly notify = inject(Notify);
-  private readonly db = inject(Db);
+  readonly db = inject(Db);
+  private readonly router = inject(Router);
 
   readonly remindersLbl = 'settings-reminders';
   readonly theme = computed(() => this.db.settings().theme);
@@ -35,19 +39,64 @@ export class SettingsPage {
     })),
   );
   readonly currency = signal(validCurrency(this.db.settings().currency));
+  readonly restCurrencies = signal<Awaited<ReturnType<typeof restCountryCurrencies>>>([]);
+  readonly duskHint = signal('');
+  readonly carOptions = computed(() =>
+    this.db.cars().map((c) => ({ value: c.id, label: c.nickname })),
+  );
+  readonly showCarSwitcher = computed(() => this.db.cars().length > 1);
+  readonly duskAssistEnabled = computed(() => this.db.settings().duskAssistEnabled === true);
   readonly langOptions = computed(() => [
     { value: 'en', label: this.i18n.t('settings.lang.en') },
     { value: 'ar', label: this.i18n.t('settings.lang.ar') },
   ]);
   readonly currencyOptions = computed(() =>
-    listCurrencyOptions(this.i18n.language(), this.currency()),
+    listCurrencyOptions(this.i18n.language(), this.currency(), this.restCurrencies()),
   );
   readonly license = signal(this.db.settings().licenseExpiry ?? '');
   readonly registration = signal(this.db.settings().registrationExpiry ?? '');
   readonly pendingImport = signal<BackupFile | null>(null);
+  readonly pendingDestructive = signal<DestructiveAction | null>(null);
   readonly importFileName = signal('');
   readonly importError = signal('');
   readonly importOk = signal(false);
+
+  constructor() {
+    void this.loadRestCurrencies();
+    void this.loadDuskHint();
+  }
+
+  async loadRestCurrencies(): Promise<void> {
+    this.restCurrencies.set(await restCountryCurrencies());
+  }
+
+  async loadDuskHint(): Promise<void> {
+    if (!this.duskAssistEnabled()) {
+      this.duskHint.set('');
+      return;
+    }
+    const coords = await getCoords();
+    if (!coords) {
+      return;
+    }
+    const times = await sunTimes(coords.lat, coords.lon);
+    if (!times) {
+      return;
+    }
+    const sunset = new Date(times.sunset);
+    const now = new Date();
+    const diffMin = Math.round((sunset.getTime() - now.getTime()) / 60_000);
+    if (diffMin >= 0 && diffMin <= 90) {
+      this.duskHint.set(
+        this.i18n.t('settings.duskHint', {
+          time: sunset.toLocaleTimeString(this.i18n.language(), {
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+        }),
+      );
+    }
+  }
 
   notifyStatus(): string {
     const p = this.notifyPerm();
@@ -81,6 +130,20 @@ export class SettingsPage {
     await this.db.updateSettings({ currency: code });
   }
 
+  async onCar(value: string): Promise<void> {
+    await this.db.switchCar(value);
+  }
+
+  async onDuskAssist(event: Event): Promise<void> {
+    const on = (event.target as HTMLInputElement).checked;
+    await this.db.updateSettings({ duskAssistEnabled: on });
+    if (on) {
+      await this.loadDuskHint();
+    } else {
+      this.duskHint.set('');
+    }
+  }
+
   async onLicense(value: string): Promise<void> {
     this.license.set(value);
     await this.db.updateSettings({ licenseExpiry: value || undefined });
@@ -107,6 +170,7 @@ export class SettingsPage {
   async onFile(event: Event): Promise<void> {
     this.importError.set('');
     this.importOk.set(false);
+    this.pendingDestructive.set(null);
     const file = (event.target as HTMLInputElement).files?.[0];
     this.importFileName.set(file?.name ?? '');
     if (!file) {
@@ -150,5 +214,60 @@ export class SettingsPage {
 
   async doInstall(): Promise<void> {
     await this.install.promptInstall();
+  }
+
+  askRemoveCar(): void {
+    if (!this.db.hasCar()) {
+      return;
+    }
+    this.pendingImport.set(null);
+    this.pendingDestructive.set('removeCar');
+  }
+
+  askStartFresh(): void {
+    this.pendingImport.set(null);
+    this.pendingDestructive.set('startFresh');
+  }
+
+  destructiveMessage(): string {
+    const action = this.pendingDestructive();
+    if (action === 'removeCar') {
+      return this.i18n.t('settings.removeCarConfirm');
+    }
+    if (action === 'startFresh') {
+      return this.i18n.t('settings.startFreshConfirm');
+    }
+    return '';
+  }
+
+  destructiveConfirmLabel(): string {
+    const action = this.pendingDestructive();
+    if (action === 'removeCar') {
+      return this.i18n.t('settings.removeCar');
+    }
+    if (action === 'startFresh') {
+      return this.i18n.t('settings.startFresh');
+    }
+    return this.i18n.t('common.confirm');
+  }
+
+  async runDestructive(): Promise<void> {
+    const action = this.pendingDestructive();
+    this.pendingDestructive.set(null);
+    if (action === 'startFresh') {
+      await this.db.wipeAll();
+      await this.router.navigateByUrl('/setup');
+      return;
+    }
+    if (action === 'removeCar') {
+      const id = this.db.car()?.id;
+      if (!id) {
+        return;
+      }
+      await this.db.removeCar(id);
+      if (!this.db.hasCar()) {
+        await this.router.navigateByUrl('/setup');
+      }
+    }
   }
 }

@@ -5,7 +5,7 @@ import {
   inject,
   isDevMode,
 } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withViewTransitions } from '@angular/router';
 import { routes } from './app.routes';
 import { provideDriveLogErrorHandler } from './core/error-handler';
 import { Db } from './data/db';
@@ -15,7 +15,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideDriveLogErrorHandler(),
-    provideRouter(routes),
+    provideRouter(routes, withViewTransitions()),
     provideAppInitializer(() => inject(Db).init()),
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),

@@ -7,12 +7,12 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
-import { countryFuelPrices, currentWeather, getCoords } from '../../data/remote';
 import {
   computeFillUpCost,
   lastFillUnitPriceFromHistory,
   lastFuelGrade,
   pickUnitPrice,
+  priceForGrade,
 } from '../../domain/fill-up-cost';
 import { countryFromCurrency } from '../../domain/country';
 import { todayDateOnly } from '../../domain/dues';
@@ -20,6 +20,7 @@ import type { FuelGrade } from '../../domain/models';
 import { weatherMsgKey } from '../../domain/weather';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
+import { countryFuelPrices, currentWeather, getCoords, reverseGeocodeLabel } from '../../data/remote';
 import { ConfirmBar } from '../../ui/confirm-bar';
 import { DateField } from '../../ui/date-field';
 import {
@@ -104,6 +105,15 @@ export class FillUpPage {
       return 0;
     }
     return computeFillUpCost(liters, unit);
+  });
+
+  readonly usingLastPaid = computed(() => {
+    const grade = this.fuelGrade();
+    if (!grade || grade === 'custom') {
+      return grade === 'custom';
+    }
+    const board = priceForGrade(this.fuelPrices(), grade);
+    return board == null && this.lastUnit() != null;
   });
 
   readonly canSave = computed(() => {
@@ -265,6 +275,11 @@ export class FillUpPage {
     this.saving.set(true);
     try {
       const w = this.weather();
+      let placeLabel: string | undefined;
+      if (w) {
+        placeLabel =
+          (await reverseGeocodeLabel(w.lat, w.lon, this.i18n.language())) ?? undefined;
+      }
       await this.db.saveFillUp({
         id: this.editId() ?? undefined,
         odometer: odo,
@@ -278,6 +293,7 @@ export class FillUpPage {
         lon: w?.lon,
         tempC: w?.tempC,
         weatherCode: w?.weatherCode,
+        placeLabel,
       });
       await this.router.navigateByUrl('/');
     } finally {

@@ -86,3 +86,17 @@
   border: 1px solid var(--hairline);
   background: var(--surface);
 }
+
+.chips {
+  flex-wrap: wrap;
+  margin-bottom: var(--space-2);
+}
+
+.holiday-banner {
+  margin: 0 0 var(--space-2);
+  padding: var(--space-3);
+  border-radius: calc(var(--radius) - 4px);
+  background: color-mix(in srgb, var(--fuel) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--fuel) 30%, var(--hairline));
+  font-size: 0.9rem;
+}

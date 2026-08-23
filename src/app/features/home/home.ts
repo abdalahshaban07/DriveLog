@@ -4,16 +4,19 @@ import { RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
 import {
   countryFuelPrices,
+  fxRate,
   getCoords,
   mapsSearchUrl,
   nearbyPoi,
+  publicHolidays,
   type CountryFuelPrices,
   type NearbyPoi,
 } from '../../data/remote';
 import { countryFromCurrency } from '../../domain/country';
 import { suggestFillUpDueKm } from '../../domain/fill-up-cost';
 import { latestEconomy, monthFuelSpend, overallLitersPer100Km } from '../../domain/economy';
-import { buildDueItems, nextDueItem } from '../../domain/dues';
+import { buildDueItems, nextDueItem, todayDateOnly } from '../../domain/dues';
+import { dueHolidayNudge, type PublicHoliday } from '../../domain/holidays';
 import { suggestMaintenanceDues } from '../../domain/interval';
 import type { DueItem } from '../../domain/models';
 import { weatherMsgKey } from '../../domain/weather';
@@ -76,6 +79,18 @@ export class HomePage {
   readonly fuelPrices = signal<CountryFuelPrices | null>(null);
   readonly pricesBusy = signal(false);
   readonly pricesError = signal('');
+  readonly fxUsd = signal<number | null>(null);
+  readonly fxBusy = signal(false);
+  readonly holidays = signal<PublicHoliday[]>([]);
+  readonly holidayBanner = computed(() => {
+    const today = todayDateOnly();
+    const d = this.due();
+    const nudge = dueHolidayNudge(d?.dueDate, this.holidays(), today);
+    if (!nudge) {
+      return null;
+    }
+    return this.i18n.t('home.holidayDue', { name: nudge.localName, date: nudge.date });
+  });
   readonly nearbyTab = signal<NearbyTab>('fuel');
   readonly nearbyBusy = signal(false);
   readonly nearbyError = signal('');
@@ -84,6 +99,28 @@ export class HomePage {
 
   constructor() {
     void this.loadPrices();
+    void this.loadFx();
+    void this.loadHolidays();
+  }
+
+  async loadFx(): Promise<void> {
+    const currency = this.db.settings().currency;
+    if (currency === 'USD') {
+      this.fxUsd.set(null);
+      return;
+    }
+    this.fxBusy.set(true);
+    try {
+      this.fxUsd.set(await fxRate(currency, 'USD'));
+    } finally {
+      this.fxBusy.set(false);
+    }
+  }
+
+  async loadHolidays(): Promise<void> {
+    const cc = countryFromCurrency(this.db.settings().currency);
+    const year = new Date().getFullYear();
+    this.holidays.set(await publicHolidays(cc, year));
   }
 
   async loadPrices(): Promise<void> {
@@ -128,6 +165,22 @@ export class HomePage {
 
   mapsUrl(p: NearbyPoi): string {
     return mapsSearchUrl(p.lat, p.lon, this.i18n.language());
+  }
+
+  formatFxSpend(value: number): string | null {
+    const rate = this.fxUsd();
+    if (rate == null) {
+      return null;
+    }
+    try {
+      return new Intl.NumberFormat(this.i18n.language(), {
+        style: 'currency',
+        currency: 'USD',
+        maximumFractionDigits: 0,
+      }).format(value * rate);
+    } catch {
+      return `${Math.round(value * rate)} USD`;
+    }
   }
 
   formatMoney(value: number): string {

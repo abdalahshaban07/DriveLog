@@ -185,11 +185,62 @@ describe('currencies', () => {
   });
 });
 
+describe('export csv', () => {
+  it('filters by grade and date range', async () => {
+    const { filterFillUps, fillUpsToCsv } = await import('./export-csv');
+    const rows = [
+      fill({ id: 'a', odometer: 1000, liters: 40, cost: 50, tankFull: true, fuelGrade: 'diesel' }),
+      fill({ id: 'b', odometer: 1100, liters: 40, cost: 50, tankFull: true, fuelGrade: 'gasoline92', date: '2026-02-01' }),
+    ];
+    expect(filterFillUps(rows, { grade: 'diesel' }).map((f) => f.id)).toEqual(['a']);
+    expect(filterFillUps(rows, { from: '2026-02-01' }).map((f) => f.id)).toEqual(['b']);
+    expect(fillUpsToCsv(rows)).toContain('diesel');
+  });
+});
+
+describe('holidays', () => {
+  it('nudges when due soon overlaps holiday window', async () => {
+    const { dueHolidayNudge, parsePublicHolidays } = await import('./holidays');
+    const holidays = parsePublicHolidays([
+      { date: '2026-06-07', localName: 'Eid' },
+    ]);
+    expect(dueHolidayNudge('2026-06-10', holidays, '2026-06-01')?.localName).toBe('Eid');
+    expect(dueHolidayNudge('2026-08-01', holidays, '2026-06-01')).toBeNull();
+  });
+});
+
+describe('insights series', () => {
+  it('builds economy trend from tank-full segments', async () => {
+    const { economyTrend } = await import('./insights');
+    const trend = economyTrend(
+      [
+        fill({ id: 'a', odometer: 1000, liters: 50, cost: 70, tankFull: true }),
+        fill({ id: 'b', odometer: 1200, liters: 45, cost: 65, tankFull: true }),
+      ],
+      'all',
+    );
+    expect(trend.length).toBe(1);
+    expect(trend[0]).toBeCloseTo(22.5, 1);
+  });
+});
+
+describe('remote parsers', () => {
+  it('parses Frankfurter FX and REST Countries', async () => {
+    const { parseFxRate, parseRestCountries } = await import('../data/remote');
+    expect(parseFxRate({ rates: { USD: 0.032 } }, 'EGP', 'USD')).toBe(0.032);
+    const currencies = parseRestCountries([
+      { flag: '🇪🇬', currencies: { EGP: { name: 'Egyptian pound' } } },
+    ]);
+    expect(currencies[0]?.code).toBe('EGP');
+    expect(currencies[0]?.flag).toBe('🇪🇬');
+  });
+});
+
 describe('backup version', () => {
   it('keeps backup version and IDB version as separate constants', async () => {
     const { BACKUP_VERSION, DB_VERSION } = await import('../core/config');
-    expect(BACKUP_VERSION).toBe(2);
-    expect(DB_VERSION).toBe(2);
+    expect(BACKUP_VERSION).toBe(3);
+    expect(DB_VERSION).toBe(3);
   });
 });
 

@@ -35,6 +35,12 @@
     [currency]="db.settings().currency"
   />
 
+  @if (usingLastPaid()) {
+    <p class="cost-hint hint" role="status">
+      {{ i18n.t('fillUp.costOverrideHint') }}
+    </p>
+  }
+
   <app-tank-toggle
     [(value)]="tankFull"
     [onLabel]="i18n.t('fillUp.tankFull')"

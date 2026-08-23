@@ -1,10 +1,45 @@
 <div class="stack history">
   <app-page-header [title]="i18n.t('history.title')" />
 
+  <div class="filters">
+    <div class="seg seg--pill chips" role="group" [attr.aria-label]="i18n.t('history.filterGrade')">
+      @for (chip of gradeChips; track chip.id) {
+        <button
+          type="button"
+          class="seg__btn"
+          [class.seg__btn--on]="gradeFilter() === chip.id"
+          (click)="setGrade(chip.id)"
+        >
+          {{ i18n.t(chip.labelKey) }}
+        </button>
+      }
+    </div>
+    <div class="filters__dates">
+      <app-date-field
+        [label]="i18n.t('history.from')"
+        [value]="fromDate()"
+        (valueChange)="fromDate.set($event)"
+      />
+      <app-date-field
+        [label]="i18n.t('history.to')"
+        [value]="toDate()"
+        (valueChange)="toDate.set($event)"
+      />
+    </div>
+  </div>
+
   @if (rows().length === 0) {
     <p class="empty-state">{{ i18n.t('home.logFirst') }}</p>
     <a routerLink="/fill-up" class="cta">{{ i18n.t('home.logFillUp') }}</a>
   } @else {
+    <div class="history__actions">
+      <button type="button" class="ghost-btn" [disabled]="shareBusy()" (click)="shareCsv()">
+        {{ shareBusy() ? i18n.t('common.loading') : i18n.t('history.share') }}
+      </button>
+    </div>
+    @if (shareError()) {
+      <p class="error-state" role="alert">{{ shareError() }}</p>
+    }
     <ul class="history__list list-reveal">
       @for (f of rows(); track f.id) {
         <li class="history__row">
@@ -18,6 +53,9 @@
               }
               @if (f.fuelGrade) {
                 · {{ gradeLabel(f.fuelGrade) }}
+              }
+              @if (f.placeLabel) {
+                · {{ f.placeLabel }}
               }
             </span>
             <strong class="history__cost">{{ formatMoney(f.cost) }}</strong>

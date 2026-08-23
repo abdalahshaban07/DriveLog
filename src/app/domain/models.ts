@@ -29,6 +29,7 @@ export interface Car {
 
 export interface FillUp {
   id: string;
+  carId?: string;
   odometer: number;
   liters: number;
   cost: number;
@@ -37,6 +38,7 @@ export interface FillUp {
   /** Snapshot ¢/L at log time */
   unitPrice?: number;
   note?: string;
+  placeLabel?: string;
   date: DateOnly;
   lat?: number;
   lon?: number;
@@ -48,6 +50,7 @@ export interface FillUp {
 
 export interface Maintenance {
   id: string;
+  carId?: string;
   type: MaintenanceType;
   odometer: number;
   cost: number;
@@ -73,6 +76,10 @@ export interface Settings {
   unitSystem: UnitSystem;
   installBannerDismissed: boolean;
   remindersEnabled: boolean;
+  /** Active vehicle when multiple cars exist. */
+  activeCarId?: string;
+  /** Opt-in dusk theme suggestion around sunset. */
+  duskAssistEnabled?: boolean;
   /** Last dismissed whats-new.json id (deploy notes). */
   lastSeenWhatsNewId?: string;
   licenseExpiry?: DateOnly;
@@ -103,7 +110,9 @@ export interface EconomySegment {
 export interface BackupFile {
   version: number;
   exportedAt: string;
+  /** Legacy single-car field; prefer `cars` when present. */
   car: Car | null;
+  cars?: Car[];
   settings: Settings;
   fillUps: FillUp[];
   maintenance: Maintenance[];
