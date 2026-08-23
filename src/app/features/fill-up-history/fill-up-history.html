@@ -1,0 +1,29 @@
+<div class="stack history">
+  <app-page-header [title]="i18n.t('history.title')" />
+
+  @if (rows().length === 0) {
+    <p class="empty-state">{{ i18n.t('home.logFirst') }}</p>
+    <a routerLink="/fill-up" class="cta">{{ i18n.t('home.logFillUp') }}</a>
+  } @else {
+    <ul class="history__list list-reveal">
+      @for (f of rows(); track f.id) {
+        <li class="history__row">
+          <a [routerLink]="['/fill-up']" [queryParams]="{ id: f.id }" class="history__link">
+            <span class="history__date pill">{{ f.date }}</span>
+            <span class="history__odo">{{ f.odometer }} {{ i18n.t('common.km') }}</span>
+            <span class="history__detail">
+              {{ f.liters }} L
+              @if (unitPrice(f); as up) {
+                · {{ up | number: '1.2-3' }}/L
+              }
+              @if (f.fuelGrade) {
+                · {{ gradeLabel(f.fuelGrade) }}
+              }
+            </span>
+            <strong class="history__cost">{{ formatMoney(f.cost) }}</strong>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</div>

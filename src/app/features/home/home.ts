@@ -5,13 +5,13 @@ import { Db } from '../../data/db';
 import {
   countryFuelPrices,
   getCoords,
-  lastFillUnitPrice,
   mapsSearchUrl,
   nearbyPoi,
   type CountryFuelPrices,
   type NearbyPoi,
 } from '../../data/remote';
 import { countryFromCurrency } from '../../domain/country';
+import { suggestFillUpDueKm } from '../../domain/fill-up-cost';
 import { latestEconomy, monthFuelSpend, overallLitersPer100Km } from '../../domain/economy';
 import { buildDueItems, nextDueItem } from '../../domain/dues';
 import { suggestMaintenanceDues } from '../../domain/interval';
@@ -40,28 +40,18 @@ export class HomePage {
   readonly economy = computed(() => latestEconomy(this.db.fillUps()));
   readonly overallL100 = computed(() => overallLitersPer100Km(this.db.fillUps()));
   readonly monthSpend = computed(() => monthFuelSpend(this.db.fillUps()));
-  readonly lastUnit = computed(() => {
-    const fills = [...this.db.fillUps()].sort(
-      (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
-    );
-    const last = fills[0];
-    if (!last) {
+  readonly fillUpDueKm = computed(() => {
+    const car = this.db.car();
+    if (!car) {
       return null;
     }
-    return lastFillUnitPrice(last.liters, last.cost);
+    return suggestFillUpDueKm(this.db.fillUps(), car.currentOdometer);
   });
   readonly lastWeather = computed(() => {
     const withWx = [...this.db.fillUps()]
       .filter((f) => f.tempC != null && f.weatherCode != null)
       .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
     return withWx[0] ?? null;
-  });
-  readonly vehicleLine = computed(() => {
-    const c = this.db.car();
-    if (!c) {
-      return '';
-    }
-    return [c.year, c.make, c.model].filter(Boolean).join(' ');
   });
   readonly due = computed(() => {
     const car = this.db.car();

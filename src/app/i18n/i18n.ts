@@ -4,11 +4,22 @@ import type { Theme } from '../domain/models';
 import { ar } from './ar';
 import { en, type MsgKey } from './en';
 
-function themeChrome(theme: Theme): {
+function systemPrefersDark(): boolean {
+  return globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+}
+
+function resolveTheme(theme: Theme): Exclude<Theme, 'system'> {
+  if (theme === 'system') {
+    return systemPrefersDark() ? 'dark' : 'light';
+  }
+  return theme;
+}
+
+function themeChrome(resolved: Exclude<Theme, 'system'>): {
   colorScheme: 'light' | 'dark';
   color: string;
 } {
-  switch (theme) {
+  switch (resolved) {
     case 'light':
       return { colorScheme: 'light', color: '#e8ecf1' };
     case 'dark':
@@ -18,7 +29,7 @@ function themeChrome(theme: Theme): {
     case 'dusk':
       return { colorScheme: 'dark', color: '#141820' };
     default: {
-      const _never: never = theme;
+      const _never: never = resolved;
       return _never;
     }
   }
@@ -27,23 +38,34 @@ function themeChrome(theme: Theme): {
 @Injectable({ providedIn: 'root' })
 export class I18n {
   private readonly lang = signal<'en' | 'ar'>('ar');
+  private readonly systemDark = signal(systemPrefersDark());
 
   readonly language = this.lang.asReadonly();
   readonly dir = computed(() => (this.lang() === 'ar' ? 'rtl' : 'ltr'));
 
   constructor(private readonly db: Db) {
+    globalThis.matchMedia?.('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+      this.systemDark.set(e.matches);
+    });
     effect(() => {
       const settings = this.db.settings();
       this.lang.set(settings.language);
     });
     effect(() => {
+      const pref = this.db.settings().theme;
+      this.systemDark();
+      const resolved = resolveTheme(pref);
       const dir = this.dir();
-      const theme = this.db.settings().theme;
-      const chrome = themeChrome(theme);
+      const chrome = themeChrome(resolved);
       const root = document.documentElement;
       root.dir = dir;
       root.lang = this.lang();
-      root.dataset['theme'] = theme;
+      root.dataset['theme'] = pref === 'system' ? 'system' : resolved;
+      if (pref === 'system') {
+        root.dataset['resolvedTheme'] = resolved;
+      } else {
+        delete root.dataset['resolvedTheme'];
+      }
       root.style.colorScheme = chrome.colorScheme;
       document.title = this.t('app.name');
       document.querySelector('meta[name="theme-color"]')?.setAttribute('content', chrome.color);

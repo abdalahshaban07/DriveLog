@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <title>DriveLog v2 · Kinetic Pulse mocks</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        --fuel: #e8a317;
+        --bg: #e8ecf1;
+        --surface: #f5f7fa;
+        --well: #d7dee8;
+        --text: #12161c;
+        --muted: #5a6573;
+        --radius: 16px;
+        --tap: 56px;
+      }
+      html[data-theme='dark'] {
+        --bg: #0b0d10;
+        --surface: #15181c;
+        --well: #07080a;
+        --text: #eef1f5;
+        --muted: #9aa3b0;
+      }
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+      header {
+        display: flex;
+        gap: 8px;
+        padding: 12px 16px;
+        border-bottom: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
+        position: sticky;
+        top: 0;
+        background: var(--surface);
+        z-index: 2;
+      }
+      button {
+        min-height: 40px;
+        border: 0;
+        border-radius: 12px;
+        padding: 0 12px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .theme {
+        background: var(--well);
+        color: var(--text);
+      }
+      .grid {
+        display: grid;
+        gap: 16px;
+        padding: 16px;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      }
+      .phone {
+        background: var(--surface);
+        border-radius: var(--radius);
+        border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+        min-height: 420px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        position: relative;
+        padding-bottom: 72px;
+      }
+      .phone h2 {
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .hero {
+        font-size: 2.4rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+      .cta {
+        background: var(--fuel);
+        color: #0b0d10;
+        min-height: var(--tap);
+        display: grid;
+        place-items: center;
+        border-radius: var(--radius);
+        font-weight: 700;
+      }
+      .nav {
+        position: absolute;
+        inset-inline: 0;
+        bottom: 0;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 2px;
+        padding: 8px;
+        border-top: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+        background: var(--surface);
+        font-size: 0.65rem;
+        text-align: center;
+        color: var(--muted);
+      }
+      .nav .on {
+        color: var(--fuel);
+        font-weight: 700;
+      }
+      .chip {
+        display: inline-grid;
+        gap: 2px;
+        padding: 8px 10px;
+        border-radius: 12px;
+        background: var(--well);
+        font-size: 0.8rem;
+      }
+      .chip.on {
+        outline: 2px solid var(--fuel);
+      }
+      .modal {
+        margin-top: auto;
+        padding: 12px;
+        border-radius: 12px;
+        background: var(--well);
+      }
+      .rail {
+        display: flex;
+        gap: 8px;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <strong>Kinetic Pulse · 11 screens</strong>
+      <button type="button" class="theme" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">
+        Toggle light/dark
+      </button>
+    </header>
+    <div class="grid">
+      <article class="phone">
+        <h2>1 · Shell + nav</h2>
+        <p>Page content</p>
+        <div class="nav"><span class="on">Home</span><span>Fill</span><span>Maint</span><span>Insights</span><span>⚙</span></div>
+      </article>
+      <article class="phone">
+        <h2>2 · Update modal</h2>
+        <div class="modal">
+          <strong>New version available</strong>
+          <p>Insights · fill-up v2 · system theme</p>
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button type="button" class="theme">Later</button>
+            <button type="button" class="cta" style="min-height:40px;padding:0 12px">Update now</button>
+          </div>
+        </div>
+        <div class="nav"><span class="on">Home</span><span>Fill</span><span>Maint</span><span>Insights</span><span>⚙</span></div>
+      </article>
+      <article class="phone">
+        <h2>3 · Setup step 1</h2>
+        <p>Car nickname</p>
+        <div class="chip" style="width:100%">My Civic</div>
+        <p>Odometer</p>
+        <div class="chip" style="width:100%">45230</div>
+        <div class="cta">Continue</div>
+      </article>
+      <article class="phone">
+        <h2>4 · Setup step 2</h2>
+        <p>Theme · Language · Currency</p>
+        <div class="chip on">System</div>
+        <div class="cta">Finish</div>
+      </article>
+      <article class="phone">
+        <h2>5 · Home</h2>
+        <div class="hero">7.4</div>
+        <p>Avg L/100 km</p>
+        <div class="chip on">Fill-up due ~400 km</div>
+        <div class="cta">Log fill-up</div>
+        <div class="nav"><span class="on">Home</span><span>Fill</span><span>Maint</span><span>Insights</span><span>⚙</span></div>
+      </article>
+      <article class="phone">
+        <h2>6 · Fill-up</h2>
+        <p>Odometer · Liters</p>
+        <div class="rail"><span class="chip on">92<br />1.58</span><span class="chip">95<br />1.62</span><span class="chip">Diesel</span></div>
+        <div class="chip" style="width:100%">42.5 L × 1.58 = <strong>67.15</strong></div>
+        <div class="cta">Save</div>
+        <div class="nav"><span>Home</span><span class="on">Fill</span><span>Maint</span><span>Insights</span><span>⚙</span></div>
+      </article>
+      <article class="phone">
+        <h2>7 · Maintenance</h2>
+        <p>Oil · Filter · Due soon</p>
+        <div class="cta">Add maintenance</div>
+        <div class="nav"><span>Home</span><span>Fill</span><span class="on">Maint</span><span>Insights</span><span>⚙</span></div>
+      </article>
+      <article class="phone">
+        <h2>8 · Settings</h2>
+        <p>Appearance · Vehicle · Data · Reminders</p>
+        <div class="nav"><span>Home</span><span>Fill</span><span>Maint</span><span>Insights</span><span class="on">⚙</span></div>
+      </article>
+      <article class="phone">
+        <h2>9 · Types</h2>
+        <p>Built-in + custom types</p>
+      </article>
+      <article class="phone">
+        <h2>10 · Insights</h2>
+        <div class="hero">7.4</div>
+        <svg viewBox="0 0 120 40" width="100%" height="40"><polyline fill="none" stroke="var(--fuel)" stroke-width="2" points="0,30 20,22 40,25 60,12 80,18 100,8 120,14"/></svg>
+        <div class="nav"><span>Home</span><span>Fill</span><span>Maint</span><span class="on">Insights</span><span>⚙</span></div>
+      </article>
+      <article class="phone">
+        <h2>11 · Fill-up history</h2>
+        <div class="chip" style="width:100%">2026-08-20 · 42 L · 92 · 67.15</div>
+        <div class="chip" style="width:100%">2026-08-05 · 40 L · 95 · 64.80</div>
+      </article>
+    </div>
+  </body>
+</html>

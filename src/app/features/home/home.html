@@ -46,9 +46,16 @@
     <a routerLink="/fill-up" class="cta hero__cta">{{ i18n.t('home.logFillUp') }}</a>
   </section>
 
+  @if (fillUpDueKm(); as km) {
+    <div class="nudge home__stagger" style="--i: 2" role="status">
+      <span>{{ i18n.t('home.fillUpDue', { km }) }}</span>
+      <a routerLink="/fill-up" class="nudge__cta">{{ i18n.t('home.logFillUp') }}</a>
+    </div>
+  }
+
   <section
     class="snapshot home__stagger"
-    style="--i: 2"
+    [style.--i]="fillUpDueKm() ? 3 : 2"
     [attr.aria-label]="i18n.t('home.monthSpend')"
   >
     <div class="snapshot__cell">
@@ -61,12 +68,7 @@
         <span class="snapshot__label">{{ i18n.t('home.costPerKm') }}</span>
       </div>
     }
-    @if (lastUnit(); as unit) {
-      <div class="snapshot__cell">
-        <span class="snapshot__value">{{ formatPerLiter(unit) }}</span>
-        <span class="snapshot__label">{{ i18n.t('home.lastUnitPrice') }}</span>
-      </div>
-    } @else if (lastWeather(); as wx) {
+    @if (lastWeather(); as wx) {
       <div class="snapshot__cell">
         <span class="snapshot__value"> {{ wx.tempC | number: '1.0-0' }}°C </span>
         <span class="snapshot__label">{{ weatherLabel(wx.weatherCode!) }}</span>
@@ -74,7 +76,7 @@
     }
   </section>
 
-  <section class="due home__stagger" style="--i: 3">
+  <section class="due home__stagger" [style.--i]="fillUpDueKm() ? 4 : 3">
     <p class="label">{{ i18n.t('home.nextDue') }}</p>
     @if (due(); as d) {
       <app-due-row
@@ -109,7 +111,7 @@
     }
   </section>
 
-  <section class="around home__stagger" style="--i: 4" [attr.aria-label]="i18n.t('home.aroundYou')">
+  <section class="around home__stagger" [style.--i]="fillUpDueKm() ? 5 : 4" [attr.aria-label]="i18n.t('home.aroundYou')">
     <p class="label">{{ i18n.t('home.aroundYou') }}</p>
 
     <div class="around__fuel card">
@@ -150,12 +152,6 @@
               <strong class="grade-tile__price">{{ formatPerLiter(prices.gasoline95) }}</strong>
             </div>
           }
-          @if (lastUnit(); as unit) {
-            <div class="grade-tile grade-tile--paid" role="listitem">
-              <span class="grade-tile__label">{{ i18n.t('home.fuelYouPaid') }}</span>
-              <strong class="grade-tile__price">{{ formatPerLiter(unit) }}</strong>
-            </div>
-          }
         </div>
         <p class="hint attr">
           <a href="https://openvan.camp" target="_blank" rel="noopener noreferrer">{{
@@ -191,7 +187,7 @@
         </button>
       </div>
       <button type="button" class="find" [disabled]="nearbyBusy()" (click)="findNearby()">
-        {{ nearbyBusy() ? i18n.t('vin.decoding') : i18n.t('home.nearbyFind') }}
+        {{ nearbyBusy() ? i18n.t('common.loading') : i18n.t('home.nearbyFind') }}
       </button>
       @if (nearbyBusy()) {
         <div class="skeleton skeleton--row" aria-hidden="true"></div>
@@ -224,20 +220,4 @@
       <p class="hint attr">{{ i18n.t('home.nearbyOsm') }}</p>
     </div>
   </section>
-
-  @if (vehicleLine()) {
-    <details class="disclosure vehicle-disclosure home__stagger" style="--i: 5">
-      <summary>{{ i18n.t('home.vehicle') }}</summary>
-      <div class="disclosure__body">
-        <p class="vehicle">{{ vehicleLine() }}</p>
-        @if (db.car()?.recallCount != null) {
-          <p class="hint">
-            {{ i18n.t('vin.recalls') }}:
-            {{ db.car()!.recallCount === 0 ? i18n.t('vin.recallsNone') : db.car()!.recallCount }}
-          </p>
-          <p class="hint">{{ i18n.t('vin.recallsCaveat') }}</p>
-        }
-      </div>
-    </details>
-  }
 </div>

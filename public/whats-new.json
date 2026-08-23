@@ -1,17 +1,17 @@
 {
-  "id": "2026-08-13-phase2",
+  "id": "2026-08-23-v2",
   "en": [
-    "VIN decode and US recall lookup on setup and settings",
-    "Attach weather to fill-ups (Open-Meteo)",
-    "Egypt national fuel prices vs your last fill",
-    "Nearby petrol and EV chargers with Maps links",
-    "Suggested next maintenance from your intervals"
+    "Kinetic Pulse visual refresh with system light/dark theme",
+    "Fixed bottom nav with Insights tab",
+    "Fill-up v2: fuel type chips and computed cost",
+    "Two-step setup without VIN",
+    "Insights charts and fill-up history"
   ],
   "ar": [
-    "فك رقم الشاسيه واستدعاءات أمريكا في الإعداد والإعدادات",
-    "إرفاق الطقس بتعبئة الوقود",
-    "أسعار الوقود الرسمية في مصر مقارنة بآخر تعبئة",
-    "محطات وقود وشحن قريبة مع فتح الخرائط",
-    "اقتراح الصيانة التالية من فتراتك السابقة"
+    "تحديث Kinetic Pulse مع مظهر النظام فاتح/داكن",
+    "شريط تنقل سفلي ثابت مع تبويب التحليلات",
+    "تعبئة v2: اختيار نوع الوقود وتكلفة محسوبة",
+    "إعداد من خطوتين بدون رقم الشاسيه",
+    "رسوم التحليلات وسجل التعبئات"
   ]
 }
