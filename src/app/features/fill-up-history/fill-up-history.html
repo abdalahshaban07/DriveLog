@@ -2,7 +2,7 @@
   <app-page-header [title]="i18n.t('history.title')" />
 
   <div class="filters">
-    <div class="seg seg--pill chips" role="group" [attr.aria-label]="i18n.t('history.filterGrade')">
+    <div class="seg chips" role="group" [attr.aria-label]="i18n.t('history.filterGrade')">
       @for (chip of gradeChips; track chip.id) {
         <button
           type="button"

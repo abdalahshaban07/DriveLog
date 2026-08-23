@@ -362,10 +362,6 @@ a {
   background: var(--well);
 }
 
-.seg--pill {
-  border-radius: 999px;
-}
-
 .seg__btn {
   min-height: calc(var(--tap) - 8px);
   border: 0;
@@ -376,10 +372,6 @@ a {
   transition:
     color var(--motion) var(--ease),
     background var(--motion) var(--ease);
-}
-
-.seg--pill .seg__btn {
-  border-radius: 999px;
 }
 
 .seg__btn--on {
