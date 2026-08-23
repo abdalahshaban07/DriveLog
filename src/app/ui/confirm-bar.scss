@@ -1,22 +1,22 @@
 :host(.modal) {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: 200;
   display: grid;
   place-items: center;
-  padding: var(--space-6);
+  padding: var(--space-5);
 }
 
 .scrim {
   position: absolute;
   inset: 0;
-  background: color-mix(in srgb, var(--cta-text) 45%, transparent);
+  background: color-mix(in srgb, var(--bg) 55%, #000 45%);
 }
 
 .bar {
   display: grid;
   gap: 12px;
-  padding: 14px;
+  padding: var(--space-5);
   border-radius: var(--radius);
   background: var(--surface);
 }
@@ -26,9 +26,19 @@
   z-index: 1;
   inline-size: min(22rem, 100%);
   border: 1px solid var(--hairline);
-  box-shadow:
-    0 16px 40px color-mix(in srgb, var(--cta-text) 28%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--well) 80%, transparent);
+  box-shadow: var(--shadow-soft);
+  animation: confirm-in var(--motion-normal) var(--ease-out);
+}
+
+@keyframes confirm-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 p {
   margin: 0;
@@ -62,6 +72,10 @@ button:active {
 @media (prefers-reduced-motion: reduce) {
   button:active {
     transform: none;
+  }
+
+  :host(.modal) .bar {
+    animation: none;
   }
 }
 .ok {
