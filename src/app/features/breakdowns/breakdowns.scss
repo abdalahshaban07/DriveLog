@@ -1,0 +1,49 @@
+.form-actions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.section-title {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: 1rem;
+}
+
+.record-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.record-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-block-end: 1px solid var(--hairline);
+}
+
+.record-row__meta {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.record-row__side {
+  text-align: end;
+}
+
+.record-row__actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.record-row__actions button {
+  min-height: var(--tap);
+  border: 0;
+  background: transparent;
+  color: var(--cta);
+  font-weight: 600;
+  cursor: pointer;
+}

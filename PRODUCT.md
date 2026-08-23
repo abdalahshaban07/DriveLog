@@ -4,22 +4,22 @@ Phone-first **Operate** PWA for personal fuel + maintenance. Local-first Indexed
 
 ## Visual world
 
-**Driver Ledger** (Dos Benzin–led + Tesla hero): system light/dark, amber `--fuel` (~5% UI), Outfit, money-first hierarchy, sparse Home economy hero. Themes: system / light / dark / contrast / dusk.
+**Dos Benzin Ledger** (replaces Kinetic Pulse / Cold Night Pump): system light/dark default, petrol teal surfaces, mint `--cta` accent (~5% UI), amber `--fuel` for fuel-grade chips only, pastel metric cards, Outfit, dense card ledger. Themes: system / light / dark / contrast / dusk.
 
 ## Core flows
 
 | Surface | Behavior |
 |---------|----------|
-| Shell | Fixed bottom nav (Home, Fill-up, Maintenance, Insights, Settings); update as modal |
+| Shell | Fixed bottom nav (Home, Fuel, Maintenance, More); update as modal |
 | Setup | 2 steps: vehicle → theme/lang/currency (no VIN) |
 | Fill-up | Numeric fields + fuel grade chips; cost = liters × unit price |
-| Home | Economy hero, one nudge cluster, grade prices only (no “you last paid”) |
-| Insights | SVG sparklines, period filters; link to fill-up history |
-| Settings | Appearance, vehicle dates, data, reminders (no VIN decode) |
+| Home | Dense metric ledger, dues cluster, grade prices (no sparse hero) |
+| Maintenance | Service log + due reminders |
+| More | Settings, data, appearance, reminders (no VIN decode) |
 
 ## Intelligence
 
-Visible Home nudges + Insights analytics. Free APIs degrade offline. No chatbot/LLM.
+Visible Home nudges + analytics. **BYOK LLM** allowed (user-supplied API key; optional assistant). Free public APIs degrade offline. No earnings/parking features.
 
 ## Stack
 

@@ -1,0 +1,41 @@
+<div class="stack assistant">
+  <app-page-header [title]="i18n.t('assistant.title')" />
+
+  @if (!enabled()) {
+    <p class="empty-state" role="status">{{ i18n.t('assistant.setupHint') }}</p>
+  }
+
+  <section class="card faq" [attr.aria-label]="i18n.t('assistant.faqTitle')">
+    <h2 class="faq__title">{{ i18n.t('assistant.faqTitle') }}</h2>
+    <div class="faq__grid">
+      @for (key of faqKeys; track key) {
+        <button type="button" class="faq__btn" (click)="askFaq(key)">
+          {{ i18n.t(key) }}
+        </button>
+      }
+    </div>
+  </section>
+
+  <ul class="chat" [attr.aria-label]="i18n.t('assistant.chat')">
+    @for (msg of messages(); track $index) {
+      <li class="chat__row" [class.chat__row--user]="msg.role === 'user'">
+        <p>{{ msg.content }}</p>
+      </li>
+    }
+  </ul>
+
+  @if (error()) {
+    <p class="error-state" role="alert">{{ error() }}</p>
+  }
+
+  <app-text-field
+    [label]="i18n.t('assistant.input')"
+    [(value)]="input"
+    [multiline]="true"
+  />
+  <app-primary-button
+    [label]="i18n.t('assistant.send')"
+    [disabled]="busy() || !input().trim()"
+    (pressed)="send()"
+  />
+</div>

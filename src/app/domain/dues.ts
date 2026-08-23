@@ -1,5 +1,6 @@
 import { DUE_SOON_DAYS, DUE_SOON_KM } from '../core/config';
 import type {
+  Car,
   DateOnly,
   DueItem,
   DueStatus,
@@ -89,25 +90,21 @@ export function buildDueItems(
   maintenance: readonly Maintenance[],
   currentOdometer: number,
   today: DateOnly = todayDateOnly(),
+  car?: Pick<Car, 'licenseExpiry' | 'registrationExpiry'> | null,
 ): DueItem[] {
   const items: DueItem[] = [];
 
   // ponytail: missing flag = off (normalizeSettings). Maintenance dues stay independent.
+  // License/registration live on Car (v4); Settings fields are legacy import only.
   if (settings.remindersEnabled) {
-    if (settings.licenseExpiry) {
-      items.push(
-        buildFromDate('license', 'license', 'due.license', settings.licenseExpiry, today),
-      );
+    const license = car?.licenseExpiry ?? settings.licenseExpiry;
+    const registration = car?.registrationExpiry ?? settings.registrationExpiry;
+    if (license) {
+      items.push(buildFromDate('license', 'license', 'due.license', license, today));
     }
-    if (settings.registrationExpiry) {
+    if (registration) {
       items.push(
-        buildFromDate(
-          'registration',
-          'registration',
-          'due.registration',
-          settings.registrationExpiry,
-          today,
-        ),
+        buildFromDate('registration', 'registration', 'due.registration', registration, today),
       );
     }
   }

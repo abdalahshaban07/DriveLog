@@ -1,24 +1,22 @@
 <div class="stack fill-up page-narrow">
   <app-page-header [title]="editId() ? i18n.t('fillUp.edit') : i18n.t('fillUp.title')" />
 
-  <p class="fill-up__odo hint">
+  <p class="hint">
     {{ i18n.t('fillUp.lastOdo') }}: {{ db.car()?.currentOdometer ?? '—' }}
     {{ i18n.t('common.km') }}
   </p>
 
-  <div class="fill-up__fields">
-    <app-numeric-field
-      [label]="i18n.t('fillUp.odometer')"
-      [(value)]="odometer"
-      [error]="odoError()"
-    />
+  <app-numeric-field
+    [label]="i18n.t('fillUp.odometer')"
+    [(value)]="odometer"
+    [error]="odoError()"
+  />
 
-    <app-numeric-field
-      [label]="i18n.t('fillUp.liters')"
-      [(value)]="liters"
-      [error]="litersError()"
-    />
-  </div>
+  <app-numeric-field
+    [label]="i18n.t('fillUp.liters')"
+    [(value)]="liters"
+    [error]="litersError()"
+  />
 
   @if (pricesBusy()) {
     <div class="skeleton skeleton--row" aria-hidden="true"></div>

@@ -1,18 +1,88 @@
-.list {
+.milestone__head {
   display: grid;
-  gap: 10px;
+  gap: var(--space-2);
 }
 
-.edit-banner {
+.milestone__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.milestone__date {
+  margin-top: var(--space-1);
+}
+
+.task-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.task-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
   border-radius: calc(var(--radius) - 4px);
-  background: color-mix(in srgb, var(--fuel) 14%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--fuel) 35%, var(--hairline));
+  border: 1px solid var(--hairline);
+  background: var(--well);
+}
+
+.task-row--done {
+  opacity: 0.72;
+}
+
+.task-row__main {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.task-row__label {
   font-weight: 600;
+}
+
+.task-row__km {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.task-row__done {
+  color: var(--mint);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.task-row__action {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: calc(var(--radius) - 4px);
+  background: color-mix(in srgb, var(--cta) 18%, var(--surface));
+  color: var(--text);
+  font-weight: 600;
+}
+
+.complete-form {
+  padding: var(--space-3);
+  border-radius: calc(var(--radius) - 4px);
+  border: 1px solid color-mix(in srgb, var(--cta) 35%, var(--hairline));
+  background: color-mix(in srgb, var(--cta) 8%, var(--surface));
+  list-style: none;
+}
+
+.complete-form__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
 }
 
 .ghost {
@@ -20,8 +90,13 @@
   background: transparent;
   color: var(--muted);
   font-weight: 600;
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 8px;
+}
+
+.list {
+  display: grid;
+  gap: 10px;
 }
 
 .meta {
@@ -33,21 +108,6 @@
   color: var(--muted);
   font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
-}
-
-.flag {
-  margin: 6px 0 0;
-  color: var(--muted);
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.flag--stop {
-  color: var(--stop);
-}
-
-.muted {
-  color: var(--muted);
 }
 
 .actions {
@@ -63,11 +123,6 @@
   color: var(--text);
   font-weight: 600;
   border-radius: calc(var(--radius) - 4px);
-  transition: background var(--motion) var(--ease);
-}
-
-.actions button:hover {
-  background: color-mix(in srgb, var(--well) 70%, transparent);
 }
 
 .danger {
@@ -79,24 +134,9 @@
   box-shadow: var(--shadow-soft);
 }
 
-:host .empty-state,
-:host .muted:only-child {
+:host .empty-state {
   padding: var(--space-4);
   border-radius: var(--radius);
   border: 1px solid var(--hairline);
   background: var(--surface);
-}
-
-.chips {
-  flex-wrap: wrap;
-  margin-bottom: var(--space-2);
-}
-
-.holiday-banner {
-  margin: 0 0 var(--space-2);
-  padding: var(--space-3);
-  border-radius: calc(var(--radius) - 4px);
-  background: color-mix(in srgb, var(--fuel) 10%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--fuel) 30%, var(--hairline));
-  font-size: 0.9rem;
 }

@@ -164,6 +164,25 @@ describe('dues', () => {
     expect(items.some((i) => i.source === 'license')).toBe(false);
     expect(items.some((i) => i.source === 'registration')).toBe(false);
   });
+
+  it('prefers car license dates over legacy settings', () => {
+    const items = buildDueItems(
+      {
+        language: 'en',
+        theme: 'dark',
+        currency: 'EGP',
+        unitSystem: 'metric',
+        installBannerDismissed: false,
+        remindersEnabled: true,
+        licenseExpiry: '2026-06-15',
+      },
+      [],
+      0,
+      '2026-06-01',
+      { licenseExpiry: '2026-06-20' },
+    );
+    expect(items.find((i) => i.id === 'license')?.dueDate).toBe('2026-06-20');
+  });
 });
 
 describe('currencies', () => {
@@ -239,8 +258,8 @@ describe('remote parsers', () => {
 describe('backup version', () => {
   it('keeps backup version and IDB version as separate constants', async () => {
     const { BACKUP_VERSION, DB_VERSION } = await import('../core/config');
-    expect(BACKUP_VERSION).toBe(3);
-    expect(DB_VERSION).toBe(3);
+    expect(BACKUP_VERSION).toBe(4);
+    expect(DB_VERSION).toBe(4);
   });
 });
 

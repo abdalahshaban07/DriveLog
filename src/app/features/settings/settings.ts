@@ -11,13 +11,14 @@ import { ConfirmBar } from '../../ui/confirm-bar';
 import { DateField } from '../../ui/date-field';
 import { PageHeader } from '../../ui/page-header';
 import { SelectField } from '../../ui/select-field';
+import { TextField } from '../../ui/text-field';
 
 type DestructiveAction = 'removeCar' | 'startFresh';
 
 @Component({
   selector: 'app-settings',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, SelectField, DateField, ConfirmBar, RouterLink],
+  imports: [PageHeader, SelectField, DateField, ConfirmBar, RouterLink, TextField],
   templateUrl: './settings.html',
   styleUrl: './settings.scss',
 })
@@ -53,8 +54,15 @@ export class SettingsPage {
   readonly currencyOptions = computed(() =>
     listCurrencyOptions(this.i18n.language(), this.currency(), this.restCurrencies()),
   );
-  readonly license = signal(this.db.settings().licenseExpiry ?? '');
-  readonly registration = signal(this.db.settings().registrationExpiry ?? '');
+  readonly plate = signal(this.db.car()?.plate ?? '');
+  readonly license = signal(this.db.car()?.licenseExpiry ?? '');
+  readonly registration = signal(this.db.car()?.registrationExpiry ?? '');
+  readonly assistantEnabled = signal(this.db.settings().assistantEnabled === true);
+  readonly assistantApiKey = signal(this.db.settings().assistantApiKey ?? '');
+  readonly assistantBaseUrl = signal(
+    this.db.settings().assistantBaseUrl ?? 'https://api.openai.com/v1',
+  );
+  readonly assistantModel = signal(this.db.settings().assistantModel ?? 'gpt-4o-mini');
   readonly pendingImport = signal<BackupFile | null>(null);
   readonly pendingDestructive = signal<DestructiveAction | null>(null);
   readonly importFileName = signal('');
@@ -132,8 +140,53 @@ export class SettingsPage {
 
   async onCar(value: string): Promise<void> {
     await this.db.switchCar(value);
+    this.syncCarFields();
   }
 
+  private syncCarFields(): void {
+    const car = this.db.car();
+    this.plate.set(car?.plate ?? '');
+    this.license.set(car?.licenseExpiry ?? '');
+    this.registration.set(car?.registrationExpiry ?? '');
+  }
+
+  async onPlate(value: string): Promise<void> {
+    this.plate.set(value);
+    await this.db.updateCar({ plate: value.trim() || undefined });
+  }
+
+  async onLicense(value: string): Promise<void> {
+    this.license.set(value);
+    await this.db.updateCar({ licenseExpiry: value || undefined });
+  }
+
+  async onRegistration(value: string): Promise<void> {
+    this.registration.set(value);
+    await this.db.updateCar({ registrationExpiry: value || undefined });
+  }
+
+  async onAssistantEnabled(event: Event): Promise<void> {
+    const on = (event.target as HTMLInputElement).checked;
+    this.assistantEnabled.set(on);
+    await this.db.updateSettings({ assistantEnabled: on });
+  }
+
+  async onAssistantApiKey(value: string): Promise<void> {
+    this.assistantApiKey.set(value);
+    await this.db.updateSettings({ assistantApiKey: value.trim() || undefined });
+  }
+
+  async onAssistantBaseUrl(value: string): Promise<void> {
+    this.assistantBaseUrl.set(value);
+    await this.db.updateSettings({
+      assistantBaseUrl: value.trim() || undefined,
+    });
+  }
+
+  async onAssistantModel(value: string): Promise<void> {
+    this.assistantModel.set(value);
+    await this.db.updateSettings({ assistantModel: value.trim() || undefined });
+  }
   async onDuskAssist(event: Event): Promise<void> {
     const on = (event.target as HTMLInputElement).checked;
     await this.db.updateSettings({ duskAssistEnabled: on });
@@ -142,16 +195,6 @@ export class SettingsPage {
     } else {
       this.duskHint.set('');
     }
-  }
-
-  async onLicense(value: string): Promise<void> {
-    this.license.set(value);
-    await this.db.updateSettings({ licenseExpiry: value || undefined });
-  }
-
-  async onRegistration(value: string): Promise<void> {
-    this.registration.set(value);
-    await this.db.updateSettings({ registrationExpiry: value || undefined });
   }
 
   exportBackup(): void {
@@ -199,8 +242,13 @@ export class SettingsPage {
       }
       this.importOk.set(true);
       this.currency.set(this.db.settings().currency);
-      this.license.set(this.db.settings().licenseExpiry ?? '');
-      this.registration.set(this.db.settings().registrationExpiry ?? '');
+      this.syncCarFields();
+      this.assistantEnabled.set(this.db.settings().assistantEnabled === true);
+      this.assistantApiKey.set(this.db.settings().assistantApiKey ?? '');
+      this.assistantBaseUrl.set(
+        this.db.settings().assistantBaseUrl ?? 'https://api.openai.com/v1',
+      );
+      this.assistantModel.set(this.db.settings().assistantModel ?? 'gpt-4o-mini');
       await this.i18n.setLanguage(this.db.settings().language);
     } catch {
       this.importError.set(this.i18n.t('backup.failed'));

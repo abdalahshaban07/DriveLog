@@ -1,0 +1,16 @@
+<div class="stack more">
+  <app-page-header [title]="i18n.t('more.title')" />
+
+  <section class="card list" [attr.aria-label]="i18n.t('more.title')">
+    @for (link of links(); track link.route) {
+      <a class="line" [routerLink]="link.route">
+        <span class="line__text">
+          <strong>{{ i18n.t(link.labelKey) }}</strong>
+        </span>
+        <svg class="line__go" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 6l6 6-6 6" />
+        </svg>
+      </a>
+    }
+  </section>
+</div>

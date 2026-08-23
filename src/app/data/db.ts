@@ -7,21 +7,35 @@ import {
   DEFAULT_LANGUAGE,
   DEFAULT_THEME,
   DEFAULT_UNIT_SYSTEM,
+  SCHEMA_STORES,
 } from '../core/config';
 import { knownOdometer } from '../domain/economy';
+import {
+  activePeriod,
+  newOpenPeriod,
+  startNewPeriod as rollExpensePeriod,
+} from '../domain/expense-period';
 import {
   addCustomMaintenanceType,
   maintenanceDetailFields,
   normalizeCustomTypes,
   type AddCustomTypeResult,
 } from '../domain/maintenance-fields';
+import { seedMilestone } from '../domain/milestones';
 import {
+  BREAKDOWN_CATEGORIES,
   MAINTENANCE_TYPES,
   THEMES,
   type BackupFile,
+  type Breakdown,
   type Car,
+  type ExpensePeriod,
   type FillUp,
   type Maintenance,
+  type MaintenanceMilestone,
+  type MaintenanceTask,
+  type MilestoneTaskKind,
+  type OtherExpense,
   type Settings,
   type Theme,
 } from '../domain/models';
@@ -42,6 +56,18 @@ function defaultSettings(): Settings {
   };
 }
 
+type DbSnapshot = {
+  cars: Car[];
+  car: Car | null;
+  settings: Settings;
+  fillUps: FillUp[];
+  maintenance: Maintenance[];
+  expensePeriods: ExpensePeriod[];
+  breakdowns: Breakdown[];
+  otherExpenses: OtherExpense[];
+  milestones: MaintenanceMilestone[];
+};
+
 @Injectable({ providedIn: 'root' })
 export class Db {
   private readonly _ready = signal(false);
@@ -50,6 +76,10 @@ export class Db {
   private readonly _settings = signal<Settings>(defaultSettings());
   private readonly _fillUpsAll = signal<FillUp[]>([]);
   private readonly _maintenanceAll = signal<Maintenance[]>([]);
+  private readonly _expensePeriodsAll = signal<ExpensePeriod[]>([]);
+  private readonly _breakdownsAll = signal<Breakdown[]>([]);
+  private readonly _otherExpensesAll = signal<OtherExpense[]>([]);
+  private readonly _milestonesAll = signal<MaintenanceMilestone[]>([]);
   private readonly _error = signal<string | null>(null);
   private readonly _savedFlash = signal(false);
 
@@ -63,6 +93,18 @@ export class Db {
   readonly maintenance = computed(() =>
     this.filterForActiveCar(this._maintenanceAll(), this._car()?.id),
   );
+  readonly expensePeriods = computed(() =>
+    this.filterForActiveCar(this._expensePeriodsAll(), this._car()?.id),
+  );
+  readonly breakdowns = computed(() =>
+    this.filterForActiveCar(this._breakdownsAll(), this._car()?.id),
+  );
+  readonly otherExpenses = computed(() =>
+    this.filterForActiveCar(this._otherExpensesAll(), this._car()?.id),
+  );
+  readonly milestones = computed(() =>
+    this.filterForActiveCar(this._milestonesAll(), this._car()?.id),
+  );
   readonly error = this._error.asReadonly();
   readonly savedFlash = this._savedFlash.asReadonly();
 
@@ -73,22 +115,87 @@ export class Db {
   async init(): Promise<void> {
     try {
       const db = await this.open();
-      const [cars, settings, fillUps, maintenance] = await Promise.all([
+      const [
+        carsRaw,
+        settingsRaw,
+        fillUps,
+        maintenance,
+        expensePeriods,
+        breakdowns,
+        otherExpenses,
+        milestones,
+      ] = await Promise.all([
         this.getAll<Car>(db, 'car'),
         this.getAll<Settings & { id?: string }>(db, 'settings').then(
           (rows) => rows[0] ?? defaultSettings(),
         ),
         this.getAll<FillUp>(db, 'fillUps'),
         this.getAll<Maintenance>(db, 'maintenance'),
+        this.getAll<ExpensePeriod>(db, 'expensePeriods'),
+        this.getAll<Breakdown>(db, 'breakdowns'),
+        this.getAll<OtherExpense>(db, 'otherExpenses'),
+        this.getAll<MaintenanceMilestone>(db, 'milestones'),
       ]);
-      const normalizedSettings = normalizeSettings(settings);
+
+      let settings = normalizeSettings(settingsRaw);
+      let cars = carsRaw.map(normalizeCar);
+      const migrationTarget =
+        cars.find((c) => c.id === settings.activeCarId) ??
+        (cars.length === 1 ? cars[0]! : null);
+
+      if (
+        migrationTarget &&
+        (settings.licenseExpiry || settings.registrationExpiry) &&
+        (!migrationTarget.licenseExpiry || !migrationTarget.registrationExpiry)
+      ) {
+        const migrated: Car = {
+          ...migrationTarget,
+          licenseExpiry: migrationTarget.licenseExpiry ?? settings.licenseExpiry,
+          registrationExpiry:
+            migrationTarget.registrationExpiry ?? settings.registrationExpiry,
+          updatedAt: nowIso(),
+        };
+        cars = cars.map((c) => (c.id === migrated.id ? migrated : c));
+        settings = {
+          ...settings,
+          licenseExpiry: undefined,
+          registrationExpiry: undefined,
+        };
+        await this.put('car', migrated);
+        await this.put('settings', { id: 'settings', ...settings });
+      }
+
+      let periods = expensePeriods.map(normalizeExpensePeriod);
+      let milestoneRows = milestones.map(normalizeMilestone);
+      const seedPuts: Promise<void>[] = [];
+
+      for (const c of cars) {
+        if (!activePeriod(periods, c.id)) {
+          const period = newOpenPeriod(c.id);
+          periods = [...periods, period];
+          seedPuts.push(this.put('expensePeriods', period));
+        }
+        if (!milestoneRows.some((m) => m.carId === c.id)) {
+          const milestone = seedMilestone(c.id, c.currentOdometer);
+          milestoneRows = [...milestoneRows, milestone];
+          seedPuts.push(this.put('milestones', milestone));
+        }
+      }
+      if (seedPuts.length) {
+        await Promise.all(seedPuts);
+      }
+
       const active =
-        cars.find((c) => c.id === normalizedSettings.activeCarId) ?? cars[0] ?? null;
+        cars.find((c) => c.id === settings.activeCarId) ?? cars[0] ?? null;
       this._cars.set(cars);
       this._car.set(active);
-      this._settings.set(normalizedSettings);
+      this._settings.set(settings);
       this._fillUpsAll.set(fillUps);
       this._maintenanceAll.set(maintenance.map(normalizeMaintenance));
+      this._expensePeriodsAll.set(periods);
+      this._breakdownsAll.set(breakdowns.map(normalizeBreakdown));
+      this._otherExpensesAll.set(otherExpenses.map(normalizeOtherExpense));
+      this._milestonesAll.set(milestoneRows);
       if (active) {
         this.recalcOdometer();
       }
@@ -118,17 +225,10 @@ export class Db {
       const req = indexedDB.open(DB_NAME, DB_VERSION);
       req.onupgradeneeded = () => {
         const db = req.result;
-        if (!db.objectStoreNames.contains('car')) {
-          db.createObjectStore('car', { keyPath: 'id' });
-        }
-        if (!db.objectStoreNames.contains('settings')) {
-          db.createObjectStore('settings', { keyPath: 'id' });
-        }
-        if (!db.objectStoreNames.contains('fillUps')) {
-          db.createObjectStore('fillUps', { keyPath: 'id' });
-        }
-        if (!db.objectStoreNames.contains('maintenance')) {
-          db.createObjectStore('maintenance', { keyPath: 'id' });
+        for (const store of SCHEMA_STORES) {
+          if (!db.objectStoreNames.contains(store)) {
+            db.createObjectStore(store, { keyPath: 'id' });
+          }
         }
       };
       req.onsuccess = () => resolve(req.result);
@@ -170,35 +270,13 @@ export class Db {
     );
   }
 
-  private clearStore(store: string): Promise<void> {
-    return this.open().then(
-      (db) =>
-        new Promise((resolve, reject) => {
-          const tx = db.transaction(store, 'readwrite');
-          tx.objectStore(store).clear();
-          tx.oncomplete = () => resolve();
-          tx.onerror = () => reject(tx.error);
-        }),
-    );
-  }
-
-  private async replaceAll(data: {
-    cars: Car[];
-    car: Car | null;
-    settings: Settings;
-    fillUps: FillUp[];
-    maintenance: Maintenance[];
-  }): Promise<void> {
+  private async replaceAll(data: DbSnapshot): Promise<void> {
     const db = await this.open();
     await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(
-        ['car', 'settings', 'fillUps', 'maintenance'],
-        'readwrite',
-      );
-      tx.objectStore('car').clear();
-      tx.objectStore('settings').clear();
-      tx.objectStore('fillUps').clear();
-      tx.objectStore('maintenance').clear();
+      const tx = db.transaction([...SCHEMA_STORES], 'readwrite');
+      for (const store of SCHEMA_STORES) {
+        tx.objectStore(store).clear();
+      }
       for (const c of data.cars) {
         tx.objectStore('car').put(c);
       }
@@ -209,14 +287,34 @@ export class Db {
       for (const m of data.maintenance) {
         tx.objectStore('maintenance').put(m);
       }
+      for (const p of data.expensePeriods) {
+        tx.objectStore('expensePeriods').put(p);
+      }
+      for (const b of data.breakdowns) {
+        tx.objectStore('breakdowns').put(b);
+      }
+      for (const o of data.otherExpenses) {
+        tx.objectStore('otherExpenses').put(o);
+      }
+      for (const m of data.milestones) {
+        tx.objectStore('milestones').put(m);
+      }
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
+    this.applySnapshot(data);
+  }
+
+  private applySnapshot(data: DbSnapshot): void {
     this._cars.set(data.cars);
     this._car.set(data.car);
     this._settings.set(data.settings);
     this._fillUpsAll.set(data.fillUps);
     this._maintenanceAll.set(data.maintenance);
+    this._expensePeriodsAll.set(data.expensePeriods);
+    this._breakdownsAll.set(data.breakdowns);
+    this._otherExpensesAll.set(data.otherExpenses);
+    this._milestonesAll.set(data.milestones);
     if (data.car) {
       this.recalcOdometer();
     }
@@ -231,6 +329,7 @@ export class Db {
     if (next !== car.currentOdometer) {
       const updated: Car = { ...car, currentOdometer: next, updatedAt: nowIso() };
       this._car.set(updated);
+      this._cars.set(this._cars().map((c) => (c.id === updated.id ? updated : c)));
       void this.put('car', updated);
     }
   }
@@ -239,7 +338,17 @@ export class Db {
     nickname: string,
     initialOdometer: number,
     extras?: Partial<
-      Pick<Car, 'vin' | 'year' | 'make' | 'model' | 'recallCount'>
+      Pick<
+        Car,
+        | 'vin'
+        | 'year'
+        | 'make'
+        | 'model'
+        | 'recallCount'
+        | 'plate'
+        | 'licenseExpiry'
+        | 'registrationExpiry'
+      >
     >,
   ): Promise<void> {
     const ts = nowIso();
@@ -248,16 +357,24 @@ export class Db {
       nickname: nickname.trim(),
       initialOdometer,
       currentOdometer: initialOdometer,
-      ...carVinFields(extras),
+      ...carDocFields(extras),
       createdAt: ts,
       updatedAt: ts,
     };
-    await this.put('car', car);
+    const period = newOpenPeriod(car.id);
+    const milestone = seedMilestone(car.id, car.currentOdometer);
+    await Promise.all([
+      this.put('car', car),
+      this.put('expensePeriods', period),
+      this.put('milestones', milestone),
+    ]);
     const settings: Settings = { ...this._settings(), activeCarId: car.id };
     await this.put('settings', { id: 'settings', ...settings });
     this._cars.set([...this._cars(), car]);
     this._car.set(car);
     this._settings.set(settings);
+    this._expensePeriodsAll.set([...this._expensePeriodsAll(), period]);
+    this._milestonesAll.set([...this._milestonesAll(), milestone]);
   }
 
   async switchCar(id: string): Promise<void> {
@@ -274,28 +391,43 @@ export class Db {
 
   async updateCar(
     patch: Partial<
-      Pick<Car, 'nickname' | 'vin' | 'year' | 'make' | 'model' | 'recallCount'>
+      Pick<
+        Car,
+        | 'nickname'
+        | 'vin'
+        | 'year'
+        | 'make'
+        | 'model'
+        | 'recallCount'
+        | 'plate'
+        | 'licenseExpiry'
+        | 'registrationExpiry'
+      >
     >,
   ): Promise<void> {
     const car = this._car();
     if (!car) {
       throw new Error('persist.noCar');
     }
+    const merged = { ...car, ...patch };
     const updated: Car = {
-      ...car,
-      ...patch,
+      ...merged,
       ...('vin' in patch ||
       'year' in patch ||
       'make' in patch ||
       'model' in patch ||
-      'recallCount' in patch
-        ? carVinFields({ ...car, ...patch })
+      'recallCount' in patch ||
+      'plate' in patch ||
+      'licenseExpiry' in patch ||
+      'registrationExpiry' in patch
+        ? carDocFields(merged)
         : {}),
       nickname: patch.nickname != null ? patch.nickname.trim() : car.nickname,
       updatedAt: nowIso(),
     };
     await this.put('car', updated);
     this._car.set(updated);
+    this._cars.set(this._cars().map((c) => (c.id === updated.id ? updated : c)));
   }
 
   async updateSettings(patch: Partial<Settings>): Promise<void> {
@@ -409,15 +541,129 @@ export class Db {
     this.recalcOdometer();
   }
 
+  async saveBreakdown(
+    input: Omit<Breakdown, 'id' | 'carId' | 'createdAt' | 'updatedAt'> & { id?: string },
+  ): Promise<void> {
+    const car = this._car();
+    if (!car) {
+      throw new Error('persist.noCar');
+    }
+    const ts = nowIso();
+    const existing = input.id
+      ? this._breakdownsAll().find((b) => b.id === input.id)
+      : undefined;
+    const row: Breakdown = {
+      id: existing?.id ?? crypto.randomUUID(),
+      carId: existing?.carId ?? car.id,
+      symptom: input.symptom.trim(),
+      repairCost: input.repairCost,
+      odometer: input.odometer,
+      date: input.date,
+      shopName: input.shopName?.trim() || undefined,
+      category: input.category,
+      note: input.note?.trim() || undefined,
+      createdAt: existing?.createdAt ?? ts,
+      updatedAt: ts,
+    };
+    await this.put('breakdowns', row);
+    const list = this._breakdownsAll().filter((b) => b.id !== row.id).concat(row);
+    this._breakdownsAll.set(list);
+    this.flashSaved();
+  }
+
+  async deleteBreakdown(id: string): Promise<void> {
+    await this.deleteKey('breakdowns', id);
+    this._breakdownsAll.set(this._breakdownsAll().filter((b) => b.id !== id));
+  }
+
+  async saveOtherExpense(
+    input: Omit<OtherExpense, 'id' | 'carId' | 'createdAt' | 'updatedAt'> & { id?: string },
+  ): Promise<void> {
+    const car = this._car();
+    if (!car) {
+      throw new Error('persist.noCar');
+    }
+    const ts = nowIso();
+    const existing = input.id
+      ? this._otherExpensesAll().find((o) => o.id === input.id)
+      : undefined;
+    const row: OtherExpense = {
+      id: existing?.id ?? crypto.randomUUID(),
+      carId: existing?.carId ?? car.id,
+      label: input.label.trim(),
+      amount: input.amount,
+      date: input.date,
+      note: input.note?.trim() || undefined,
+      createdAt: existing?.createdAt ?? ts,
+      updatedAt: ts,
+    };
+    await this.put('otherExpenses', row);
+    const list = this._otherExpensesAll().filter((o) => o.id !== row.id).concat(row);
+    this._otherExpensesAll.set(list);
+    this.flashSaved();
+  }
+
+  async deleteOtherExpense(id: string): Promise<void> {
+    await this.deleteKey('otherExpenses', id);
+    this._otherExpensesAll.set(this._otherExpensesAll().filter((o) => o.id !== id));
+  }
+
+  async saveMilestone(input: MaintenanceMilestone & { id?: string }): Promise<void> {
+    const car = this._car();
+    if (!car) {
+      throw new Error('persist.noCar');
+    }
+    const existing = input.id
+      ? this._milestonesAll().find((m) => m.id === input.id)
+      : undefined;
+    const row: MaintenanceMilestone = {
+      id: existing?.id ?? input.id ?? crypto.randomUUID(),
+      carId: existing?.carId ?? car.id,
+      targetKm: input.targetKm,
+      scheduledDate: input.scheduledDate,
+      tasks: input.tasks.map(normalizeMaintenanceTask),
+    };
+    await this.put('milestones', row);
+    const list = this._milestonesAll().filter((m) => m.id !== row.id).concat(row);
+    this._milestonesAll.set(list);
+    this.flashSaved();
+  }
+
+  async deleteMilestone(id: string): Promise<void> {
+    await this.deleteKey('milestones', id);
+    this._milestonesAll.set(this._milestonesAll().filter((m) => m.id !== id));
+  }
+
+  async startNewPeriod(carId: string): Promise<void> {
+    const next = rollExpensePeriod(this._expensePeriodsAll(), carId);
+    const added = next.filter(
+      (p) => !this._expensePeriodsAll().some((existing) => existing.id === p.id),
+    );
+    const updated = next.filter((p) =>
+      this._expensePeriodsAll().some((existing) => existing.id === p.id),
+    );
+    await Promise.all([
+      ...updated.map((p) => this.put('expensePeriods', p)),
+      ...added.map((p) => this.put('expensePeriods', p)),
+    ]);
+    this._expensePeriodsAll.set(next);
+    this.flashSaved();
+  }
+
   exportBackup(): BackupFile {
+    const { assistantApiKey: _removed, ...settings } = this._settings();
     return {
       version: BACKUP_VERSION,
       exportedAt: nowIso(),
       car: this._car(),
       cars: this._cars(),
-      settings: this._settings(),
+      settings,
       fillUps: this._fillUpsAll(),
       maintenance: this._maintenanceAll(),
+      expensePeriods: this._expensePeriodsAll(),
+      breakdowns: this._breakdownsAll(),
+      otherExpenses: this._otherExpensesAll(),
+      milestones: this._milestonesAll(),
     };
   }
 
@@ -426,8 +672,13 @@ export class Db {
       throw new Error('backup.invalid');
     }
     const obj = raw as Record<string, unknown>;
-    // ponytail: accept v1 backups; v2 adds optional fill fields only
-    if (obj['version'] !== 1 && obj['version'] !== BACKUP_VERSION) {
+    const version = obj['version'];
+    if (
+      version !== 1 &&
+      version !== 2 &&
+      version !== 3 &&
+      version !== BACKUP_VERSION
+    ) {
       throw new Error('backup.unsupportedVersion');
     }
     if (!Array.isArray(obj['fillUps']) || !Array.isArray(obj['maintenance'])) {
@@ -440,12 +691,28 @@ export class Db {
     const maintenance = (obj['maintenance'] as Maintenance[]).map(normalizeMaintenance);
     const settings = normalizeSettings(obj['settings']);
     const carsRaw = Array.isArray(obj['cars']) ? (obj['cars'] as Car[]) : null;
-    const cars = carsRaw?.length ? carsRaw.map(normalizeCar) : obj['car'] ? [normalizeCar(obj['car'])] : [];
+    const cars = carsRaw?.length
+      ? carsRaw.map(normalizeCar)
+      : obj['car']
+        ? [normalizeCar(obj['car'])]
+        : [];
     const car =
       cars.find((c) => c.id === settings.activeCarId) ?? cars[0] ?? null;
     if (car && !settings.activeCarId) {
       settings.activeCarId = car.id;
     }
+    const expensePeriods = Array.isArray(obj['expensePeriods'])
+      ? (obj['expensePeriods'] as ExpensePeriod[]).map(normalizeExpensePeriod)
+      : [];
+    const breakdowns = Array.isArray(obj['breakdowns'])
+      ? (obj['breakdowns'] as Breakdown[]).map(normalizeBreakdown)
+      : [];
+    const otherExpenses = Array.isArray(obj['otherExpenses'])
+      ? (obj['otherExpenses'] as OtherExpense[]).map(normalizeOtherExpense)
+      : [];
+    const milestones = Array.isArray(obj['milestones'])
+      ? (obj['milestones'] as MaintenanceMilestone[]).map(normalizeMilestone)
+      : [];
     return {
       version: BACKUP_VERSION,
       exportedAt: String(obj['exportedAt'] ?? nowIso()),
@@ -454,6 +721,10 @@ export class Db {
       settings,
       fillUps,
       maintenance,
+      expensePeriods: expensePeriods.length ? expensePeriods : undefined,
+      breakdowns: breakdowns.length ? breakdowns : undefined,
+      otherExpenses: otherExpenses.length ? otherExpenses : undefined,
+      milestones: milestones.length ? milestones : undefined,
     };
   }
 
@@ -477,6 +748,10 @@ export class Db {
       settings,
       fillUps: backup.fillUps,
       maintenance: backup.maintenance,
+      expensePeriods: backup.expensePeriods ?? [],
+      breakdowns: backup.breakdowns ?? [],
+      otherExpenses: backup.otherExpenses ?? [],
+      milestones: backup.milestones ?? [],
     });
   }
 
@@ -488,6 +763,22 @@ export class Db {
     const maintMap = new Map(this._maintenanceAll().map((m) => [m.id, m]));
     for (const m of backup.maintenance) {
       maintMap.set(m.id, m);
+    }
+    const periodMap = new Map(this._expensePeriodsAll().map((p) => [p.id, p]));
+    for (const p of backup.expensePeriods ?? []) {
+      periodMap.set(p.id, p);
+    }
+    const breakdownMap = new Map(this._breakdownsAll().map((b) => [b.id, b]));
+    for (const b of backup.breakdowns ?? []) {
+      breakdownMap.set(b.id, b);
+    }
+    const otherMap = new Map(this._otherExpensesAll().map((o) => [o.id, o]));
+    for (const o of backup.otherExpenses ?? []) {
+      otherMap.set(o.id, o);
+    }
+    const milestoneMap = new Map(this._milestonesAll().map((m) => [m.id, m]));
+    for (const m of backup.milestones ?? []) {
+      milestoneMap.set(m.id, m);
     }
     const carMap = new Map(this._cars().map((c) => [c.id, c]));
     for (const c of this.carsFromBackup(backup)) {
@@ -515,10 +806,14 @@ export class Db {
       settings,
       fillUps: [...fillMap.values()],
       maintenance: [...maintMap.values()],
+      expensePeriods: [...periodMap.values()],
+      breakdowns: [...breakdownMap.values()],
+      otherExpenses: [...otherMap.values()],
+      milestones: [...milestoneMap.values()],
     });
   }
 
-  /** Wipe cars, fill-ups, maintenance, and settings. */
+  /** Wipe all stores and reset settings. */
   async wipeAll(): Promise<void> {
     await this.replaceAll({
       cars: [],
@@ -526,11 +821,15 @@ export class Db {
       settings: defaultSettings(),
       fillUps: [],
       maintenance: [],
+      expensePeriods: [],
+      breakdowns: [],
+      otherExpenses: [],
+      milestones: [],
     });
   }
 
   /**
-   * Delete one car and its fill-ups/maintenance.
+   * Delete one car and its related rows.
    * Legacy rows without carId belong to this car when it is the only or active car.
    * Last car → wipeAll (settings reset too).
    */
@@ -551,8 +850,17 @@ export class Db {
 
     const droppedFill = this._fillUpsAll().filter(drop);
     const droppedMaint = this._maintenanceAll().filter(drop);
+    const droppedPeriods = this._expensePeriodsAll().filter((p) => p.carId === id);
+    const droppedBreakdowns = this._breakdownsAll().filter((b) => b.carId === id);
+    const droppedOther = this._otherExpensesAll().filter((o) => o.carId === id);
+    const droppedMilestones = this._milestonesAll().filter((m) => m.carId === id);
+
     const fillUps = this._fillUpsAll().filter((f) => !drop(f));
     const maintenance = this._maintenanceAll().filter((m) => !drop(m));
+    const expensePeriods = this._expensePeriodsAll().filter((p) => p.carId !== id);
+    const breakdowns = this._breakdownsAll().filter((b) => b.carId !== id);
+    const otherExpenses = this._otherExpensesAll().filter((o) => o.carId !== id);
+    const milestones = this._milestonesAll().filter((m) => m.carId !== id);
     const next = remaining.find((c) => c.id === this._settings().activeCarId) ?? remaining[0];
     const settings: Settings = {
       ...this._settings(),
@@ -563,6 +871,10 @@ export class Db {
     await Promise.all([
       ...droppedFill.map((f) => this.deleteKey('fillUps', f.id)),
       ...droppedMaint.map((m) => this.deleteKey('maintenance', m.id)),
+      ...droppedPeriods.map((p) => this.deleteKey('expensePeriods', p.id)),
+      ...droppedBreakdowns.map((b) => this.deleteKey('breakdowns', b.id)),
+      ...droppedOther.map((o) => this.deleteKey('otherExpenses', o.id)),
+      ...droppedMilestones.map((m) => this.deleteKey('milestones', m.id)),
     ]);
     await this.put('settings', { id: 'settings', ...settings });
 
@@ -571,6 +883,10 @@ export class Db {
     this._settings.set(settings);
     this._fillUpsAll.set(fillUps);
     this._maintenanceAll.set(maintenance);
+    this._expensePeriodsAll.set(expensePeriods);
+    this._breakdownsAll.set(breakdowns);
+    this._otherExpensesAll.set(otherExpenses);
+    this._milestonesAll.set(milestones);
     this.recalcOdometer();
   }
 
@@ -595,6 +911,32 @@ function carVinFields(
   };
 }
 
+function carDocFields(
+  o?: Partial<
+    Pick<
+      Car,
+      | 'vin'
+      | 'year'
+      | 'make'
+      | 'model'
+      | 'recallCount'
+      | 'plate'
+      | 'licenseExpiry'
+      | 'registrationExpiry'
+    >
+  > | null,
+): Pick<
+  Car,
+  'vin' | 'year' | 'make' | 'model' | 'recallCount' | 'plate' | 'licenseExpiry' | 'registrationExpiry'
+> {
+  return {
+    ...carVinFields(o),
+    plate: o?.plate ? String(o.plate).trim() : undefined,
+    licenseExpiry: o?.licenseExpiry ? String(o.licenseExpiry) : undefined,
+    registrationExpiry: o?.registrationExpiry ? String(o.registrationExpiry) : undefined,
+  };
+}
+
 function normalizeCar(raw: unknown): Car {
   const o = raw as Car;
   if (!o?.id || typeof o.nickname !== 'string') {
@@ -605,7 +947,7 @@ function normalizeCar(raw: unknown): Car {
     nickname: String(o.nickname),
     initialOdometer: Number(o.initialOdometer),
     currentOdometer: Number(o.currentOdometer),
-    ...carVinFields(o),
+    ...carDocFields(o),
     createdAt: String(o.createdAt),
     updatedAt: String(o.updatedAt),
   };
@@ -658,6 +1000,99 @@ function normalizeMaintenance(raw: unknown): Maintenance {
   };
 }
 
+function normalizeExpensePeriod(raw: unknown): ExpensePeriod {
+  const o = raw as ExpensePeriod;
+  if (!o?.id || !o.carId || !o.startDate) {
+    throw new Error('backup.invalid');
+  }
+  return {
+    id: String(o.id),
+    carId: String(o.carId),
+    startDate: String(o.startDate),
+    endDate: o.endDate ? String(o.endDate) : undefined,
+  };
+}
+
+function normalizeBreakdown(raw: unknown): Breakdown {
+  const o = raw as Breakdown;
+  if (
+    !o?.id ||
+    !o.carId ||
+    typeof o.symptom !== 'string' ||
+    !BREAKDOWN_CATEGORIES.includes(o.category)
+  ) {
+    throw new Error('backup.invalid');
+  }
+  return {
+    id: String(o.id),
+    carId: String(o.carId),
+    symptom: String(o.symptom),
+    repairCost: Number(o.repairCost),
+    odometer: Number(o.odometer),
+    date: String(o.date),
+    shopName: o.shopName ? String(o.shopName) : undefined,
+    category: o.category,
+    note: o.note ? String(o.note) : undefined,
+    createdAt: String(o.createdAt),
+    updatedAt: String(o.updatedAt),
+  };
+}
+
+function normalizeOtherExpense(raw: unknown): OtherExpense {
+  const o = raw as OtherExpense;
+  if (!o?.id || !o.carId || typeof o.label !== 'string') {
+    throw new Error('backup.invalid');
+  }
+  return {
+    id: String(o.id),
+    carId: String(o.carId),
+    label: String(o.label),
+    amount: Number(o.amount),
+    date: String(o.date),
+    note: o.note ? String(o.note) : undefined,
+    createdAt: String(o.createdAt),
+    updatedAt: String(o.updatedAt),
+  };
+}
+
+const MILESTONE_TASK_KINDS: readonly MilestoneTaskKind[] = [
+  'oil',
+  'filter',
+  'tires',
+  'brakes',
+  'labor',
+  'custom',
+] as const;
+
+function normalizeMaintenanceTask(raw: unknown): MaintenanceTask {
+  const o = raw as MaintenanceTask;
+  if (!o?.id || !MILESTONE_TASK_KINDS.includes(o.kind)) {
+    throw new Error('backup.invalid');
+  }
+  return {
+    id: String(o.id),
+    kind: o.kind,
+    label: o.label ? String(o.label) : undefined,
+    intervalKm: o.intervalKm == null ? undefined : Number(o.intervalKm),
+    lastDoneKm: o.lastDoneKm == null ? undefined : Number(o.lastDoneKm),
+    maintenanceId: o.maintenanceId ? String(o.maintenanceId) : undefined,
+  };
+}
+
+function normalizeMilestone(raw: unknown): MaintenanceMilestone {
+  const o = raw as MaintenanceMilestone;
+  if (!o?.id || !o.carId || typeof o.targetKm !== 'number') {
+    throw new Error('backup.invalid');
+  }
+  return {
+    id: String(o.id),
+    carId: String(o.carId),
+    targetKm: Number(o.targetKm),
+    scheduledDate: o.scheduledDate ? String(o.scheduledDate) : undefined,
+    tasks: Array.isArray(o.tasks) ? o.tasks.map(normalizeMaintenanceTask) : [],
+  };
+}
+
 function isTheme(v: unknown): v is Theme {
   return (THEMES as readonly string[]).includes(String(v));
 }
@@ -676,10 +1111,16 @@ function normalizeSettings(raw: unknown): Settings {
     lastSeenWhatsNewId: o.lastSeenWhatsNewId
       ? String(o.lastSeenWhatsNewId)
       : undefined,
+    customMaintenanceTypes: normalizeCustomTypes(o.customMaintenanceTypes),
+    assistantEnabled: o.assistantEnabled === true ? true : undefined,
+    assistantApiKey: o.assistantApiKey ? String(o.assistantApiKey) : undefined,
+    assistantBaseUrl: o.assistantBaseUrl ? String(o.assistantBaseUrl) : undefined,
+    assistantModel: o.assistantModel ? String(o.assistantModel) : undefined,
+    fuelTipText: o.fuelTipText ? String(o.fuelTipText) : undefined,
+    fuelTipDay: o.fuelTipDay ? String(o.fuelTipDay) : undefined,
     licenseExpiry: o.licenseExpiry ? String(o.licenseExpiry) : undefined,
     registrationExpiry: o.registrationExpiry
       ? String(o.registrationExpiry)
       : undefined,
-    customMaintenanceTypes: normalizeCustomTypes(o.customMaintenanceTypes),
   };
 }

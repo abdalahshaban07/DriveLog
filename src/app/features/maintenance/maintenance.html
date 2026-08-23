@@ -1,127 +1,115 @@
 <div class="stack page-narrow">
   <app-page-header [title]="i18n.t('maint.title')" />
 
-  @if (editId()) {
-    <div class="edit-banner" role="status">
-      <span>{{ i18n.t('maint.editing') }}</span>
-      <button type="button" class="ghost" (click)="resetForm()">
-        {{ i18n.t('maint.cancelEdit') }}
-      </button>
-    </div>
+  @if (sortedMilestones().length === 0) {
+    <p class="empty-state">{{ i18n.t('milestone.empty') }}</p>
   }
 
-  <section class="card stack" [attr.aria-label]="i18n.t('maint.essentials')">
-    <p class="label">{{ i18n.t('maint.essentials') }}</p>
-    <app-select-field
-      [label]="i18n.t('maint.type')"
-      [options]="typeOptions()"
-      [value]="typeSelectValue()"
-      (valueChange)="onTypeValue($event)"
-    />
+  @for (milestone of sortedMilestones(); track milestone.id) {
+    <section class="card milestone stack">
+      <header class="milestone__head">
+        <h2 class="milestone__title">
+          {{ i18n.t('milestone.targetKm', { km: milestone.targetKm }) }}
+        </h2>
+        <app-date-field
+          class="milestone__date"
+          [label]="i18n.t('milestone.scheduledDate')"
+          [value]="milestone.scheduledDate ?? ''"
+          (valueChange)="onScheduledDate(milestone, $event)"
+        />
+      </header>
 
-    <app-numeric-field
-      [label]="i18n.t('maint.odometer')"
-      [(value)]="odometer"
-      [error]="odoError()"
-    />
-    <app-date-field [label]="i18n.t('maint.date')" [(value)]="date" />
-    <app-text-field [label]="i18n.t('maint.note')" [(value)]="note" [multiline]="true" />
-  </section>
+      <ul class="task-list" [attr.aria-label]="i18n.t('milestone.tasks')">
+        @for (task of milestone.tasks; track task.id) {
+          <li
+            class="task-row"
+            [class.task-row--done]="!isTaskOpen(task)"
+          >
+            <div class="task-row__main">
+              <span class="task-row__label">{{ taskLabel(task) }}</span>
+              @if (isTaskOpen(task)) {
+                <span class="task-row__km">
+                  {{ i18n.t('milestone.kmRemaining', { km: taskRemaining(task, milestone) }) }}
+                </span>
+              } @else {
+                <span class="task-row__done">{{ i18n.t('milestone.completed') }}</span>
+              }
+            </div>
+            @if (isTaskOpen(task)) {
+              <button
+                type="button"
+                class="task-row__action"
+                (click)="startComplete(milestone.id, task.id)"
+              >
+                {{ i18n.t('milestone.complete') }}
+              </button>
+            }
+          </li>
+
+          @if (
+            completing()?.milestoneId === milestone.id && completing()?.taskId === task.id
+          ) {
+            <li class="complete-form stack">
+              <p class="label">{{ i18n.t('milestone.completeTask') }}: {{ taskLabel(task) }}</p>
+              <app-numeric-field
+                [label]="i18n.t('maint.odometer')"
+                [(value)]="odometer"
+                [error]="odoError()"
+              />
+              <app-date-field [label]="i18n.t('maint.date')" [(value)]="date" />
+              <app-numeric-field
+                [label]="i18n.t('maint.cost')"
+                [(value)]="cost"
+                [error]="costError()"
+              />
+              <app-text-field [label]="i18n.t('maint.note')" [(value)]="note" [multiline]="true" />
+              <div class="complete-form__actions">
+                <button type="button" class="ghost" (click)="cancelComplete()">
+                  {{ i18n.t('common.cancel') }}
+                </button>
+                <app-primary-button
+                  [label]="i18n.t('milestone.completeSave')"
+                  [disabled]="saving()"
+                  (pressed)="saveComplete()"
+                />
+              </div>
+            </li>
+          }
+        }
+      </ul>
+    </section>
+  }
+
+  <app-primary-button
+    [label]="i18n.t('milestone.add')"
+    [disabled]="addingMilestone()"
+    (pressed)="addMilestone()"
+  />
 
   <details class="disclosure">
-    <summary>{{ i18n.t('maint.advanced') }}</summary>
-    <div class="disclosure__body stack">
-      <app-text-field [label]="i18n.t('maint.centerName')" [(value)]="centerName" />
-      <app-text-field [label]="i18n.t('maint.technicianName')" [(value)]="technicianName" />
-      <app-text-field [label]="i18n.t('maint.partBrand')" [(value)]="partBrand" />
-
-      <div class="row">
-        <app-numeric-field
-          [label]="i18n.t('maint.partCost')"
-          [value]="partCost()"
-          (valueChange)="onPartCost($event)"
-        />
-        <app-numeric-field
-          [label]="i18n.t('maint.laborCost')"
-          [value]="laborCost()"
-          (valueChange)="onLaborCost($event)"
-        />
-      </div>
-
-      <app-numeric-field [label]="i18n.t('maint.cost')" [(value)]="cost" [error]="costError()" />
-      <app-numeric-field [label]="i18n.t('maint.dueKm')" [(value)]="dueKm" />
-      <app-date-field [label]="i18n.t('maint.dueDate')" [(value)]="dueDate" />
+    <summary>{{ i18n.t('milestone.history') }}</summary>
+    <div class="disclosure__body stack list">
+      @if (history().length === 0) {
+        <p class="empty-state">{{ i18n.t('maint.empty') }}</p>
+      }
+      @for (m of history(); track m.id) {
+        <article class="due-card">
+          <div>
+            <strong>{{ rowLabel(m) }}</strong>
+            <p class="meta">
+              <span class="pill">{{ m.date }}</span>
+              {{ m.odometer }} {{ i18n.t('common.km') }} · {{ formatMoney(m.cost) }}
+            </p>
+          </div>
+          <div class="actions">
+            <button type="button" class="danger" (click)="askDelete(m.id)">
+              {{ i18n.t('maint.delete') }}
+            </button>
+          </div>
+        </article>
+      }
     </div>
   </details>
-
-  <app-primary-button [label]="i18n.t('maint.save')" [disabled]="saving()" (pressed)="save()" />
-
-  <section class="list">
-    <p class="label">{{ i18n.t('maint.list') }}</p>
-
-    @if (holidayBanner(); as banner) {
-      <p class="holiday-banner" role="status">{{ banner }}</p>
-    }
-
-    <div class="seg chips" role="group" [attr.aria-label]="i18n.t('maint.filter')">
-      <button
-        type="button"
-        class="seg__btn"
-        [class.seg__btn--on]="listFilter() === 'all'"
-        (click)="listFilter.set('all')"
-      >
-        {{ i18n.t('maint.filterAll') }}
-      </button>
-      <button
-        type="button"
-        class="seg__btn"
-        [class.seg__btn--on]="listFilter() === 'dueSoon'"
-        (click)="listFilter.set('dueSoon')"
-      >
-        {{ i18n.t('due.dueSoon') }}
-      </button>
-      <button
-        type="button"
-        class="seg__btn"
-        [class.seg__btn--on]="listFilter() === 'overdue'"
-        (click)="listFilter.set('overdue')"
-      >
-        {{ i18n.t('due.overdue') }}
-      </button>
-    </div>
-
-    @if (filteredMaintenance().length === 0) {
-      <p class="empty-state">{{ i18n.t('maint.empty') }}</p>
-    }
-    @for (m of filteredMaintenance(); track m.id) {
-      <article
-        class="due-card"
-        [class.due-card--overdue]="rowStatus(m.id) === 'overdue'"
-        [class.due-card--soon]="rowStatus(m.id) === 'dueSoon'"
-      >
-        <div>
-          <strong>{{ rowLabel(m) }}</strong>
-          <p class="meta">
-            <span class="pill">{{ m.date }}</span>
-            {{ m.odometer }} {{ i18n.t('common.km') }} · {{ formatMoney(m.cost) }}
-          </p>
-          @if (rowStatusLabel(m.id); as status) {
-            <p class="flag" [class.flag--stop]="rowStatus(m.id) === 'overdue'">
-              {{ status }}
-            </p>
-          }
-        </div>
-        <div class="actions">
-          <button type="button" (click)="edit(m)">
-            {{ i18n.t('common.edit') }}
-          </button>
-          <button type="button" class="danger" (click)="askDelete(m.id)">
-            {{ i18n.t('maint.delete') }}
-          </button>
-        </div>
-      </article>
-    }
-  </section>
 
   @if (pendingDelete()) {
     <app-confirm-bar

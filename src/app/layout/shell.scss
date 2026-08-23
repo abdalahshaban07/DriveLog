@@ -33,17 +33,17 @@
   bottom: 0;
   z-index: 100;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: stretch;
-  gap: 0;
+  gap: 2px;
   max-inline-size: var(--shell);
   margin-inline: auto;
   height: var(--nav-height);
-  padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+  padding: 8px 6px calc(8px + env(safe-area-inset-bottom, 0px));
   overflow: hidden;
   border-block-start: 1px solid var(--hairline);
   background: var(--surface);
-  box-shadow: none;
+  box-shadow: 0 -4px 24px color-mix(in srgb, var(--bg) 40%, transparent);
 }
 
 .nav a {
@@ -60,12 +60,14 @@
   color: var(--muted);
   font-size: var(--type-nav);
   font-weight: 600;
-  letter-spacing: 0.03em;
-  border-radius: calc(var(--radius) - 2px);
+  letter-spacing: 0.02em;
+  border-radius: 14px;
   text-align: center;
   padding: 0 2px;
   cursor: pointer;
-  transition: color var(--motion-fast) var(--ease-out);
+  transition:
+    color var(--motion-fast) var(--ease-out),
+    background var(--motion-fast) var(--ease-out);
 }
 
 .nav a:active {
@@ -93,16 +95,16 @@
 
 .nav a.active {
   color: var(--fuel);
-  background: transparent;
+  background: var(--well);
 }
 
 .nav a.active::before {
   content: '';
   position: absolute;
-  inset-block-start: 2px;
-  inset-inline: 32%;
-  block-size: 2px;
-  border-radius: 1px;
+  inset-block-start: 4px;
+  inset-inline: 28%;
+  block-size: 3px;
+  border-radius: 999px;
   background: var(--fuel);
 }
 

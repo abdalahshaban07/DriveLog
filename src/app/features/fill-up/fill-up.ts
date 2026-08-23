@@ -295,7 +295,7 @@ export class FillUpPage {
         weatherCode: w?.weatherCode,
         placeLabel,
       });
-      await this.router.navigateByUrl('/');
+      await this.router.navigateByUrl('/fuel');
     } finally {
       this.saving.set(false);
     }

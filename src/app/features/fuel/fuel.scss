@@ -1,0 +1,99 @@
+.fuel {
+  padding-block-end: calc(var(--nav-height) + var(--space-8));
+}
+
+.tip-strip {
+  padding: var(--space-4);
+  background: color-mix(in srgb, var(--cta) 10%, var(--surface));
+}
+
+.tip-strip__label {
+  margin: 0 0 var(--space-2);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.tip-strip__text {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.tip-strip__hint {
+  margin: var(--space-2) 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.tip-strip__refresh {
+  margin-top: var(--space-3);
+  min-height: var(--tap);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.grade-row {
+  display: grid;
+  gap: var(--space-2);
+  margin-block: var(--space-4);
+}
+
+.grade-row__lbl {
+  font-weight: 600;
+}
+
+.grade-row__select {
+  min-height: var(--tap);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius);
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.metric-card {
+  padding: var(--space-4);
+  border-radius: var(--radius);
+  background: var(--card-pastel, var(--surface));
+  border: 1px solid var(--hairline);
+}
+
+.metric-card__label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-block-end: var(--space-2);
+}
+
+.metric-card__value {
+  font-size: 1.15rem;
+}
+
+.fuel-fab {
+  position: fixed;
+  inset-inline-end: max(var(--space-5), calc((100vw - var(--shell)) / 2 + var(--space-5)));
+  bottom: calc(var(--nav-height) + var(--space-4));
+  z-index: 90;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap);
+  padding: 0 var(--space-5);
+  border-radius: 999px;
+  background: var(--cta);
+  color: var(--cta-text);
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--cta) 35%, transparent);
+}
