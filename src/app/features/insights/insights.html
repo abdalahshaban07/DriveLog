@@ -1,7 +1,7 @@
 <div class="stack insights">
   <app-page-header [title]="i18n.t('insights.title')" />
 
-  <div class="seg seg--pill" role="group" [attr.aria-label]="i18n.t('insights.period')">
+  <div class="seg" role="group" [attr.aria-label]="i18n.t('insights.period')">
     @for (p of periodOptions; track p.id) {
       <button
         type="button"
