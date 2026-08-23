@@ -4,7 +4,7 @@ Phone-first **Operate** PWA for personal fuel + maintenance. Local-first Indexed
 
 ## Visual world
 
-**Kinetic Pulse** (replaces Cold Night Pump): system light/dark default, amber `--fuel` accent (~5% UI), Outfit, instrument density. Themes: system / light / dark / contrast / dusk.
+**Driver Ledger** (Dos Benzin–led + Tesla hero): system light/dark, amber `--fuel` (~5% UI), Outfit, money-first hierarchy, sparse Home economy hero. Themes: system / light / dark / contrast / dusk.
 
 ## Core flows
 

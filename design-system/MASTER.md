@@ -1,48 +1,46 @@
-# DriveLog design system — Kinetic Pulse
+# DriveLog design system — Driver Ledger
 
 > Visual SSOT. Live tokens: `src/app/ui/tokens.scss`. Product: `PRODUCT.md`.
 
-**Updated:** 2026-08-23 · **Product:** Personal fuel + maintenance PWA (phone-first, EN+AR)
+**Updated:** 2026-08-23 · **World:** Driver Ledger (Dos Benzin–led + Tesla hero)
 
 ## Design read
 
-Phone-first Operate PWA. Cool slate + amber fuel. System light/dark. Instrument density (VISUAL_DENSITY 7). MOTION 7 via CSS + View Transitions only.
+Phone-first Operate PWA for MENA drivers. **Expense utility with one sparse hero** — not equal card soup, not marketing soft UI.
 
-**Dials:** `DESIGN_VARIANCE: 6` · `MOTION_INTENSITY: 7` · `VISUAL_DENSITY: 7`
+**Dominant (70%):** Dos Benzin — driver ledger, money first, Arabic-first comfort, task density  
+**Accent (30%):** Tesla — Home hero only: huge L/100km, cold empty, almost no chrome
 
-**Stack:** Angular 22 + SCSS tokens. No Tailwind / Material / GSAP / Motion npm.
+**Dials:** `DESIGN_VARIANCE: 5` · `MOTION_INTENSITY: 4` · `VISUAL_DENSITY: 7`
+
+## Hierarchy (non-negotiable)
+
+| Layer | Rules |
+|-------|--------|
+| Home hero | Borderless. Big number. Car name quiet. One amber CTA. Breathing room. |
+| Money | Month spend + cost/km are first-class ledger rows, not equal widgets |
+| Secondary | Due / Around you quieter — less border, no competing shadows |
+| Fill-up | Task stack; receipt is an **instrument strip** (ink well); total is the emotional center |
+| Shell | Opaque fixed nav; active = amber text + thin top tick — no pill chrome |
 
 ## Color
 
-Amber `--fuel` `#E8A317` only strong accent. Light and dark both polished. `data-theme="system"` follows `prefers-color-scheme`.
+Amber `--fuel` `#E8A317` for CTAs and positive feedback only (~5%). Cool slate neutrals. System light/dark both polished.
 
-Never: cream/beige, purple mesh, glass nav, brass second accent.
+Never: cream, purple mesh, glass nav, equal card grids, stadium pills on filters, radial “AI” card glows.
 
 ## Type
 
-Outfit (self-hosted) + Arabic OS fallback. Tabular nums on meters/economy/cost.
+Outfit (self-hosted) + Arabic OS fallback. Tabular nums on meters / economy / cost. Hero large; labels small; few mid sizes.
 
-## Motion (Emil contract)
+## Motion
 
-| Surface | Decision |
-|---------|----------|
-| Tab nav | Instant |
-| Fuel chip | 50–100ms color/border |
-| Receipt total | Instant / opacity flash |
-| Update modal | 200–300ms fade + scale(0.95→1) |
+Tab nav: instant. Fuel chip: border/color only. Receipt total: opacity flash. Modal: 200–300ms scale(0.95→1). Honor `prefers-reduced-motion`.
 
-Tokens: `--motion-fast` 160ms · `--motion-normal` 250ms · `--ease-out` · `--nav-height`.
+## Radius
 
-Hard bans: no `transition: all`, no `scale(0)`, honor `prefers-reduced-motion`.
-
-## Shell
-
-Fixed bottom nav (`position: fixed; bottom: 0` + safe-area). Main padding accounts for `--nav-height`. Update = modal (Later / Update now), not top strip.
-
-## Fill-up
-
-No keypad. Fuel grade chips + read-only receipt preview. Cost computed.
+`--radius: 12px` (instrument, not soft SaaS). Nested: `calc(var(--radius) - 2px)`.
 
 ## Accessibility
 
-56px tap · 2px amber focus · visible labels · RTL logical properties · icon buttons with i18n `aria-label`.
+56px tap · 2px amber focus · visible labels · RTL logical properties · i18n `aria-label` on icon buttons.
