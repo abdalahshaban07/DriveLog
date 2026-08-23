@@ -1,19 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Db } from '../../data/db';
 import { todayDateOnly } from '../../domain/dues';
-import {
-  addMilestoneAfter,
-  completeTask,
-  sortMilestones,
-  taskKmRemaining,
-} from '../../domain/milestones';
-import type {
-  Maintenance,
-  MaintenanceMilestone,
-  MaintenanceTask,
-  MaintenanceType,
-  MilestoneTaskKind,
-} from '../../domain/models';
+import { MAINTENANCE_TYPES, type Maintenance, type MaintenanceType } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { ConfirmBar } from '../../ui/confirm-bar';
@@ -21,14 +9,21 @@ import { DateField } from '../../ui/date-field';
 import { NumericField } from '../../ui/numeric-field';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
+import { SelectField } from '../../ui/select-field';
 import { TextField } from '../../ui/text-field';
-
-type CompletingTask = { milestoneId: string; taskId: string };
 
 @Component({
   selector: 'app-maintenance',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, TextField, NumericField, DateField, PrimaryButton, ConfirmBar],
+  imports: [
+    PageHeader,
+    TextField,
+    NumericField,
+    DateField,
+    SelectField,
+    PrimaryButton,
+    ConfirmBar,
+  ],
   templateUrl: './maintenance.html',
   styleUrl: './maintenance.scss',
 })
@@ -36,20 +31,29 @@ export class MaintenancePage {
   readonly i18n = inject(I18n);
   readonly db = inject(Db);
 
-  readonly completing = signal<CompletingTask | null>(null);
+  readonly type = signal('oil');
   readonly cost = signal('');
   readonly odometer = signal(String(this.db.car()?.currentOdometer ?? ''));
   readonly date = signal(todayDateOnly());
   readonly note = signal('');
+  readonly dueKm = signal('');
+  readonly dueDate = signal('');
   readonly saving = signal(false);
-  readonly addingMilestone = signal(false);
-  readonly pendingDelete = signal<string | null>(null);
   readonly editId = signal<string | null>(null);
+  readonly pendingDelete = signal<string | null>(null);
   readonly odoError = signal('');
   readonly costError = signal('');
 
-  readonly sortedMilestones = computed(() => sortMilestones(this.db.milestones()));
-  readonly currentOdometer = computed(() => this.db.car()?.currentOdometer ?? 0);
+  readonly typeOptions = computed(() => {
+    const opts: { value: string; label: string }[] = MAINTENANCE_TYPES.map((value) => ({
+      value,
+      label: this.i18n.t(`maintenance.type.${value}` as MsgKey),
+    }));
+    for (const name of this.db.settings().customMaintenanceTypes ?? []) {
+      opts.push({ value: `custom:${name}`, label: name });
+    }
+    return opts;
+  });
 
   readonly history = computed(() =>
     [...this.db.maintenance()].sort(
@@ -57,99 +61,71 @@ export class MaintenancePage {
     ),
   );
 
-  taskLabel(task: MaintenanceTask): string {
-    if (task.kind === 'custom' && task.label) {
-      return task.label;
-    }
-    return this.i18n.t(`milestone.task.${task.kind}` as MsgKey);
-  }
-
-  taskRemaining(task: MaintenanceTask, milestone: MaintenanceMilestone): number {
-    return taskKmRemaining(task, milestone, this.currentOdometer());
-  }
-
-  isTaskOpen(task: MaintenanceTask): boolean {
-    return !task.maintenanceId;
-  }
-
-  startComplete(milestoneId: string, taskId: string): void {
-    this.completing.set({ milestoneId, taskId });
+  resetForm(): void {
+    this.editId.set(null);
+    this.type.set('oil');
     this.cost.set('');
     this.odometer.set(String(this.db.car()?.currentOdometer ?? ''));
     this.date.set(todayDateOnly());
     this.note.set('');
+    this.dueKm.set('');
+    this.dueDate.set('');
     this.odoError.set('');
     this.costError.set('');
   }
 
-  cancelComplete(): void {
-    this.completing.set(null);
-    this.odoError.set('');
-    this.costError.set('');
+  startEdit(row: Maintenance): void {
+    this.editId.set(row.id);
+    this.type.set(row.otherLabel ? `custom:${row.otherLabel}` : row.type);
+    this.cost.set(String(row.cost));
+    this.odometer.set(String(row.odometer));
+    this.date.set(row.date);
+    this.note.set(row.note ?? '');
+    this.dueKm.set(row.dueKm != null ? String(row.dueKm) : '');
+    this.dueDate.set(row.dueDate ?? '');
   }
 
-  async onScheduledDate(milestone: MaintenanceMilestone, value: string): Promise<void> {
-    await this.db.saveMilestone({
-      ...milestone,
-      scheduledDate: value.trim() || undefined,
-    });
+  parseType(value: string): { type: MaintenanceType; otherLabel?: string } {
+    if (value.startsWith('custom:')) {
+      return { type: 'other', otherLabel: value.slice(7) };
+    }
+    return { type: value as MaintenanceType };
   }
 
-  async addMilestone(): Promise<void> {
-    const car = this.db.car();
-    if (!car) {
-      return;
-    }
-    this.addingMilestone.set(true);
-    try {
-      const next = addMilestoneAfter(car.id, this.db.milestones(), car.currentOdometer);
-      await this.db.saveMilestone(next);
-    } finally {
-      this.addingMilestone.set(false);
-    }
-  }
-
-  async saveComplete(): Promise<void> {
-    const ctx = this.completing();
-    if (!ctx) {
-      return;
-    }
-    const milestone = this.db.milestones().find((m) => m.id === ctx.milestoneId);
-    const task = milestone?.tasks.find((t) => t.id === ctx.taskId);
-    if (!milestone || !task) {
-      return;
-    }
-    const cost = Number(this.cost() || '0');
+  async save(): Promise<void> {
+    const cost = Number(this.cost());
     const odometer = Number(this.odometer());
     this.odoError.set('');
     this.costError.set('');
-    let invalid = false;
+    let ok = true;
     if (!Number.isFinite(odometer) || odometer < 0) {
       this.odoError.set(this.i18n.t('maint.err.odometer'));
-      invalid = true;
+      ok = false;
     }
     if (!Number.isFinite(cost)) {
       this.costError.set(this.i18n.t('maint.err.cost'));
-      invalid = true;
+      ok = false;
     }
-    if (invalid) {
+    if (!ok) {
       return;
     }
-    const { type, otherLabel } = taskMaintenanceFields(task);
-    const maintenanceId = crypto.randomUUID();
+    const { type, otherLabel } = this.parseType(this.type());
+    const dueKmRaw = this.dueKm().trim();
+    const dueKm = dueKmRaw ? Number(dueKmRaw) : undefined;
     this.saving.set(true);
     try {
       await this.db.saveMaintenance({
-        id: maintenanceId,
+        id: this.editId() ?? undefined,
         type,
+        otherLabel,
         cost,
         odometer,
         date: this.date(),
         note: this.note().trim() || undefined,
-        otherLabel,
+        dueKm: Number.isFinite(dueKm) ? dueKm : undefined,
+        dueDate: this.dueDate().trim() || undefined,
       });
-      await this.db.saveMilestone(completeTask(milestone, task.id, maintenanceId, odometer));
-      this.cancelComplete();
+      this.resetForm();
     } finally {
       this.saving.set(false);
     }
@@ -168,13 +144,13 @@ export class MaintenancePage {
 
   async doDelete(): Promise<void> {
     const id = this.pendingDelete();
+    this.pendingDelete.set(null);
     if (!id) {
       return;
     }
     await this.db.deleteMaintenance(id);
-    this.pendingDelete.set(null);
     if (this.editId() === id) {
-      this.editId.set(null);
+      this.resetForm();
     }
   }
 
@@ -187,27 +163,6 @@ export class MaintenancePage {
       }).format(value);
     } catch {
       return `${value} ${this.db.settings().currency}`;
-    }
-  }
-}
-
-function taskMaintenanceFields(task: MaintenanceTask): {
-  type: MaintenanceType;
-  otherLabel?: string;
-} {
-  switch (task.kind) {
-    case 'oil':
-    case 'filter':
-    case 'tires':
-    case 'brakes':
-      return { type: task.kind };
-    case 'labor':
-      return { type: 'other', otherLabel: 'Labor' };
-    case 'custom':
-      return { type: 'other', otherLabel: task.label?.trim() || 'Custom' };
-    default: {
-      const _never: never = task.kind;
-      return _never;
     }
   }
 }

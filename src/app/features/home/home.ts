@@ -23,6 +23,9 @@ import type { ExpenseCategory } from '../../domain/models';
 import { buildSmartReports } from '../../domain/smart-reports';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
+import { DateField } from '../../ui/date-field';
+import { PageHeader } from '../../ui/page-header';
+import { PrimaryButton } from '../../ui/primary-button';
 
 type HomeView = 'dashboard' | 'reports' | 'charts';
 type ChartCategory = ExpenseCategory | 'all';
@@ -30,7 +33,7 @@ type ChartCategory = ExpenseCategory | 'all';
 @Component({
   selector: 'app-home',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, PageHeader, DateField, PrimaryButton],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
@@ -44,6 +47,9 @@ export class HomePage {
   readonly chartCategory = signal<ChartCategory>('all');
   readonly chartPeriod = signal<LedgerPeriodFilter>('3m');
   readonly startingPeriod = signal(false);
+  readonly showPeriodForm = signal(false);
+  readonly periodCloseDate = signal(todayDateOnly());
+  readonly periodStartDate = signal(todayDateOnly());
 
   readonly tabOptions: { id: HomeView; labelKey: MsgKey }[] = [
     { id: 'dashboard', labelKey: 'home.tab.dashboard' },
@@ -79,21 +85,15 @@ export class HomePage {
       this.db.otherExpenses(),
     ),
   );
-  readonly reports = computed(() => {
-    const car = this.db.car();
-    if (!car) {
-      return [];
-    }
-    return buildSmartReports({
+  readonly reports = computed(() =>
+    buildSmartReports({
       fills: this.db.fillUps(),
       maintenance: this.db.maintenance(),
       breakdowns: this.db.breakdowns(),
       other: this.db.otherExpenses(),
       period: this.period(),
-      milestones: this.db.milestones(),
-      odometer: car.currentOdometer,
-    });
-  });
+    }),
+  );
   readonly ledgerRows = computed(() =>
     buildExpenseLedger({
       fills: this.db.fillUps(),
@@ -186,14 +186,30 @@ export class HomePage {
     }
   }
 
-  async startNewMonth(): Promise<void> {
+  openPeriodForm(): void {
+    const today = todayDateOnly();
+    this.periodCloseDate.set(today);
+    this.periodStartDate.set(today);
+    this.showPeriodForm.set(true);
+  }
+
+  cancelPeriodForm(): void {
+    this.showPeriodForm.set(false);
+  }
+
+  async confirmNewPeriod(): Promise<void> {
     const carId = this.activeCarId();
     if (!carId) {
       return;
     }
     this.startingPeriod.set(true);
     try {
-      await this.db.startNewPeriod(carId);
+      await this.db.startNewPeriod(
+        carId,
+        this.periodStartDate(),
+        this.periodCloseDate(),
+      );
+      this.showPeriodForm.set(false);
     } finally {
       this.startingPeriod.set(false);
     }

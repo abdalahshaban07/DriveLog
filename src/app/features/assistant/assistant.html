@@ -1,10 +1,6 @@
 <div class="stack assistant">
   <app-page-header [title]="i18n.t('assistant.title')" />
 
-  @if (!enabled()) {
-    <p class="empty-state" role="status">{{ i18n.t('assistant.setupHint') }}</p>
-  }
-
   <section class="card faq" [attr.aria-label]="i18n.t('assistant.faqTitle')">
     <h2 class="faq__title">{{ i18n.t('assistant.faqTitle') }}</h2>
     <div class="faq__grid">
@@ -26,6 +22,12 @@
 
   @if (error()) {
     <p class="error-state" role="alert">{{ error() }}</p>
+  }
+
+  @if (messages().length) {
+    <button type="button" class="clear-chat" (click)="clearChat()">
+      {{ i18n.t('assistant.clear') }}
+    </button>
   }
 
   <app-text-field

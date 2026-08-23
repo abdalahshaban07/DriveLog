@@ -41,3 +41,13 @@
   margin: 0;
   white-space: pre-wrap;
 }
+
+.clear-chat {
+  min-height: var(--tap);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-weight: 600;
+  cursor: pointer;
+}

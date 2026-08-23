@@ -57,12 +57,6 @@ export class SettingsPage {
   readonly plate = signal(this.db.car()?.plate ?? '');
   readonly license = signal(this.db.car()?.licenseExpiry ?? '');
   readonly registration = signal(this.db.car()?.registrationExpiry ?? '');
-  readonly assistantEnabled = signal(this.db.settings().assistantEnabled === true);
-  readonly assistantApiKey = signal(this.db.settings().assistantApiKey ?? '');
-  readonly assistantBaseUrl = signal(
-    this.db.settings().assistantBaseUrl ?? 'https://api.openai.com/v1',
-  );
-  readonly assistantModel = signal(this.db.settings().assistantModel ?? 'gpt-4o-mini');
   readonly pendingImport = signal<BackupFile | null>(null);
   readonly pendingDestructive = signal<DestructiveAction | null>(null);
   readonly importFileName = signal('');
@@ -165,28 +159,6 @@ export class SettingsPage {
     await this.db.updateCar({ registrationExpiry: value || undefined });
   }
 
-  async onAssistantEnabled(event: Event): Promise<void> {
-    const on = (event.target as HTMLInputElement).checked;
-    this.assistantEnabled.set(on);
-    await this.db.updateSettings({ assistantEnabled: on });
-  }
-
-  async onAssistantApiKey(value: string): Promise<void> {
-    this.assistantApiKey.set(value);
-    await this.db.updateSettings({ assistantApiKey: value.trim() || undefined });
-  }
-
-  async onAssistantBaseUrl(value: string): Promise<void> {
-    this.assistantBaseUrl.set(value);
-    await this.db.updateSettings({
-      assistantBaseUrl: value.trim() || undefined,
-    });
-  }
-
-  async onAssistantModel(value: string): Promise<void> {
-    this.assistantModel.set(value);
-    await this.db.updateSettings({ assistantModel: value.trim() || undefined });
-  }
   async onDuskAssist(event: Event): Promise<void> {
     const on = (event.target as HTMLInputElement).checked;
     await this.db.updateSettings({ duskAssistEnabled: on });
@@ -243,12 +215,6 @@ export class SettingsPage {
       this.importOk.set(true);
       this.currency.set(this.db.settings().currency);
       this.syncCarFields();
-      this.assistantEnabled.set(this.db.settings().assistantEnabled === true);
-      this.assistantApiKey.set(this.db.settings().assistantApiKey ?? '');
-      this.assistantBaseUrl.set(
-        this.db.settings().assistantBaseUrl ?? 'https://api.openai.com/v1',
-      );
-      this.assistantModel.set(this.db.settings().assistantModel ?? 'gpt-4o-mini');
       await this.i18n.setLanguage(this.db.settings().language);
     } catch {
       this.importError.set(this.i18n.t('backup.failed'));
