@@ -53,6 +53,7 @@
     @if (updateReady()) {
       <app-update-modal
         [lines]="modalLines()"
+        [releaseId]="releaseId()"
         (later)="dismissUpdate()"
         (updateNow)="reload()"
       />

@@ -11,7 +11,7 @@ describe('MotionPolicy', () => {
     }));
     const policy = new MotionPolicy();
     expect(policy.allowAnime('ledger')).toBe(false);
-    expect(policy.allowWebGL('fillUpTank')).toBe(false);
+    expect(policy.allowWebGL('homeAmbient')).toBe(false);
     vi.unstubAllGlobals();
   });
 
@@ -23,9 +23,9 @@ describe('MotionPolicy', () => {
       removeEventListener: () => undefined,
     }));
     const policy = new MotionPolicy();
-    expect(policy.claimWebGL('fillUpTank')).toBe(true);
-    expect(policy.claimWebGL('homeAmbient')).toBe(false);
-    policy.releaseWebGL('fillUpTank');
+    expect(policy.claimWebGL('homeAmbient')).toBe(true);
+    expect(policy.claimWebGL('homeAmbient')).toBe(true);
+    policy.releaseWebGL('homeAmbient');
     expect(policy.claimWebGL('homeAmbient')).toBe(true);
     vi.unstubAllGlobals();
   });

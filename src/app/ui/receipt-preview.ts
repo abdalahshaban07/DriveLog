@@ -1,4 +1,3 @@
-import { DecimalPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -15,12 +14,14 @@ import { I18n } from '../i18n/i18n';
 @Component({
   selector: 'app-receipt-preview',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe],
   template: `
     <div class="receipt" role="status" aria-live="polite" [attr.aria-label]="i18n.t('fillUp.receipt')">
       @if (liters() > 0 && unitPrice() != null) {
         <div class="receipt-line">
-          <span>{{ liters() | number: '1.0-2' }} L × {{ unitPrice() | number: '1.2-3' }}/L</span>
+          <span>
+            {{ i18n.formatNumber(liters(), { minimumFractionDigits: 0, maximumFractionDigits: 2 }) }} L ×
+            {{ i18n.formatNumber(unitPrice()!, { minimumFractionDigits: 2, maximumFractionDigits: 3 }) }}/L
+          </span>
         </div>
         <div class="receipt-line receipt-line--total" [class.metric-flash]="flash()">
           <span>{{ i18n.t('fillUp.total') }}</span>
@@ -111,14 +112,15 @@ export class ReceiptPreview {
   }
 
   formatMoney(value: number): string {
+    const locale = this.i18n.language() === 'ar' ? 'ar-EG-u-nu-arab' : 'en-GB';
     try {
-      return new Intl.NumberFormat(this.i18n.language(), {
+      return new Intl.NumberFormat(locale, {
         style: 'currency',
         currency: this.currency(),
         maximumFractionDigits: 2,
       }).format(value);
     } catch {
-      return `${value.toFixed(2)} ${this.currency()}`;
+      return `${this.i18n.formatNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${this.currency()}`;
     }
   }
 }

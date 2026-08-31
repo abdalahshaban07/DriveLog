@@ -1,3 +1,22 @@
+.history__groups {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.history-group__title {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: 0 0 var(--space-2);
+  padding-block: var(--space-2);
+  background: var(--bg);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .history__list {
   list-style: none;
   margin: 0;
@@ -6,9 +25,9 @@
   gap: var(--space-2);
 }
 
-.history__link {
+.history__card {
   display: grid;
-  gap: 4px;
+  gap: var(--space-2);
   padding: var(--space-4);
   border-radius: var(--radius);
   background: var(--surface);
@@ -16,15 +35,49 @@
   text-decoration: none;
   color: inherit;
   box-shadow: var(--shadow-soft);
+  transition: border-color var(--motion) var(--ease);
+}
+
+.history__card:hover {
+  border-color: color-mix(in srgb, var(--cta) 35%, var(--hairline));
+}
+
+.history__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.history__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.history__date.pill {
+  font-weight: 700;
+  font-size: 0.85rem;
 }
 
 .history__cost {
+  font-size: 1.35rem;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
+  color: var(--text);
 }
 
-.history__detail {
+.history__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.history__place {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .filters {

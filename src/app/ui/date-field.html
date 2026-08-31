@@ -32,9 +32,28 @@
         [attr.aria-label]="label()"
       >
         <div class="cal__nav">
-          <button type="button" class="cal__shift" (click)="shift(-1)">‹</button>
-          <span class="cal__month">{{ monthLabel() }}</span>
-          <button type="button" class="cal__shift" (click)="shift(1)">›</button>
+          <select
+            class="cal__select"
+            [id]="monthSelectId"
+            [value]="viewM()"
+            [attr.aria-label]="i18n.t('date.month')"
+            (change)="onMonthChange($event)"
+          >
+            @for (m of monthOptions(); track m.value) {
+              <option [value]="m.value">{{ m.label }}</option>
+            }
+          </select>
+          <select
+            class="cal__select"
+            [id]="yearSelectId"
+            [value]="viewY()"
+            [attr.aria-label]="i18n.t('date.year')"
+            (change)="onYearChange($event)"
+          >
+            @for (y of yearOptions(); track y) {
+              <option [value]="y">{{ y }}</option>
+            }
+          </select>
         </div>
         <div class="cal__week">
           @for (w of weekdays(); track $index) {

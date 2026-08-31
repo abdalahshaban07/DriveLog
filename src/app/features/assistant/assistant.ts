@@ -59,7 +59,7 @@ export class AssistantPage {
       const reply = await fetchChatReply(this.db, text, this.i18n.language(), (k, p) =>
         this.i18n.t(k as MsgKey, p),
       );
-      this.messages.set([...nextHistory, { role: 'assistant', content: reply }]);
+      this.messages.set([...nextHistory, { role: 'assistant', content: reply.text }]);
     } catch {
       this.error.set(this.i18n.t('assistant.network'));
     } finally {

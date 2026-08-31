@@ -65,7 +65,45 @@ export function computeEconomySegments(fillUps: readonly FillUp[]): EconomySegme
   return segments;
 }
 
+/** Per-fill segments for rows that store distanceKm (new model). */
+export function computePerFillSegments(fillUps: readonly FillUp[]): EconomySegment[] {
+  const withDistance = fillUps.filter(
+    (f) => f.distanceKm != null && Number.isFinite(f.distanceKm) && f.distanceKm! > 0,
+  );
+  if (withDistance.length === 0) {
+    return [];
+  }
+
+  const sorted = [...withDistance].sort((a, b) => {
+    const byDate = a.date.localeCompare(b.date);
+    if (byDate !== 0) {
+      return byDate;
+    }
+    return a.createdAt.localeCompare(b.createdAt);
+  });
+
+  const segments: EconomySegment[] = [];
+  for (let i = 0; i < sorted.length; i++) {
+    const end = sorted[i]!;
+    const distance = end.distanceKm!;
+    const start = i > 0 ? sorted[i - 1]! : end;
+    segments.push({
+      startId: start.id,
+      endId: end.id,
+      distanceKm: distance,
+      litersPer100Km: (end.liters / distance) * 100,
+      costPerKm: end.cost / distance,
+      totalCost: end.cost,
+    });
+  }
+  return segments;
+}
+
 export function latestEconomy(fillUps: readonly FillUp[]): EconomySegment | null {
+  const perFill = computePerFillSegments(fillUps);
+  if (perFill.length > 0) {
+    return perFill[perFill.length - 1]!;
+  }
   const segments = computeEconomySegments(fillUps);
   return segments.length === 0 ? null : segments[segments.length - 1]!;
 }

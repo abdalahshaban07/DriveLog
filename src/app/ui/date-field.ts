@@ -42,6 +42,34 @@ export function weekdayLabels(locale: string, weekStart: number): string[] {
   });
 }
 
+export type DateFieldMode = 'record' | 'due';
+
+export function yearOptionsForMode(
+  mode: DateFieldMode,
+  currentYear: number,
+  selectedDate = '',
+): number[] {
+  const min = currentYear - 50;
+  const max = mode === 'due' ? currentYear + 20 : currentYear;
+  const years = Array.from({ length: max - min + 1 }, (_, i) => min + i);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) {
+    const y = Number(selectedDate.slice(0, 4));
+    if (y < min || y > max) {
+      years.push(y);
+      years.sort((a, b) => a - b);
+    }
+  }
+  return years;
+}
+
+export function monthLabels(locale: string): { value: number; label: string }[] {
+  const fmt = new Intl.DateTimeFormat(locale, { month: 'long' });
+  return Array.from({ length: 12 }, (_, i) => ({
+    value: i,
+    label: fmt.format(new Date(2024, i, 1)),
+  }));
+}
+
 export function monthCells(
   year: number,
   monthIndex: number,
@@ -67,6 +95,7 @@ export class DateField {
   readonly i18n = inject(I18n);
   readonly label = input.required<string>();
   readonly value = model('');
+  readonly mode = input<DateFieldMode>('record');
   readonly error = input('');
   readonly hint = input('');
 
@@ -77,6 +106,8 @@ export class DateField {
   private readonly uid = crypto.randomUUID().slice(0, 8);
   readonly inputId = `date-${this.uid}`;
   readonly calId = `date-cal-${this.uid}`;
+  readonly monthSelectId = `date-month-${this.uid}`;
+  readonly yearSelectId = `date-year-${this.uid}`;
   readonly errorId = `date-err-${this.uid}`;
   readonly hintId = `date-hint-${this.uid}`;
 
@@ -92,12 +123,14 @@ export class DateField {
   readonly cells = computed(() =>
     monthCells(this.viewY(), this.viewM(), this.weekStart()),
   );
-  readonly monthLabel = computed(() =>
-    new Intl.DateTimeFormat(this.locale(), {
-      month: 'long',
-      year: 'numeric',
-    }).format(new Date(this.viewY(), this.viewM(), 1)),
+  readonly yearOptions = computed(() =>
+    yearOptionsForMode(
+      this.mode(),
+      new Date().getFullYear(),
+      this.value(),
+    ),
   );
+  readonly monthOptions = computed(() => monthLabels(this.locale()));
   readonly dayLabels = computed(() => {
     const fmt = new Intl.DateTimeFormat(this.locale(), { day: 'numeric' });
     const y = this.viewY();
@@ -164,10 +197,12 @@ export class DateField {
     this.open();
   }
 
-  shift(delta: number): void {
-    const d = new Date(this.viewY(), this.viewM() + delta, 1);
-    this.viewY.set(d.getFullYear());
-    this.viewM.set(d.getMonth());
+  onMonthChange(event: Event): void {
+    this.viewM.set(Number((event.target as HTMLSelectElement).value));
+  }
+
+  onYearChange(event: Event): void {
+    this.viewY.set(Number((event.target as HTMLSelectElement).value));
   }
 
   pick(day: number): void {

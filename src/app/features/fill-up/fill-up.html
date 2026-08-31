@@ -9,33 +9,51 @@
   <section class="console card" [attr.aria-label]="i18n.t('fillUp.title')">
     <div class="console__face">
       <app-numeric-field
-        [label]="i18n.t('fillUp.odometer')"
-        [(value)]="odometer"
-        [error]="odoError()"
+        [label]="distanceLabel()"
+        [(value)]="distanceKm"
+        [error]="distanceError()"
+        (valueChange)="onDistanceChange()"
       />
       <app-numeric-field
         [label]="i18n.t('fillUp.liters')"
         [(value)]="liters"
         [error]="litersError()"
+        (valueChange)="onLitersChange()"
       />
     </div>
 
+    @if (distanceWarn()) {
+      <p class="warn-hint" role="status">{{ distanceWarn() }}</p>
+    }
+    @if (capacityWarn()) {
+      <p class="warn-hint" role="status">{{ capacityWarn() }}</p>
+    }
+
+    @if (liveEconomy(); as eco) {
+      <p class="economy-live" role="status">
+        {{ i18n.t('fillUp.economyLive', { value: i18n.formatNumber(eco, { maximumFractionDigits: 1 }) }) }}
+      </p>
+    }
+
     <app-fuel-tank-canvas
       [liters]="litersNum()"
-      [tankFull]="tankFull()"
-      [maxLiters]="maxLiters()"
+      [tankCapacityLiters]="tankCapacity()"
     />
+
+    @if (showTankHint()) {
+      <p class="hint tank-hint">{{ i18n.t('fillUp.tankSizeHint') }}</p>
+    }
 
     @if (pricesBusy()) {
       <div class="skeleton skeleton--row price-skeleton" aria-hidden="true"></div>
     } @else if (pricesReady()) {
       <div class="grade-fade">
-      <app-fuel-grade-selector
-        [prices]="fuelPrices()"
-        [fallbackPrice]="lastUnit()"
-        [options]="gradeOptions()"
-        [(value)]="fuelGrade"
-      />
+        <app-fuel-grade-selector
+          [prices]="fuelPrices()"
+          [fallbackPrice]="lastUnit()"
+          [options]="gradeOptions()"
+          [(value)]="fuelGrade"
+        />
       </div>
     }
 
@@ -51,16 +69,11 @@
       </p>
     }
 
-    <app-tank-toggle
-      [(value)]="tankFull"
-      [onLabel]="i18n.t('fillUp.tankFull')"
-      [offLabel]="i18n.t('fillUp.tankPartial')"
-    />
-
     <app-date-field
       [label]="i18n.t('fillUp.date')"
       [(value)]="date"
       [error]="dateError()"
+      mode="record"
       (valueChange)="dateError.set('')"
     />
   </section>

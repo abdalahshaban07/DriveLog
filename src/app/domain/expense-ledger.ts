@@ -8,6 +8,13 @@ import type {
 } from './models';
 import { compareDateOnly } from './dues';
 
+export interface LedgerFuelDetail {
+  liters: number;
+  fuelGrade?: string;
+  distanceKm?: number;
+  placeLabel?: string;
+}
+
 export interface LedgerRow {
   id: string;
   category: ExpenseCategory;
@@ -16,6 +23,7 @@ export interface LedgerRow {
   date: DateOnly;
   time?: string;
   meta?: string;
+  fuelDetail?: LedgerFuelDetail;
   sortAt: string;
 }
 
@@ -98,9 +106,12 @@ export function buildExpenseLedger(input: {
         amount: f.cost,
         date: f.date,
         time: f.createdAt.slice(11, 16),
-        meta: [f.liters ? `${f.liters} L` : null, f.fuelGrade, f.unitPrice != null ? `@ ${f.unitPrice}` : null]
-          .filter(Boolean)
-          .join(' · '),
+        fuelDetail: {
+          liters: f.liters,
+          fuelGrade: f.fuelGrade,
+          distanceKm: f.distanceKm,
+          placeLabel: f.placeLabel,
+        },
         sortAt: f.createdAt,
       });
     }

@@ -33,29 +33,26 @@
       [value]="currency()"
       (valueChange)="onCurrency($event)"
     />
-    <label class="line">
-      <span class="line__text" id="dusk-assist-lbl">{{ i18n.t('settings.duskAssist') }}</span>
-      <span class="switch">
-        <input
-          type="checkbox"
-          class="switch__input"
-          role="switch"
-          [checked]="duskAssistEnabled()"
-          [attr.aria-checked]="duskAssistEnabled()"
-          aria-labelledby="dusk-assist-lbl"
-          (change)="onDuskAssist($event)"
-        />
-        <span class="switch__track" aria-hidden="true"></span>
-      </span>
-    </label>
-    @if (duskHint()) {
-      <p class="line line--hint" role="status">{{ duskHint() }}</p>
-    }
   </section>
 
   <section class="card list vehicle-fields" [attr.aria-label]="i18n.t('settings.vehicleSection')">
     <p class="section-label">{{ i18n.t('settings.vehicleSection') }}</p>
     <div class="vehicle-fields__body stack">
+    @if (showTankBanner()) {
+      <p class="tank-banner" role="status">{{ i18n.t('settings.tankSizeBanner') }}</p>
+    }
+    <app-numeric-field
+      [label]="i18n.t('settings.tankCapacity')"
+      [value]="tankCapacity()"
+      [error]="tankCapacityError()"
+      (valueChange)="onTankCapacity($event)"
+    />
+    <app-numeric-field
+      [label]="i18n.t('settings.correctOdometer')"
+      [value]="correctOdometer()"
+      [error]="odometerError()"
+      (valueChange)="onCorrectOdometer($event)"
+    />
     <app-text-field
       [label]="i18n.t('settings.plate')"
       [value]="plate()"
@@ -64,11 +61,13 @@
     <app-date-field
       [label]="i18n.t('settings.license')"
       [value]="license()"
+      mode="due"
       (valueChange)="onLicense($event)"
     />
     <app-date-field
       [label]="i18n.t('settings.registration')"
       [value]="registration()"
+      mode="due"
       (valueChange)="onRegistration($event)"
     />
     </div>

@@ -10,13 +10,17 @@ import { Db } from '../../data/db';
 import {
   computeFillUpCost,
   lastFillUnitPriceFromHistory,
-  lastFullFillLiters,
   lastFuelGrade,
   pickUnitPrice,
   priceForGrade,
 } from '../../domain/fill-up-cost';
 import { countryFromCurrency } from '../../domain/country';
 import { todayDateOnly } from '../../domain/dues';
+import {
+  TANK_FALLBACK,
+  computeOdometerFromDistance,
+  validateFillDistance,
+} from '../../domain/fill-up-distance';
 import type { FuelGrade } from '../../domain/models';
 import { weatherMsgKey } from '../../domain/weather';
 import { I18n } from '../../i18n/i18n';
@@ -33,7 +37,6 @@ import { NumericField } from '../../ui/numeric-field';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
 import { ReceiptPreview } from '../../ui/receipt-preview';
-import { TankToggle } from '../../ui/tank-toggle';
 
 const GRADE_KEYS: Record<FuelGrade, MsgKey> = {
   gasoline92: 'home.fuel92',
@@ -52,7 +55,6 @@ const GRADE_KEYS: Record<FuelGrade, MsgKey> = {
     FuelGradeSelector,
     FuelTankCanvas,
     ReceiptPreview,
-    TankToggle,
     DateField,
     PrimaryButton,
     ConfirmBar,
@@ -67,14 +69,15 @@ export class FillUpPage {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
-  readonly odometer = signal('');
+  readonly distanceKm = signal('');
   readonly liters = signal('');
   readonly fuelGrade = signal<FuelGrade | null>(null);
-  readonly tankFull = signal(true);
   readonly date = signal(todayDateOnly());
   readonly dateError = signal('');
-  readonly odoError = signal('');
+  readonly distanceError = signal('');
+  readonly distanceWarn = signal('');
   readonly litersError = signal('');
+  readonly capacityWarn = signal('');
   readonly saving = signal(false);
   readonly editId = signal<string | null>(null);
   readonly confirmDelete = signal(false);
@@ -82,6 +85,8 @@ export class FillUpPage {
   readonly weatherError = signal('');
   readonly pricesBusy = signal(false);
   readonly pricesReady = signal(false);
+  readonly legacyDistanceEdit = signal(false);
+  readonly distanceTouched = signal(false);
   readonly fuelPrices = signal<Awaited<ReturnType<typeof countryFuelPrices>>>(null);
   readonly weather = signal<{
     lat: number;
@@ -92,11 +97,24 @@ export class FillUpPage {
 
   readonly lastUnit = computed(() => lastFillUnitPriceFromHistory(this.db.fillUps()));
 
-  readonly maxLiters = computed(() => {
-    const fromHistory = lastFullFillLiters(this.db.fillUps());
-    const current = Number(this.liters()) || 0;
-    return fromHistory ?? Math.max(current, 50);
-  });
+  readonly isFirstFill = computed(
+    () =>
+      !this.db
+        .fillUps()
+        .some((f) => f.id !== this.editId() && (!f.carId || f.carId === this.db.car()?.id)),
+  );
+
+  readonly distanceLabel = computed(() =>
+    this.isFirstFill()
+      ? this.i18n.t('fillUp.distanceSinceSetup')
+      : this.i18n.t('fillUp.distanceKm'),
+  );
+
+  readonly tankCapacity = computed(
+    () => this.db.car()?.tankCapacityLiters ?? TANK_FALLBACK,
+  );
+
+  readonly showTankHint = computed(() => this.db.car()?.tankCapacityLiters == null);
 
   readonly gradeOptions = computed(() =>
     buildGradeOptions(this.fuelPrices(), GRADE_KEYS),
@@ -107,9 +125,19 @@ export class FillUpPage {
   );
 
   readonly litersNum = computed(() => Number(this.liters()) || 0);
+  readonly distanceNum = computed(() => Number(this.distanceKm()) || 0);
+
+  readonly liveEconomy = computed(() => {
+    const d = this.distanceNum();
+    const l = this.litersNum();
+    if (d <= 0 || l <= 0) {
+      return null;
+    }
+    return (l / d) * 100;
+  });
 
   readonly computedCost = computed(() => {
-    const liters = Number(this.liters());
+    const liters = this.litersNum();
     const unit = this.unitPrice();
     if (!Number.isFinite(liters) || unit == null) {
       return 0;
@@ -127,11 +155,11 @@ export class FillUpPage {
   });
 
   readonly canSave = computed(() => {
-    const odo = Number(this.odometer());
-    const liters = Number(this.liters());
+    const distance = this.distanceNum();
+    const liters = this.litersNum();
     return (
-      Number.isFinite(odo) &&
-      odo > 0 &&
+      Number.isFinite(distance) &&
+      distance > 0 &&
       Number.isFinite(liters) &&
       liters > 0 &&
       this.unitPrice() != null &&
@@ -147,10 +175,6 @@ export class FillUpPage {
     if (id) {
       this.load(id);
     } else {
-      const car = this.db.car();
-      if (car) {
-        this.odometer.set(String(car.currentOdometer));
-      }
       const lastGrade = lastFuelGrade(this.db.fillUps());
       if (lastGrade) {
         this.fuelGrade.set(lastGrade);
@@ -177,14 +201,25 @@ export class FillUpPage {
 
   load(id: string): void {
     const existing = this.db.fillUps().find((f) => f.id === id);
-    if (!existing) {
+    const car = this.db.car();
+    if (!existing || !car) {
       return;
     }
     this.editId.set(id);
-    this.odometer.set(String(existing.odometer));
+    if (existing.distanceKm != null) {
+      this.distanceKm.set(String(existing.distanceKm));
+      this.legacyDistanceEdit.set(false);
+    } else {
+      const prev = this.db
+        .fillUps()
+        .filter((f) => f.id !== id && (!f.carId || f.carId === car.id))
+        .sort((a, b) => b.odometer - a.odometer)[0];
+      const base = prev?.odometer ?? car.initialOdometer;
+      this.distanceKm.set(String(Math.max(0, existing.odometer - base)));
+      this.legacyDistanceEdit.set(false);
+    }
     this.liters.set(String(existing.liters));
     this.fuelGrade.set(existing.fuelGrade ?? 'custom');
-    this.tankFull.set(existing.tankFull);
     this.date.set(existing.date);
     this.weather.set(
       existing.tempC != null && existing.weatherCode != null
@@ -196,10 +231,48 @@ export class FillUpPage {
           }
         : null,
     );
-    this.odoError.set('');
+    this.distanceError.set('');
     this.litersError.set('');
     this.dateError.set('');
     this.weatherError.set('');
+    this.distanceWarn.set('');
+    this.capacityWarn.set('');
+  }
+
+  onDistanceChange(): void {
+    this.distanceTouched.set(true);
+    this.distanceError.set('');
+    this.distanceWarn.set('');
+    const car = this.db.car();
+    if (!car) {
+      return;
+    }
+    const d = this.distanceNum();
+    if (!d) {
+      return;
+    }
+    const result = validateFillDistance(car, this.db.fillUps(), d, this.editId() ?? undefined);
+    if (!result.ok && result.errorKey) {
+      this.distanceError.set(this.i18n.t(result.errorKey));
+    } else if (result.warnKey) {
+      this.distanceWarn.set(this.i18n.t(result.warnKey));
+    }
+    this.checkCapacity();
+  }
+
+  onLitersChange(): void {
+    this.litersError.set('');
+    this.checkCapacity();
+  }
+
+  private checkCapacity(): void {
+    const cap = this.db.car()?.tankCapacityLiters;
+    const l = this.litersNum();
+    if (cap != null && l > cap) {
+      this.capacityWarn.set(this.i18n.t('fillUp.warn.overCapacity'));
+    } else {
+      this.capacityWarn.set('');
+    }
   }
 
   weatherLabel(code: number): string {
@@ -241,12 +314,13 @@ export class FillUpPage {
   }
 
   async save(): Promise<void> {
-    this.odoError.set('');
+    this.distanceError.set('');
+    this.distanceWarn.set('');
     this.litersError.set('');
     this.dateError.set('');
 
-    const odo = Number(this.odometer());
-    const liters = Number(this.liters());
+    const distance = this.distanceNum();
+    const liters = this.litersNum();
     const unit = this.unitPrice();
     const grade = this.fuelGrade();
     const date = this.date();
@@ -257,21 +331,19 @@ export class FillUpPage {
     const cost = computeFillUpCost(liters, unit);
 
     let ok = true;
-    if (!Number.isFinite(odo) || odo <= 0) {
-      this.odoError.set(this.i18n.t('fillUp.err.odometer'));
+    const distCheck = validateFillDistance(
+      car,
+      this.db.fillUps(),
+      distance,
+      this.editId() ?? undefined,
+    );
+    if (!distCheck.ok && distCheck.errorKey) {
+      this.distanceError.set(this.i18n.t(distCheck.errorKey));
       ok = false;
-    } else {
-      const others = this.db
-        .fillUps()
-        .filter((f) => f.id !== this.editId())
-        .map((f) => f.odometer);
-      const floor = Math.max(car.initialOdometer, ...others, 0);
-      const minAllowed = this.editId() ? floor : car.currentOdometer;
-      if (odo < minAllowed) {
-        this.odoError.set(this.i18n.t('fillUp.err.odometerLow'));
-        ok = false;
-      }
+    } else if (distCheck.warnKey) {
+      this.distanceWarn.set(this.i18n.t(distCheck.warnKey));
     }
+
     if (!Number.isFinite(liters) || liters <= 0) {
       this.litersError.set(this.i18n.t('fillUp.err.liters'));
       ok = false;
@@ -284,6 +356,19 @@ export class FillUpPage {
       return;
     }
 
+    const odometer = computeOdometerFromDistance(
+      car,
+      this.db.fillUps(),
+      distance,
+      this.editId() ?? undefined,
+    );
+
+    const existing = this.editId()
+      ? this.db.fillUps().find((f) => f.id === this.editId())
+      : undefined;
+    const persistDistance =
+      !existing || existing.distanceKm != null || this.distanceTouched();
+
     this.saving.set(true);
     try {
       const w = this.weather();
@@ -294,12 +379,13 @@ export class FillUpPage {
       }
       await this.db.saveFillUp({
         id: this.editId() ?? undefined,
-        odometer: odo,
+        odometer,
         liters,
         cost,
         unitPrice: unit,
         fuelGrade: grade,
-        tankFull: this.tankFull(),
+        tankFull: false,
+        distanceKm: persistDistance ? distance : undefined,
         date,
         lat: w?.lat,
         lon: w?.lon,

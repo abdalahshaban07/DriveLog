@@ -68,14 +68,15 @@ export class FuelPage {
   }
 
   formatMoney(value: number): string {
+    const locale = this.i18n.language() === 'ar' ? 'ar-EG-u-nu-arab' : 'en-GB';
     try {
-      return new Intl.NumberFormat(this.i18n.language(), {
+      return new Intl.NumberFormat(locale, {
         style: 'currency',
         currency: this.db.settings().currency,
         maximumFractionDigits: 2,
       }).format(value);
     } catch {
-      return `${value} ${this.db.settings().currency}`;
+      return `${this.i18n.formatNumber(value)} ${this.db.settings().currency}`;
     }
   }
 
@@ -83,17 +84,16 @@ export class FuelPage {
     if (value == null || !Number.isFinite(value)) {
       return '—';
     }
-    return `${value.toFixed(1)} ${suffix}`;
+    return `${this.i18n.formatNumber(value, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} ${suffix}`;
   }
 
   async loadTip(): Promise<void> {
     this.tipBusy.set(true);
     try {
       const lang = this.i18n.language();
-      const fallback = this.i18n.t(contextualFuelTipKey(this.db));
-      const text = await fetchFuelTip(this.db, lang, (k) => this.i18n.t(k as MsgKey));
-      this.tip.set(text);
-      this.tipSource.set(text.trim() === fallback.trim() ? 'local' : 'ai');
+      const reply = await fetchFuelTip(this.db, lang, (k) => this.i18n.t(k as MsgKey));
+      this.tip.set(reply.text);
+      this.tipSource.set(reply.source);
     } finally {
       this.tipBusy.set(false);
     }

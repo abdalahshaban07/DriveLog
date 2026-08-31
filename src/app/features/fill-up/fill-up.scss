@@ -26,10 +26,25 @@
   gap: var(--space-3);
 }
 
-.hint {
+.warn-hint,
+.economy-live,
+.tank-hint {
   margin: 0;
-  color: var(--muted);
   font-size: 0.9rem;
+}
+
+.warn-hint {
+  color: var(--fuel);
+}
+
+.economy-live {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--petrol-muted);
+}
+
+.tank-hint {
+  color: var(--muted);
 }
 
 .console {

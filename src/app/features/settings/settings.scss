@@ -24,6 +24,16 @@
   padding: 0 var(--space-4) var(--space-4);
 }
 
+.tank-banner {
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: calc(var(--radius) - 4px);
+  font-size: 0.9rem;
+  color: var(--petrol-muted);
+  background: color-mix(in srgb, var(--mint) 12%, var(--well));
+  border: 1px solid var(--hairline);
+}
+
 .list {
   display: grid;
 }

@@ -12,6 +12,14 @@
     transform var(--motion) var(--ease),
     filter var(--motion) var(--ease);
 }
+:host.stretch {
+  display: block;
+  flex: 1;
+  min-inline-size: 0;
+}
+.btn--mint {
+  background: var(--cta);
+}
 .btn:hover:not(:disabled) {
   box-shadow: 0 0 16px var(--glow);
 }

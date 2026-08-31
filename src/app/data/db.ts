@@ -348,6 +348,7 @@ export class Db {
         | 'plate'
         | 'licenseExpiry'
         | 'registrationExpiry'
+        | 'tankCapacityLiters'
       >
     >,
   ): Promise<void> {
@@ -402,6 +403,8 @@ export class Db {
         | 'plate'
         | 'licenseExpiry'
         | 'registrationExpiry'
+        | 'tankCapacityLiters'
+        | 'currentOdometer'
       >
     >,
   ): Promise<void> {
@@ -419,10 +422,13 @@ export class Db {
       'recallCount' in patch ||
       'plate' in patch ||
       'licenseExpiry' in patch ||
-      'registrationExpiry' in patch
+      'registrationExpiry' in patch ||
+      'tankCapacityLiters' in patch
         ? carDocFields(merged)
         : {}),
       nickname: patch.nickname != null ? patch.nickname.trim() : car.nickname,
+      currentOdometer:
+        patch.currentOdometer != null ? Number(patch.currentOdometer) : car.currentOdometer,
       updatedAt: nowIso(),
     };
     await this.put('car', updated);
@@ -478,6 +484,7 @@ export class Db {
       id: existing?.id ?? crypto.randomUUID(),
       carId: existing?.carId ?? car.id,
       odometer: input.odometer,
+      distanceKm: input.distanceKm,
       liters: input.liters,
       cost: input.cost,
       fuelGrade: input.fuelGrade,
@@ -932,17 +939,30 @@ function carDocFields(
       | 'plate'
       | 'licenseExpiry'
       | 'registrationExpiry'
+      | 'tankCapacityLiters'
     >
   > | null,
 ): Pick<
   Car,
-  'vin' | 'year' | 'make' | 'model' | 'recallCount' | 'plate' | 'licenseExpiry' | 'registrationExpiry'
+  | 'vin'
+  | 'year'
+  | 'make'
+  | 'model'
+  | 'recallCount'
+  | 'plate'
+  | 'licenseExpiry'
+  | 'registrationExpiry'
+  | 'tankCapacityLiters'
 > {
   return {
     ...carVinFields(o),
     plate: o?.plate ? String(o.plate).trim() : undefined,
     licenseExpiry: o?.licenseExpiry ? String(o.licenseExpiry) : undefined,
     registrationExpiry: o?.registrationExpiry ? String(o.registrationExpiry) : undefined,
+    tankCapacityLiters:
+      o?.tankCapacityLiters == null || !Number.isFinite(Number(o.tankCapacityLiters))
+        ? undefined
+        : Number(o.tankCapacityLiters),
   };
 }
 
@@ -971,6 +991,10 @@ function normalizeFillUp(raw: unknown): FillUp {
     id: String(o.id),
     carId: o.carId ? String(o.carId) : undefined,
     odometer: Number(o.odometer),
+    distanceKm:
+      o.distanceKm == null || !Number.isFinite(Number(o.distanceKm))
+        ? undefined
+        : Number(o.distanceKm),
     liters: Number(o.liters),
     cost: Number(o.cost),
     tankFull: Boolean(o.tankFull),

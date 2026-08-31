@@ -12,15 +12,16 @@
         (click)="setView(tab.id)"
       >
         {{ i18n.t(tab.labelKey) }}
-        @if (tab.id === 'reports' && reportCount() > 0) {
-          <span class="home-tabs__badge" aria-hidden="true">{{ reportCount() }}</span>
-        }
       </button>
     }
   </div>
 
   @if (view() === 'dashboard') {
-    <section class="home-panel" role="tabpanel" [attr.aria-label]="i18n.t('home.tab.dashboard')">
+    <section
+      class="home-panel home-panel--dashboard list-reveal"
+      role="tabpanel"
+      [attr.aria-label]="i18n.t('home.tab.dashboard')"
+    >
       @if (db.cars().length) {
         <div class="carousel" [attr.aria-label]="i18n.t('home.carousel.label')">
           @for (car of db.cars(); track car.id) {
@@ -31,7 +32,7 @@
               (click)="switchCar(car.id)"
             >
               <span class="carousel__name">{{ carLabel(car) }}</span>
-              <span class="carousel__odo">{{ car.currentOdometer | number: '1.0-0' }} {{ i18n.t('common.km') }}</span>
+              <span class="carousel__odo">{{ i18n.formatNumber(car.currentOdometer, { maximumFractionDigits: 0 }) }} {{ i18n.t('common.km') }}</span>
             </button>
           }
         </div>
@@ -45,7 +46,7 @@
             <span class="glance-strip__label">{{ i18n.t('home.economy') }}</span>
             <strong>
               @if (fuelMetrics().lastL100 != null) {
-                {{ fuelMetrics().lastL100 | number: '1.1-1' }} L/100km
+                {{ i18n.formatNumber(fuelMetrics().lastL100!, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }} L/100km
               } @else {
                 —
               }
@@ -58,39 +59,129 @@
         </div>
       }
 
-      <div class="license-row">
-        @let licDays = licenseDays(db.car()?.licenseExpiry);
-        @let regDays = licenseDays(db.car()?.registrationExpiry);
-        <article
-          class="license-card"
-          [class.license-card--overdue]="licenseStatus(licDays) === 'overdue'"
-          [class.license-card--soon]="licenseStatus(licDays) === 'soon'"
-        >
-          <h2 class="license-card__title">{{ i18n.t('due.license') }}</h2>
-          @if (licDays == null) {
-            <p class="license-card__body">{{ i18n.t('home.license.missing') }}</p>
-          } @else {
-            <p class="license-card__days">{{ i18n.t('home.license.days', { days: licDays }) }}</p>
-            <p class="license-card__date">{{ db.car()?.licenseExpiry }}</p>
-          }
-        </article>
-        <article
-          class="license-card"
-          [class.license-card--overdue]="licenseStatus(regDays) === 'overdue'"
-          [class.license-card--soon]="licenseStatus(regDays) === 'soon'"
-        >
-          <h2 class="license-card__title">{{ i18n.t('due.registration') }}</h2>
-          @if (regDays == null) {
-            <p class="license-card__body">{{ i18n.t('home.license.missing') }}</p>
-          } @else {
-            <p class="license-card__days">{{ i18n.t('home.license.days', { days: regDays }) }}</p>
-            <p class="license-card__date">{{ db.car()?.registrationExpiry }}</p>
-          }
-        </article>
-      </div>
+      <section
+        class="card nearby-card"
+        role="status"
+        aria-live="polite"
+        [attr.aria-label]="i18n.t('home.nearby')"
+      >
+        <header class="nearby-card__head">
+          <h2 class="nearby-card__title">{{ i18n.t('home.aroundYou') }}</h2>
+          <div class="seg nearby-card__seg" role="group" [attr.aria-label]="i18n.t('home.nearby')">
+            <button
+              type="button"
+              class="seg__btn"
+              [class.seg__btn--on]="nearbyKind() === 'fuel'"
+              [attr.aria-pressed]="nearbyKind() === 'fuel'"
+              (click)="setNearbyKind('fuel')"
+            >
+              {{ i18n.t('home.nearbyFuel') }}
+            </button>
+            <button
+              type="button"
+              class="seg__btn"
+              [class.seg__btn--on]="nearbyKind() === 'charge'"
+              [attr.aria-pressed]="nearbyKind() === 'charge'"
+              (click)="setNearbyKind('charge')"
+            >
+              {{ i18n.t('home.nearbyCharge') }}
+            </button>
+          </div>
+        </header>
 
-      @if (db.car()) {
-        <app-ambient-canvas class="ambient-wrap" />
+        @if (nearbyLoading()) {
+          <div class="nearby-card__body">
+            <div class="skeleton skeleton--row" aria-hidden="true"></div>
+            <div class="skeleton skeleton--row" aria-hidden="true"></div>
+            <div class="skeleton skeleton--row" aria-hidden="true"></div>
+          </div>
+        } @else if (nearbyError()) {
+          <div class="error-state" role="alert">
+            <p>{{ nearbyError() }}</p>
+          </div>
+        } @else if (filteredNearby().length === 0) {
+          <div class="empty-state">
+            <p>{{ i18n.t('home.nearbyEmpty') }}</p>
+          </div>
+        } @else {
+          <ul class="nearby-list list-reveal">
+            @for (poi of filteredNearby(); track poi.id) {
+              <li class="nearby-list__item">
+                <a
+                  class="nearby-list__link"
+                  [href]="mapsUrl(poi)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span class="nearby-list__name">{{ poi.name }}</span>
+                  <span class="nearby-list__meta">
+                    {{ i18n.formatNumber(poi.distanceKm, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }} {{ i18n.t('common.km') }}
+                    @if (poi.detail) {
+                      · {{ poi.detail }}
+                    }
+                  </span>
+                </a>
+              </li>
+            }
+          </ul>
+        }
+
+        <p class="nearby-card__attr">{{ i18n.t('home.nearbyOsm') }}</p>
+      </section>
+
+      @let outlook = monthOutlook();
+      <section class="month-outlook" role="status" [attr.aria-label]="i18n.t('home.monthOutlook')">
+        <h2 class="month-outlook__title">{{ i18n.t('home.monthOutlook') }}</h2>
+        <div class="month-outlook__strip">
+          <div class="month-outlook__cell">
+            <span class="month-outlook__label">{{ i18n.t('home.monthSpend') }}</span>
+            <strong>{{ formatMoney(outlook.actual) }}</strong>
+          </div>
+          @if (outlook.projected != null) {
+            <div class="month-outlook__cell month-outlook__cell--projected">
+              <span class="month-outlook__label">{{ i18n.t('home.projectedSpend') }}</span>
+              <strong>{{ formatMoney(outlook.projected) }}</strong>
+            </div>
+          }
+        </div>
+      </section>
+
+      @if (recommendations().length) {
+        <section class="rec-section" [attr.aria-label]="i18n.t('home.whatsNext')">
+          <h2 class="rec-section__title">{{ i18n.t('home.whatsNext') }}</h2>
+          <div class="rec-row">
+            @for (rec of recommendations(); track rec.id) {
+              @if (rec.route) {
+                <a class="rec-card rec-card--{{ rec.tone }}" [routerLink]="rec.route">
+                  <h3 class="rec-card__title">{{ recTitle(rec) }}</h3>
+                  <p class="rec-card__body">{{ recBody(rec) }}</p>
+                </a>
+              } @else {
+                <article class="rec-card rec-card--{{ rec.tone }}">
+                  <h3 class="rec-card__title">{{ recTitle(rec) }}</h3>
+                  <p class="rec-card__body">{{ recBody(rec) }}</p>
+                </article>
+              }
+            }
+            @if (assistantOnline()) {
+              <article class="rec-card rec-card--ai" role="status" aria-live="polite">
+                <div class="rec-card__head">
+                  <h3 class="rec-card__title">{{ i18n.t('rec.ai.title') }}</h3>
+                  @if (aiTipSource() === 'ai') {
+                    <span class="ai-badge">{{ i18n.t('fuel.aiBadge') }}</span>
+                  }
+                </div>
+                @if (aiTipBusy()) {
+                  <div class="skeleton skeleton--row" aria-hidden="true"></div>
+                } @else if (aiTip()) {
+                  <p class="rec-card__body">{{ aiTip() }}</p>
+                } @else {
+                  <p class="rec-card__body">{{ i18n.t('rec.ai.loading') }}</p>
+                }
+              </article>
+            }
+          </div>
+        </section>
       }
 
       <section class="card period-card">
@@ -136,7 +227,7 @@
             </div>
           </div>
         }
-        <div class="period-grid">
+        <div class="period-grid period-grid--dense">
           <div class="period-metric period-metric--fuel">
             <span class="period-metric__label">{{ i18n.t('charts.cat.fuel') }}</span>
             <strong>{{ formatMoney(totals().fuel) }}</strong>
@@ -158,6 +249,41 @@
           {{ i18n.t('home.period.total', { amount: formatMoney(totals().total) }) }}
         </p>
       </section>
+
+      <div class="license-row">
+        @let licDays = licenseDays(db.car()?.licenseExpiry);
+        @let regDays = licenseDays(db.car()?.registrationExpiry);
+        <article
+          class="license-card"
+          [class.license-card--overdue]="licenseStatus(licDays) === 'overdue'"
+          [class.license-card--soon]="licenseStatus(licDays) === 'soon'"
+        >
+          <h2 class="license-card__title">{{ i18n.t('due.license') }}</h2>
+          @if (licDays == null) {
+            <p class="license-card__body">{{ i18n.t('home.license.missing') }}</p>
+          } @else {
+            <p class="license-card__days">{{ i18n.t('home.license.days', { days: i18n.formatNumber(licDays, { maximumFractionDigits: 0 }) }) }}</p>
+            <p class="license-card__date">{{ db.car()?.licenseExpiry }}</p>
+          }
+        </article>
+        <article
+          class="license-card"
+          [class.license-card--overdue]="licenseStatus(regDays) === 'overdue'"
+          [class.license-card--soon]="licenseStatus(regDays) === 'soon'"
+        >
+          <h2 class="license-card__title">{{ i18n.t('due.registration') }}</h2>
+          @if (regDays == null) {
+            <p class="license-card__body">{{ i18n.t('home.license.missing') }}</p>
+          } @else {
+            <p class="license-card__days">{{ i18n.t('home.license.days', { days: i18n.formatNumber(regDays, { maximumFractionDigits: 0 }) }) }}</p>
+            <p class="license-card__date">{{ db.car()?.registrationExpiry }}</p>
+          }
+        </article>
+      </div>
+
+      @if (db.car()) {
+        <app-ambient-canvas class="ambient-wrap" />
+      }
     </section>
   }
 
@@ -188,32 +314,22 @@
         <app-sparkline [values]="spendTrend()" [label]="i18n.t('home.monthSpend')" />
       </div>
 
-      <div class="filter-row">
-        <label class="filter-row__lbl" for="chart-cat">{{ i18n.t('charts.category') }}</label>
-        <select
-          id="chart-cat"
-          class="filter-row__select"
-          [value]="chartCategory()"
-          (change)="chartCategory.set($any($event.target).value)"
-        >
-          @for (opt of chartCategoryOptions; track opt.id) {
-            <option [value]="opt.id">{{ i18n.t(opt.labelKey) }}</option>
-          }
-        </select>
-      </div>
-      <div class="filter-row">
-        <label class="filter-row__lbl" for="chart-period">{{ i18n.t('charts.period') }}</label>
-        <select
-          id="chart-period"
-          class="filter-row__select"
-          [value]="chartPeriod()"
-          (change)="chartPeriod.set($any($event.target).value)"
-        >
-          @for (opt of chartPeriodOptions; track opt.id) {
-            <option [value]="opt.id">{{ i18n.t(opt.labelKey) }}</option>
-          }
-        </select>
-      </div>
+      <app-select-field
+        class="filter-select"
+        [compact]="true"
+        [label]="i18n.t('charts.category')"
+        [options]="chartCategorySelectOptions()"
+        [value]="chartCategory()"
+        (valueChange)="chartCategory.set($any($event))"
+      />
+      <app-select-field
+        class="filter-select"
+        [compact]="true"
+        [label]="i18n.t('charts.period')"
+        [options]="chartPeriodSelectOptions()"
+        [value]="chartPeriod()"
+        (valueChange)="chartPeriod.set($any($event))"
+      />
 
       @let lt = ledgerTotals();
       @if (lt.total > 0) {
@@ -259,19 +375,44 @@
       } @else {
         <ul #ledgerList class="ledger list-reveal">
           @for (row of ledgerRows(); track row.id) {
-            <li class="ledger-row">
-              <div class="ledger-row__main">
-                <span class="ledger-row__cat">{{ categoryLabel(row.category) }}</span>
-                <strong class="ledger-row__title">{{ row.title }}</strong>
-                @if (row.meta) {
-                  <span class="ledger-row__meta">{{ row.meta }}</span>
-                }
-              </div>
-              <div class="ledger-row__side">
-                <strong>{{ formatMoney(row.amount) }}</strong>
-                <time>{{ row.date }}</time>
-              </div>
-            </li>
+            @if (row.category === 'fuel' && row.fuelDetail; as fd) {
+              <li class="ledger-card ledger-card--fuel">
+                <div class="ledger-card__head">
+                  <span class="ledger-card__date pill">{{ ledgerDateLabel(row.date) }}</span>
+                  <div class="ledger-card__chips">
+                    <span class="chip">
+                      {{ i18n.formatNumber(fd.liters, { maximumFractionDigits: 1 }) }} L
+                    </span>
+                    @if (fd.fuelGrade) {
+                      <span class="chip chip--fuel">{{ gradeLabel(fd.fuelGrade) }}</span>
+                    }
+                  </div>
+                </div>
+                <strong class="ledger-card__cost">{{ formatMoney(row.amount) }}</strong>
+                <div class="ledger-card__foot">
+                  @if (ledgerKmChip(row); as kmLabel) {
+                    <span class="chip">{{ kmLabel }}</span>
+                  }
+                  @if (fd.placeLabel) {
+                    <span class="ledger-card__place">{{ fd.placeLabel }}</span>
+                  }
+                </div>
+              </li>
+            } @else {
+              <li class="ledger-row">
+                <div class="ledger-row__main">
+                  <span class="ledger-row__cat">{{ categoryLabel(row.category) }}</span>
+                  <strong class="ledger-row__title">{{ row.title }}</strong>
+                  @if (row.meta) {
+                    <span class="ledger-row__meta">{{ row.meta }}</span>
+                  }
+                </div>
+                <div class="ledger-row__side">
+                  <strong>{{ formatMoney(row.amount) }}</strong>
+                  <time>{{ ledgerDateLabel(row.date) }}</time>
+                </div>
+              </li>
+            }
           }
         </ul>
       }

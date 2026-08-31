@@ -1,4 +1,3 @@
-import { DecimalPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -11,6 +10,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
+import { getCoords, mapsSearchUrl, nearbyPoi, type NearbyPoi } from '../../data/remote';
 import { buildDueItems, nextDueItem, todayDateOnly } from '../../domain/dues';
 import {
   activePeriod,
@@ -21,10 +21,17 @@ import {
   buildExpenseLedger,
   ledgerCategoryTotals,
   type LedgerPeriodFilter,
+  type LedgerRow,
 } from '../../domain/expense-ledger';
+import { fetchFuelTip } from '../../data/assistant';
 import { fuelDashboardMetrics } from '../../domain/fuel-dashboard';
 import { costPerKmTrend, economyTrend, spendByMonth } from '../../domain/insights';
 import type { ExpenseCategory } from '../../domain/models';
+import {
+  buildMonthOutlook,
+  buildRecommendations,
+  type Recommendation,
+} from '../../domain/recommendations';
 import { buildSmartReports } from '../../domain/smart-reports';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
@@ -34,6 +41,7 @@ import { DateField } from '../../ui/date-field';
 import { MotionPolicy } from '../../ui/motion/motion-policy';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
+import { SelectField } from '../../ui/select-field';
 
 type HomeView = 'dashboard' | 'reports' | 'charts';
 type ChartCategory = ExpenseCategory | 'all';
@@ -41,7 +49,7 @@ type ChartCategory = ExpenseCategory | 'all';
 @Component({
   selector: 'app-home',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, PageHeader, DateField, PrimaryButton, RouterLink, Sparkline, AmbientCanvas],
+  imports: [PageHeader, DateField, PrimaryButton, RouterLink, Sparkline, AmbientCanvas, SelectField],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
@@ -61,6 +69,13 @@ export class HomePage {
   readonly showPeriodForm = signal(false);
   readonly periodCloseDate = signal(todayDateOnly());
   readonly periodStartDate = signal(todayDateOnly());
+  readonly nearbyKind = signal<'fuel' | 'charge'>('fuel');
+  readonly nearbyLoading = signal(false);
+  readonly nearbyError = signal<string | null>(null);
+  readonly nearbyItems = signal<NearbyPoi[]>([]);
+  readonly aiTip = signal('');
+  readonly aiTipBusy = signal(false);
+  readonly aiTipSource = signal<'ai' | 'local'>('local');
 
   readonly tabOptions: { id: HomeView; labelKey: MsgKey }[] = [
     { id: 'dashboard', labelKey: 'home.tab.dashboard' },
@@ -82,6 +97,20 @@ export class HomePage {
     { id: '6m', labelKey: 'charts.period6m' },
     { id: 'all', labelKey: 'charts.periodAll' },
   ];
+
+  readonly chartCategorySelectOptions = computed(() =>
+    this.chartCategoryOptions.map((opt) => ({
+      value: opt.id,
+      label: this.i18n.t(opt.labelKey),
+    })),
+  );
+
+  readonly chartPeriodSelectOptions = computed(() =>
+    this.chartPeriodOptions.map((opt) => ({
+      value: opt.id,
+      label: this.i18n.t(opt.labelKey),
+    })),
+  );
 
   readonly activeCarId = computed(() => this.db.car()?.id ?? '');
   readonly period = computed(() =>
@@ -117,7 +146,9 @@ export class HomePage {
   );
   readonly ledgerTotals = computed(() => ledgerCategoryTotals(this.ledgerRows()));
   readonly fuelMetrics = computed(() => fuelDashboardMetrics(this.db.fillUps()));
-  readonly reportCount = computed(() => this.reports().length);
+  readonly filteredNearby = computed(() =>
+    this.nearbyItems().filter((poi) => poi.kind === this.nearbyKind()),
+  );
   readonly lastFillDate = computed(() => {
     const sorted = [...this.db.fillUps()].sort(
       (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
@@ -141,6 +172,31 @@ export class HomePage {
   readonly economyTrend = computed(() => economyTrend(this.db.fillUps(), '3m'));
   readonly costTrend = computed(() => costPerKmTrend(this.db.fillUps(), '3m'));
   readonly spendTrend = computed(() => spendByMonth(this.db.fillUps(), '3m'));
+  readonly monthOutlook = computed(() =>
+    buildMonthOutlook(
+      this.db.fillUps(),
+      this.db.maintenance(),
+      this.db.breakdowns(),
+      this.db.otherExpenses(),
+    ),
+  );
+  readonly recommendations = computed(() =>
+    buildRecommendations({
+      settings: this.db.settings(),
+      car: this.db.car() ?? null,
+      fills: this.db.fillUps(),
+      maintenance: this.db.maintenance(),
+      breakdowns: this.db.breakdowns(),
+      other: this.db.otherExpenses(),
+      periods: this.db.expensePeriods(),
+    }),
+  );
+  readonly assistantOnline = computed(
+    () =>
+      this.db.settings().assistantEnabled === true &&
+      typeof navigator !== 'undefined' &&
+      navigator.onLine,
+  );
 
   constructor() {
     this.route.queryParamMap.subscribe((params) => {
@@ -153,7 +209,60 @@ export class HomePage {
       if (this.view() === 'charts') {
         void this.animateCharts();
       }
+      void this.loadNearby();
+      void this.loadAiTip();
     });
+  }
+
+  setNearbyKind(kind: 'fuel' | 'charge'): void {
+    this.nearbyKind.set(kind);
+  }
+
+  mapsUrl(poi: NearbyPoi): string {
+    return mapsSearchUrl(poi.lat, poi.lon, this.i18n.language());
+  }
+
+  async loadNearby(): Promise<void> {
+    this.nearbyLoading.set(true);
+    this.nearbyError.set(null);
+    try {
+      const coords = await getCoords();
+      if (!coords) {
+        this.nearbyError.set(this.i18n.t('home.nearbyGpsDenied'));
+        this.nearbyItems.set([]);
+        return;
+      }
+      const list = await nearbyPoi(coords);
+      this.nearbyItems.set(list);
+    } catch {
+      this.nearbyError.set(this.i18n.t('home.nearbyUnavailable'));
+      this.nearbyItems.set([]);
+    } finally {
+      this.nearbyLoading.set(false);
+    }
+  }
+
+  recTitle(rec: Recommendation): string {
+    return this.i18n.t(rec.titleKey as MsgKey);
+  }
+
+  recBody(rec: Recommendation): string {
+    return this.i18n.t(rec.bodyKey as MsgKey, rec.bodyParams);
+  }
+
+  async loadAiTip(): Promise<void> {
+    if (!this.assistantOnline()) {
+      return;
+    }
+    this.aiTipBusy.set(true);
+    try {
+      const lang = this.i18n.language();
+      const reply = await fetchFuelTip(this.db, lang, (k) => this.i18n.t(k as MsgKey));
+      this.aiTip.set(reply.text);
+      this.aiTipSource.set(reply.source);
+    } finally {
+      this.aiTipBusy.set(false);
+    }
   }
 
   dueLabel(): string {
@@ -183,7 +292,7 @@ export class HomePage {
       }
       const list = this.ledgerList()?.nativeElement;
       if (list) {
-        const rows = list.querySelectorAll('.ledger-row');
+        const rows = list.querySelectorAll('.ledger-row, .ledger-card');
         animate(rows, {
           opacity: [0, 1],
           translateY: [8, 0],
@@ -223,15 +332,37 @@ export class HomePage {
   }
 
   formatMoney(value: number): string {
+    const locale = this.i18n.language() === 'ar' ? 'ar-EG-u-nu-arab' : 'en-GB';
     try {
-      return new Intl.NumberFormat(this.i18n.language(), {
+      return new Intl.NumberFormat(locale, {
         style: 'currency',
         currency: this.db.settings().currency,
         maximumFractionDigits: 0,
       }).format(value);
     } catch {
-      return `${value} ${this.db.settings().currency}`;
+      return `${this.i18n.formatNumber(value)} ${this.db.settings().currency}`;
     }
+  }
+
+  gradeLabel(grade?: string): string {
+    if (!grade) {
+      return '';
+    }
+    return this.i18n.t(`fillUp.grade.${grade}` as MsgKey);
+  }
+
+  ledgerKmChip(row: LedgerRow): string | null {
+    const km = row.fuelDetail?.distanceKm;
+    if (km == null || km <= 0) {
+      return null;
+    }
+    return this.i18n.t('history.kmDriven', {
+      km: this.i18n.formatNumber(km, { maximumFractionDigits: 0 }),
+    });
+  }
+
+  ledgerDateLabel(date: string): string {
+    return this.i18n.formatDate(date, { day: 'numeric', month: 'short' });
   }
 
   categoryLabel(cat: ExpenseCategory): string {

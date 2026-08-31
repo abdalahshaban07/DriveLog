@@ -5,6 +5,7 @@ import { DEFAULT_CURRENCY, DEFAULT_LANGUAGE, DEFAULT_THEME } from '../../core/co
 import { Db } from '../../data/db';
 import { detectCountryCurrency } from '../../data/remote';
 import { listCurrencyOptions, validCurrency } from '../../domain/currencies';
+import { TANK_MAX, TANK_MIN } from '../../domain/fill-up-distance';
 import { THEMES, type Theme } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import { DateField } from '../../ui/date-field';
@@ -33,7 +34,7 @@ export class FirstRunPage {
   readonly plate = signal('');
   readonly licenseExpiry = signal('');
   readonly registrationExpiry = signal('');
-  readonly setupModel = signal({ nickname: '', odometer: '' });
+  readonly setupModel = signal({ nickname: '', odometer: '', tankCapacity: '' });
   readonly setupForm = form(this.setupModel, (p) => {
     required(p.nickname, { message: () => this.i18n.t('setup.err.nickname') });
     validate(p.nickname, ({ value }) => {
@@ -47,6 +48,12 @@ export class FirstRunPage {
       return Number.isFinite(n) && n > 0
         ? undefined
         : { kind: 'min', message: this.i18n.t('setup.err.odometer') };
+    });
+    validate(p.tankCapacity, ({ value }) => {
+      const n = Number(value());
+      return Number.isFinite(n) && n >= TANK_MIN && n <= TANK_MAX
+        ? undefined
+        : { kind: 'range', message: this.i18n.t('setup.err.tankCapacity') };
     });
   });
 
@@ -83,6 +90,11 @@ export class FirstRunPage {
     return f.touched() && f.invalid() ? this.i18n.t('setup.err.odometer') : '';
   });
 
+  readonly tankCapError = computed(() => {
+    const f = this.setupForm.tankCapacity();
+    return f.touched() && f.invalid() ? this.i18n.t('setup.err.tankCapacity') : '';
+  });
+
   async detectCurrency(): Promise<void> {
     const cc = await detectCountryCurrency();
     if (cc) {
@@ -115,7 +127,7 @@ export class FirstRunPage {
 
   async submit(): Promise<void> {
     await submit(this.setupForm, async () => {
-      const { nickname, odometer } = this.setupModel();
+      const { nickname, odometer, tankCapacity } = this.setupModel();
       await this.db.updateSettings({
         language: this.language(),
         theme: this.theme(),
@@ -125,6 +137,7 @@ export class FirstRunPage {
         plate: this.plate().trim() || undefined,
         licenseExpiry: this.licenseExpiry() || undefined,
         registrationExpiry: this.registrationExpiry() || undefined,
+        tankCapacityLiters: Number(tankCapacity),
       });
       await this.router.navigateByUrl('/');
     });

@@ -42,8 +42,10 @@ export class Shell {
   readonly showNav = computed(() => !this.url().startsWith('/setup'));
   readonly updateReady = computed(() => this.install.updateReady() && !this.updateDismissed());
   readonly modalLines = computed(() => this.whatsNew.lines());
+  readonly releaseId = computed(() => this.whatsNew.notes()?.id ?? '');
 
   reload(): void {
+    void this.whatsNew.dismiss();
     void this.install.applyUpdate();
   }
 

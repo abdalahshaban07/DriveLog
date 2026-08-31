@@ -40,28 +40,40 @@
     @if (shareError()) {
       <p class="error-state" role="alert">{{ shareError() }}</p>
     }
-    <ul class="history__list list-reveal">
-      @for (f of rows(); track f.id) {
-        <li class="history__row">
-          <a [routerLink]="['/fill-up']" [queryParams]="{ id: f.id }" class="history__link">
-            <span class="history__date pill">{{ f.date }}</span>
-            <span class="history__odo">{{ f.odometer }} {{ i18n.t('common.km') }}</span>
-            <span class="history__detail">
-              {{ f.liters }} L
-              @if (unitPrice(f); as up) {
-                · {{ up | number: '1.2-3' }}/L
-              }
-              @if (f.fuelGrade) {
-                · {{ gradeLabel(f.fuelGrade) }}
-              }
-              @if (f.placeLabel) {
-                · {{ f.placeLabel }}
-              }
-            </span>
-            <strong class="history__cost">{{ formatMoney(f.cost) }}</strong>
-          </a>
-        </li>
+    <div class="history__groups list-reveal">
+      @for (group of groupedRows(); track group.month) {
+        <section class="history-group">
+          <h2 class="history-group__title">{{ monthLabel(group.month) }}</h2>
+          <ul class="history__list">
+            @for (f of group.items; track f.id) {
+              <li class="history__row">
+                <a [routerLink]="['/fill-up']" [queryParams]="{ id: f.id }" class="history__card">
+                  <div class="history__head">
+                    <span class="history__date pill">{{ datePill(f.date) }}</span>
+                    <div class="history__chips">
+                      <span class="history__liters chip">
+                        {{ i18n.formatNumber(f.liters, { maximumFractionDigits: 1 }) }} L
+                      </span>
+                      @if (f.fuelGrade) {
+                        <span class="history__grade chip chip--fuel">{{ gradeLabel(f.fuelGrade) }}</span>
+                      }
+                    </div>
+                  </div>
+                  <strong class="history__cost">{{ formatMoney(f.cost) }}</strong>
+                  <div class="history__foot">
+                    @if (kmDrivenLabel(f); as kmLabel) {
+                      <span class="history__km chip">{{ kmLabel }}</span>
+                    }
+                    @if (f.placeLabel) {
+                      <span class="history__place">{{ f.placeLabel }}</span>
+                    }
+                  </div>
+                </a>
+              </li>
+            }
+          </ul>
+        </section>
       }
-    </ul>
+    </div>
   }
 </div>

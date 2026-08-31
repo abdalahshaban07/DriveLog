@@ -1,6 +1,6 @@
 <header class="head">
-  <div class="slot" [attr.aria-hidden]="showBack() ? null : true">
-    @if (showBack()) {
+  @if (showBack()) {
+    <div class="slot">
       <button
         type="button"
         class="back"
@@ -11,8 +11,8 @@
           <path d="M15 6l-6 6 6 6" />
         </svg>
       </button>
-    }
-  </div>
+    </div>
+  }
   <div class="copy">
     @if (eyebrow()) {
       <p class="label">{{ eyebrow() }}</p>

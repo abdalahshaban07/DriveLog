@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 
-export type AnimeSurface = 'sparkline' | 'ledger' | 'receipt' | 'stackBar';
-export type WebGlSurface = 'fillUpTank' | 'homeAmbient';
+export type AnimeSurface = 'sparkline' | 'ledger' | 'receipt' | 'stackBar' | 'fuelTank' | 'updateModal';
+export type WebGlSurface = 'homeAmbient';
 
 @Injectable({ providedIn: 'root' })
 export class MotionPolicy {

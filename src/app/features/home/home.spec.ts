@@ -24,6 +24,7 @@ describe('HomePage', () => {
               unitSystem: 'metric',
               installBannerDismissed: true,
               remindersEnabled: true,
+              assistantEnabled: false,
             }),
             fillUps: () => [],
             maintenance: () => [],
@@ -34,15 +35,44 @@ describe('HomePage', () => {
         },
         {
           provide: I18n,
-          useValue: { t: (k: string) => k, language: () => 'en' },
+          useValue: {
+            t: (k: string) => k,
+            formatNumber: (n: number) => String(n),
+            formatDate: (d: string) => d,
+            language: () => 'en' as const,
+          },
         },
       ],
     }).compileComponents();
   });
 
-  it('exposes report count for tab badge', () => {
+  it('starts with empty nearby results', () => {
     const fixture = TestBed.createComponent(HomePage);
     fixture.detectChanges();
-    expect(fixture.componentInstance.reportCount()).toBeGreaterThanOrEqual(0);
+    expect(fixture.componentInstance.filteredNearby()).toEqual([]);
+  });
+
+  it('builds recommendations and month outlook', () => {
+    const fixture = TestBed.createComponent(HomePage);
+    fixture.detectChanges();
+    const page = fixture.componentInstance;
+    expect(page.recommendations().length).toBeGreaterThan(0);
+    expect(page.monthOutlook().actual).toBe(0);
+    expect(page.monthOutlook().projected).toBeNull();
+  });
+
+  it('renders dashboard list-reveal panel', () => {
+    const fixture = TestBed.createComponent(HomePage);
+    fixture.detectChanges();
+    const panel = fixture.nativeElement.querySelector('.home-panel--dashboard.list-reveal');
+    expect(panel).toBeTruthy();
+  });
+
+  it('does not show AI tip when assistant is disabled', () => {
+    const fixture = TestBed.createComponent(HomePage);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.assistantOnline()).toBe(false);
+    const aiCard = fixture.nativeElement.querySelector('.rec-card--ai');
+    expect(aiCard).toBeFalsy();
   });
 });
