@@ -43,25 +43,43 @@
   @if (history().length === 0) {
     <p class="empty-state">{{ i18n.t('maint.empty') }}</p>
   } @else {
-    <ul class="maint-list list-reveal">
-      @for (m of history(); track m.id) {
-        <li class="due-card">
-          <div>
-            <strong>{{ rowLabel(m) }}</strong>
-            <p class="meta">
-              <span class="pill">{{ m.date }}</span>
-              {{ m.odometer }} {{ i18n.t('common.km') }} · {{ formatMoney(m.cost) }}
-            </p>
-          </div>
-          <div class="actions">
-            <button type="button" (click)="startEdit(m)">{{ i18n.t('common.edit') }}</button>
-            <button type="button" class="danger" (click)="askDelete(m.id)">
-              {{ i18n.t('maint.delete') }}
-            </button>
-          </div>
-        </li>
+    <div class="maint-groups list-reveal">
+      @for (group of groupedHistory(); track group.month) {
+        <section class="maint-group">
+          <h3 class="maint-group__title">{{ monthLabel(group.month) }}</h3>
+          <ul class="maint-list">
+            @for (m of group.items; track m.id) {
+              @let status = dueStatus(m);
+              <li class="due-card">
+                <div>
+                  <strong>
+                    @if (status) {
+                      <span
+                        class="due-dot"
+                        [class.due-dot--overdue]="status === 'overdue'"
+                        [class.due-dot--soon]="status === 'dueSoon'"
+                        aria-hidden="true"
+                      ></span>
+                    }
+                    {{ rowLabel(m) }}
+                  </strong>
+                  <p class="meta">
+                    <span class="pill">{{ m.date }}</span>
+                    {{ m.odometer }} {{ i18n.t('common.km') }} · {{ formatMoney(m.cost) }}
+                  </p>
+                </div>
+                <div class="actions">
+                  <button type="button" (click)="startEdit(m)">{{ i18n.t('common.edit') }}</button>
+                  <button type="button" class="danger" (click)="askDelete(m.id)">
+                    {{ i18n.t('maint.delete') }}
+                  </button>
+                </div>
+              </li>
+            }
+          </ul>
+        </section>
       }
-    </ul>
+    </div>
   }
 
   @if (pendingDelete()) {

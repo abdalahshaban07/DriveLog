@@ -45,6 +45,24 @@ export class FuelPage {
     fuelDashboardMetrics(this.db.fillUps(), this.grade()),
   );
 
+  readonly lastFill = computed(() => {
+    const sorted = [...this.db.fillUps()].sort(
+      (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
+    );
+    return sorted[0] ?? null;
+  });
+
+  gradeLabel(grade: FuelGrade): string {
+    const keys: Record<FuelGrade, MsgKey> = {
+      gasoline92: 'fillUp.grade.gasoline92',
+      gasoline95: 'fillUp.grade.gasoline95',
+      diesel: 'fillUp.grade.diesel',
+      solar: 'fillUp.grade.solar',
+      custom: 'fillUp.grade.custom',
+    };
+    return this.i18n.t(keys[grade]);
+  }
+
   constructor() {
     void this.loadTip();
   }

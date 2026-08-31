@@ -66,6 +66,15 @@ export function lastFillUnitPriceFromHistory(fills: readonly FillUp[]): number |
   return null;
 }
 
+/** Latest positive-liter full-tank fill for the active car scope (caller filters by car). */
+export function lastFullFillLiters(fills: readonly FillUp[]): number | null {
+  const sorted = [...fills]
+    .filter((f) => f.tankFull && f.liters > 0)
+    .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
+  const latest = sorted[0];
+  return latest ? latest.liters : null;
+}
+
 export function lastFuelGrade(fills: readonly FillUp[]): FuelGrade | null {
   const sorted = [...fills].sort(
     (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),

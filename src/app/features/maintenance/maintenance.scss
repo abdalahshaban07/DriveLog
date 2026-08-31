@@ -1,3 +1,40 @@
+.maint-groups {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.maint-group__title {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0 0 var(--space-2);
+  padding-block: var(--space-2);
+  background: var(--bg);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.due-dot {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-inline-end: 6px;
+  border-radius: 50%;
+  background: var(--mint);
+  vertical-align: middle;
+}
+
+.due-dot--soon {
+  background: var(--fuel);
+}
+
+.due-dot--overdue {
+  background: var(--stop);
+}
+
 .maint-form__actions {
   display: flex;
   gap: var(--space-3);

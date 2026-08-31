@@ -8,11 +8,14 @@ import type {
   OtherExpense,
 } from './models';
 
+export type ReportTone = 'fuel' | 'maintenance' | 'breakdown' | 'other';
+
 export interface SmartReportCard {
   id: string;
   titleKey: string;
   bodyKey: string;
   bodyParams?: Record<string, string | number>;
+  tone: ReportTone;
 }
 
 function topCategory(t: PeriodTotals): { key: string; pct: number } | null {
@@ -52,12 +55,14 @@ export function buildSmartReports(input: {
       titleKey: 'reports.biggestTitle',
       bodyKey: `reports.biggest.${top.key}`,
       bodyParams: { pct: top.pct },
+      tone: top.key === 'breakdowns' ? 'breakdown' : (top.key as ReportTone),
     });
   } else {
     cards.push({
       id: 'biggest',
       titleKey: 'reports.biggestTitle',
       bodyKey: 'reports.biggest.empty',
+      tone: 'other',
     });
   }
 
@@ -68,12 +73,14 @@ export function buildSmartReports(input: {
       titleKey: 'reports.economyTitle',
       bodyKey: 'reports.economy.body',
       bodyParams: { l100: Number(fuel.lastL100.toFixed(1)) },
+      tone: 'fuel',
     });
   } else {
     cards.push({
       id: 'economy',
       titleKey: 'reports.economyTitle',
       bodyKey: 'reports.economy.empty',
+      tone: 'fuel',
     });
   }
 
@@ -84,12 +91,14 @@ export function buildSmartReports(input: {
       titleKey: 'reports.maintTitle',
       bodyKey: 'reports.maint.count',
       bodyParams: { count: maintInPeriod },
+      tone: 'maintenance',
     });
   } else {
     cards.push({
       id: 'maint',
       titleKey: 'reports.maintTitle',
       bodyKey: 'reports.maint.empty',
+      tone: 'maintenance',
     });
   }
 
@@ -103,6 +112,7 @@ export function buildSmartReports(input: {
     titleKey: 'reports.breakdownTitle',
     bodyKey: recurring.length ? 'reports.breakdown.recurring' : 'reports.breakdown.none',
     bodyParams: recurring.length ? { count: recurring.length } : undefined,
+    tone: 'breakdown',
   });
 
   return cards;

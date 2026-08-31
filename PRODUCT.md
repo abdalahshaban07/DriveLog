@@ -26,3 +26,5 @@ Visible Home nudges + analytics. **BYOK LLM** allowed (user-supplied API key; op
 Angular 22 standalone · signals · OnPush · SCSS tokens · Vitest · PWA · GitHub Pages.
 
 **Banned:** Tailwind, Material, GSAP, Motion npm, React kits.
+
+**Allowed (lazy islands only):** `animejs` for SVG draw, stagger, and debounced number morphs; `three` for fill-up tank gauge and Home ambient backdrop. High-frequency UI stays CSS/instant.

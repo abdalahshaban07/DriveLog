@@ -2,6 +2,41 @@
   padding-block-end: calc(var(--nav-height) + var(--space-8));
 }
 
+.last-fill-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+  padding: var(--space-3);
+}
+
+.last-fill-strip__col {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.last-fill-strip__label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.last-fill-strip__col strong {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.last-fill-strip__empty {
+  margin: 0;
+  grid-column: 1 / -1;
+  color: var(--muted);
+}
+
 .tip-strip {
   padding: var(--space-4);
   background: color-mix(in srgb, var(--cta) 10%, var(--surface));

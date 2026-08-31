@@ -47,6 +47,8 @@ Tokens: `--motion-fast` 160ms · `--motion-normal` 250ms · `--ease-out` · `--n
 
 Hard bans: no `transition: all`, no `scale(0)`, honor `prefers-reduced-motion`.
 
+**Motion libraries (Operate-safe):** `animejs` on occasional surfaces only (sparklines, receipt count-up, chart stagger). `three` only on fill-up tank + Home ambient (~120px, finite reveal). Max one WebGL surface; CSS fallback when reduced motion.
+
 ## Shell
 
 4-tab fixed bottom nav: **Home / Fuel / Maintenance / More** (`position: fixed; bottom: 0` + safe-area). Main padding accounts for `--nav-height`. Update = modal (Later / Update now), not top strip.

@@ -2,13 +2,16 @@ import { DecimalPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
+  afterNextRender,
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
-import { todayDateOnly } from '../../domain/dues';
+import { buildDueItems, nextDueItem, todayDateOnly } from '../../domain/dues';
 import {
   activePeriod,
   daysUntil,
@@ -19,11 +22,16 @@ import {
   ledgerCategoryTotals,
   type LedgerPeriodFilter,
 } from '../../domain/expense-ledger';
+import { fuelDashboardMetrics } from '../../domain/fuel-dashboard';
+import { costPerKmTrend, economyTrend, spendByMonth } from '../../domain/insights';
 import type { ExpenseCategory } from '../../domain/models';
 import { buildSmartReports } from '../../domain/smart-reports';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
+import { AmbientCanvas } from '../../ui/ambient-canvas/ambient-canvas';
+import { Sparkline } from '../../ui/charts/sparkline';
 import { DateField } from '../../ui/date-field';
+import { MotionPolicy } from '../../ui/motion/motion-policy';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
 
@@ -33,7 +41,7 @@ type ChartCategory = ExpenseCategory | 'all';
 @Component({
   selector: 'app-home',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, PageHeader, DateField, PrimaryButton],
+  imports: [DecimalPipe, PageHeader, DateField, PrimaryButton, RouterLink, Sparkline, AmbientCanvas],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
@@ -42,6 +50,9 @@ export class HomePage {
   readonly db = inject(Db);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly policy = inject(MotionPolicy);
+  private readonly ledgerList = viewChild<ElementRef<HTMLElement>>('ledgerList');
+  private readonly stackBar = viewChild<ElementRef<HTMLElement>>('stackBar');
 
   readonly view = signal<HomeView>('dashboard');
   readonly chartCategory = signal<ChartCategory>('all');
@@ -105,6 +116,31 @@ export class HomePage {
     }),
   );
   readonly ledgerTotals = computed(() => ledgerCategoryTotals(this.ledgerRows()));
+  readonly fuelMetrics = computed(() => fuelDashboardMetrics(this.db.fillUps()));
+  readonly reportCount = computed(() => this.reports().length);
+  readonly lastFillDate = computed(() => {
+    const sorted = [...this.db.fillUps()].sort(
+      (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
+    );
+    return sorted[0]?.date ?? null;
+  });
+  readonly nextDue = computed(() => {
+    const car = this.db.car();
+    if (!car) {
+      return null;
+    }
+    const items = buildDueItems(
+      this.db.settings(),
+      this.db.maintenance(),
+      car.currentOdometer,
+      todayDateOnly(),
+      car,
+    );
+    return nextDueItem(items);
+  });
+  readonly economyTrend = computed(() => economyTrend(this.db.fillUps(), '3m'));
+  readonly costTrend = computed(() => costPerKmTrend(this.db.fillUps(), '3m'));
+  readonly spendTrend = computed(() => spendByMonth(this.db.fillUps(), '3m'));
 
   constructor() {
     this.route.queryParamMap.subscribe((params) => {
@@ -113,6 +149,52 @@ export class HomePage {
         this.view.set(v);
       }
     });
+    afterNextRender(() => {
+      if (this.view() === 'charts') {
+        void this.animateCharts();
+      }
+    });
+  }
+
+  dueLabel(): string {
+    const due = this.nextDue();
+    if (!due) {
+      return this.i18n.t('home.nothingDue');
+    }
+    return this.i18n.t(due.labelKey as MsgKey, due.labelParams);
+  }
+
+  async animateCharts(): Promise<void> {
+    if (!this.policy.allowAnime('stackBar')) {
+      return;
+    }
+    try {
+      const { animate, stagger } = await import('animejs');
+      const bar = this.stackBar()?.nativeElement;
+      if (bar) {
+        const segs = bar.querySelectorAll('.stack-bar__seg');
+        animate(segs, {
+          opacity: [0, 1],
+          scaleX: [0.6, 1],
+          delay: stagger(60),
+          duration: 480,
+          ease: 'out(3)',
+        });
+      }
+      const list = this.ledgerList()?.nativeElement;
+      if (list) {
+        const rows = list.querySelectorAll('.ledger-row');
+        animate(rows, {
+          opacity: [0, 1],
+          translateY: [8, 0],
+          delay: stagger(40),
+          duration: 420,
+          ease: 'out(3)',
+        });
+      }
+    } catch {
+      /* CSS fallback */
+    }
   }
 
   carLabel(car: { nickname: string; plate?: string }): string {
@@ -173,6 +255,9 @@ export class HomePage {
 
   setView(next: HomeView): void {
     this.view.set(next);
+    if (next === 'charts') {
+      queueMicrotask(() => void this.animateCharts());
+    }
     void this.router.navigate([], {
       queryParams: { view: next === 'dashboard' ? null : next },
       queryParamsHandling: 'merge',

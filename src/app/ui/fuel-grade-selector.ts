@@ -75,8 +75,8 @@ type GradeOption = { grade: FuelGrade; labelKey: MsgKey; price: number | null };
       text-align: center;
       cursor: pointer;
       transition:
-        border-color var(--motion-fast) var(--ease-out),
-        background var(--motion-fast) var(--ease-out);
+        border-color 80ms var(--ease-out),
+        background 80ms var(--ease-out);
     }
     .grades__chip--on {
       border-color: color-mix(in srgb, var(--fuel) 55%, var(--hairline));

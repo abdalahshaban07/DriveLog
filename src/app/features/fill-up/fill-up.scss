@@ -1,3 +1,27 @@
+.price-skeleton {
+  opacity: 1;
+  transition: opacity 200ms var(--ease-out);
+}
+
+.grade-fade {
+  animation: grade-in 200ms var(--ease-out);
+}
+
+@keyframes grade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grade-fade {
+    animation: none;
+  }
+}
+
 .fill-up {
   gap: var(--space-3);
 }
