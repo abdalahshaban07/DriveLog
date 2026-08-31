@@ -1,5 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
+import { MotionPolicy } from './motion/motion-policy';
 import { I18n } from '../i18n/i18n';
 
 @Component({
@@ -12,9 +22,9 @@ import { I18n } from '../i18n/i18n';
         <div class="receipt-line">
           <span>{{ liters() | number: '1.0-2' }} L × {{ unitPrice() | number: '1.2-3' }}/L</span>
         </div>
-        <div class="receipt-line receipt-line--total">
+        <div class="receipt-line receipt-line--total" [class.metric-flash]="flash()">
           <span>{{ i18n.t('fillUp.total') }}</span>
-          <strong>{{ formatMoney(total()) }}</strong>
+          <strong>{{ formatMoney(displayTotal()) }}</strong>
         </div>
       } @else {
         <p class="receipt__hint">{{ i18n.t('fillUp.receiptHint') }}</p>
@@ -42,9 +52,14 @@ import { I18n } from '../i18n/i18n';
 })
 export class ReceiptPreview {
   readonly i18n = inject(I18n);
+  private readonly policy = inject(MotionPolicy);
+
   readonly liters = input(0);
   readonly unitPrice = input<number | null>(null);
   readonly currency = input('EGP');
+  readonly flash = signal(false);
+  readonly displayTotal = signal(0);
+
   readonly total = computed(() => {
     const l = this.liters();
     const u = this.unitPrice();
@@ -53,6 +68,47 @@ export class ReceiptPreview {
     }
     return Math.round(l * u * 100) / 100;
   });
+
+  private debounceTimer = 0;
+
+  constructor() {
+    afterNextRender(() => {
+      this.displayTotal.set(this.total());
+    });
+    effect(() => {
+      const next = this.total();
+      window.clearTimeout(this.debounceTimer);
+      this.debounceTimer = window.setTimeout(() => {
+        void this.animateTotal(next);
+      }, 300);
+    });
+  }
+
+  private async animateTotal(target: number): Promise<void> {
+    if (!this.policy.allowAnime('receipt')) {
+      this.displayTotal.set(target);
+      return;
+    }
+    const from = this.displayTotal();
+    if (from === target) {
+      return;
+    }
+    this.flash.set(true);
+    window.setTimeout(() => this.flash.set(false), 220);
+    try {
+      const { animate } = await import('animejs');
+      const state = { value: from };
+      animate(state, {
+        value: target,
+        duration: 420,
+        ease: 'out(3)',
+        onUpdate: () => this.displayTotal.set(Math.round(state.value * 100) / 100),
+        onComplete: () => this.displayTotal.set(target),
+      });
+    } catch {
+      this.displayTotal.set(target);
+    }
+  }
 
   formatMoney(value: number): string {
     try {

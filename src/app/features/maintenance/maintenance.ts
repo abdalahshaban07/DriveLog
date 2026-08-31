@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Db } from '../../data/db';
-import { todayDateOnly } from '../../domain/dues';
+import { buildDueItems, todayDateOnly } from '../../domain/dues';
+import type { DueStatus } from '../../domain/models';
 import { MAINTENANCE_TYPES, type Maintenance, type MaintenanceType } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
@@ -60,6 +61,46 @@ export class MaintenancePage {
       (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
     ),
   );
+
+  readonly groupedHistory = computed(() => {
+    const groups = new Map<string, Maintenance[]>();
+    for (const row of this.history()) {
+      const month = row.date.slice(0, 7);
+      const bucket = groups.get(month) ?? [];
+      bucket.push(row);
+      groups.set(month, bucket);
+    }
+    return [...groups.entries()].map(([month, items]) => ({ month, items }));
+  });
+
+  dueStatus(m: Maintenance): DueStatus | null {
+    const car = this.db.car();
+    if (!car) {
+      return null;
+    }
+    const today = todayDateOnly();
+    const items = buildDueItems(
+      this.db.settings(),
+      [m],
+      car.currentOdometer,
+      today,
+      car,
+    );
+    const match = items.find((i) => i.maintenanceId === m.id);
+    return match?.status ?? null;
+  }
+
+  monthLabel(month: string): string {
+    const [y, mo] = month.split('-').map(Number);
+    try {
+      return new Intl.DateTimeFormat(this.i18n.language(), {
+        month: 'long',
+        year: 'numeric',
+      }).format(new Date(y!, mo! - 1, 1));
+    } catch {
+      return month;
+    }
+  }
 
   resetForm(): void {
     this.editId.set(null);

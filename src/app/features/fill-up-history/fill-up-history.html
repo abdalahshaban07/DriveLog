@@ -30,7 +30,7 @@
 
   @if (rows().length === 0) {
     <p class="empty-state">{{ i18n.t('home.logFirst') }}</p>
-    <a routerLink="/fill-up" class="cta">{{ i18n.t('home.logFillUp') }}</a>
+    <a routerLink="/fill-up" class="cta">{{ i18n.t('empty.fillUps.cta') }}</a>
   } @else {
     <div class="history__actions">
       <button type="button" class="ghost-btn" [disabled]="shareBusy()" (click)="shareCsv()">

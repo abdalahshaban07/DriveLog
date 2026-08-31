@@ -20,15 +20,23 @@
       />
     </div>
 
+    <app-fuel-tank-canvas
+      [liters]="litersNum()"
+      [tankFull]="tankFull()"
+      [maxLiters]="maxLiters()"
+    />
+
     @if (pricesBusy()) {
-      <div class="skeleton skeleton--row" aria-hidden="true"></div>
-    } @else {
+      <div class="skeleton skeleton--row price-skeleton" aria-hidden="true"></div>
+    } @else if (pricesReady()) {
+      <div class="grade-fade">
       <app-fuel-grade-selector
         [prices]="fuelPrices()"
         [fallbackPrice]="lastUnit()"
         [options]="gradeOptions()"
         [(value)]="fuelGrade"
       />
+      </div>
     }
 
     <app-receipt-preview

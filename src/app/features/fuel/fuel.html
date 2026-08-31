@@ -1,6 +1,29 @@
 <div class="stack fuel">
   <app-page-header [title]="i18n.t('fuel.title')" />
 
+  <section class="card last-fill-strip" role="status" [attr.aria-label]="i18n.t('fuel.lastFillStrip')">
+    @if (lastFill(); as f) {
+      <div class="last-fill-strip__col">
+        <span class="last-fill-strip__label">{{ i18n.t('fillUp.date') }}</span>
+        <strong>{{ f.date }}</strong>
+      </div>
+      <div class="last-fill-strip__col">
+        <span class="last-fill-strip__label">{{ i18n.t('fillUp.liters') }}</span>
+        <strong>{{ f.liters }} L</strong>
+      </div>
+      <div class="last-fill-strip__col">
+        <span class="last-fill-strip__label">{{ i18n.t('fillUp.fuelType') }}</span>
+        <strong>{{ f.fuelGrade ? gradeLabel(f.fuelGrade) : '—' }}</strong>
+      </div>
+      <div class="last-fill-strip__col">
+        <span class="last-fill-strip__label">{{ i18n.t('fillUp.tankFull') }}</span>
+        <strong>{{ f.tankFull ? i18n.t('fillUp.tankFull') : i18n.t('fillUp.tankPartial') }}</strong>
+      </div>
+    } @else {
+      <p class="last-fill-strip__empty">{{ i18n.t('home.logFirst') }}</p>
+    }
+  </section>
+
   <section class="tip-strip card" role="status" aria-live="polite">
     <p class="tip-strip__label">{{ i18n.t('fuel.tipLabel') }}</p>
     @if (tipBusy()) {

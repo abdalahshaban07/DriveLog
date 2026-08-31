@@ -10,6 +10,7 @@ import { Db } from '../../data/db';
 import {
   computeFillUpCost,
   lastFillUnitPriceFromHistory,
+  lastFullFillLiters,
   lastFuelGrade,
   pickUnitPrice,
   priceForGrade,
@@ -27,6 +28,7 @@ import {
   buildGradeOptions,
   FuelGradeSelector,
 } from '../../ui/fuel-grade-selector';
+import { FuelTankCanvas } from '../../ui/fuel-tank-canvas/fuel-tank-canvas';
 import { NumericField } from '../../ui/numeric-field';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
@@ -48,6 +50,7 @@ const GRADE_KEYS: Record<FuelGrade, MsgKey> = {
     PageHeader,
     NumericField,
     FuelGradeSelector,
+    FuelTankCanvas,
     ReceiptPreview,
     TankToggle,
     DateField,
@@ -78,6 +81,7 @@ export class FillUpPage {
   readonly weatherBusy = signal(false);
   readonly weatherError = signal('');
   readonly pricesBusy = signal(false);
+  readonly pricesReady = signal(false);
   readonly fuelPrices = signal<Awaited<ReturnType<typeof countryFuelPrices>>>(null);
   readonly weather = signal<{
     lat: number;
@@ -87,6 +91,12 @@ export class FillUpPage {
   } | null>(null);
 
   readonly lastUnit = computed(() => lastFillUnitPriceFromHistory(this.db.fillUps()));
+
+  readonly maxLiters = computed(() => {
+    const fromHistory = lastFullFillLiters(this.db.fillUps());
+    const current = Number(this.liters()) || 0;
+    return fromHistory ?? Math.max(current, 50);
+  });
 
   readonly gradeOptions = computed(() =>
     buildGradeOptions(this.fuelPrices(), GRADE_KEYS),
@@ -150,6 +160,7 @@ export class FillUpPage {
 
   async loadPrices(): Promise<void> {
     this.pricesBusy.set(true);
+    this.pricesReady.set(false);
     try {
       const cc = countryFromCurrency(this.db.settings().currency);
       this.fuelPrices.set(await countryFuelPrices(cc));
@@ -160,6 +171,7 @@ export class FillUpPage {
       }
     } finally {
       this.pricesBusy.set(false);
+      this.pricesReady.set(true);
     }
   }
 

@@ -2,10 +2,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  inject,
   input,
   signal,
   afterNextRender,
 } from '@angular/core';
+import { MotionPolicy } from '../motion/motion-policy';
 
 @Component({
   selector: 'app-sparkline',
@@ -70,8 +72,16 @@ export class Sparkline {
   readonly label = input('');
   readonly draw = signal(false);
 
+  private readonly policy = inject(MotionPolicy);
+
   constructor() {
-    afterNextRender(() => this.draw.set(true));
+    afterNextRender(() => {
+      if (this.policy.allowAnime('sparkline')) {
+        void this.drawWithAnime();
+      } else {
+        this.draw.set(true);
+      }
+    });
   }
 
   readonly points = computed(() => this.values().filter((v) => Number.isFinite(v)));
@@ -95,4 +105,23 @@ export class Sparkline {
       })
       .join(' ');
   });
+
+  private async drawWithAnime(): Promise<void> {
+    try {
+      const { animate, createDrawable } = await import('animejs');
+      const line = document.querySelector('.spark__line');
+      if (!(line instanceof SVGPolylineElement)) {
+        this.draw.set(true);
+        return;
+      }
+      const drawable = createDrawable(line);
+      animate(drawable, {
+        draw: '0 1',
+        duration: 550,
+        ease: 'out(3)',
+      });
+    } catch {
+      this.draw.set(true);
+    }
+  }
 }

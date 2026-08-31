@@ -12,6 +12,9 @@
         (click)="setView(tab.id)"
       >
         {{ i18n.t(tab.labelKey) }}
+        @if (tab.id === 'reports' && reportCount() > 0) {
+          <span class="home-tabs__badge" aria-hidden="true">{{ reportCount() }}</span>
+        }
       </button>
     }
   </div>
@@ -31,6 +34,27 @@
               <span class="carousel__odo">{{ car.currentOdometer | number: '1.0-0' }} {{ i18n.t('common.km') }}</span>
             </button>
           }
+        </div>
+
+        <div class="glance-strip" role="status" [attr.aria-label]="i18n.t('home.glanceStrip')">
+          <div class="glance-strip__cell">
+            <span class="glance-strip__label">{{ i18n.t('home.lastFill') }}</span>
+            <strong>{{ lastFillDate() ?? '—' }}</strong>
+          </div>
+          <div class="glance-strip__cell">
+            <span class="glance-strip__label">{{ i18n.t('home.economy') }}</span>
+            <strong>
+              @if (fuelMetrics().lastL100 != null) {
+                {{ fuelMetrics().lastL100 | number: '1.1-1' }} L/100km
+              } @else {
+                —
+              }
+            </strong>
+          </div>
+          <div class="glance-strip__cell">
+            <span class="glance-strip__label">{{ i18n.t('home.nextDue') }}</span>
+            <strong>{{ dueLabel() }}</strong>
+          </div>
         </div>
       }
 
@@ -64,6 +88,10 @@
           }
         </article>
       </div>
+
+      @if (db.car()) {
+        <app-ambient-canvas class="ambient-wrap" />
+      }
 
       <section class="card period-card">
         <header class="period-card__head">
@@ -136,10 +164,13 @@
   @if (view() === 'reports') {
     <section class="home-panel reports-panel" role="tabpanel" [attr.aria-label]="i18n.t('home.tab.reports')">
       @if (reports().length === 0) {
-        <p class="empty-state">{{ i18n.t('reports.empty') }}</p>
+        <div class="empty-state">
+          <p>{{ i18n.t('reports.empty') }}</p>
+          <a routerLink="/fill-up" class="empty-cta">{{ i18n.t('home.logFillUp') }}</a>
+        </div>
       }
       @for (card of reports(); track card.id) {
-        <article class="card report-card">
+        <article class="card report-card" [class]="'card report-card report-card--' + card.tone">
           <h2 class="report-card__title">{{ reportTitle(card.titleKey) }}</h2>
           <p class="report-card__body">
             {{ reportBody(card.bodyKey, card.bodyParams) }}
@@ -151,6 +182,12 @@
 
   @if (view() === 'charts') {
     <section class="home-panel" role="tabpanel" [attr.aria-label]="i18n.t('home.tab.charts')">
+      <div class="spark-grid">
+        <app-sparkline [values]="economyTrend()" [label]="i18n.t('home.economy')" />
+        <app-sparkline [values]="costTrend()" [label]="i18n.t('home.costPerKm')" />
+        <app-sparkline [values]="spendTrend()" [label]="i18n.t('home.monthSpend')" />
+      </div>
+
       <div class="filter-row">
         <label class="filter-row__lbl" for="chart-cat">{{ i18n.t('charts.category') }}</label>
         <select
@@ -180,7 +217,7 @@
 
       @let lt = ledgerTotals();
       @if (lt.total > 0) {
-        <div class="stack-bar" role="img" [attr.aria-label]="i18n.t('charts.stackLabel')">
+        <div #stackBar class="stack-bar" role="img" [attr.aria-label]="i18n.t('charts.stackLabel')">
           <div class="stack-bar__track">
             <span
               class="stack-bar__seg stack-bar__seg--fuel"
@@ -207,14 +244,20 @@
           </ul>
         </div>
       } @else {
-        <p class="empty-state">{{ i18n.t('charts.empty') }}</p>
+        <div class="empty-state">
+          <p>{{ i18n.t('charts.empty') }}</p>
+          <a routerLink="/fill-up" class="empty-cta">{{ i18n.t('home.logFillUp') }}</a>
+        </div>
       }
 
       <h2 class="ledger-title">{{ i18n.t('charts.ledger') }}</h2>
       @if (ledgerRows().length === 0) {
-        <p class="empty-state">{{ i18n.t('charts.ledgerEmpty') }}</p>
+        <div class="empty-state">
+          <p>{{ i18n.t('charts.ledgerEmpty') }}</p>
+          <a routerLink="/fill-up" class="empty-cta">{{ i18n.t('home.logFillUp') }}</a>
+        </div>
       } @else {
-        <ul class="ledger list-reveal">
+        <ul #ledgerList class="ledger list-reveal">
           @for (row of ledgerRows(); track row.id) {
             <li class="ledger-row">
               <div class="ledger-row__main">
