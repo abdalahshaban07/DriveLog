@@ -39,7 +39,17 @@
   display: flex;
   gap: var(--space-3);
   align-items: center;
-  justify-content: flex-end;
+}
+
+.maint-new-type__actions {
+  display: flex;
+}
+
+.maint-new-type__link {
+  color: var(--cta);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
 }
 
 .section-title {

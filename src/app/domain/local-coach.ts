@@ -11,6 +11,16 @@ export const FUEL_TIP_KEYS = [
   'fuel.tip.compareGrades',
 ] as const satisfies readonly MsgKey[];
 
+export type CoachSource = 'ai' | 'local';
+
+export type CoachReply = {
+  text: string;
+  source: CoachSource;
+};
+
+const POLLINATIONS_TIMEOUT_MS = 12_000;
+const POLLINATIONS_RETRIES = 2;
+
 export function pickFuelTipKey(seed = Date.now()): MsgKey {
   const i = Math.abs(seed) % FUEL_TIP_KEYS.length;
   return FUEL_TIP_KEYS[i]!;
@@ -42,7 +52,10 @@ function coachPrompt(db: Db, question: string, lang: 'en' | 'ar'): string {
     periods: db.expensePeriods(),
     milestones: db.milestones(),
   });
-  const langLine = lang === 'ar' ? 'Reply in Arabic.' : 'Reply in English.';
+  const langLine =
+    lang === 'ar'
+      ? 'أجب بالعربية الفصحى المبسطة. استخدم الأرقام العربية الهندية عند ذكر الأرقام.'
+      : 'Reply in English.';
   return [
     'You are a concise car expense coach for a personal fuel app.',
     langLine,
@@ -52,35 +65,57 @@ function coachPrompt(db: Db, question: string, lang: 'en' | 'ar'): string {
   ].join('\n');
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /** ponytail: free no-key text API; falls back to local templates offline. */
 export async function fetchFreeCoachText(prompt: string): Promise<string | null> {
-  try {
-    const res = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}`, {
-      headers: { Accept: 'text/plain' },
-    });
-    if (!res.ok) {
-      return null;
+  const url = `https://text.pollinations.ai/${encodeURIComponent(prompt)}`;
+  for (let attempt = 0; attempt <= POLLINATIONS_RETRIES; attempt++) {
+    const ctrl = new AbortController();
+    const timer = window.setTimeout(() => ctrl.abort(), POLLINATIONS_TIMEOUT_MS);
+    try {
+      const res = await fetch(url, {
+        headers: { Accept: 'text/plain' },
+        signal: ctrl.signal,
+      });
+      if (!res.ok) {
+        continue;
+      }
+      const text = (await res.text()).trim().replace(/\s+/g, ' ').slice(0, 480);
+      if (text.length >= 8) {
+        return text;
+      }
+    } catch {
+      /* retry */
+    } finally {
+      window.clearTimeout(timer);
     }
-    const text = (await res.text()).trim().replace(/\s+/g, ' ').slice(0, 480);
-    return text.length >= 8 ? text : null;
-  } catch {
-    return null;
+    if (attempt < POLLINATIONS_RETRIES) {
+      await sleep(400 * (attempt + 1));
+    }
   }
+  return null;
 }
 
 export async function fetchFuelTipText(
   db: Db,
   lang: 'en' | 'ar',
   t: (key: MsgKey) => string,
-): Promise<string> {
+): Promise<CoachReply> {
   const key = contextualFuelTipKey(db);
   const fallback = t(key);
   const car = db.car();
   if (!car) {
-    return fallback;
+    return { text: fallback, source: 'local' };
   }
   const prompt = coachPrompt(db, t('fuel.tip.prompt'), lang);
-  return (await fetchFreeCoachText(prompt)) ?? fallback;
+  const remote = await fetchFreeCoachText(prompt);
+  if (remote) {
+    return { text: remote, source: 'ai' };
+  }
+  return { text: fallback, source: 'local' };
 }
 
 export async function fetchCoachReply(
@@ -88,13 +123,13 @@ export async function fetchCoachReply(
   question: string,
   lang: 'en' | 'ar',
   t: (key: MsgKey, params?: Record<string, string | number>) => string,
-): Promise<string> {
+): Promise<CoachReply> {
   const prompt = coachPrompt(db, question, lang);
   const remote = await fetchFreeCoachText(prompt);
   if (remote) {
-    return remote;
+    return { text: remote, source: 'ai' };
   }
-  return localCoachReply(db, question, t);
+  return { text: localCoachReply(db, question, t), source: 'local' };
 }
 
 function localCoachReply(

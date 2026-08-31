@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
 import { buildDueItems, todayDateOnly } from '../../domain/dues';
+import { MAINTENANCE_TYPES } from '../../domain/models';
 import type { DueStatus } from '../../domain/models';
-import { MAINTENANCE_TYPES, type Maintenance, type MaintenanceType } from '../../domain/models';
+import type { Maintenance, MaintenanceType } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { ConfirmBar } from '../../ui/confirm-bar';
@@ -12,6 +14,8 @@ import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
 import { SelectField } from '../../ui/select-field';
 import { TextField } from '../../ui/text-field';
+
+const ADD_TYPE = '__add__';
 
 @Component({
   selector: 'app-maintenance',
@@ -24,6 +28,7 @@ import { TextField } from '../../ui/text-field';
     SelectField,
     PrimaryButton,
     ConfirmBar,
+    RouterLink,
   ],
   templateUrl: './maintenance.html',
   styleUrl: './maintenance.scss',
@@ -44,6 +49,10 @@ export class MaintenancePage {
   readonly pendingDelete = signal<string | null>(null);
   readonly odoError = signal('');
   readonly costError = signal('');
+  readonly newTypeName = signal('');
+  readonly newTypeError = signal('');
+
+  readonly addingType = computed(() => this.type() === ADD_TYPE);
 
   readonly typeOptions = computed(() => {
     const opts: { value: string; label: string }[] = MAINTENANCE_TYPES.map((value) => ({
@@ -53,6 +62,7 @@ export class MaintenancePage {
     for (const name of this.db.settings().customMaintenanceTypes ?? []) {
       opts.push({ value: `custom:${name}`, label: name });
     }
+    opts.push({ value: ADD_TYPE, label: this.i18n.t('maint.addType') });
     return opts;
   });
 
@@ -93,7 +103,7 @@ export class MaintenancePage {
   monthLabel(month: string): string {
     const [y, mo] = month.split('-').map(Number);
     try {
-      return new Intl.DateTimeFormat(this.i18n.language(), {
+      return new Intl.DateTimeFormat(this.i18n.language() === 'ar' ? 'ar-EG-u-nu-arab' : 'en-GB', {
         month: 'long',
         year: 'numeric',
       }).format(new Date(y!, mo! - 1, 1));
@@ -113,6 +123,8 @@ export class MaintenancePage {
     this.dueDate.set('');
     this.odoError.set('');
     this.costError.set('');
+    this.newTypeName.set('');
+    this.newTypeError.set('');
   }
 
   startEdit(row: Maintenance): void {
@@ -133,7 +145,25 @@ export class MaintenancePage {
     return { type: value as MaintenanceType };
   }
 
+  async saveNewType(): Promise<void> {
+    this.newTypeError.set('');
+    const result = await this.db.addCustomType(this.newTypeName());
+    if (!result.ok) {
+      this.newTypeError.set(
+        result.reason === 'empty'
+          ? this.i18n.t('types.err.empty')
+          : this.i18n.t('types.err.duplicate'),
+      );
+      return;
+    }
+    this.type.set(`custom:${result.name}`);
+    this.newTypeName.set('');
+  }
+
   async save(): Promise<void> {
+    if (this.addingType()) {
+      return;
+    }
     const cost = Number(this.cost());
     const odometer = Number(this.odometer());
     this.odoError.set('');
@@ -196,14 +226,15 @@ export class MaintenancePage {
   }
 
   formatMoney(value: number): string {
+    const locale = this.i18n.language() === 'ar' ? 'ar-EG-u-nu-arab' : 'en-GB';
     try {
-      return new Intl.NumberFormat(this.i18n.language(), {
+      return new Intl.NumberFormat(locale, {
         style: 'currency',
         currency: this.db.settings().currency,
         maximumFractionDigits: 2,
       }).format(value);
     } catch {
-      return `${value} ${this.db.settings().currency}`;
+      return `${this.i18n.formatNumber(value)} ${this.db.settings().currency}`;
     }
   }
 }

@@ -1,0 +1,45 @@
+<dialog
+  #dialog
+  class="update-sheet"
+  [attr.aria-labelledby]="titleId"
+  (cancel)="onCancel($event)"
+  (click)="onBackdropClick($event)"
+>
+  <div class="update-sheet__panel" role="document">
+    <header class="update-sheet__head">
+      <div>
+        <h2 [id]="titleId" class="update-sheet__title">{{ i18n.t('update.available') }}</h2>
+        @if (releaseId()) {
+          <span class="update-sheet__release pill">
+            {{ i18n.t('update.release') }} · {{ releaseId() }}
+          </span>
+        }
+      </div>
+      <button type="button" class="update-sheet__close" (click)="later.emit()">
+        {{ i18n.t('update.later') }}
+      </button>
+    </header>
+
+    @if (lines().length) {
+      <section class="update-sheet__features" [attr.aria-label]="i18n.t('update.whatsNew')">
+        <h3 class="update-sheet__subtitle">{{ i18n.t('update.whatsNew') }}</h3>
+        <ul #cards class="update-sheet__cards">
+          @for (line of lines(); track line) {
+            <li class="update-card">{{ line }}</li>
+          }
+        </ul>
+      </section>
+    } @else {
+      <p class="update-sheet__body">{{ i18n.t('update.notifyBody') }}</p>
+    }
+
+    <div class="update-sheet__actions">
+      <app-primary-button
+        [label]="i18n.t('update.reload')"
+        [tone]="'mint'"
+        [stretch]="true"
+        (pressed)="updateNow.emit()"
+      />
+    </div>
+  </div>
+</dialog>

@@ -145,26 +145,19 @@
 }
 
 .cal__nav {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
   gap: 8px;
 }
 
-.cal__month {
-  flex: 1;
-  text-align: center;
-  font-weight: 700;
-}
-
-.cal__shift {
-  width: 44px;
-  height: 44px;
-  border: 0;
+.cal__select {
+  min-height: 44px;
+  padding-inline: 12px;
+  border: 1px solid color-mix(in srgb, var(--well) 80%, transparent);
   border-radius: 12px;
-  background: transparent;
+  background: var(--well);
   color: var(--text);
-  font-size: 1.4rem;
-  line-height: 1;
+  font-weight: 700;
 }
 
 .cal__week,

@@ -11,6 +11,23 @@
       [value]="type()"
       (valueChange)="type.set($event)"
     />
+    @if (addingType()) {
+      <div class="maint-new-type stack">
+        <app-text-field
+          [label]="i18n.t('maint.newTypeName')"
+          [(value)]="newTypeName"
+          [error]="newTypeError()"
+        />
+        <div class="maint-new-type__actions">
+          <app-primary-button
+            [label]="i18n.t('types.add')"
+            [stretch]="true"
+            (pressed)="saveNewType()"
+          />
+        </div>
+        <a class="maint-new-type__link" routerLink="/settings/types">{{ i18n.t('maint.manageTypes') }}</a>
+      </div>
+    }
     <app-numeric-field
       [label]="i18n.t('maint.odometer')"
       [(value)]="odometer"
@@ -33,7 +50,8 @@
       }
       <app-primary-button
         [label]="i18n.t('maint.save')"
-        [disabled]="saving()"
+        [disabled]="saving() || addingType()"
+        [stretch]="true"
         (pressed)="save()"
       />
     </div>
@@ -64,8 +82,8 @@
                     {{ rowLabel(m) }}
                   </strong>
                   <p class="meta">
-                    <span class="pill">{{ m.date }}</span>
-                    {{ m.odometer }} {{ i18n.t('common.km') }} · {{ formatMoney(m.cost) }}
+                    <span class="pill">{{ i18n.formatDate(m.date, { day: 'numeric', month: 'short' }) }}</span>
+                    {{ i18n.formatNumber(m.odometer, { maximumFractionDigits: 0 }) }} {{ i18n.t('common.km') }} · {{ formatMoney(m.cost) }}
                   </p>
                 </div>
                 <div class="actions">

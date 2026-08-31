@@ -1,13 +1,14 @@
 import { DestroyRef } from '@angular/core';
 import type { Scope } from 'animejs';
-import { MotionPolicy } from './motion-policy';
+import { MotionPolicy, type AnimeSurface } from './motion-policy';
 
 export async function createAnimeScope(
   root: HTMLElement,
   destroyRef: DestroyRef,
   policy: MotionPolicy,
+  surface: AnimeSurface = 'sparkline',
 ): Promise<Scope | null> {
-  if (!policy.allowAnime('sparkline')) {
+  if (!policy.allowAnime(surface)) {
     return null;
   }
   try {

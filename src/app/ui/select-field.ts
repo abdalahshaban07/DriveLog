@@ -17,12 +17,14 @@ export type SelectOption = { value: string; label: string };
   styleUrl: './select-field.scss',
   host: {
     '(keydown)': 'onKey($event)',
+    '[class.compact]': 'compact()',
   },
 })
 export class SelectField {
   readonly label = input.required<string>();
   readonly value = model.required<string>();
   readonly options = input.required<readonly SelectOption[]>();
+  readonly compact = input(false);
 
   readonly opened = signal(false);
   readonly active = signal(0);

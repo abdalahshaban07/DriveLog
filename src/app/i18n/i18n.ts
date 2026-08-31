@@ -83,6 +83,17 @@ export class I18n {
     return text;
   }
 
+  formatNumber(value: number, options?: Intl.NumberFormatOptions): string {
+    const locale = this.lang() === 'ar' ? 'ar-EG-u-nu-arab' : 'en-GB';
+    return new Intl.NumberFormat(locale, options).format(value);
+  }
+
+  formatDate(value: string | Date, options?: Intl.DateTimeFormatOptions): string {
+    const locale = this.lang() === 'ar' ? 'ar-EG-u-nu-arab' : 'en-GB';
+    const date = typeof value === 'string' ? new Date(`${value}T12:00:00`) : value;
+    return new Intl.DateTimeFormat(locale, options).format(date);
+  }
+
   async setLanguage(language: 'en' | 'ar'): Promise<void> {
     this.lang.set(language);
     await this.db.updateSettings({ language });

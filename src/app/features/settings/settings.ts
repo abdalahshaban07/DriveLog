@@ -1,14 +1,20 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
-import { getCoords, restCountryCurrencies, sunTimes } from '../../data/remote';
+import { restCountryCurrencies } from '../../data/remote';
 import { listCurrencyOptions, validCurrency } from '../../domain/currencies';
+import {
+  maxLoggedOdometer,
+  TANK_MAX,
+  TANK_MIN,
+} from '../../domain/fill-up-distance';
 import { THEMES, type BackupFile, type Theme } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import { InstallPwa } from '../../pwa/install-pwa';
 import { Notify } from '../../pwa/notify';
 import { ConfirmBar } from '../../ui/confirm-bar';
 import { DateField } from '../../ui/date-field';
+import { NumericField } from '../../ui/numeric-field';
 import { PageHeader } from '../../ui/page-header';
 import { SelectField } from '../../ui/select-field';
 import { TextField } from '../../ui/text-field';
@@ -18,7 +24,15 @@ type DestructiveAction = 'removeCar' | 'startFresh';
 @Component({
   selector: 'app-settings',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, SelectField, DateField, ConfirmBar, RouterLink, TextField],
+  imports: [
+    PageHeader,
+    SelectField,
+    DateField,
+    ConfirmBar,
+    RouterLink,
+    TextField,
+    NumericField,
+  ],
   templateUrl: './settings.html',
   styleUrl: './settings.scss',
 })
@@ -41,12 +55,10 @@ export class SettingsPage {
   );
   readonly currency = signal(validCurrency(this.db.settings().currency));
   readonly restCurrencies = signal<Awaited<ReturnType<typeof restCountryCurrencies>>>([]);
-  readonly duskHint = signal('');
   readonly carOptions = computed(() =>
     this.db.cars().map((c) => ({ value: c.id, label: c.nickname })),
   );
   readonly showCarSwitcher = computed(() => this.db.cars().length > 1);
-  readonly duskAssistEnabled = computed(() => this.db.settings().duskAssistEnabled === true);
   readonly langOptions = computed(() => [
     { value: 'en', label: this.i18n.t('settings.lang.en') },
     { value: 'ar', label: this.i18n.t('settings.lang.ar') },
@@ -57,47 +69,34 @@ export class SettingsPage {
   readonly plate = signal(this.db.car()?.plate ?? '');
   readonly license = signal(this.db.car()?.licenseExpiry ?? '');
   readonly registration = signal(this.db.car()?.registrationExpiry ?? '');
+  readonly tankCapacity = signal(
+    this.db.car()?.tankCapacityLiters != null ? String(this.db.car()!.tankCapacityLiters) : '',
+  );
+  readonly correctOdometer = signal(String(this.db.car()?.currentOdometer ?? ''));
+  readonly tankCapacityError = signal('');
+  readonly odometerError = signal('');
   readonly pendingImport = signal<BackupFile | null>(null);
   readonly pendingDestructive = signal<DestructiveAction | null>(null);
   readonly importFileName = signal('');
   readonly importError = signal('');
   readonly importOk = signal(false);
 
+  readonly showTankBanner = computed(() => this.db.car()?.tankCapacityLiters == null);
+
+  readonly odometerFloor = computed(() => {
+    const car = this.db.car();
+    if (!car) {
+      return 0;
+    }
+    return maxLoggedOdometer(car, this.db.fillUps(), this.db.maintenance(), this.db.breakdowns());
+  });
+
   constructor() {
     void this.loadRestCurrencies();
-    void this.loadDuskHint();
   }
 
   async loadRestCurrencies(): Promise<void> {
     this.restCurrencies.set(await restCountryCurrencies());
-  }
-
-  async loadDuskHint(): Promise<void> {
-    if (!this.duskAssistEnabled()) {
-      this.duskHint.set('');
-      return;
-    }
-    const coords = await getCoords();
-    if (!coords) {
-      return;
-    }
-    const times = await sunTimes(coords.lat, coords.lon);
-    if (!times) {
-      return;
-    }
-    const sunset = new Date(times.sunset);
-    const now = new Date();
-    const diffMin = Math.round((sunset.getTime() - now.getTime()) / 60_000);
-    if (diffMin >= 0 && diffMin <= 90) {
-      this.duskHint.set(
-        this.i18n.t('settings.duskHint', {
-          time: sunset.toLocaleTimeString(this.i18n.language(), {
-            hour: '2-digit',
-            minute: '2-digit',
-          }),
-        }),
-      );
-    }
   }
 
   notifyStatus(): string {
@@ -142,6 +141,12 @@ export class SettingsPage {
     this.plate.set(car?.plate ?? '');
     this.license.set(car?.licenseExpiry ?? '');
     this.registration.set(car?.registrationExpiry ?? '');
+    this.tankCapacity.set(
+      car?.tankCapacityLiters != null ? String(car.tankCapacityLiters) : '',
+    );
+    this.correctOdometer.set(String(car?.currentOdometer ?? ''));
+    this.tankCapacityError.set('');
+    this.odometerError.set('');
   }
 
   async onPlate(value: string): Promise<void> {
@@ -159,14 +164,31 @@ export class SettingsPage {
     await this.db.updateCar({ registrationExpiry: value || undefined });
   }
 
-  async onDuskAssist(event: Event): Promise<void> {
-    const on = (event.target as HTMLInputElement).checked;
-    await this.db.updateSettings({ duskAssistEnabled: on });
-    if (on) {
-      await this.loadDuskHint();
-    } else {
-      this.duskHint.set('');
+  async onTankCapacity(value: string): Promise<void> {
+    this.tankCapacity.set(value);
+    const n = Number(value);
+    if (!Number.isFinite(n) || n < TANK_MIN || n > TANK_MAX) {
+      this.tankCapacityError.set(this.i18n.t('setup.err.tankCapacity'));
+      return;
     }
+    this.tankCapacityError.set('');
+    await this.db.updateCar({ tankCapacityLiters: n });
+  }
+
+  async onCorrectOdometer(value: string): Promise<void> {
+    this.correctOdometer.set(value);
+    const n = Number(value);
+    if (!Number.isFinite(n) || n <= 0) {
+      this.odometerError.set(this.i18n.t('setup.err.odometer'));
+      return;
+    }
+    const floor = this.odometerFloor();
+    if (n < floor) {
+      this.odometerError.set(this.i18n.t('settings.err.odometerFloor'));
+      return;
+    }
+    this.odometerError.set('');
+    await this.db.updateCar({ currentOdometer: n });
   }
 
   exportBackup(): void {

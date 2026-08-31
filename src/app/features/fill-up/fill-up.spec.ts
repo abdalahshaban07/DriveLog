@@ -5,6 +5,7 @@ import { FillUpPage } from './fill-up';
 import { Db } from '../../data/db';
 import { I18n } from '../../i18n/i18n';
 import { routes } from '../../app.routes';
+import { TANK_FALLBACK } from '../../domain/fill-up-distance';
 
 describe('FillUpPage', () => {
   beforeEach(async () => {
@@ -15,7 +16,12 @@ describe('FillUpPage', () => {
         {
           provide: Db,
           useValue: {
-            car: () => ({ id: 'c1', currentOdometer: 10000, initialOdometer: 0, nickname: 'Test' }),
+            car: () => ({
+              id: 'c1',
+              currentOdometer: 10000,
+              initialOdometer: 0,
+              nickname: 'Test',
+            }),
             settings: () => ({ currency: 'EGP', language: 'en' }),
             fillUps: () => [
               {
@@ -33,15 +39,24 @@ describe('FillUpPage', () => {
         },
         {
           provide: I18n,
-          useValue: { t: (k: string) => k, language: () => 'en' },
+          useValue: {
+            t: (k: string, p?: Record<string, string | number>) => {
+              if (p) {
+                return `${k}:${JSON.stringify(p)}`;
+              }
+              return k;
+            },
+            formatNumber: (n: number) => String(n),
+            language: () => 'en',
+          },
         },
       ],
     }).compileComponents();
   });
 
-  it('derives maxLiters from last full fill', () => {
+  it('uses tank capacity fallback when unset on car', () => {
     const fixture = TestBed.createComponent(FillUpPage);
     fixture.detectChanges();
-    expect(fixture.componentInstance.maxLiters()).toBe(42);
+    expect(fixture.componentInstance.tankCapacity()).toBe(TANK_FALLBACK);
   });
 });

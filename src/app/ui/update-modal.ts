@@ -1,140 +1,85 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
-  HostListener,
   inject,
   input,
   output,
   viewChild,
 } from '@angular/core';
 import { I18n } from '../i18n/i18n';
+import { PrimaryButton } from './primary-button';
+import { MotionPolicy } from './motion/motion-policy';
+import { createAnimeScope } from './motion/anime-scope';
 
 @Component({
   selector: 'app-update-modal',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <div class="modal-backdrop" (click)="later.emit()" aria-hidden="true"></div>
-    <div
-      #dialog
-      class="modal"
-      role="dialog"
-      aria-modal="true"
-      [attr.aria-labelledby]="titleId"
-    >
-      <h2 [id]="titleId" class="modal__title">{{ i18n.t('update.available') }}</h2>
-      @if (lines().length) {
-        <ul class="modal__list">
-          @for (line of lines(); track line) {
-            <li>{{ line }}</li>
-          }
-        </ul>
-      } @else {
-        <p class="modal__body">{{ i18n.t('update.notifyBody') }}</p>
-      }
-      <div class="modal__actions">
-        <button type="button" class="modal__later" (click)="later.emit()">
-          {{ i18n.t('update.later') }}
-        </button>
-        <button type="button" class="modal__now" (click)="updateNow.emit()">
-          {{ i18n.t('update.reload') }}
-        </button>
-      </div>
-    </div>
-  `,
-  styles: `
-    :host {
-      position: fixed;
-      inset: 0;
-      z-index: 200;
-      display: grid;
-      place-items: center;
-      padding: var(--space-5);
-    }
-    .modal-backdrop {
-      position: absolute;
-      inset: 0;
-      background: color-mix(in srgb, var(--bg) 55%, #000 45%);
-    }
-    .modal {
-      position: relative;
-      width: min(100%, 22rem);
-      padding: var(--space-5);
-      border-radius: var(--radius);
-      background: var(--surface);
-      border: 1px solid var(--hairline);
-      box-shadow: var(--shadow-soft);
-      animation: modal-in var(--motion-normal) var(--ease-out);
-    }
-    @keyframes modal-in {
-      from {
-        opacity: 0;
-        transform: scale(0.95);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
-    .modal__title {
-      margin: 0 0 var(--space-3);
-      font-size: var(--type-title);
-      font-weight: 700;
-    }
-    .modal__body,
-    .modal__list {
-      margin: 0 0 var(--space-4);
-      color: var(--text);
-      font-size: 0.95rem;
-    }
-    .modal__list {
-      padding-inline-start: 1.1rem;
-    }
-    .modal__actions {
-      display: flex;
-      gap: var(--space-2);
-      justify-content: flex-end;
-    }
-    .modal__later,
-    .modal__now {
-      min-height: 44px;
-      padding: 0 var(--space-4);
-      border: 0;
-      border-radius: var(--radius);
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .modal__later {
-      background: var(--well);
-      color: var(--text);
-    }
-    .modal__now {
-      background: var(--fuel);
-      color: var(--cta-text);
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .modal {
-        animation: none;
-      }
-    }
-  `,
+  imports: [PrimaryButton],
+  templateUrl: './update-modal.html',
+  styleUrl: './update-modal.scss',
 })
 export class UpdateModal {
   readonly i18n = inject(I18n);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly policy = inject(MotionPolicy);
+
   readonly lines = input<string[]>([]);
+  readonly releaseId = input('');
   readonly later = output<void>();
   readonly updateNow = output<void>();
-  readonly titleId = `update-modal-${Math.random().toString(36).slice(2, 8)}`;
-  private readonly dialog = viewChild<ElementRef<HTMLElement>>('dialog');
 
-  @HostListener('document:keydown.escape')
-  onEsc(): void {
+  readonly titleId = `update-modal-${Math.random().toString(36).slice(2, 8)}`;
+  private readonly dialog = viewChild<ElementRef<HTMLDialogElement>>('dialog');
+  private readonly cards = viewChild<ElementRef<HTMLElement>>('cards');
+
+  constructor() {
+    afterNextRender(() => {
+      const el = this.dialog()?.nativeElement;
+      if (el && !el.open) {
+        el.showModal();
+      }
+      el?.querySelector('button')?.focus();
+      void this.staggerCards();
+    });
+  }
+
+  onBackdropClick(event: MouseEvent): void {
+    if (event.target === this.dialog()?.nativeElement) {
+      this.later.emit();
+    }
+  }
+
+  onCancel(event: Event): void {
+    event.preventDefault();
     this.later.emit();
   }
 
-  constructor() {
-    queueMicrotask(() => {
-      this.dialog()?.nativeElement.querySelector('button')?.focus();
-    });
+  private async staggerCards(): Promise<void> {
+    const root = this.cards()?.nativeElement;
+    if (!root) {
+      return;
+    }
+    const scope = await createAnimeScope(root, this.destroyRef, this.policy, 'updateModal');
+    if (!scope) {
+      return;
+    }
+    try {
+      const { animate, stagger } = await import('animejs');
+      scope.add('stagger', () => {
+        animate(root.querySelectorAll('.update-card'), {
+          opacity: [0, 1],
+          translateY: [10, 0],
+          delay: stagger(70),
+          duration: 420,
+          ease: 'out(3)',
+        });
+      });
+      scope.methods['stagger']();
+    } catch {
+      /* CSS fallback */
+    }
   }
 }

@@ -10,7 +10,7 @@
 
 .main {
   flex: 1;
-  padding: var(--space-5) var(--space-5) calc(var(--nav-height) + var(--space-6));
+  padding: var(--space-5) var(--space-4) calc(var(--nav-height) + var(--space-6));
   overflow: auto;
 }
 
@@ -29,21 +29,24 @@
 
 .nav {
   position: fixed;
-  inset-inline: 0;
-  bottom: 0;
+  inset-inline: var(--space-4);
+  bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
   z-index: 100;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: stretch;
-  gap: 2px;
-  max-inline-size: var(--shell);
+  gap: var(--space-1);
+  inline-size: min(calc(100% - var(--space-4) * 2), calc(var(--shell) - var(--space-4) * 2));
   margin-inline: auto;
-  height: var(--nav-height);
-  padding: 8px 6px calc(8px + env(safe-area-inset-bottom, 0px));
+  min-height: var(--tap);
+  padding: var(--space-2);
   overflow: hidden;
-  border-block-start: 1px solid var(--hairline);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
   background: var(--surface);
-  box-shadow: 0 -4px 24px color-mix(in srgb, var(--bg) 40%, transparent);
+  box-shadow:
+    var(--shadow-soft),
+    0 8px 32px color-mix(in srgb, var(--bg) 45%, transparent);
 }
 
 .nav a {
@@ -61,7 +64,7 @@
   font-size: var(--type-nav);
   font-weight: 600;
   letter-spacing: 0.02em;
-  border-radius: 14px;
+  border-radius: calc(var(--radius) - var(--space-2));
   text-align: center;
   padding: 0 2px;
   cursor: pointer;
@@ -94,18 +97,8 @@
 }
 
 .nav a.active {
-  color: var(--fuel);
-  background: var(--well);
-}
-
-.nav a.active::before {
-  content: '';
-  position: absolute;
-  inset-block-start: 4px;
-  inset-inline: 28%;
-  block-size: 3px;
-  border-radius: 999px;
-  background: var(--fuel);
+  color: var(--cta-text);
+  background: var(--mint);
 }
 
 .loading {
@@ -116,13 +109,16 @@
 
 @media (min-width: 768px) {
   .main {
-    padding-inline: var(--space-6);
+    padding-inline: var(--space-5);
+  }
+
+  .nav {
+    inline-size: min(calc(100% - var(--space-4) * 2), calc(var(--shell-wide) - var(--space-4) * 2));
   }
 }
 
 @media (min-width: 1280px) {
-  .frame,
-  .nav {
+  .frame {
     max-inline-size: var(--shell-wide);
   }
 }

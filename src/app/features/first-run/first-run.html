@@ -20,6 +20,11 @@
         [formField]="setupForm.odometer"
         [error]="odoError()"
       />
+      <app-numeric-field
+        [label]="i18n.t('setup.tankCapacity')"
+        [formField]="setupForm.tankCapacity"
+        [error]="tankCapError()"
+      />
       <app-text-field
         [label]="i18n.t('setup.plate')"
         [(value)]="plate"
@@ -27,10 +32,12 @@
       <app-date-field
         [label]="i18n.t('setup.license')"
         [(value)]="licenseExpiry"
+        mode="due"
       />
       <app-date-field
         [label]="i18n.t('setup.registration')"
         [(value)]="registrationExpiry"
+        mode="due"
       />
     </section>
     <app-primary-button

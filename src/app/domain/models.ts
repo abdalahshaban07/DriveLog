@@ -29,6 +29,8 @@ export interface Car {
   model?: string;
   /** US-market NHTSA count; null/undefined = not fetched. */
   recallCount?: number;
+  /** Nominal tank size in liters (gauge + validation). */
+  tankCapacityLiters?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -37,6 +39,8 @@ export interface FillUp {
   id: string;
   carId?: string;
   odometer: number;
+  /** Distance since previous fill (or setup); drives per-fill economy. */
+  distanceKm?: number;
   liters: number;
   cost: number;
   tankFull: boolean;
