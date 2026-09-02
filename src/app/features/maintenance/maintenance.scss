@@ -58,6 +58,21 @@
   font-weight: 700;
 }
 
+.maint-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.maint-see-all {
+  color: var(--cta);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
 .maint-list {
   margin: 0;
   padding: 0;

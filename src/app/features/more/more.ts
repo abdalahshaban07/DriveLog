@@ -25,6 +25,7 @@ export class MorePage {
     { route: '/breakdowns', labelKey: 'more.breakdowns' },
     { route: '/other-expenses', labelKey: 'more.otherExpenses' },
     { route: '/history/fill-ups', labelKey: 'more.fillUpHistory' },
+    { route: '/history/maintenance', labelKey: 'more.maintHistory' },
     { route: '/settings/types', labelKey: 'more.maintenanceTypes' },
   ]);
 }

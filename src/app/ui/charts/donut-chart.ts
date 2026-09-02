@@ -191,7 +191,10 @@ export class DonutChart {
       const { animate, stagger } = await import('animejs');
       const segs = document.querySelectorAll('.donut-chart__seg');
       animate(segs, {
-        strokeDashoffset: (_el, i) => this.arcs()[i]?.offset ?? 0,
+        strokeDashoffset: (_el, i) => {
+          const idx = typeof i === 'number' ? i : 0;
+          return this.arcs()[idx]?.offset ?? 0;
+        },
         delay: stagger(50),
         duration: 520,
         ease: 'out(3)',

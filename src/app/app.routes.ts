@@ -37,6 +37,14 @@ export const routes: Routes = [
     canActivate: [setupGuard],
   },
   {
+    path: 'history/maintenance',
+    loadComponent: () =>
+      import('./features/maintenance-history/maintenance-history').then(
+        (m) => m.MaintenanceHistoryPage,
+      ),
+    canActivate: [setupGuard],
+  },
+  {
     path: 'maintenance',
     loadComponent: () =>
       import('./features/maintenance/maintenance').then((m) => m.MaintenancePage),
