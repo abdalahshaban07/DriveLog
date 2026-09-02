@@ -25,7 +25,7 @@ import {
 } from '../../domain/expense-ledger';
 import { fetchFuelTip } from '../../data/assistant';
 import { fuelDashboardMetrics } from '../../domain/fuel-dashboard';
-import { costPerKmTrend, economyTrend, spendByMonth } from '../../domain/insights';
+import { costPerKmTrend, economyTrend, fuelGradeCostShare, spendByMonth, spendByMonthEntries } from '../../domain/insights';
 import type { ExpenseCategory } from '../../domain/models';
 import {
   buildMonthOutlook,
@@ -37,6 +37,9 @@ import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { AmbientCanvas } from '../../ui/ambient-canvas/ambient-canvas';
 import { Sparkline } from '../../ui/charts/sparkline';
+import { BarChart } from '../../ui/charts/bar-chart';
+import { LineChart } from '../../ui/charts/line-chart';
+import { DonutChart, type DonutSlice } from '../../ui/charts/donut-chart';
 import { DateField } from '../../ui/date-field';
 import { MotionPolicy } from '../../ui/motion/motion-policy';
 import { PageHeader } from '../../ui/page-header';
@@ -49,7 +52,7 @@ type ChartCategory = ExpenseCategory | 'all';
 @Component({
   selector: 'app-home',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, DateField, PrimaryButton, RouterLink, Sparkline, AmbientCanvas, SelectField],
+  imports: [PageHeader, DateField, PrimaryButton, RouterLink, Sparkline, BarChart, LineChart, DonutChart, AmbientCanvas, SelectField],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
@@ -169,9 +172,29 @@ export class HomePage {
     );
     return nextDueItem(items);
   });
-  readonly economyTrend = computed(() => economyTrend(this.db.fillUps(), '3m'));
-  readonly costTrend = computed(() => costPerKmTrend(this.db.fillUps(), '3m'));
-  readonly spendTrend = computed(() => spendByMonth(this.db.fillUps(), '3m'));
+  readonly economyTrend = computed(() => economyTrend(this.db.fillUps(), this.chartPeriod()));
+  readonly costTrend = computed(() => costPerKmTrend(this.db.fillUps(), this.chartPeriod()));
+  readonly spendTrendEntries = computed(() =>
+    spendByMonthEntries(this.db.fillUps(), this.chartPeriod()),
+  );
+  readonly spendTrend = computed(() => spendByMonth(this.db.fillUps(), this.chartPeriod()));
+  readonly spendTrendLabels = computed(() =>
+    this.spendTrendEntries().map((e) =>
+      this.i18n.formatDate(`${e.month}-01`, { month: 'short' }),
+    ),
+  );
+  readonly fuelGradeShare = computed(() =>
+    fuelGradeCostShare(this.db.fillUps(), this.chartPeriod()),
+  );
+  readonly fuelGradeSlices = computed((): DonutSlice[] =>
+    this.fuelGradeShare().map((s) => ({
+      label:
+        s.grade === 'unknown'
+          ? this.i18n.t('charts.gradeUnknown')
+          : this.gradeLabel(s.grade),
+      value: s.cost,
+    })),
+  );
   readonly monthOutlook = computed(() =>
     buildMonthOutlook(
       this.db.fillUps(),

@@ -1,30 +1,52 @@
-<div class="stack history">
+<div class="stack history-page">
   <app-page-header [title]="i18n.t('history.title')" />
 
-  <div class="filters">
-    <div class="seg chips" role="group" [attr.aria-label]="i18n.t('history.filterGrade')">
-      @for (chip of gradeChips; track chip.id) {
+  <div class="history-filter">
+    <div
+      class="seg history-filter__presets"
+      role="group"
+      [attr.aria-label]="i18n.t('history.range')"
+    >
+      @for (preset of rangePresets; track preset.id) {
         <button
           type="button"
           class="seg__btn"
-          [class.seg__btn--on]="gradeFilter() === chip.id"
-          (click)="setGrade(chip.id)"
+          [class.seg__btn--on]="rangePreset() === preset.id"
+          (click)="setRangePreset(preset.id)"
         >
-          {{ i18n.t(chip.labelKey) }}
+          {{ i18n.t(preset.labelKey) }}
         </button>
       }
     </div>
-    <div class="filters__dates">
-      <app-date-field
-        [label]="i18n.t('history.from')"
-        [value]="fromDate()"
-        (valueChange)="fromDate.set($event)"
-      />
-      <app-date-field
-        [label]="i18n.t('history.to')"
-        [value]="toDate()"
-        (valueChange)="toDate.set($event)"
-      />
+
+    @if (rangePreset() === 'custom') {
+      <div class="history-filter__dates">
+        <app-date-field
+          [label]="i18n.t('history.from')"
+          [value]="fromDate()"
+          (valueChange)="fromDate.set($event)"
+        />
+        <app-date-field
+          [label]="i18n.t('history.to')"
+          [value]="toDate()"
+          (valueChange)="toDate.set($event)"
+        />
+      </div>
+    }
+
+    <div class="history-filter__extra">
+      <div class="seg chips" role="group" [attr.aria-label]="i18n.t('history.filterGrade')">
+        @for (chip of gradeChips; track chip.id) {
+          <button
+            type="button"
+            class="seg__btn"
+            [class.seg__btn--on]="gradeFilter() === chip.id"
+            (click)="setGrade(chip.id)"
+          >
+            {{ i18n.t(chip.labelKey) }}
+          </button>
+        }
+      </div>
     </div>
   </div>
 
@@ -32,7 +54,7 @@
     <p class="empty-state">{{ i18n.t('home.logFirst') }}</p>
     <a routerLink="/fill-up" class="cta">{{ i18n.t('empty.fillUps.cta') }}</a>
   } @else {
-    <div class="history__actions">
+    <div class="history-actions">
       <button type="button" class="ghost-btn" [disabled]="shareBusy()" (click)="shareCsv()">
         {{ shareBusy() ? i18n.t('common.loading') : i18n.t('history.share') }}
       </button>
@@ -40,33 +62,36 @@
     @if (shareError()) {
       <p class="error-state" role="alert">{{ shareError() }}</p>
     }
-    <div class="history__groups list-reveal">
+    <div class="history-months list-reveal">
       @for (group of groupedRows(); track group.month) {
-        <section class="history-group">
-          <h2 class="history-group__title">{{ monthLabel(group.month) }}</h2>
-          <ul class="history__list">
+        <section class="history-month">
+          <div class="history-month__head">
+            <h2 class="history-month__title">{{ monthLabel(group.month) }}</h2>
+            <p class="history-month__total">{{ formatMoney(group.total) }}</p>
+          </div>
+          <ul class="history-ledger">
             @for (f of group.items; track f.id) {
-              <li class="history__row">
-                <a [routerLink]="['/fill-up']" [queryParams]="{ id: f.id }" class="history__card">
-                  <div class="history__head">
-                    <span class="history__date pill">{{ datePill(f.date) }}</span>
-                    <div class="history__chips">
-                      <span class="history__liters chip">
+              <li class="history-ledger__row">
+                <a [routerLink]="['/fill-up']" [queryParams]="{ id: f.id }" class="history-ledger__link">
+                  <div class="history-ledger__main">
+                    <span class="pill">{{ datePill(f.date) }}</span>
+                    <div class="history-ledger__meta">
+                      <span class="chip">
                         {{ i18n.formatUnit(f.liters, 'common.liters', 1) }}
                       </span>
                       @if (f.fuelGrade) {
-                        <span class="history__grade chip chip--fuel">{{ gradeLabel(f.fuelGrade) }}</span>
+                        <span class="chip chip--fuel">{{ gradeLabel(f.fuelGrade) }}</span>
+                      }
+                      @if (kmDrivenLabel(f); as kmLabel) {
+                        <span class="chip">{{ kmLabel }}</span>
                       }
                     </div>
-                  </div>
-                  <strong class="history__cost">{{ formatMoney(f.cost) }}</strong>
-                  <div class="history__foot">
-                    @if (kmDrivenLabel(f); as kmLabel) {
-                      <span class="history__km chip">{{ kmLabel }}</span>
-                    }
                     @if (f.placeLabel) {
-                      <span class="history__place">{{ f.placeLabel }}</span>
+                      <span class="history-ledger__place">{{ f.placeLabel }}</span>
                     }
+                  </div>
+                  <div class="history-ledger__side">
+                    <strong class="history-ledger__cost">{{ formatMoney(f.cost) }}</strong>
                   </div>
                 </a>
               </li>

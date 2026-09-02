@@ -22,16 +22,17 @@ import {
   validateFillDistance,
 } from '../../domain/fill-up-distance';
 import type { FuelGrade } from '../../domain/models';
-import { weatherMsgKey } from '../../domain/weather';
+import { distinctPlaceLabels } from '../../domain/place-labels';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
-import { countryFuelPrices, currentWeather, getCoords, reverseGeocodeLabel } from '../../data/remote';
+import { countryFuelPrices, getCoords, nearbyPoi, type NearbyPoi } from '../../data/remote';
 import { ConfirmBar } from '../../ui/confirm-bar';
 import { DateField } from '../../ui/date-field';
 import {
   buildGradeOptions,
   FuelGradeSelector,
 } from '../../ui/fuel-grade-selector';
+import { FuelTank3d } from '../../ui/fuel-tank-3d/fuel-tank-3d';
 import { FuelTankCanvas } from '../../ui/fuel-tank-canvas/fuel-tank-canvas';
 import { NumericField } from '../../ui/numeric-field';
 import { PageHeader } from '../../ui/page-header';
@@ -53,6 +54,7 @@ const GRADE_KEYS: Record<FuelGrade, MsgKey> = {
     PageHeader,
     NumericField,
     FuelGradeSelector,
+    FuelTank3d,
     FuelTankCanvas,
     ReceiptPreview,
     DateField,
@@ -73,6 +75,7 @@ export class FillUpPage {
   readonly liters = signal('');
   readonly fuelGrade = signal<FuelGrade | null>(null);
   readonly date = signal(todayDateOnly());
+  readonly placeLabel = signal('');
   readonly dateError = signal('');
   readonly distanceError = signal('');
   readonly distanceWarn = signal('');
@@ -81,21 +84,25 @@ export class FillUpPage {
   readonly saving = signal(false);
   readonly editId = signal<string | null>(null);
   readonly confirmDelete = signal(false);
-  readonly weatherBusy = signal(false);
-  readonly weatherError = signal('');
+  readonly locationBusy = signal(false);
+  readonly locationError = signal('');
+  readonly nearbyStations = signal<NearbyPoi[]>([]);
+  readonly selectedStationId = signal<number | null>(null);
   readonly pricesBusy = signal(false);
   readonly pricesReady = signal(false);
   readonly legacyDistanceEdit = signal(false);
   readonly distanceTouched = signal(false);
   readonly fuelPrices = signal<Awaited<ReturnType<typeof countryFuelPrices>>>(null);
-  readonly weather = signal<{
-    lat: number;
-    lon: number;
-    tempC: number;
-    weatherCode: number;
-  } | null>(null);
 
   readonly lastUnit = computed(() => lastFillUnitPriceFromHistory(this.db.fillUps()));
+
+  readonly stationSuggestions = computed(() => distinctPlaceLabels(this.db.fillUps()));
+
+  readonly fuelNearby = computed(() =>
+    this.nearbyStations()
+      .filter((p) => p.kind === 'fuel')
+      .slice(0, 5),
+  );
 
   readonly isFirstFill = computed(
     () =>
@@ -221,20 +228,11 @@ export class FillUpPage {
     this.liters.set(String(existing.liters));
     this.fuelGrade.set(existing.fuelGrade ?? 'custom');
     this.date.set(existing.date);
-    this.weather.set(
-      existing.tempC != null && existing.weatherCode != null
-        ? {
-            lat: existing.lat ?? 0,
-            lon: existing.lon ?? 0,
-            tempC: existing.tempC,
-            weatherCode: existing.weatherCode,
-          }
-        : null,
-    );
+    this.placeLabel.set(existing.placeLabel ?? '');
     this.distanceError.set('');
     this.litersError.set('');
     this.dateError.set('');
-    this.weatherError.set('');
+    this.locationError.set('');
     this.distanceWarn.set('');
     this.capacityWarn.set('');
   }
@@ -265,6 +263,43 @@ export class FillUpPage {
     this.checkCapacity();
   }
 
+  onPlaceLabelInput(event: Event): void {
+    this.placeLabel.set((event.target as HTMLInputElement).value);
+    this.selectedStationId.set(null);
+  }
+
+  selectStation(poi: NearbyPoi): void {
+    this.selectedStationId.set(poi.id);
+    this.placeLabel.set(poi.name);
+  }
+
+  async useLocation(): Promise<void> {
+    this.locationError.set('');
+    this.locationBusy.set(true);
+    try {
+      const coords = await getCoords();
+      if (!coords) {
+        this.locationError.set(this.i18n.t('fillUp.locationDenied'));
+        this.nearbyStations.set([]);
+        this.selectedStationId.set(null);
+        return;
+      }
+      const list = await nearbyPoi(coords, 'fuel');
+      const fuel = list.filter((p) => p.kind === 'fuel').slice(0, 5);
+      if (!fuel.length) {
+        this.locationError.set(this.i18n.t('fillUp.noStations'));
+        this.nearbyStations.set([]);
+        this.selectedStationId.set(null);
+        return;
+      }
+      this.nearbyStations.set(fuel);
+      this.selectedStationId.set(fuel[0]!.id);
+      this.placeLabel.set(fuel[0]!.name);
+    } finally {
+      this.locationBusy.set(false);
+    }
+  }
+
   private checkCapacity(): void {
     const cap = this.db.car()?.tankCapacityLiters;
     const l = this.litersNum();
@@ -272,30 +307,6 @@ export class FillUpPage {
       this.capacityWarn.set(this.i18n.t('fillUp.warn.overCapacity'));
     } else {
       this.capacityWarn.set('');
-    }
-  }
-
-  weatherLabel(code: number): string {
-    return this.i18n.t(weatherMsgKey(code) as MsgKey);
-  }
-
-  async attachWeather(): Promise<void> {
-    this.weatherError.set('');
-    this.weatherBusy.set(true);
-    try {
-      const coords = await getCoords();
-      if (!coords) {
-        this.weatherError.set(this.i18n.t('home.nearbyGpsDenied'));
-        return;
-      }
-      const w = await currentWeather(coords.lat, coords.lon);
-      if (!w) {
-        this.weatherError.set(this.i18n.t('fillUp.weatherFailed'));
-        return;
-      }
-      this.weather.set(w);
-    } finally {
-      this.weatherBusy.set(false);
     }
   }
 
@@ -369,14 +380,11 @@ export class FillUpPage {
     const persistDistance =
       !existing || existing.distanceKm != null || this.distanceTouched();
 
+    const station = this.placeLabel().trim() || undefined;
+    const selected = this.fuelNearby().find((p) => p.id === this.selectedStationId());
+
     this.saving.set(true);
     try {
-      const w = this.weather();
-      let placeLabel: string | undefined;
-      if (w) {
-        placeLabel =
-          (await reverseGeocodeLabel(w.lat, w.lon, this.i18n.language())) ?? undefined;
-      }
       await this.db.saveFillUp({
         id: this.editId() ?? undefined,
         odometer,
@@ -387,11 +395,9 @@ export class FillUpPage {
         tankFull: false,
         distanceKm: persistDistance ? distance : undefined,
         date,
-        lat: w?.lat,
-        lon: w?.lon,
-        tempC: w?.tempC,
-        weatherCode: w?.weatherCode,
-        placeLabel,
+        placeLabel: station,
+        lat: selected?.lat,
+        lon: selected?.lon,
       });
       await this.router.navigateByUrl('/fuel');
     } finally {

@@ -241,6 +241,23 @@ describe('insights series', () => {
     expect(trend.length).toBe(1);
     expect(trend[0]).toBeCloseTo(22.5, 1);
   });
+
+  it('groups fuel grade cost share for the period', async () => {
+    const { fuelGradeCostShare } = await import('./insights');
+    const share = fuelGradeCostShare(
+      [
+        fill({ id: 'a', odometer: 1000, liters: 40, cost: 80, tankFull: true, fuelGrade: 'diesel' }),
+        fill({ id: 'b', odometer: 1100, liters: 40, cost: 40, tankFull: true, fuelGrade: 'gasoline92', date: '2026-02-01' }),
+        fill({ id: 'c', odometer: 1200, liters: 40, cost: 20, tankFull: true, date: '2026-02-15' }),
+      ],
+      'all',
+    );
+    expect(share).toEqual([
+      { grade: 'diesel', cost: 80 },
+      { grade: 'gasoline92', cost: 40 },
+      { grade: 'unknown', cost: 20 },
+    ]);
+  });
 });
 
 describe('remote parsers', () => {

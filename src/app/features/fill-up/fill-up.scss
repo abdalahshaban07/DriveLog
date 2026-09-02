@@ -91,6 +91,102 @@
   border-block-start: 1px solid var(--hairline);
 }
 
+.station-field {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.station-field__row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: stretch;
+}
+
+.station-field__input {
+  flex: 1;
+  min-width: 0;
+}
+
+.station-field__hint {
+  margin: 0;
+}
+
+.station-loc-btn {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  min-height: var(--tap);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--well);
+  color: var(--fuel);
+  cursor: pointer;
+  transition:
+    border-color var(--motion) var(--ease),
+    background var(--motion) var(--ease);
+}
+
+.station-loc-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+
+.station-loc-btn:hover {
+  border-color: color-mix(in srgb, var(--fuel) 40%, var(--hairline));
+  background: color-mix(in srgb, var(--fuel) 8%, var(--well));
+}
+
+.station-loc-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.station-err {
+  margin: 0;
+  color: var(--stop);
+  font-size: 0.9rem;
+}
+
+.station-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.station-chip {
+  display: grid;
+  gap: 2px;
+  min-height: calc(var(--tap) - 12px);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--hairline);
+  border-radius: calc(var(--radius) - 4px);
+  background: var(--well);
+  color: var(--text);
+  text-align: start;
+  cursor: pointer;
+  transition:
+    border-color 80ms var(--ease-out),
+    background 80ms var(--ease-out);
+}
+
+.station-chip--on {
+  border-color: color-mix(in srgb, var(--fuel) 55%, var(--hairline));
+  background: color-mix(in srgb, var(--fuel) 12%, var(--well));
+}
+
+.station-chip__name {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.station-chip__dist {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
 .danger {
   min-height: 44px;
   border: 0;
@@ -150,39 +246,6 @@
 .history:hover {
   border-color: color-mix(in srgb, var(--fuel) 40%, var(--hairline));
   background: color-mix(in srgb, var(--fuel) 8%, var(--surface));
-}
-
-.weather-btn {
-  min-height: 44px;
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius);
-  background: var(--well);
-  color: var(--text);
-  font-weight: 600;
-  padding: 0 var(--space-4);
-  transition:
-    border-color var(--motion) var(--ease),
-    background var(--motion) var(--ease);
-}
-
-.weather-btn:hover {
-  border-color: color-mix(in srgb, var(--fuel) 35%, var(--hairline));
-}
-
-.weather-btn:disabled {
-  opacity: 0.6;
-}
-
-.weather-chip {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
-.weather-err {
-  margin: 0;
-  color: var(--stop);
-  font-size: 0.9rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

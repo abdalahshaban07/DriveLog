@@ -1,8 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
-import { filterFillUps, fillUpsToCsv } from '../../domain/export-csv';
+import {
+  filterFillUps,
+  fillUpsToCsv,
+  rangeBoundsForPreset,
+  type HistoryRangePreset,
+} from '../../domain/export-csv';
 import { previousFillForCar } from '../../domain/fill-up-distance';
+import { todayDateOnly } from '../../domain/dues';
 import type { FillUp, FuelGrade } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
@@ -16,17 +22,24 @@ type GradeFilter = FuelGrade | 'all';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PageHeader, RouterLink, DateField],
   templateUrl: './fill-up-history.html',
-  styleUrl: './fill-up-history.scss',
 })
 export class FillUpHistoryPage {
   readonly i18n = inject(I18n);
   readonly db = inject(Db);
 
   readonly gradeFilter = signal<GradeFilter>('all');
+  readonly rangePreset = signal<HistoryRangePreset>('3months');
   readonly fromDate = signal('');
   readonly toDate = signal('');
   readonly shareBusy = signal(false);
   readonly shareError = signal('');
+
+  readonly rangePresets: { id: HistoryRangePreset; labelKey: MsgKey }[] = [
+    { id: 'thisMonth', labelKey: 'history.rangeThisMonth' },
+    { id: '3months', labelKey: 'history.range3Months' },
+    { id: 'year', labelKey: 'history.rangeYear' },
+    { id: 'custom', labelKey: 'history.rangeCustom' },
+  ];
 
   readonly gradeChips: { id: GradeFilter; labelKey: MsgKey }[] = [
     { id: 'all', labelKey: 'history.filterAll' },
@@ -37,11 +50,21 @@ export class FillUpHistoryPage {
     { id: 'custom', labelKey: 'fillUp.grade.custom' },
   ];
 
+  readonly activeRange = computed(() => {
+    const preset = this.rangePreset();
+    if (preset === 'custom') {
+      return {
+        from: this.fromDate() || undefined,
+        to: this.toDate() || undefined,
+      };
+    }
+    return rangeBoundsForPreset(preset, todayDateOnly());
+  });
+
   readonly rows = computed(() =>
     filterFillUps(this.db.fillUps(), {
       grade: this.gradeFilter(),
-      from: this.fromDate() || undefined,
-      to: this.toDate() || undefined,
+      ...this.activeRange(),
     }).sort(
       (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
     ),
@@ -55,7 +78,11 @@ export class FillUpHistoryPage {
       bucket.push(row);
       groups.set(month, bucket);
     }
-    return [...groups.entries()].map(([month, items]) => ({ month, items }));
+    return [...groups.entries()].map(([month, items]) => ({
+      month,
+      items,
+      total: items.reduce((sum, f) => sum + f.cost, 0),
+    }));
   });
 
   gradeLabel(grade?: string): string {
@@ -123,6 +150,10 @@ export class FillUpHistoryPage {
 
   setGrade(id: GradeFilter): void {
     this.gradeFilter.set(id);
+  }
+
+  setRangePreset(id: HistoryRangePreset): void {
+    this.rangePreset.set(id);
   }
 
   async shareCsv(): Promise<void> {

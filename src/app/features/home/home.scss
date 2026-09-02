@@ -205,10 +205,27 @@
   margin-block-end: var(--space-3);
 }
 
-.spark-grid {
+.spark-grid,
+.chart-grid {
   display: grid;
   gap: var(--space-3);
   margin-block-end: var(--space-4);
+}
+
+.chart-card {
+  padding: var(--space-3);
+  border-radius: calc(var(--radius) - 4px);
+  background: var(--well);
+}
+
+.chart-card__label {
+  display: block;
+  margin-block-end: var(--space-2);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 .empty-cta {

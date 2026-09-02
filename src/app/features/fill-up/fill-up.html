@@ -35,10 +35,17 @@
       </p>
     }
 
-    <app-fuel-tank-canvas
-      [liters]="litersNum()"
-      [tankCapacityLiters]="tankCapacity()"
-    />
+    @defer (on viewport) {
+      <app-fuel-tank-3d
+        [liters]="litersNum()"
+        [tankCapacityLiters]="tankCapacity()"
+      />
+    } @placeholder {
+      <app-fuel-tank-canvas
+        [liters]="litersNum()"
+        [tankCapacityLiters]="tankCapacity()"
+      />
+    }
 
     @if (showTankHint()) {
       <p class="hint tank-hint">{{ i18n.t('fillUp.tankSizeHint') }}</p>
@@ -81,28 +88,71 @@
   <details class="disclosure card">
     <summary>{{ i18n.t('fillUp.details') }}</summary>
     <div class="disclosure__body">
-      <button
-        type="button"
-        class="weather-btn"
-        [disabled]="weatherBusy()"
-        (click)="attachWeather()"
-      >
-        {{
-          weatherBusy()
-            ? i18n.t('common.loading')
-            : weather()
-              ? i18n.t('fillUp.weatherAttached')
-              : i18n.t('fillUp.attachWeather')
-        }}
-      </button>
-      @if (weather(); as w) {
-        <p class="weather-chip">
-          {{ w.tempC }}°C · {{ weatherLabel(w.weatherCode) }}
-        </p>
-      }
-      @if (weatherError()) {
-        <p class="weather-err" role="alert">{{ weatherError() }}</p>
-      }
+      <div class="station-field">
+        <label class="label" for="station-input">{{ i18n.t('fillUp.station') }}</label>
+        <div class="station-field__row">
+          <input
+            id="station-input"
+            class="input station-field__input"
+            type="text"
+            [value]="placeLabel()"
+            list="station-suggestions"
+            (input)="onPlaceLabelInput($event)"
+          />
+          <button
+            type="button"
+            class="station-loc-btn"
+            [attr.aria-label]="i18n.t('fillUp.useLocation')"
+            [disabled]="locationBusy()"
+            (click)="useLocation()"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"
+              />
+            </svg>
+          </button>
+        </div>
+        <datalist id="station-suggestions">
+          @for (s of stationSuggestions(); track s) {
+            <option [value]="s"></option>
+          }
+        </datalist>
+        <p class="hint station-field__hint">{{ i18n.t('fillUp.stationHint') }}</p>
+        @if (locationError()) {
+          <p class="station-err" role="alert">{{ locationError() }}</p>
+        }
+        @if (fuelNearby().length) {
+          <p class="hint">{{ i18n.t('fillUp.nearbyPick') }}</p>
+          <div
+            class="station-chips"
+            role="radiogroup"
+            [attr.aria-label]="i18n.t('fillUp.nearbyPick')"
+          >
+            @for (poi of fuelNearby(); track poi.id) {
+              <button
+                type="button"
+                role="radio"
+                class="station-chip"
+                [class.station-chip--on]="selectedStationId() === poi.id"
+                [attr.aria-checked]="selectedStationId() === poi.id"
+                (click)="selectStation(poi)"
+              >
+                <span class="station-chip__name">{{ poi.name }}</span>
+                <span class="station-chip__dist">
+                  {{
+                    i18n.formatNumber(poi.distanceKm, {
+                      minimumFractionDigits: 1,
+                      maximumFractionDigits: 1,
+                    })
+                  }}
+                  {{ i18n.t('common.km') }}
+                </span>
+              </button>
+            }
+          </div>
+        }
+      </div>
     </div>
   </details>
 

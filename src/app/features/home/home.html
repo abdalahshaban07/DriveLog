@@ -308,10 +308,33 @@
 
   @if (view() === 'charts') {
     <section class="home-panel" role="tabpanel" [attr.aria-label]="i18n.t('home.tab.charts')">
-      <div class="spark-grid">
-        <app-sparkline [values]="economyTrend()" [label]="i18n.t('home.economy')" />
-        <app-sparkline [values]="costTrend()" [label]="i18n.t('home.costPerKm')" />
-        <app-sparkline [values]="spendTrend()" [label]="i18n.t('home.monthSpend')" />
+      <div class="chart-grid">
+        <div class="chart-card">
+          <span class="chart-card__label">{{ i18n.t('home.monthSpend') }}</span>
+          <app-bar-chart
+            [values]="spendTrend()"
+            [labels]="spendTrendLabels()"
+            [label]="i18n.t('home.monthSpend')"
+          />
+        </div>
+        <div class="chart-card">
+          <span class="chart-card__label">{{ i18n.t('home.economy') }}</span>
+          <app-line-chart
+            [values]="economyTrend()"
+            [label]="i18n.t('home.economy')"
+          />
+        </div>
+        <div class="chart-card">
+          <span class="chart-card__label">{{ i18n.t('home.costPerKm') }}</span>
+          <app-sparkline [values]="costTrend()" [label]="i18n.t('home.costPerKm')" />
+        </div>
+        <div class="chart-card">
+          <span class="chart-card__label">{{ i18n.t('charts.fuelGradeShare') }}</span>
+          <app-donut-chart
+            [slices]="fuelGradeSlices()"
+            [label]="i18n.t('charts.fuelGradeShare')"
+          />
+        </div>
       </div>
 
       <app-select-field
