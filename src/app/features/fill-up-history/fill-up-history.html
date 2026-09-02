@@ -52,7 +52,7 @@
                     <span class="history__date pill">{{ datePill(f.date) }}</span>
                     <div class="history__chips">
                       <span class="history__liters chip">
-                        {{ i18n.formatNumber(f.liters, { maximumFractionDigits: 1 }) }} L
+                        {{ i18n.formatUnit(f.liters, 'common.liters', 1) }}
                       </span>
                       @if (f.fuelGrade) {
                         <span class="history__grade chip chip--fuel">{{ gradeLabel(f.fuelGrade) }}</span>

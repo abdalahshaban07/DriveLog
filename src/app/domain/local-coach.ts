@@ -26,6 +26,21 @@ export function pickFuelTipKey(seed = Date.now()): MsgKey {
   return FUEL_TIP_KEYS[i]!;
 }
 
+/** Cycle tips excluding the current one so refresh always changes the message. */
+export function nextFuelTipKey(currentKey: MsgKey, db: Db): MsgKey {
+  const pool: MsgKey[] = [...FUEL_TIP_KEYS];
+  const contextual = contextualFuelTipKey(db);
+  if (!pool.includes(contextual)) {
+    pool.push(contextual);
+  }
+  const candidates = pool.filter((k) => k !== currentKey);
+  if (candidates.length === 0) {
+    return currentKey;
+  }
+  const idx = Math.abs(Date.now()) % candidates.length;
+  return candidates[idx]!;
+}
+
 export function contextualFuelTipKey(db: Db): MsgKey {
   const car = db.car();
   if (!car) {
@@ -153,7 +168,7 @@ function localCoachReply(
   const fuel = fuelDashboardMetrics(db.fillUps());
   if (q.includes('economy') || q.includes('fuel') || q.includes('وقود') || q.includes('اقتصاد')) {
     if (fuel.lastL100 != null) {
-      return t('assistant.local.economy', { l100: Number(fuel.lastL100.toFixed(1)) });
+      return t('assistant.local.economy', { l100: fuel.lastL100 });
     }
     return t('assistant.local.economyEmpty');
   }

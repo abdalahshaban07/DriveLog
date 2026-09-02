@@ -31,7 +31,7 @@
 
     @if (liveEconomy(); as eco) {
       <p class="economy-live" role="status">
-        {{ i18n.t('fillUp.economyLive', { value: i18n.formatNumber(eco, { maximumFractionDigits: 1 }) }) }}
+        {{ i18n.formatUnit(eco, 'common.lPer100', 1) }}
       </p>
     }
 

@@ -75,12 +75,35 @@ export class I18n {
   t(key: MsgKey, params?: Record<string, string | number>): string {
     const table = this.lang() === 'ar' ? ar : en;
     let text: string = table[key] ?? en[key] ?? key;
-    if (params) {
-      for (const [k, v] of Object.entries(params)) {
+    const resolved = params ? this.formatParams(params) : undefined;
+    if (resolved) {
+      for (const [k, v] of Object.entries(resolved)) {
         text = text.replace(`{${k}}`, String(v));
       }
     }
     return text;
+  }
+
+  formatUnit(value: number, unitKey: MsgKey, fractionDigits?: number): string {
+    const options: Intl.NumberFormatOptions = {};
+    if (fractionDigits != null) {
+      options.minimumFractionDigits = fractionDigits;
+      options.maximumFractionDigits = fractionDigits;
+    }
+    const num = this.formatNumber(value, options);
+    const unit = this.t(unitKey);
+    if (unitKey === 'common.perLiter') {
+      return `${num}${unit}`;
+    }
+    return `${num} ${unit}`;
+  }
+
+  private formatParams(params: Record<string, string | number>): Record<string, string | number> {
+    const out = { ...params };
+    if (typeof out['l100'] === 'number') {
+      out['l100'] = this.formatUnit(out['l100'], 'common.lPer100', 1);
+    }
+    return out;
   }
 
   formatNumber(value: number, options?: Intl.NumberFormatOptions): string {

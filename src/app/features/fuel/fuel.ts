@@ -8,7 +8,7 @@ import {
 import { RouterLink } from '@angular/router';
 import { fetchFuelTip } from '../../data/assistant';
 import { Db } from '../../data/db';
-import { contextualFuelTipKey } from '../../domain/local-coach';
+import { contextualFuelTipKey, nextFuelTipKey } from '../../domain/local-coach';
 import { fuelDashboardMetrics } from '../../domain/fuel-dashboard';
 import type { FuelGrade } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
@@ -30,8 +30,10 @@ export class FuelPage {
 
   readonly grade = signal<GradeFilter>('all');
   readonly tip = signal('');
+  readonly tipKey = signal<MsgKey | null>(null);
   readonly tipBusy = signal(false);
   readonly tipSource = signal<'ai' | 'local'>('local');
+  readonly tipFlash = signal(false);
 
   readonly gradeOptions: { id: GradeFilter; labelKey: MsgKey }[] = [
     { id: 'all', labelKey: 'fuel.gradeAll' },
@@ -80,20 +82,34 @@ export class FuelPage {
     }
   }
 
-  formatMetric(value: number | null, suffix: string): string {
+  formatMetric(value: number | null, unitKey: MsgKey): string {
     if (value == null || !Number.isFinite(value)) {
       return '—';
     }
-    return `${this.i18n.formatNumber(value, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} ${suffix}`;
+    return this.i18n.formatUnit(value, unitKey, 1);
   }
 
   async loadTip(): Promise<void> {
     this.tipBusy.set(true);
+    const prevKey = this.tipKey();
+    const nextKey = prevKey
+      ? nextFuelTipKey(prevKey, this.db)
+      : contextualFuelTipKey(this.db);
     try {
       const lang = this.i18n.language();
       const reply = await fetchFuelTip(this.db, lang, (k) => this.i18n.t(k as MsgKey));
-      this.tip.set(reply.text);
-      this.tipSource.set(reply.source);
+      if (reply.source === 'local') {
+        this.tipKey.set(nextKey);
+        this.tip.set(this.i18n.t(nextKey));
+        this.tipSource.set('local');
+      } else {
+        this.tip.set(reply.text);
+        this.tipSource.set(reply.source);
+      }
+      if (prevKey && nextKey !== prevKey) {
+        this.tipFlash.set(true);
+        window.setTimeout(() => this.tipFlash.set(false), 600);
+      }
     } finally {
       this.tipBusy.set(false);
     }

@@ -78,7 +78,7 @@ const INNER_H = 84;
       stroke-width: 2;
     }
     .tank-liquid {
-      fill: color-mix(in srgb, var(--mint) 70%, var(--petrol-muted));
+      fill: color-mix(in srgb, var(--fuel) 70%, var(--petrol-muted));
     }
     .tank-pct {
       font-size: 11px;
@@ -110,7 +110,7 @@ const INNER_H = 84;
       bottom: 0;
       background: linear-gradient(
         180deg,
-        color-mix(in srgb, var(--mint) 70%, var(--petrol-muted)),
+        color-mix(in srgb, var(--fuel) 70%, var(--petrol-muted)),
         var(--petrol-muted)
       );
       transition: height var(--motion-fast) var(--ease-out);

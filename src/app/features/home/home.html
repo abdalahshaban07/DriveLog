@@ -46,7 +46,7 @@
             <span class="glance-strip__label">{{ i18n.t('home.economy') }}</span>
             <strong>
               @if (fuelMetrics().lastL100 != null) {
-                {{ i18n.formatNumber(fuelMetrics().lastL100!, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }} L/100km
+                {{ i18n.formatUnit(fuelMetrics().lastL100!, 'common.lPer100', 1) }}
               } @else {
                 —
               }
@@ -381,7 +381,7 @@
                   <span class="ledger-card__date pill">{{ ledgerDateLabel(row.date) }}</span>
                   <div class="ledger-card__chips">
                     <span class="chip">
-                      {{ i18n.formatNumber(fd.liters, { maximumFractionDigits: 1 }) }} L
+                      {{ i18n.formatUnit(fd.liters, 'common.liters', 1) }}
                     </span>
                     @if (fd.fuelGrade) {
                       <span class="chip chip--fuel">{{ gradeLabel(fd.fuelGrade) }}</span>

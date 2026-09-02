@@ -1,10 +1,12 @@
 import {
   Component,
   computed,
+  ElementRef,
   inject,
   input,
   model,
   signal,
+  viewChild,
 } from '@angular/core';
 import { todayDateOnly } from '../domain/dues';
 import { I18n } from '../i18n/i18n';
@@ -49,7 +51,7 @@ export function yearOptionsForMode(
   currentYear: number,
   selectedDate = '',
 ): number[] {
-  const min = currentYear - 50;
+  const min = currentYear - 30;
   const max = mode === 'due' ? currentYear + 20 : currentYear;
   const years = Array.from({ length: max - min + 1 }, (_, i) => min + i);
   if (/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) {
@@ -93,6 +95,7 @@ export function monthCells(
 })
 export class DateField {
   readonly i18n = inject(I18n);
+  private readonly calDialog = viewChild<ElementRef<HTMLDialogElement>>('calDialog');
   readonly label = input.required<string>();
   readonly value = model('');
   readonly mode = input<DateFieldMode>('record');
@@ -181,10 +184,27 @@ export class DateField {
       this.viewM.set(Number(t.slice(5, 7)) - 1);
     }
     this.opened.set(true);
+    this.calDialog()?.nativeElement.showModal();
   }
 
   close(): void {
+    const dlg = this.calDialog()?.nativeElement;
+    if (dlg?.open) {
+      dlg.close();
+    }
     this.opened.set(false);
+  }
+
+  onDialogCancel(event: Event): void {
+    event.preventDefault();
+    this.close();
+  }
+
+  onDialogBackdrop(event: MouseEvent): void {
+    const dlg = this.calDialog()?.nativeElement;
+    if (event.target === dlg) {
+      this.close();
+    }
   }
 
   toggle(event: Event): void {

@@ -102,7 +102,7 @@
   bottom: -1px;
   height: 2px;
   border-radius: 2px;
-  background: var(--mint);
+  background: var(--cta);
 }
 
 .nearby-card__head {
@@ -219,7 +219,7 @@
   margin-block-start: var(--space-3);
   padding-inline: var(--space-4);
   border-radius: var(--radius);
-  background: var(--mint);
+  background: var(--cta);
   color: var(--cta-text);
   font-weight: 700;
   text-decoration: none;
@@ -231,8 +231,8 @@
 }
 
 .report-card--maintenance {
-  border-inline-start-color: var(--mint);
-  background: color-mix(in srgb, var(--mint) 6%, var(--surface));
+  border-inline-start-color: var(--cta);
+  background: color-mix(in srgb, var(--cta) 6%, var(--surface));
 }
 
 .report-card--breakdown {
@@ -382,7 +382,7 @@
   background: color-mix(in srgb, var(--cta) 12%, var(--surface));
 }
 .period-metric--maint {
-  background: color-mix(in srgb, var(--mint, var(--cta)) 12%, var(--surface));
+  background: color-mix(in srgb, var(--cta) 12%, var(--surface));
 }
 .period-metric--break {
   background: color-mix(in srgb, var(--warn) 12%, var(--surface));
@@ -435,7 +435,7 @@
   background: var(--cta);
 }
 .stack-bar__seg--maint {
-  background: var(--mint, var(--cta));
+  background: var(--cta);
 }
 .stack-bar__seg--break {
   background: var(--warn);
@@ -590,8 +590,8 @@
 }
 
 .rec-card--spending {
-  border-inline-start-color: var(--mint);
-  background: color-mix(in srgb, var(--mint) 6%, var(--surface));
+  border-inline-start-color: var(--cta);
+  background: color-mix(in srgb, var(--cta) 6%, var(--surface));
 }
 
 .rec-card--tip,

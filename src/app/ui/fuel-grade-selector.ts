@@ -105,11 +105,7 @@ export class FuelGradeSelector {
   readonly options = input<GradeOption[]>([]);
 
   formatPrice(value: number): string {
-    try {
-      return `${new Intl.NumberFormat(this.i18n.language(), { maximumFractionDigits: 2 }).format(value)}/L`;
-    } catch {
-      return `${value.toFixed(2)}/L`;
-    }
+    return this.i18n.formatUnit(value, 'common.perLiter', 2);
   }
 }
 

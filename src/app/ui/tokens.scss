@@ -102,7 +102,7 @@
 
 :root,
 html[data-theme='light'] {
-  /* Brand — petrol surfaces, mint CTAs, amber fuel-grade only */
+  /* Brand — petrol surfaces, amber single accent; mint for success only */
   --petrol: #0f4545;
   --petrol-muted: #1a5c5c;
   --mint: #5cdba8;
@@ -114,10 +114,11 @@ html[data-theme='light'] {
   --card-dark: var(--petrol);
   --card-dark-text: #eef8f4;
 
-  /* Pastel metric card tints */
-  --metric-blue: #e4f1fb;
-  --metric-green: #e2f7ed;
-  --metric-orange: #fdf0e4;
+  /* Unified metric card tint (aliases kept one release) */
+  --metric-tint: color-mix(in srgb, var(--fuel) 12%, var(--surface));
+  --metric-blue: var(--metric-tint);
+  --metric-green: var(--metric-tint);
+  --metric-orange: var(--metric-tint);
 
   --radius: 12px; /* concentric rule: inner radius = outer radius − that element's padding */
   --page-head-gap: var(--space-4);
@@ -150,11 +151,11 @@ html[data-theme='light'] {
   --well: #e8edf1;
   --text: #122022;
   --muted: #5a6b6e;
-  --ok: #1a8f5c;
+  --ok: var(--mint);
   --stop: #c44747;
   --aura-1: #c8e8e0;
   --aura-2: #b8d4e8;
-  --glow: color-mix(in srgb, var(--mint) 28%, transparent);
+  --glow: color-mix(in srgb, var(--fuel) 28%, transparent);
   --hairline: color-mix(in srgb, #708890 28%, transparent);
   --input-border: color-mix(in srgb, var(--muted) 38%, transparent);
   --well-inset: inset 0 2px 8px color-mix(in srgb, #122022 6%, transparent);
@@ -168,18 +169,19 @@ html[data-theme='system'] {
   --well: #e8edf1;
   --text: #122022;
   --muted: #5a6b6e;
-  --ok: #1a8f5c;
+  --ok: var(--mint);
   --stop: #c44747;
   --aura-1: #c8e8e0;
   --aura-2: #b8d4e8;
-  --glow: color-mix(in srgb, var(--mint) 28%, transparent);
+  --glow: color-mix(in srgb, var(--fuel) 28%, transparent);
   --hairline: color-mix(in srgb, #708890 28%, transparent);
   --input-border: color-mix(in srgb, var(--muted) 38%, transparent);
   --well-inset: inset 0 2px 8px color-mix(in srgb, #122022 6%, transparent);
   --shadow-soft: 0 1px 3px color-mix(in srgb, #122022 8%, transparent);
-  --metric-blue: #e4f1fb;
-  --metric-green: #e2f7ed;
-  --metric-orange: #fdf0e4;
+  --metric-tint: color-mix(in srgb, var(--fuel) 12%, var(--surface));
+  --metric-blue: var(--metric-tint);
+  --metric-green: var(--metric-tint);
+  --metric-orange: var(--metric-tint);
   color-scheme: light;
 }
 
@@ -197,18 +199,19 @@ html[data-theme='system'] {
     --well: #081012;
     --text: #eef4f2;
     --muted: #8ea3a0;
-    --ok: #3ddc97;
+    --ok: var(--mint);
     --stop: #f87171;
     --aura-1: #0f2828;
     --aura-2: #0a1e22;
-    --glow: color-mix(in srgb, var(--mint) 42%, transparent);
+    --glow: color-mix(in srgb, var(--fuel) 42%, transparent);
     --hairline: color-mix(in srgb, var(--text) 10%, transparent);
     --input-border: color-mix(in srgb, var(--muted) 22%, transparent);
     --well-inset: inset 0 2px 10px color-mix(in srgb, #000 42%, transparent);
     --shadow-soft: 0 1px 2px color-mix(in srgb, #000 40%, transparent);
-    --metric-blue: color-mix(in srgb, #4a90c4 22%, var(--surface));
-    --metric-green: color-mix(in srgb, var(--mint) 18%, var(--surface));
-    --metric-orange: color-mix(in srgb, #e8a317 14%, var(--surface));
+    --metric-tint: color-mix(in srgb, var(--fuel) 12%, var(--surface));
+    --metric-blue: var(--metric-tint);
+    --metric-green: var(--metric-tint);
+    --metric-orange: var(--metric-tint);
     color-scheme: dark;
   }
 }
@@ -226,18 +229,19 @@ html[data-theme='dark'] {
   --well: #081012;
   --text: #eef4f2;
   --muted: #8ea3a0;
-  --ok: #3ddc97;
+  --ok: var(--mint);
   --stop: #f87171;
   --aura-1: #0f2828;
   --aura-2: #0a1e22;
-  --glow: color-mix(in srgb, var(--mint) 42%, transparent);
+  --glow: color-mix(in srgb, var(--fuel) 42%, transparent);
   --hairline: color-mix(in srgb, var(--text) 10%, transparent);
   --input-border: color-mix(in srgb, var(--muted) 22%, transparent);
   --well-inset: inset 0 2px 10px color-mix(in srgb, #000 42%, transparent);
   --shadow-soft: 0 1px 2px color-mix(in srgb, #000 40%, transparent);
-  --metric-blue: color-mix(in srgb, #4a90c4 22%, var(--surface));
-  --metric-green: color-mix(in srgb, var(--mint) 18%, var(--surface));
-  --metric-orange: color-mix(in srgb, #e8a317 14%, var(--surface));
+  --metric-tint: color-mix(in srgb, var(--fuel) 14%, var(--surface));
+  --metric-blue: var(--metric-tint);
+  --metric-green: var(--metric-tint);
+  --metric-orange: var(--metric-tint);
   color-scheme: dark;
 }
 
@@ -247,7 +251,7 @@ html[data-theme='contrast'] {
   --mint: #6eecc0;
   --mint-bright: #9af5dc;
   --cta-text: #000000;
-  --focus: var(--mint-bright);
+  --focus: var(--fuel);
   --card-dark: #0a3030;
   --card-dark-text: #ffffff;
   --bg: #000000;
@@ -255,18 +259,19 @@ html[data-theme='contrast'] {
   --well: #000000;
   --text: #ffffff;
   --muted: #c8c8c8;
-  --ok: #5cffb0;
+  --ok: var(--mint);
   --stop: #ff6b6b;
   --aura-1: #0a2020;
   --aura-2: #051010;
-  --glow: color-mix(in srgb, var(--mint) 55%, transparent);
+  --glow: color-mix(in srgb, var(--fuel) 55%, transparent);
   --hairline: color-mix(in srgb, var(--text) 40%, transparent);
   --input-border: color-mix(in srgb, var(--text) 70%, transparent);
   --well-inset: inset 0 2px 10px color-mix(in srgb, #000 42%, transparent);
   --shadow-soft: none;
-  --metric-blue: #1a2838;
-  --metric-green: #142820;
-  --metric-orange: #282018;
+  --metric-tint: color-mix(in srgb, var(--fuel) 14%, var(--surface));
+  --metric-blue: var(--metric-tint);
+  --metric-green: var(--metric-tint);
+  --metric-orange: var(--metric-tint);
   color-scheme: dark;
 }
 
@@ -283,18 +288,19 @@ html[data-theme='dusk'] {
   --well: #0e141c;
   --text: #e8f0ee;
   --muted: #8e9ea8;
-  --ok: #3ddc97;
+  --ok: var(--mint);
   --stop: #f87171;
   --aura-1: #1a2830;
   --aura-2: #141c28;
-  --glow: color-mix(in srgb, var(--mint) 38%, transparent);
+  --glow: color-mix(in srgb, var(--fuel) 38%, transparent);
   --hairline: color-mix(in srgb, var(--text) 12%, transparent);
   --input-border: color-mix(in srgb, var(--muted) 28%, transparent);
   --well-inset: inset 0 2px 10px color-mix(in srgb, #000 42%, transparent);
   --shadow-soft: 0 1px 2px color-mix(in srgb, #000 35%, transparent);
-  --metric-blue: color-mix(in srgb, #4a90c4 20%, var(--surface));
-  --metric-green: color-mix(in srgb, var(--mint) 16%, var(--surface));
-  --metric-orange: color-mix(in srgb, #e8a317 12%, var(--surface));
+  --metric-tint: color-mix(in srgb, var(--fuel) 10%, var(--surface));
+  --metric-blue: var(--metric-tint);
+  --metric-green: var(--metric-tint);
+  --metric-orange: var(--metric-tint);
   color-scheme: dark;
 }
 
@@ -442,7 +448,7 @@ a {
 .seg__btn--on {
   background: var(--surface);
   color: var(--text);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--mint) 40%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--cta) 40%, transparent);
 }
 
 .label-row {
@@ -481,7 +487,7 @@ a {
 }
 
 .due-card--soon {
-  border-inline-start-color: var(--mint);
+  border-inline-start-color: var(--cta);
 }
 
 .row {
@@ -550,7 +556,7 @@ textarea.input {
 
 .input:hover,
 .file-pick:hover {
-  border-color: color-mix(in srgb, var(--mint) 40%, var(--muted));
+  border-color: color-mix(in srgb, var(--cta) 40%, var(--muted));
 }
 
 .input:focus,
