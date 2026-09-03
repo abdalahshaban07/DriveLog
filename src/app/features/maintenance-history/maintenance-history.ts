@@ -41,7 +41,7 @@ export class MaintenanceHistoryPage {
 
   readonly typeChips = computed(() => {
     const chips: { id: string; labelKey?: MsgKey; label?: string }[] = [
-      { id: 'all', labelKey: 'history.filterAll' },
+      { id: 'all', labelKey: 'maint.filterAll' },
     ];
     for (const value of MAINTENANCE_TYPES) {
       chips.push({ id: value, labelKey: `maintenance.type.${value}` as MsgKey });

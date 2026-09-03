@@ -104,18 +104,6 @@ export class MaintenancePage {
     return match?.status ?? null;
   }
 
-  monthLabel(month: string): string {
-    const [y, mo] = month.split('-').map(Number);
-    try {
-      return new Intl.DateTimeFormat(this.i18n.language() === 'ar' ? 'ar-EG-u-nu-arab' : 'en-GB', {
-        month: 'long',
-        year: 'numeric',
-      }).format(new Date(y!, mo! - 1, 1));
-    } catch {
-      return month;
-    }
-  }
-
   resetForm(): void {
     this.editId.set(null);
     this.type.set('oil');
