@@ -7,6 +7,7 @@ import { detectCountryCurrency } from '../../data/remote';
 import { listCurrencyOptions, validCurrency } from '../../domain/currencies';
 import { TANK_MAX, TANK_MIN } from '../../domain/fill-up-distance';
 import { THEMES, type Theme } from '../../domain/models';
+import { buildSampleDataset } from '../../domain/sample-data';
 import { I18n } from '../../i18n/i18n';
 import { DateField } from '../../ui/date-field';
 import { NumericField } from '../../ui/numeric-field';
@@ -141,5 +142,10 @@ export class FirstRunPage {
       });
       await this.router.navigateByUrl('/');
     });
+  }
+
+  async loadSample(): Promise<void> {
+    await this.db.installSampleData(buildSampleDataset());
+    await this.router.navigateByUrl('/');
   }
 }

@@ -1,0 +1,49 @@
+:host {
+  display: block;
+  margin-block-end: var(--space-4);
+}
+
+.quick-log__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin-block-end: var(--space-3);
+}
+
+.quick-log__title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.quick-log__full {
+  color: var(--cta);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.quick-log__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  margin-block-end: var(--space-3);
+}
+
+.quick-log__tank {
+  display: grid;
+  grid-template-columns: 5rem 1fr;
+  gap: var(--space-3);
+  align-items: center;
+  margin-block: var(--space-3);
+}
+
+.quick-log__cost {
+  margin: 0;
+  font-weight: 700;
+}
+
+.err {
+  margin: 0 0 var(--space-2);
+  color: var(--stop);
+}

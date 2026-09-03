@@ -390,6 +390,42 @@ export class Db {
     this.recalcOdometer();
   }
 
+  /** Install first-run demo car + rows and flag sampleMode. */
+  async installSampleData(dataset: {
+    car: Car;
+    fillUps: FillUp[];
+    maintenance: Maintenance[];
+  }): Promise<void> {
+    const period = newOpenPeriod(dataset.car.id);
+    await Promise.all([
+      this.put('car', dataset.car),
+      ...dataset.fillUps.map((f) => this.put('fillUps', f)),
+      ...dataset.maintenance.map((m) => this.put('maintenance', m)),
+      this.put('expensePeriods', period),
+    ]);
+    const settings: Settings = {
+      ...this._settings(),
+      activeCarId: dataset.car.id,
+      sampleMode: true,
+    };
+    await this.put('settings', { id: 'settings', ...settings });
+    this._cars.set([...this._cars(), dataset.car]);
+    this._car.set(dataset.car);
+    this._settings.set(settings);
+    this._fillUpsAll.set([...this._fillUpsAll(), ...dataset.fillUps]);
+    this._maintenanceAll.set([...this._maintenanceAll(), ...dataset.maintenance]);
+    this._expensePeriodsAll.set([...this._expensePeriodsAll(), period]);
+    this.recalcOdometer();
+  }
+
+  /** Wipe the demo car and related rows, then exit sample mode. */
+  async clearSampleData(sampleCarId: string): Promise<void> {
+    await this.removeCar(sampleCarId);
+    if (this._settings().sampleMode) {
+      await this.updateSettings({ sampleMode: false });
+    }
+  }
+
   async updateCar(
     patch: Partial<
       Pick<
@@ -1144,6 +1180,9 @@ function normalizeSettings(raw: unknown): Settings {
     lastSeenWhatsNewId: o.lastSeenWhatsNewId
       ? String(o.lastSeenWhatsNewId)
       : undefined,
+    sampleMode: o.sampleMode === true ? true : undefined,
+    checklistDismissed: o.checklistDismissed === true ? true : undefined,
+    installCardDismissed: o.installCardDismissed === true ? true : undefined,
     customMaintenanceTypes: normalizeCustomTypes(o.customMaintenanceTypes),
     assistantEnabled: o.assistantEnabled === true ? true : undefined,
     assistantApiKey: o.assistantApiKey ? String(o.assistantApiKey) : undefined,

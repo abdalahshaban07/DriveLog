@@ -10,9 +10,19 @@ import {
   viewChild,
 } from '@angular/core';
 import { I18n } from '../i18n/i18n';
+import type { WhatsNewCard, WhatsNewIcon } from '../pwa/whats-new';
 import { PrimaryButton } from './primary-button';
 import { MotionPolicy } from './motion/motion-policy';
 import { createAnimeScope } from './motion/anime-scope';
+
+const ICON_GLYPH: Record<WhatsNewIcon, string> = {
+  fuel: '⛽',
+  chart: '📊',
+  wrench: '🔧',
+  palette: '🎨',
+  sparkle: '✨',
+  bug: '🐛',
+};
 
 @Component({
   selector: 'app-update-modal',
@@ -27,13 +37,15 @@ export class UpdateModal {
   private readonly policy = inject(MotionPolicy);
 
   readonly lines = input<string[]>([]);
+  readonly cards = input<WhatsNewCard[]>([]);
   readonly releaseId = input('');
+  readonly isUpdate = input(true);
   readonly later = output<void>();
   readonly updateNow = output<void>();
 
   readonly titleId = `update-modal-${Math.random().toString(36).slice(2, 8)}`;
   private readonly dialog = viewChild<ElementRef<HTMLDialogElement>>('dialog');
-  private readonly cards = viewChild<ElementRef<HTMLElement>>('cards');
+  private readonly cardsEl = viewChild<ElementRef<HTMLElement>>('cardsEl');
 
   constructor() {
     afterNextRender(() => {
@@ -44,6 +56,10 @@ export class UpdateModal {
       el?.querySelector('button')?.focus();
       void this.staggerCards();
     });
+  }
+
+  iconGlyph(icon: WhatsNewIcon): string {
+    return ICON_GLYPH[icon] ?? ICON_GLYPH.sparkle;
   }
 
   onBackdropClick(event: MouseEvent): void {
@@ -58,7 +74,7 @@ export class UpdateModal {
   }
 
   private async staggerCards(): Promise<void> {
-    const root = this.cards()?.nativeElement;
+    const root = this.cardsEl()?.nativeElement;
     if (!root) {
       return;
     }

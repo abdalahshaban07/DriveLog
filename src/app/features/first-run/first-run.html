@@ -45,6 +45,9 @@
       [disabled]="!canContinue()"
       (pressed)="goStep2()"
     />
+    <button type="button" class="ghost-btn setup__sample" (click)="loadSample()">
+      {{ i18n.t('setup.sample') }}
+    </button>
   } @else {
     <section class="card stack" [attr.aria-label]="i18n.t('setup.prefs')">
       <p class="label">{{ i18n.t('setup.step2') }}</p>

@@ -39,12 +39,18 @@
     transform var(--motion) var(--ease);
 }
 
-a.line:hover {
+a.line:hover,
+button.line:hover {
   background: color-mix(in srgb, var(--well) 55%, transparent);
 }
 
-a.line:active {
+a.line:active,
+button.line:active {
   transform: scale(0.97);
+}
+
+.line--btn {
+  cursor: pointer;
 }
 
 .line__text {

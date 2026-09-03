@@ -771,6 +771,13 @@ textarea.input {
   animation: metric-flash var(--motion-fast) var(--ease-out);
 }
 
+.metric--ghost {
+  color: var(--muted);
+  opacity: 0.55;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+}
+
 @keyframes metric-flash {
   0% {
     opacity: 0.55;

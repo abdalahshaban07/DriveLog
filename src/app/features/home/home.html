@@ -37,114 +37,100 @@
           }
         </div>
 
-        <div class="glance-strip" role="status" [attr.aria-label]="i18n.t('home.glanceStrip')">
+        @if (sampleMode()) {
+          <app-sample-banner (clear)="clearSample()" />
+        }
+
+        @if (showChecklist()) {
+          <app-setup-checklist
+            [items]="checklistItems()"
+            (dismiss)="dismissChecklist()"
+          />
+        }
+
+        <div
+          #glanceStrip
+          class="glance-strip"
+          [class.metric-flash]="glanceFlash()"
+          role="status"
+          [attr.aria-label]="i18n.t('home.glanceStrip')"
+        >
           <div class="glance-strip__cell">
             <span class="glance-strip__label">{{ i18n.t('home.lastFill') }}</span>
-            <strong>{{ lastFillDate() ?? '—' }}</strong>
+            <strong [class.metric--ghost]="!hasRealFills()">
+              {{ hasRealFills() ? (lastFillDate() ?? '—') : '—.—' }}
+            </strong>
           </div>
           <div class="glance-strip__cell">
             <span class="glance-strip__label">{{ i18n.t('home.economy') }}</span>
-            <strong>
+            <strong [class.metric--ghost]="fuelMetrics().lastL100 == null">
               @if (fuelMetrics().lastL100 != null) {
                 {{ i18n.formatUnit(fuelMetrics().lastL100!, 'common.lPer100', 1) }}
               } @else {
-                —
+                —.—
               }
             </strong>
           </div>
           <div class="glance-strip__cell">
             <span class="glance-strip__label">{{ i18n.t('home.nextDue') }}</span>
-            <strong>{{ dueLabel() }}</strong>
+            <strong [class.metric--ghost]="!nextDue()">{{ dueLabel() }}</strong>
           </div>
         </div>
-      }
 
-      <section
-        class="card nearby-card"
-        role="status"
-        aria-live="polite"
-        [attr.aria-label]="i18n.t('home.nearby')"
-      >
-        <header class="nearby-card__head">
-          <h2 class="nearby-card__title">{{ i18n.t('home.aroundYou') }}</h2>
-          <div class="seg nearby-card__seg" role="group" [attr.aria-label]="i18n.t('home.nearby')">
-            <button
-              type="button"
-              class="seg__btn"
-              [class.seg__btn--on]="nearbyKind() === 'fuel'"
-              [attr.aria-pressed]="nearbyKind() === 'fuel'"
-              (click)="setNearbyKind('fuel')"
-            >
-              {{ i18n.t('home.nearbyFuel') }}
-            </button>
-            <button
-              type="button"
-              class="seg__btn"
-              [class.seg__btn--on]="nearbyKind() === 'charge'"
-              [attr.aria-pressed]="nearbyKind() === 'charge'"
-              (click)="setNearbyKind('charge')"
-            >
-              {{ i18n.t('home.nearbyCharge') }}
-            </button>
-          </div>
-        </header>
-
-        @if (nearbyLoading()) {
-          <div class="nearby-card__body">
-            <div class="skeleton skeleton--row" aria-hidden="true"></div>
-            <div class="skeleton skeleton--row" aria-hidden="true"></div>
-            <div class="skeleton skeleton--row" aria-hidden="true"></div>
-          </div>
-        } @else if (nearbyError()) {
-          <div class="error-state" role="alert">
-            <p>{{ nearbyError() }}</p>
-          </div>
-        } @else if (filteredNearby().length === 0) {
-          <div class="empty-state">
-            <p>{{ i18n.t('home.nearbyEmpty') }}</p>
-          </div>
-        } @else {
-          <ul class="nearby-list list-reveal">
-            @for (poi of filteredNearby(); track poi.id) {
-              <li class="nearby-list__item">
-                <a
-                  class="nearby-list__link"
-                  [href]="mapsUrl(poi)"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <span class="nearby-list__name">{{ poi.name }}</span>
-                  <span class="nearby-list__meta">
-                    {{ i18n.formatNumber(poi.distanceKm, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }} {{ i18n.t('common.km') }}
-                    @if (poi.detail) {
-                      · {{ poi.detail }}
-                    }
-                  </span>
-                </a>
-              </li>
-            }
-          </ul>
+        @if (!hasRealFills() && !sampleMode()) {
+          <a routerLink="/fill-up" class="ghost-cta">{{ i18n.t('home.ghost.cta') }}</a>
         }
 
-        <p class="nearby-card__attr">{{ i18n.t('home.nearbyOsm') }}</p>
-      </section>
+        @if (showQuickLog()) {
+          <app-quick-log (saved)="onQuickSaved()" />
+        }
 
-      @let outlook = monthOutlook();
-      <section class="month-outlook" role="status" [attr.aria-label]="i18n.t('home.monthOutlook')">
-        <h2 class="month-outlook__title">{{ i18n.t('home.monthOutlook') }}</h2>
-        <div class="month-outlook__strip">
-          <div class="month-outlook__cell">
-            <span class="month-outlook__label">{{ i18n.t('home.monthSpend') }}</span>
-            <strong>{{ formatMoney(outlook.actual) }}</strong>
-          </div>
-          @if (outlook.projected != null) {
+        @let outlook = monthOutlook();
+        <section class="month-outlook" role="status" [attr.aria-label]="i18n.t('home.monthOutlook')">
+          <h2 class="month-outlook__title">{{ i18n.t('home.monthOutlook') }}</h2>
+          <div class="month-outlook__strip">
+            <div class="month-outlook__cell">
+              <span class="month-outlook__label">{{ i18n.t('home.monthSpend') }}</span>
+              <strong>{{ formatMoney(outlook.actual) }}</strong>
+            </div>
             <div class="month-outlook__cell month-outlook__cell--projected">
               <span class="month-outlook__label">{{ i18n.t('home.projectedSpend') }}</span>
-              <strong>{{ formatMoney(outlook.projected) }}</strong>
+              <strong>
+                @if (outlook.projected != null) {
+                  {{ formatMoney(outlook.projected) }}
+                } @else {
+                  —
+                }
+              </strong>
             </div>
-          }
-        </div>
-      </section>
+          </div>
+        </section>
+
+        @if (!sampleMode()) {
+          <app-month-insight
+            [fills]="db.fillUps()"
+            [maintenance]="db.maintenance()"
+            [breakdowns]="db.breakdowns()"
+            [other]="db.otherExpenses()"
+            [currency]="db.settings().currency"
+          />
+        }
+
+        @if (showInstallCard()) {
+          <app-install-card
+            (install)="promptInstall()"
+            (dismiss)="dismissInstallCard()"
+          />
+        }
+
+        <app-nearby-stations
+          [items]="filteredNearby()"
+          [loading]="nearbyLoading()"
+          [error]="nearbyError()"
+          [kind]="nearbyKind()"
+          (kindChange)="setNearbyKind($event)"
+        />
+      }
 
       @if (recommendations().length) {
         <section class="rec-section" [attr.aria-label]="i18n.t('home.whatsNext')">
