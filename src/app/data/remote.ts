@@ -350,11 +350,11 @@ export function parseNearbyPoi(
       lat,
       lon,
       distanceKm: haversineKm(origin, { lat, lon }),
-      brand: tags['brand'],
+      brand: tags['brand'] || tags['operator'],
       detail,
     });
   }
-  return list.sort((a, b) => a.distanceKm - b.distanceKm).slice(0, 10);
+  return list.sort((a, b) => a.distanceKm - b.distanceKm).slice(0, 20);
 }
 
 export async function nearbyPoi(

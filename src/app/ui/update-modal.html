@@ -7,25 +7,44 @@
 >
   <div class="update-sheet__panel" role="document">
     <header class="update-sheet__head">
-      <div>
-        <h2 [id]="titleId" class="update-sheet__title">{{ i18n.t('update.available') }}</h2>
-        @if (releaseId()) {
-          <span class="update-sheet__release pill">
-            {{ i18n.t('update.release') }} · {{ releaseId() }}
-          </span>
-        }
+      <div class="update-sheet__brand">
+        <img class="update-sheet__icon" src="icons/icon-192.png" width="48" height="48" alt="" />
+        <div>
+          <h2 [id]="titleId" class="update-sheet__title">{{ i18n.t('update.available') }}</h2>
+          @if (releaseId()) {
+            <span class="update-sheet__release pill">
+              {{ i18n.t('update.release') }} · {{ releaseId() }}
+            </span>
+          }
+        </div>
       </div>
       <button type="button" class="update-sheet__close" (click)="later.emit()">
         {{ i18n.t('update.later') }}
       </button>
     </header>
 
-    @if (lines().length) {
+    @if (cards().length) {
       <section class="update-sheet__features" [attr.aria-label]="i18n.t('update.whatsNew')">
         <h3 class="update-sheet__subtitle">{{ i18n.t('update.whatsNew') }}</h3>
-        <ul #cards class="update-sheet__cards">
+        <ul #cardsEl class="update-sheet__rail">
+          @for (card of cards(); track $index) {
+            <li class="update-card">
+              <span class="update-card__icon" aria-hidden="true">{{ iconGlyph(card.icon) }}</span>
+              @if (card.title) {
+                <strong class="update-card__title">{{ card.title }}</strong>
+              }
+              <p class="update-card__body">{{ card.body }}</p>
+            </li>
+          }
+        </ul>
+      </section>
+    } @else if (lines().length) {
+      <section class="update-sheet__features" [attr.aria-label]="i18n.t('update.whatsNew')">
+        <ul #cardsEl class="update-sheet__rail">
           @for (line of lines(); track line) {
-            <li class="update-card">{{ line }}</li>
+            <li class="update-card">
+              <p class="update-card__body">{{ line }}</p>
+            </li>
           }
         </ul>
       </section>
@@ -34,12 +53,22 @@
     }
 
     <div class="update-sheet__actions">
-      <app-primary-button
-        [label]="i18n.t('update.reload')"
-        [tone]="'mint'"
-        [stretch]="true"
-        (pressed)="updateNow.emit()"
-      />
+      @if (isUpdate()) {
+        <app-primary-button
+          [label]="i18n.t('update.reload')"
+          [stretch]="true"
+          (pressed)="updateNow.emit()"
+        />
+        <button type="button" class="ghost-btn" (click)="later.emit()">
+          {{ i18n.t('update.later') }}
+        </button>
+      } @else {
+        <app-primary-button
+          [label]="i18n.t('update.dismiss')"
+          [stretch]="true"
+          (pressed)="later.emit()"
+        />
+      }
     </div>
   </div>
 </dialog>

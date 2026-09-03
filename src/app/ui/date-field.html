@@ -21,74 +21,73 @@
       aria-hidden="true"
       (click)="toggle($event)"
     ></button>
-    @if (opened()) {
-      <div class="scrim" (click)="close()"></div>
-      <div
-        class="cal"
-        role="dialog"
-        [id]="calId"
-        [attr.lang]="i18n.language()"
-        [attr.dir]="i18n.dir()"
-        [attr.aria-label]="label()"
-      >
-        <div class="cal__nav">
-          <select
-            class="cal__select"
-            [id]="monthSelectId"
-            [value]="viewM()"
-            [attr.aria-label]="i18n.t('date.month')"
-            (change)="onMonthChange($event)"
-          >
-            @for (m of monthOptions(); track m.value) {
-              <option [value]="m.value">{{ m.label }}</option>
-            }
-          </select>
-          <select
-            class="cal__select"
-            [id]="yearSelectId"
-            [value]="viewY()"
-            [attr.aria-label]="i18n.t('date.year')"
-            (change)="onYearChange($event)"
-          >
-            @for (y of yearOptions(); track y) {
-              <option [value]="y">{{ y }}</option>
-            }
-          </select>
-        </div>
-        <div class="cal__week">
-          @for (w of weekdays(); track $index) {
-            <span>{{ w }}</span>
-          }
-        </div>
-        <div class="cal__days">
-          @for (day of cells(); track $index) {
-            @if (day === null) {
-              <span class="cal__pad"></span>
-            } @else {
-              <button
-                type="button"
-                class="cal__day"
-                [class.cal__day--on]="isSelected(day)"
-                [class.cal__day--today]="isToday(day)"
-                [attr.aria-current]="isSelected(day) ? 'date' : null"
-                (click)="pick(day)"
-              >
-                {{ dayLabels()[day - 1] }}
-              </button>
-            }
-          }
-        </div>
-        <div class="cal__foot">
-          <button type="button" (click)="clear()">
-            {{ i18n.t('date.clear') }}
-          </button>
-          <button type="button" (click)="today()">
-            {{ i18n.t('date.today') }}
-          </button>
-        </div>
-      </div>
-    }
   </span>
+  <dialog
+    #calDialog
+    class="cal-dialog"
+    [id]="calId"
+    [attr.lang]="i18n.language()"
+    [attr.dir]="i18n.dir()"
+    [attr.aria-label]="label()"
+    (cancel)="onDialogCancel($event)"
+    (click)="onDialogBackdrop($event)"
+  >
+    <div class="cal">
+      <div class="cal__nav">
+        <select
+          class="cal__select"
+          [id]="monthSelectId"
+          [attr.aria-label]="i18n.t('date.month')"
+          (change)="onMonthChange($event)"
+        >
+          @for (m of monthOptions(); track m.value) {
+            <option [value]="m.value" [selected]="m.value === viewM()">{{ m.label }}</option>
+          }
+        </select>
+        <select
+          class="cal__select"
+          [id]="yearSelectId"
+          [attr.aria-label]="i18n.t('date.year')"
+          (change)="onYearChange($event)"
+        >
+          @for (y of yearOptions(); track y) {
+            <option [value]="y" [selected]="y === viewY()">{{ y }}</option>
+          }
+        </select>
+      </div>
+      <div class="cal__week">
+        @for (w of weekdays(); track $index) {
+          <span>{{ w }}</span>
+        }
+      </div>
+      <div class="cal__days">
+        @for (day of cells(); track $index) {
+          @if (day === null) {
+            <span class="cal__pad"></span>
+          } @else {
+            <button
+              type="button"
+              class="cal__day"
+              [class.cal__day--on]="isSelected(day)"
+              [class.cal__day--today]="isToday(day)"
+              [attr.aria-current]="isSelected(day) ? 'date' : null"
+              (click)="pick(day)"
+            >
+              {{ dayLabels()[day - 1] }}
+            </button>
+          }
+        }
+      </div>
+      <div class="cal__foot">
+        <button type="button" (click)="clear()">
+          {{ i18n.t('date.clear') }}
+        </button>
+        <button type="button" (click)="today()">
+          {{ i18n.t('date.today') }}
+        </button>
+      </div>
+    </div>
+  </dialog>
   @if (hint()) {
     <span class="hint" [id]="hintId">{{ hint() }}</span>
   }

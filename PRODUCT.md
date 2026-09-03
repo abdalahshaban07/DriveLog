@@ -4,7 +4,7 @@ Phone-first **Operate** PWA for personal fuel + maintenance. Local-first Indexed
 
 ## Visual world
 
-**Dos Benzin Ledger** (replaces Kinetic Pulse / Cold Night Pump): system light/dark default, petrol teal surfaces, mint `--cta` accent (~5% UI), amber `--fuel` for fuel-grade chips only, pastel metric cards, Outfit, dense card ledger. Themes: system / light / dark / contrast / dusk.
+**Dos Benzin Ledger** (replaces Kinetic Pulse / Cold Night Pump): system light/dark default, petrol teal surfaces, amber `--cta` single accent (~5% UI), `--mint` for success only, unified `--metric-tint` cards, Outfit, dense card ledger. Themes: system / light / dark / contrast / dusk.
 
 ## Core flows
 

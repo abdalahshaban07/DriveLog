@@ -6,7 +6,7 @@
 
 ## Design read
 
-Phone-first Operate PWA. **Dos Benzin ledger** world: deep petrol teal surfaces, mint CTAs, pastel metric cards, cool off-white canvas. Dense card grid — no Tesla-sparse Home hero. System light/dark default. Instrument density (VISUAL_DENSITY 8). MOTION 7 via CSS + View Transitions only.
+Phone-first Operate PWA. **Dos Benzin ledger** world: deep petrol teal surfaces, amber single accent, unified metric tints, cool off-white canvas. Dense card grid — no Tesla-sparse Home hero. System light/dark default. Instrument density (VISUAL_DENSITY 8). MOTION 7 via CSS + View Transitions only.
 
 **Dials:** `DESIGN_VARIANCE: 6` · `MOTION_INTENSITY: 7` · `VISUAL_DENSITY: 8`
 
@@ -17,14 +17,15 @@ Phone-first Operate PWA. **Dos Benzin ledger** world: deep petrol teal surfaces,
 | Token | Role |
 |-------|------|
 | `--petrol` | Deep teal for dark cards / primary surfaces (`.card--dark`) |
-| `--mint` / `--cta` | Mint green for CTAs (~5% UI) |
-| `--fuel` | Warm amber for fuel-grade chips only — not primary CTAs |
-| `--metric-blue/green/orange` | Pastel metric card backgrounds |
-| `--focus` | Mint/teal focus ring (2px) |
+| `--fuel` / `--cta` | Warm amber single accent for CTAs, focus, glow (~5% UI) |
+| `--mint` | Success semantics only (`--ok`) |
+| `--metric-tint` | Unified metric card background (fuel-tinted surface mix) |
+| `--metric-blue/green/orange` | Aliases of `--metric-tint` (one release) |
+| `--focus` | Amber focus ring (2px, `var(--fuel)`) |
 
 Light: cool off-white `--bg` `#f2f5f7`, white `--surface`, soft `--radius` 15px. Dark / dusk / contrast themes retokened with petrol undertones. `data-theme="system"` follows `prefers-color-scheme`.
 
-Never: cream/beige, purple mesh, glass nav, brass second accent, amber-only Driver Ledger.
+Never: cream/beige, purple mesh, glass nav, brass second accent, mint CTA chrome.
 
 ## Type
 
@@ -55,8 +56,8 @@ Hard bans: no `transition: all`, no `scale(0)`, honor `prefers-reduced-motion`.
 
 ## Fill-up
 
-No keypad. Fuel grade chips (amber `--fuel`) + read-only receipt preview. Cost computed.
+No keypad. Fuel grade chips (`--fuel`) + read-only receipt preview. Cost computed.
 
 ## Accessibility
 
-56px tap · 2px mint/teal focus · visible labels · RTL logical properties · icon buttons with i18n `aria-label`.
+56px tap · 2px amber focus · visible labels · RTL logical properties · icon buttons with i18n `aria-label`.

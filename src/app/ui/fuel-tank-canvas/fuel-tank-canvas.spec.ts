@@ -8,6 +8,8 @@ const i18nMock = {
   t: (k: string, p?: Record<string, string | number>) =>
     p ? `${k}:${JSON.stringify(p)}` : k,
   language: () => 'en' as const,
+  formatNumber: (n: number) => String(n),
+  dir: () => 'ltr' as const,
 };
 
 describe('FuelTankCanvas', () => {

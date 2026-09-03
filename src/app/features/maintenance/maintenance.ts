@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
 import { buildDueItems, todayDateOnly } from '../../domain/dues';
 import { MAINTENANCE_TYPES } from '../../domain/models';
@@ -36,6 +36,7 @@ const ADD_TYPE = '__add__';
 export class MaintenancePage {
   readonly i18n = inject(I18n);
   readonly db = inject(Db);
+  private readonly route = inject(ActivatedRoute);
 
   readonly type = signal('oil');
   readonly cost = signal('');
@@ -72,16 +73,19 @@ export class MaintenancePage {
     ),
   );
 
-  readonly groupedHistory = computed(() => {
-    const groups = new Map<string, Maintenance[]>();
-    for (const row of this.history()) {
-      const month = row.date.slice(0, 7);
-      const bucket = groups.get(month) ?? [];
-      bucket.push(row);
-      groups.set(month, bucket);
+  readonly recentHistory = computed(() => this.history().slice(0, 3));
+
+  readonly hasMoreHistory = computed(() => this.history().length > 3);
+
+  constructor() {
+    const id = this.route.snapshot.queryParamMap.get('id');
+    if (id) {
+      const row = this.db.maintenance().find((m) => m.id === id);
+      if (row) {
+        this.startEdit(row);
+      }
     }
-    return [...groups.entries()].map(([month, items]) => ({ month, items }));
-  });
+  }
 
   dueStatus(m: Maintenance): DueStatus | null {
     const car = this.db.car();
@@ -98,18 +102,6 @@ export class MaintenancePage {
     );
     const match = items.find((i) => i.maintenanceId === m.id);
     return match?.status ?? null;
-  }
-
-  monthLabel(month: string): string {
-    const [y, mo] = month.split('-').map(Number);
-    try {
-      return new Intl.DateTimeFormat(this.i18n.language() === 'ar' ? 'ar-EG-u-nu-arab' : 'en-GB', {
-        month: 'long',
-        year: 'numeric',
-      }).format(new Date(y!, mo! - 1, 1));
-    } catch {
-      return month;
-    }
   }
 
   resetForm(): void {

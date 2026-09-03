@@ -9,10 +9,29 @@
   margin: auto;
   padding: 0;
   border: 0;
-  max-width: min(100%, 24rem);
+  max-width: min(100%, 28rem);
   width: calc(100% - var(--space-5) * 2);
   background: transparent;
   color: inherit;
+  opacity: 0;
+  transform: scale(0.95);
+  transition:
+    opacity 250ms var(--ease),
+    transform 250ms var(--ease),
+    overlay 250ms allow-discrete,
+    display 250ms allow-discrete;
+}
+
+.update-sheet[open] {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@starting-style {
+  .update-sheet[open] {
+    opacity: 0;
+    transform: scale(0.95);
+  }
 }
 
 .update-sheet::backdrop {
@@ -25,7 +44,6 @@
   background: var(--surface);
   border: 1px solid var(--hairline);
   box-shadow: var(--shadow-soft);
-  animation: sheet-in var(--motion-normal) var(--ease-out);
 }
 
 .update-sheet__head {
@@ -34,6 +52,16 @@
   justify-content: space-between;
   gap: var(--space-3);
   margin-block-end: var(--space-4);
+}
+
+.update-sheet__brand {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.update-sheet__icon {
+  border-radius: 12px;
 }
 
 .update-sheet__title {
@@ -76,35 +104,56 @@
   font-size: 0.95rem;
 }
 
-.update-sheet__cards {
+.update-sheet__rail {
   margin: 0 0 var(--space-4);
-  padding: 0;
+  padding: 0 0 var(--space-2);
   list-style: none;
   display: grid;
-  gap: var(--space-2);
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(12rem, 80%);
+  gap: var(--space-3);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
 }
 
 .update-card {
-  padding: var(--space-3) var(--space-4);
+  scroll-snap-align: start;
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
   border-radius: calc(var(--radius) - 4px);
   background: color-mix(in srgb, var(--cta) 8%, var(--surface));
   border: 1px solid color-mix(in srgb, var(--cta) 18%, var(--hairline));
-  font-size: 0.92rem;
+  min-height: 8rem;
+}
+
+.update-card__icon {
+  font-size: 1.25rem;
+}
+
+.update-card__title {
+  font-size: 0.95rem;
+}
+
+.update-card__body {
+  margin: 0;
+  font-size: 0.9rem;
   line-height: 1.45;
+  color: var(--muted);
 }
 
 .update-sheet__actions {
   display: grid;
+  gap: var(--space-2);
 }
 
-@keyframes sheet-in {
-  from {
-    opacity: 0;
-    transform: translateY(12px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+@media (min-width: 768px) {
+  .update-sheet__rail {
+    grid-auto-flow: row;
+    grid-auto-columns: unset;
+    overflow: visible;
+    scroll-snap-type: none;
   }
 }
 
@@ -124,7 +173,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .update-sheet__panel {
-    animation: none;
+  .update-sheet {
+    transition: none;
+    transform: none;
+  }
+
+  .update-sheet[open] {
+    transform: none;
   }
 }

@@ -215,6 +215,37 @@ describe('export csv', () => {
     expect(filterFillUps(rows, { from: '2026-02-01' }).map((f) => f.id)).toEqual(['b']);
     expect(fillUpsToCsv(rows)).toContain('diesel');
   });
+
+  it('filters maintenance by type and exports csv', async () => {
+    const { filterMaintenance, maintenanceToCsv, rangeBoundsForPreset } = await import('./export-csv');
+    const rows = [
+      {
+        id: 'm1',
+        type: 'oil' as const,
+        odometer: 1000,
+        cost: 200,
+        date: '2026-01-15',
+        createdAt: '2026-01-15T00:00:00.000Z',
+        updatedAt: '2026-01-15T00:00:00.000Z',
+      },
+      {
+        id: 'm2',
+        type: 'brakes' as const,
+        odometer: 1100,
+        cost: 400,
+        date: '2026-03-01',
+        createdAt: '2026-03-01T00:00:00.000Z',
+        updatedAt: '2026-03-01T00:00:00.000Z',
+      },
+    ];
+    expect(filterMaintenance(rows, { type: 'oil' }).map((m) => m.id)).toEqual(['m1']);
+    expect(filterMaintenance(rows, { from: '2026-03-01' }).map((m) => m.id)).toEqual(['m2']);
+    expect(maintenanceToCsv(rows)).toContain('brakes');
+    expect(rangeBoundsForPreset('year', '2026-09-03')).toEqual({
+      from: '2026-01-01',
+      to: '2026-09-03',
+    });
+  });
 });
 
 describe('holidays', () => {
@@ -240,6 +271,23 @@ describe('insights series', () => {
     );
     expect(trend.length).toBe(1);
     expect(trend[0]).toBeCloseTo(22.5, 1);
+  });
+
+  it('groups fuel grade cost share for the period', async () => {
+    const { fuelGradeCostShare } = await import('./insights');
+    const share = fuelGradeCostShare(
+      [
+        fill({ id: 'a', odometer: 1000, liters: 40, cost: 80, tankFull: true, fuelGrade: 'diesel' }),
+        fill({ id: 'b', odometer: 1100, liters: 40, cost: 40, tankFull: true, fuelGrade: 'gasoline92', date: '2026-02-01' }),
+        fill({ id: 'c', odometer: 1200, liters: 40, cost: 20, tankFull: true, date: '2026-02-15' }),
+      ],
+      'all',
+    );
+    expect(share).toEqual([
+      { grade: 'diesel', cost: 80 },
+      { grade: 'gasoline92', cost: 40 },
+      { grade: 'unknown', cost: 20 },
+    ]);
   });
 });
 

@@ -1,17 +1,97 @@
 {
-  "id": "2026-08-23-v2-complete",
+  "id": "2026-09-03-ui-sweep",
   "en": [
-    "Multi-car backup support and car switcher in Settings",
-    "Fill-up history filters, CSV share, and place labels",
-    "Holiday-aware due banners and Frankfurter FX on Home",
-    "Insights economy trend sparkline with draw-in animation",
-    "Dusk theme assist and richer currency labels"
+    {
+      "icon": "palette",
+      "title": "One amber accent",
+      "body": "CTAs, focus rings, and metric washes now share a single fuel amber — clearer and calmer."
+    },
+    {
+      "icon": "sparkle",
+      "title": "Arabic digits & units",
+      "body": "Numbers and units (L, km, L/100 km) render with Eastern Arabic digits in Arabic."
+    },
+    {
+      "icon": "chart",
+      "title": "Richer charts",
+      "body": "Home charts add bar, line, and fuel-grade donut views beside the category stack."
+    },
+    {
+      "icon": "fuel",
+      "title": "Station + 3D tank",
+      "body": "Pick a station from nearby chips and enjoy a modern glass tank gauge on fill-up."
+    },
+    {
+      "icon": "wrench",
+      "title": "History refresh",
+      "body": "Fill-up and maintenance histories share a modern ledger layout with CSV export."
+    },
+    {
+      "icon": "sparkle",
+      "title": "Nearby accordion",
+      "body": "Top stations stay visible; the rest group by brand so the list never overwhelms."
+    },
+    {
+      "icon": "sparkle",
+      "title": "First-run polish",
+      "body": "Try a sample car, follow a setup checklist, and install the PWA when ready."
+    },
+    {
+      "icon": "fuel",
+      "title": "Quick log",
+      "body": "Log a fill-up from Home in seconds — distance, liters, grade, done."
+    },
+    {
+      "icon": "chart",
+      "title": "Month insight",
+      "body": "See how this month's spend compares to last month at a glance."
+    }
   ],
   "ar": [
-    "دعم نسخ احتياطي متعدد السيارات ومبدّل السيارة في الإعدادات",
-    "تصفية سجل التعبئات ومشاركة CSV وتسميات الأماكن",
-    "تنبيهات العطل الرسمية وأسعار الصرف على الرئيسية",
-    "مخطط اتجاه الاستهلاك مع رسوم متحركة",
-    "مساعدة مظهر الغسق وتسميات عملات أوضح"
+    {
+      "icon": "palette",
+      "title": "لون كهرماني واحد",
+      "body": "الأزرار والتركيز وبطاقات المقاييس تشترك الآن في كهرمان الوقود نفسه."
+    },
+    {
+      "icon": "sparkle",
+      "title": "أرقام ووحدات عربية",
+      "body": "الأرقام والوحدات (لتر، كم، ل/١٠٠ كم) تظهر بالأرقام العربية الشرقية."
+    },
+    {
+      "icon": "chart",
+      "title": "رسوم أوضح",
+      "body": "أضفنا مخططات أعمدة وخط ودونات حسب نوع الوقود بجانب شريط الفئات."
+    },
+    {
+      "icon": "fuel",
+      "title": "محطة وخزان ثلاثي",
+      "body": "اختر محطة من الشرائح القريبة واستمتع بمقياس خزان زجاجي حديث."
+    },
+    {
+      "icon": "wrench",
+      "title": "تحديث السجلات",
+      "body": "سجلات التعبئة والصيانة بتخطيط دفتر حديث مع تصدير CSV."
+    },
+    {
+      "icon": "sparkle",
+      "title": "المحطات القريبة",
+      "body": "أقرب المحطات ظاهرة دائماً والباقي مجمّع حسب العلامة."
+    },
+    {
+      "icon": "sparkle",
+      "title": "بداية أوضح",
+      "body": "جرّب سيارة تجريبية، اتبع قائمة الإعداد، وثبّت التطبيق عند الجاهزية."
+    },
+    {
+      "icon": "fuel",
+      "title": "تسجيل سريع",
+      "body": "سجّل تعبئة من الرئيسية خلال ثوانٍ — مسافة ولترات ونوع الوقود."
+    },
+    {
+      "icon": "chart",
+      "title": "لمحة الشهر",
+      "body": "قارن إنفاق هذا الشهر بالشهر الماضي بنظرة واحدة."
+    }
   ]
 }

@@ -48,6 +48,7 @@ describe('FillUpPage', () => {
             },
             formatNumber: (n: number) => String(n),
             language: () => 'en',
+            dir: () => 'ltr',
           },
         },
       ],

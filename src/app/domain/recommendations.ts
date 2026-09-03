@@ -246,7 +246,7 @@ export function buildRecommendations(input: {
       kind: 'fuel',
       titleKey: 'rec.fuel.high.title',
       bodyKey: 'rec.fuel.high.body',
-      bodyParams: { l100: Number(fuel.lastL100.toFixed(1)) },
+      bodyParams: { l100: fuel.lastL100 },
       tone: 'fuel',
       route: '/fuel',
     });

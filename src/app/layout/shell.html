@@ -50,10 +50,12 @@
         </a>
       </nav>
     }
-    @if (updateReady()) {
+    @if (showWhatsNew()) {
       <app-update-modal
+        [cards]="modalCards()"
         [lines]="modalLines()"
         [releaseId]="releaseId()"
+        [isUpdate]="primaryIsUpdate()"
         (later)="dismissUpdate()"
         (updateNow)="reload()"
       />

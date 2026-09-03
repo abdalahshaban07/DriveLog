@@ -1,0 +1,63 @@
+<section class="card quick-log" [attr.aria-label]="i18n.t('home.quickAdd.title')">
+  <header class="quick-log__head">
+    <h2 class="quick-log__title">{{ i18n.t('home.quickAdd.title') }}</h2>
+    <a routerLink="/fill-up" class="quick-log__full">{{ i18n.t('home.quickAdd.fullForm') }}</a>
+  </header>
+
+  <div class="quick-log__grid">
+    <app-numeric-field
+      [label]="i18n.t('fillUp.distanceKm')"
+      [(value)]="distanceKm"
+    />
+    <app-numeric-field
+      [label]="i18n.t('fillUp.liters')"
+      [(value)]="liters"
+    />
+  </div>
+
+  <app-fuel-grade-selector
+    [options]="gradeOptions()"
+    [(value)]="fuelGrade"
+  />
+
+  <div class="field">
+    <label class="label" [attr.for]="stationListId">{{ i18n.t('fillUp.station') }}</label>
+    <input
+      class="input"
+      [id]="stationListId"
+      [attr.list]="stationListId + '-dl'"
+      [value]="station()"
+      (input)="station.set($any($event.target).value)"
+      [attr.placeholder]="i18n.t('fillUp.stationHint')"
+    />
+    <datalist [id]="stationListId + '-dl'">
+      @for (s of stationSuggestions(); track s) {
+        <option [value]="s"></option>
+      }
+    </datalist>
+  </div>
+
+  @if (showTank()) {
+    <div class="quick-log__tank">
+      <app-fuel-tank-canvas
+        [liters]="litersNum()"
+        [tankCapacityLiters]="tankCapacity()"
+      />
+      <p class="quick-log__cost">
+        {{ i18n.t('fillUp.receipt') }}:
+        {{ i18n.formatNumber(cost(), { maximumFractionDigits: 2 }) }}
+        {{ db.settings().currency }}
+      </p>
+    </div>
+  }
+
+  @if (error()) {
+    <p class="err" role="alert">{{ error() }}</p>
+  }
+
+  <app-primary-button
+    [label]="i18n.t('home.quickAdd.save')"
+    [disabled]="!canSave()"
+    (pressed)="save()"
+  />
+</section>

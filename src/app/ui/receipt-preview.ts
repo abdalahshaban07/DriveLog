@@ -19,8 +19,8 @@ import { I18n } from '../i18n/i18n';
       @if (liters() > 0 && unitPrice() != null) {
         <div class="receipt-line">
           <span>
-            {{ i18n.formatNumber(liters(), { minimumFractionDigits: 0, maximumFractionDigits: 2 }) }} L ×
-            {{ i18n.formatNumber(unitPrice()!, { minimumFractionDigits: 2, maximumFractionDigits: 3 }) }}/L
+            {{ i18n.formatUnit(liters(), 'common.liters', 2) }} ×
+            {{ i18n.formatUnit(unitPrice()!, 'common.perLiter', 3) }}
           </span>
         </div>
         <div class="receipt-line receipt-line--total" [class.metric-flash]="flash()">

@@ -1,0 +1,104 @@
+<div class="stack history-page">
+  <app-page-header [title]="i18n.t('history.maintTitle')" />
+
+  <div class="history-filter">
+    <div
+      class="seg history-filter__presets"
+      role="group"
+      [attr.aria-label]="i18n.t('history.range')"
+    >
+      @for (preset of rangePresets; track preset.id) {
+        <button
+          type="button"
+          class="seg__btn"
+          [class.seg__btn--on]="rangePreset() === preset.id"
+          (click)="setRangePreset(preset.id)"
+        >
+          {{ i18n.t(preset.labelKey) }}
+        </button>
+      }
+    </div>
+
+    @if (rangePreset() === 'custom') {
+      <div class="history-filter__dates">
+        <app-date-field
+          [label]="i18n.t('history.from')"
+          [value]="fromDate()"
+          (valueChange)="fromDate.set($event)"
+        />
+        <app-date-field
+          [label]="i18n.t('history.to')"
+          [value]="toDate()"
+          (valueChange)="toDate.set($event)"
+        />
+      </div>
+    }
+
+    <div class="history-filter__extra">
+      <div class="seg chips" role="group" [attr.aria-label]="i18n.t('history.filterType')">
+        @for (chip of typeChips(); track chip.id) {
+          <button
+            type="button"
+            class="seg__btn"
+            [class.seg__btn--on]="typeFilter() === chip.id"
+            (click)="setType(chip.id)"
+          >
+            {{ chipLabel(chip) }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  @if (rows().length === 0) {
+    <p class="empty-state">{{ i18n.t('maint.empty') }}</p>
+    <a routerLink="/maintenance" class="cta">{{ i18n.t('maint.add') }}</a>
+  } @else {
+    <div class="history-actions">
+      <button type="button" class="ghost-btn" [disabled]="shareBusy()" (click)="shareCsv()">
+        {{ shareBusy() ? i18n.t('common.loading') : i18n.t('history.share') }}
+      </button>
+    </div>
+    @if (shareError()) {
+      <p class="error-state" role="alert">{{ shareError() }}</p>
+    }
+    <div class="history-months list-reveal">
+      @for (group of groupedRows(); track group.month) {
+        <section class="history-month">
+          <div class="history-month__head">
+            <h2 class="history-month__title">{{ monthLabel(group.month) }}</h2>
+            <p class="history-month__total">{{ formatMoney(group.total) }}</p>
+          </div>
+          <ul class="history-ledger">
+            @for (m of group.items; track m.id) {
+              <li class="history-ledger__row">
+                <a
+                  [routerLink]="['/maintenance']"
+                  [queryParams]="{ id: m.id }"
+                  class="history-ledger__link"
+                >
+                  <div class="history-ledger__main">
+                    <strong>{{ rowLabel(m) }}</strong>
+                    <div class="history-ledger__meta">
+                      <span class="pill">{{ datePill(m.date) }}</span>
+                      <span>
+                        {{ i18n.formatNumber(m.odometer, { maximumFractionDigits: 0 }) }}
+                        {{ i18n.t('common.km') }}
+                      </span>
+                    </div>
+                    @if (m.note) {
+                      <span class="history-ledger__place">{{ m.note }}</span>
+                    }
+                  </div>
+                  <div class="history-ledger__side">
+                    <strong class="history-ledger__cost">{{ formatMoney(m.cost) }}</strong>
+                  </div>
+                </a>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    </div>
+  }
+</div>

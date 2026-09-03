@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { HomePage } from './home';
 import { Db } from '../../data/db';
 import { I18n } from '../../i18n/i18n';
+import { InstallPwa } from '../../pwa/install-pwa';
 import { routes } from '../../app.routes';
 
 describe('HomePage', () => {
@@ -34,12 +35,22 @@ describe('HomePage', () => {
           },
         },
         {
+          provide: InstallPwa,
+          useValue: {
+            canPrompt: () => false,
+            installed: () => false,
+            promptInstall: async () => undefined,
+          },
+        },
+        {
           provide: I18n,
           useValue: {
             t: (k: string) => k,
             formatNumber: (n: number) => String(n),
+            formatUnit: (n: number) => String(n),
             formatDate: (d: string) => d,
             language: () => 'en' as const,
+            dir: () => 'ltr' as const,
           },
         },
       ],

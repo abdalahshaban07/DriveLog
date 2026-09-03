@@ -1,0 +1,124 @@
+<section
+  class="card nearby-card"
+  role="status"
+  aria-live="polite"
+  [attr.aria-label]="i18n.t('home.nearby')"
+>
+  <header class="nearby-card__head">
+    <h2 class="nearby-card__title">{{ i18n.t('home.aroundYou') }}</h2>
+    <div class="seg nearby-card__seg" role="group" [attr.aria-label]="i18n.t('home.nearby')">
+      <button
+        type="button"
+        class="seg__btn"
+        [class.seg__btn--on]="kind() === 'fuel'"
+        [attr.aria-pressed]="kind() === 'fuel'"
+        (click)="kindChange.emit('fuel')"
+      >
+        {{ i18n.t('home.nearbyFuel') }}
+      </button>
+      <button
+        type="button"
+        class="seg__btn"
+        [class.seg__btn--on]="kind() === 'charge'"
+        [attr.aria-pressed]="kind() === 'charge'"
+        (click)="kindChange.emit('charge')"
+      >
+        {{ i18n.t('home.nearbyCharge') }}
+      </button>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <div class="nearby-card__body">
+      <div class="skeleton skeleton--row" aria-hidden="true"></div>
+      <div class="skeleton skeleton--row" aria-hidden="true"></div>
+      <div class="skeleton skeleton--row" aria-hidden="true"></div>
+    </div>
+  } @else if (error()) {
+    <div class="error-state" role="alert">
+      <p>{{ error() }}</p>
+    </div>
+  } @else if (items().length === 0) {
+    <div class="empty-state">
+      <p>{{ i18n.t('home.nearbyEmpty') }}</p>
+    </div>
+  } @else {
+    <ul class="nearby-list list-reveal">
+      @for (poi of top(); track poi.id) {
+        <li class="nearby-list__item">
+          <a
+            class="nearby-list__link"
+            [href]="mapsUrl(poi)"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="nearby-list__name">{{ poi.name }}</span>
+            <span class="nearby-list__meta">
+              {{
+                i18n.formatNumber(poi.distanceKm, {
+                  minimumFractionDigits: 1,
+                  maximumFractionDigits: 1,
+                })
+              }}
+              {{ i18n.t('common.km') }}
+              @if (poi.detail) {
+                · {{ poi.detail }}
+              }
+            </span>
+          </a>
+        </li>
+      }
+    </ul>
+
+    @if (restGroups().length) {
+      <details class="disclosure nearby-card__more">
+        <summary>
+          {{ i18n.t('home.nearbyMore', { count: rest().length }) }}
+        </summary>
+        @for (group of restGroups(); track group.brand) {
+          <div class="nearby-group">
+            <header class="nearby-group__head">
+              <strong>{{ groupLabel(group.brand, group.displayName) }}</strong>
+              <span class="nearby-group__meta">
+                {{ i18n.formatNumber(group.pois.length) }}
+                ·
+                {{
+                  i18n.formatNumber(group.pois[0]!.distanceKm, {
+                    minimumFractionDigits: 1,
+                    maximumFractionDigits: 1,
+                  })
+                }}
+                {{ i18n.t('common.km') }}
+              </span>
+            </header>
+            <ul class="nearby-list">
+              @for (poi of group.pois; track poi.id) {
+                <li class="nearby-list__item">
+                  <a
+                    class="nearby-list__link"
+                    [href]="mapsUrl(poi)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span class="nearby-list__name">{{ poi.name }}</span>
+                    <span class="nearby-list__meta">
+                      {{
+                        i18n.formatNumber(poi.distanceKm, {
+                          minimumFractionDigits: 1,
+                          maximumFractionDigits: 1,
+                        })
+                      }}
+                      {{ i18n.t('common.km') }}
+                    </span>
+                  </a>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+      </details>
+    }
+  }
+
+  <p class="nearby-card__attr">{{ i18n.t('home.nearbyOsm') }}</p>
+</section>

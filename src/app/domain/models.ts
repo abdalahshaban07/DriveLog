@@ -142,6 +142,12 @@ export interface Settings {
   duskAssistEnabled?: boolean;
   /** Last dismissed whats-new.json id (deploy notes). */
   lastSeenWhatsNewId?: string;
+  /** First-run sample car is active. */
+  sampleMode?: boolean;
+  /** User dismissed Home setup checklist. */
+  checklistDismissed?: boolean;
+  /** User dismissed Home PWA install card. */
+  installCardDismissed?: boolean;
   customMaintenanceTypes?: string[];
   assistantEnabled?: boolean;
   assistantApiKey?: string;

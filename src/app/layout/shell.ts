@@ -40,9 +40,16 @@ export class Shell {
   );
 
   readonly showNav = computed(() => !this.url().startsWith('/setup'));
+  readonly showWhatsNew = computed(
+    () =>
+      (this.install.updateReady() && !this.updateDismissed()) ||
+      this.whatsNew.manualOpen(),
+  );
   readonly updateReady = computed(() => this.install.updateReady() && !this.updateDismissed());
   readonly modalLines = computed(() => this.whatsNew.lines());
+  readonly modalCards = computed(() => this.whatsNew.cards());
   readonly releaseId = computed(() => this.whatsNew.notes()?.id ?? '');
+  readonly primaryIsUpdate = computed(() => this.updateReady());
 
   reload(): void {
     void this.whatsNew.dismiss();
@@ -51,5 +58,9 @@ export class Shell {
 
   dismissUpdate(): void {
     this.updateDismissed.set(true);
+    this.whatsNew.closeManual();
+    if (this.whatsNew.visible()) {
+      void this.whatsNew.dismiss();
+    }
   }
 }

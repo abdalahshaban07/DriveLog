@@ -72,7 +72,7 @@ export function buildSmartReports(input: {
       id: 'economy',
       titleKey: 'reports.economyTitle',
       bodyKey: 'reports.economy.body',
-      bodyParams: { l100: Number(fuel.lastL100.toFixed(1)) },
+      bodyParams: { l100: fuel.lastL100 },
       tone: 'fuel',
     });
   } else {

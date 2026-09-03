@@ -9,7 +9,7 @@
       </div>
       <div class="last-fill-strip__col">
         <span class="last-fill-strip__label">{{ i18n.t('fillUp.liters') }}</span>
-        <strong>{{ i18n.formatNumber(f.liters, { maximumFractionDigits: 1 }) }} L</strong>
+        <strong>{{ i18n.formatUnit(f.liters, 'common.liters', 1) }}</strong>
       </div>
       <div class="last-fill-strip__col">
         <span class="last-fill-strip__label">{{ i18n.t('fillUp.fuelType') }}</span>
@@ -26,7 +26,13 @@
     }
   </section>
 
-  <section class="tip-strip card" role="status" aria-live="polite">
+  <section
+    #tipStrip
+    class="tip-strip card"
+    [class.metric-flash]="tipFlash()"
+    role="status"
+    aria-live="polite"
+  >
     <div class="tip-strip__head">
       <p class="tip-strip__label">{{ i18n.t('fuel.tipLabel') }}</p>
       @if (tipSource() === 'ai') {
@@ -80,19 +86,19 @@
     </article>
     <article class="metric-card">
       <span class="metric-card__label">{{ i18n.t('fuel.overallL100') }}</span>
-      <strong class="metric-card__value">{{ formatMetric(m.overallL100, 'L/100km') }}</strong>
+      <strong class="metric-card__value">{{ formatMetric(m.overallL100, 'common.lPer100') }}</strong>
     </article>
     <article class="metric-card">
       <span class="metric-card__label">{{ i18n.t('fuel.lastL100') }}</span>
-      <strong class="metric-card__value">{{ formatMetric(m.lastL100, 'L/100km') }}</strong>
+      <strong class="metric-card__value">{{ formatMetric(m.lastL100, 'common.lPer100') }}</strong>
     </article>
     <article class="metric-card">
       <span class="metric-card__label">{{ i18n.t('fuel.overallKmPerL') }}</span>
-      <strong class="metric-card__value">{{ formatMetric(m.overallKmPerL, 'km/L') }}</strong>
+      <strong class="metric-card__value">{{ formatMetric(m.overallKmPerL, 'common.kmPerL') }}</strong>
     </article>
     <article class="metric-card">
       <span class="metric-card__label">{{ i18n.t('fuel.lastKmPerL') }}</span>
-      <strong class="metric-card__value">{{ formatMetric(m.lastKmPerL, 'km/L') }}</strong>
+      <strong class="metric-card__value">{{ formatMetric(m.lastKmPerL, 'common.kmPerL') }}</strong>
     </article>
   </div>
 

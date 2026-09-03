@@ -25,7 +25,7 @@
 .wrap::after {
   content: '';
   position: absolute;
-  inset-inline-end: 18px;
+  inset-inline-end: 20px;
   inset-block-start: 50%;
   width: 8px;
   height: 8px;
@@ -44,7 +44,7 @@
 }
 
 .select {
-  padding-inline: 16px 44px;
+  padding-inline: 16px 52px;
   cursor: pointer;
 }
 

@@ -26,9 +26,12 @@ const INNER_H = 84;
     @if (useFallback()) {
       <div class="tank-fallback" role="img" [attr.aria-label]="label()">
         <div class="tank-fallback__shell">
-          <div class="tank-fallback__liquid" [style.height.%]="fillPct()"></div>
+          <div class="tank-fallback__liquid" [style.height.%]="fillPct()">
+            <div class="tank-fallback__wave" aria-hidden="true"></div>
+          </div>
+          <div class="tank-fallback__glass" aria-hidden="true"></div>
         </div>
-        <span class="tank-fallback__pct">{{ fillPct() }}%</span>
+        <span class="tank-fallback__pct">{{ pctLabel() }}</span>
       </div>
     } @else {
       <div #root class="tank-svg-wrap">
@@ -39,10 +42,18 @@ const INNER_H = 84;
           [attr.aria-label]="label()"
           aria-hidden="false"
         >
+          <defs>
+            <clipPath id="tank-inner-clip">
+              <rect x="28" y="18" width="104" height="84" rx="6" />
+            </clipPath>
+            <linearGradient id="tank-meniscus" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="var(--fuel)" stop-opacity="0.95" />
+              <stop offset="55%" stop-color="var(--fuel)" stop-opacity="0.75" />
+              <stop offset="100%" stop-color="var(--petrol-muted)" stop-opacity="0.9" />
+            </linearGradient>
+          </defs>
           <rect class="tank-shell" x="24" y="14" width="112" height="92" rx="10" />
-          <clipPath id="tank-inner-clip">
-            <rect x="28" y="18" width="104" height="84" rx="6" />
-          </clipPath>
+          <rect class="tank-glass" x="26" y="16" width="48" height="70" rx="8" />
           <g clip-path="url(#tank-inner-clip)">
             <rect
               class="tank-liquid"
@@ -51,9 +62,15 @@ const INNER_H = 84;
               width="104"
               [attr.height]="liquidHeight()"
             />
+            @if (liquidHeight() > 2) {
+              <path
+                class="tank-wave"
+                [attr.d]="wavePath()"
+              />
+            }
           </g>
-          <text class="tank-pct" x="80" y="112" text-anchor="middle">{{ fillPct() }}%</text>
         </svg>
+        <span class="tank-pct-overlay">{{ pctLabel() }}</span>
       </div>
     }
   `,
@@ -62,6 +79,7 @@ const INNER_H = 84;
       display: block;
     }
     .tank-svg-wrap {
+      position: relative;
       padding: var(--space-3);
       border-radius: calc(var(--radius) - 4px);
       background: var(--well);
@@ -77,14 +95,27 @@ const INNER_H = 84;
       stroke: var(--petrol-muted);
       stroke-width: 2;
     }
-    .tank-liquid {
-      fill: color-mix(in srgb, var(--mint) 70%, var(--petrol-muted));
+    .tank-glass {
+      fill: color-mix(in srgb, white 22%, transparent);
+      pointer-events: none;
     }
-    .tank-pct {
-      font-size: 11px;
+    .tank-liquid {
+      fill: url(#tank-meniscus);
+    }
+    .tank-wave {
+      fill: color-mix(in srgb, var(--fuel) 85%, white);
+      opacity: 0.55;
+    }
+    .tank-pct-overlay {
+      position: absolute;
+      inset-inline: 0;
+      bottom: var(--space-3);
+      text-align: center;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
-      fill: var(--muted);
+      font-size: 0.85rem;
+      color: var(--muted);
+      pointer-events: none;
     }
     .tank-fallback {
       display: grid;
@@ -108,18 +139,57 @@ const INNER_H = 84;
       position: absolute;
       inset-inline: 0;
       bottom: 0;
+      overflow: hidden;
       background: linear-gradient(
         180deg,
-        color-mix(in srgb, var(--mint) 70%, var(--petrol-muted)),
+        color-mix(in srgb, var(--fuel) 85%, white),
+        color-mix(in srgb, var(--fuel) 70%, var(--petrol-muted)),
         var(--petrol-muted)
       );
       transition: height var(--motion-fast) var(--ease-out);
+    }
+    .tank-fallback__wave {
+      position: absolute;
+      inset-inline: -20%;
+      top: -6px;
+      height: 12px;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--fuel) 75%, white);
+      opacity: 0.6;
+      animation: tank-wave 2.4s ease-in-out infinite;
+    }
+    .tank-fallback__glass {
+      position: absolute;
+      inset-block: 8% 12%;
+      inset-inline-start: 8%;
+      width: 38%;
+      border-radius: calc(var(--radius) - 8px);
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, white 35%, transparent),
+        transparent 70%
+      );
+      pointer-events: none;
     }
     .tank-fallback__pct {
       font-variant-numeric: tabular-nums;
       font-weight: 700;
       color: var(--muted);
       font-size: 0.85rem;
+    }
+    @keyframes tank-wave {
+      0%,
+      100% {
+        transform: translateX(-8%);
+      }
+      50% {
+        transform: translateX(8%);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .tank-fallback__wave {
+        animation: none;
+      }
     }
   `,
 })
@@ -134,6 +204,7 @@ export class FuelTankCanvas implements AfterViewInit {
 
   private animeScope: Scope | null = null;
   private animToken = 0;
+  private wavePhase = signal(0);
 
   readonly fillRatio = computed(() => {
     const cap = Math.max(this.tankCapacityLiters(), 1);
@@ -143,9 +214,24 @@ export class FuelTankCanvas implements AfterViewInit {
 
   readonly fillPct = computed(() => Math.round(this.fillRatio() * 100));
   readonly displayedFill = signal(0);
+  readonly pctLabel = computed(() =>
+    `${this.i18n.formatNumber(this.fillPct(), { maximumFractionDigits: 0 })}%`,
+  );
 
   readonly liquidHeight = computed(() => this.displayedFill() * INNER_H);
   readonly liquidY = computed(() => INNER_Y + INNER_H - this.liquidHeight());
+
+  readonly wavePath = computed(() => {
+    const y = this.liquidY();
+    const phase = this.wavePhase();
+    const amp = 2.2;
+    const w = 104;
+    const x0 = 28;
+    const mid = x0 + w / 2;
+    const c1x = x0 + w * 0.25 + Math.sin(phase) * 4;
+    const c2x = x0 + w * 0.75 - Math.sin(phase) * 4;
+    return `M${x0} ${y + amp} Q${c1x} ${y - amp} ${mid} ${y} T${x0 + w} ${y + amp} L${x0 + w} ${y + 8} L${x0} ${y + 8} Z`;
+  });
 
   readonly label = computed(() =>
     this.i18n.t('fillUp.tankVisualLabel', {
@@ -165,6 +251,9 @@ export class FuelTankCanvas implements AfterViewInit {
       }
       void this.animateFill(ratio);
     });
+    if (!this.policy.prefersReducedMotion()) {
+      this.startWaveLoop();
+    }
   }
 
   ngAfterViewInit(): void {
@@ -182,6 +271,16 @@ export class FuelTankCanvas implements AfterViewInit {
         this.useFallback.set(true);
       }
     });
+  }
+
+  private startWaveLoop(): void {
+    let raf = 0;
+    const loop = () => {
+      this.wavePhase.update((p) => p + 0.06);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    this.destroyRef.onDestroy(() => cancelAnimationFrame(raf));
   }
 
   private async animateFill(target: number): Promise<void> {
