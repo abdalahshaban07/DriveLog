@@ -84,7 +84,7 @@ export class FuelPage {
 
   formatMetric(value: number | null, unitKey: MsgKey): string {
     if (value == null || !Number.isFinite(value)) {
-      return '—';
+      return '—.—';
     }
     return this.i18n.formatUnit(value, unitKey, 1);
   }

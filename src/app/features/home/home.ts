@@ -33,6 +33,11 @@ import {
   type Recommendation,
 } from '../../domain/recommendations';
 import { SAMPLE_CAR_ID } from '../../domain/sample-data';
+import {
+  buildSetupChecklist,
+  isRealFillUp,
+  shouldShowSetupChecklist,
+} from '../../domain/setup-checklist';
 import { buildSmartReports } from '../../domain/smart-reports';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
@@ -184,9 +189,7 @@ export class HomePage {
     this.nearbyItems().filter((poi) => poi.kind === this.nearbyKind()),
   );
   readonly sampleMode = computed(() => this.db.settings().sampleMode === true);
-  readonly hasRealFills = computed(() =>
-    this.db.fillUps().some((f) => !f.id.startsWith('sample-')),
-  );
+  readonly hasRealFills = computed(() => this.db.fillUps().some(isRealFillUp));
   readonly showQuickLog = computed(
     () => !!this.db.car() && !this.sampleMode() && this.hasRealFills(),
   );
@@ -199,37 +202,33 @@ export class HomePage {
       !this.install.installed(),
   );
   readonly checklistItems = computed((): ChecklistItem[] => {
-    const car = this.db.car();
-    const hasDue = this.db
-      .maintenance()
-      .some((m) => m.dueDate != null || m.dueKm != null);
-    return [
-      {
-        id: 'car',
-        done: !!car,
-        labelKey: 'home.checklist.car',
-        route: '/settings',
-      },
-      {
-        id: 'fill',
-        done: this.hasRealFills(),
-        labelKey: 'home.checklist.fillUp',
-        route: '/fill-up',
-      },
-      {
-        id: 'due',
-        done: hasDue,
-        labelKey: 'home.checklist.due',
-        route: '/maintenance',
-      },
-    ];
+    const draft = buildSetupChecklist({
+      car: this.db.car(),
+      fills: this.db.fillUps(),
+      maintenance: this.db.maintenance(),
+    });
+    const routes: Record<(typeof draft)[number]['id'], { labelKey: MsgKey; route: string }> = {
+      car: { labelKey: 'home.checklist.car', route: '/settings' },
+      fill: { labelKey: 'home.checklist.fillUp', route: '/fill-up' },
+      due: { labelKey: 'home.checklist.due', route: '/maintenance' },
+    };
+    return draft.map((d) => ({
+      id: d.id,
+      done: d.done,
+      labelKey: routes[d.id].labelKey,
+      route: routes[d.id].route,
+    }));
   });
-  readonly showChecklist = computed(() => {
-    if (this.sampleMode() || this.db.settings().checklistDismissed) {
-      return false;
-    }
-    return this.checklistItems().some((i) => !i.done);
-  });
+  readonly showChecklist = computed(() =>
+    shouldShowSetupChecklist({
+      sampleMode: this.sampleMode(),
+      checklistDismissed: this.db.settings().checklistDismissed === true,
+      items: this.checklistItems().map((i) => ({
+        id: i.id as 'car' | 'fill' | 'due',
+        done: i.done,
+      })),
+    }),
+  );
   readonly lastFillDate = computed(() => {
     const sorted = [...this.db.fillUps()].sort(
       (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),

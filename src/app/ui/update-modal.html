@@ -10,7 +10,9 @@
       <div class="update-sheet__brand">
         <img class="update-sheet__icon" src="icons/icon-192.png" width="48" height="48" alt="" />
         <div>
-          <h2 [id]="titleId" class="update-sheet__title">{{ i18n.t('update.available') }}</h2>
+          <h2 [id]="titleId" class="update-sheet__title">
+            {{ title() || i18n.t('update.available') }}
+          </h2>
           @if (releaseId()) {
             <span class="update-sheet__release pill">
               {{ i18n.t('update.release') }} · {{ releaseId() }}
@@ -26,10 +28,12 @@
     @if (cards().length) {
       <section class="update-sheet__features" [attr.aria-label]="i18n.t('update.whatsNew')">
         <h3 class="update-sheet__subtitle">{{ i18n.t('update.whatsNew') }}</h3>
-        <ul #cardsEl class="update-sheet__rail">
+        <ul #cardsEl class="update-sheet__rail" (scroll)="onRailScroll()">
           @for (card of cards(); track $index) {
             <li class="update-card">
-              <span class="update-card__icon" aria-hidden="true">{{ iconGlyph(card.icon) }}</span>
+              <svg class="update-card__icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="iconPath(card.icon)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
               @if (card.title) {
                 <strong class="update-card__title">{{ card.title }}</strong>
               }
@@ -37,16 +41,40 @@
             </li>
           }
         </ul>
+        <div class="update-sheet__dots" role="tablist" [attr.aria-label]="i18n.t('update.whatsNew')">
+          @for (card of cards(); track $index) {
+            <button
+              type="button"
+              class="update-sheet__dot"
+              [class.update-sheet__dot--on]="$index === activeDot()"
+              [attr.aria-label]="card.title || card.body"
+              [attr.aria-selected]="$index === activeDot()"
+              (click)="goToCard($index)"
+            ></button>
+          }
+        </div>
       </section>
     } @else if (lines().length) {
       <section class="update-sheet__features" [attr.aria-label]="i18n.t('update.whatsNew')">
-        <ul #cardsEl class="update-sheet__rail">
+        <ul #cardsEl class="update-sheet__rail" (scroll)="onRailScroll()">
           @for (line of lines(); track line) {
             <li class="update-card">
               <p class="update-card__body">{{ line }}</p>
             </li>
           }
         </ul>
+        <div class="update-sheet__dots" role="tablist" [attr.aria-label]="i18n.t('update.whatsNew')">
+          @for (line of lines(); track $index) {
+            <button
+              type="button"
+              class="update-sheet__dot"
+              [class.update-sheet__dot--on]="$index === activeDot()"
+              [attr.aria-label]="line"
+              [attr.aria-selected]="$index === activeDot()"
+              (click)="goToCard($index)"
+            ></button>
+          }
+        </div>
       </section>
     } @else {
       <p class="update-sheet__body">{{ i18n.t('update.notifyBody') }}</p>

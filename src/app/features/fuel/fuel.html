@@ -22,9 +22,28 @@
         </div>
       }
     } @else {
-      <p class="last-fill-strip__empty">{{ i18n.t('home.logFirst') }}</p>
+      <div class="last-fill-strip__col">
+        <span class="last-fill-strip__label">{{ i18n.t('fillUp.date') }}</span>
+        <strong class="metric--ghost">—.—</strong>
+      </div>
+      <div class="last-fill-strip__col">
+        <span class="last-fill-strip__label">{{ i18n.t('fillUp.liters') }}</span>
+        <strong class="metric--ghost">—.—</strong>
+      </div>
+      <div class="last-fill-strip__col">
+        <span class="last-fill-strip__label">{{ i18n.t('fillUp.fuelType') }}</span>
+        <strong class="metric--ghost">—.—</strong>
+      </div>
+      <div class="last-fill-strip__col">
+        <span class="last-fill-strip__label">{{ i18n.t('fillUp.distanceKm') }}</span>
+        <strong class="metric--ghost">—.—</strong>
+      </div>
     }
   </section>
+
+  @if (!lastFill()) {
+    <a routerLink="/fill-up" class="ghost-cta">{{ i18n.t('home.ghost.cta') }}</a>
+  }
 
   <section
     #tipStrip
@@ -72,33 +91,46 @@
   <div class="metric-grid" [attr.aria-label]="i18n.t('fuel.metrics')">
     <article class="metric-card">
       <span class="metric-card__label">{{ i18n.t('fuel.costPerKm') }}</span>
-      <strong class="metric-card__value">
+      <strong class="metric-card__value" [class.metric--ghost]="m.costPerKm == null">
         @if (m.costPerKm != null) {
           {{ formatMoney(m.costPerKm) }}
         } @else {
-          —
+          —.—
         }
       </strong>
     </article>
     <article class="metric-card">
       <span class="metric-card__label">{{ i18n.t('fuel.monthSpend') }}</span>
-      <strong class="metric-card__value">{{ formatMoney(m.monthSpend) }}</strong>
+      <strong
+        class="metric-card__value"
+        [class.metric--ghost]="!lastFill() && m.monthSpend === 0"
+      >
+        {{ formatMoney(m.monthSpend) }}
+      </strong>
     </article>
     <article class="metric-card">
       <span class="metric-card__label">{{ i18n.t('fuel.overallL100') }}</span>
-      <strong class="metric-card__value">{{ formatMetric(m.overallL100, 'common.lPer100') }}</strong>
+      <strong class="metric-card__value" [class.metric--ghost]="m.overallL100 == null">
+        {{ formatMetric(m.overallL100, 'common.lPer100') }}
+      </strong>
     </article>
     <article class="metric-card">
       <span class="metric-card__label">{{ i18n.t('fuel.lastL100') }}</span>
-      <strong class="metric-card__value">{{ formatMetric(m.lastL100, 'common.lPer100') }}</strong>
+      <strong class="metric-card__value" [class.metric--ghost]="m.lastL100 == null">
+        {{ formatMetric(m.lastL100, 'common.lPer100') }}
+      </strong>
     </article>
     <article class="metric-card">
       <span class="metric-card__label">{{ i18n.t('fuel.overallKmPerL') }}</span>
-      <strong class="metric-card__value">{{ formatMetric(m.overallKmPerL, 'common.kmPerL') }}</strong>
+      <strong class="metric-card__value" [class.metric--ghost]="m.overallKmPerL == null">
+        {{ formatMetric(m.overallKmPerL, 'common.kmPerL') }}
+      </strong>
     </article>
     <article class="metric-card">
       <span class="metric-card__label">{{ i18n.t('fuel.lastKmPerL') }}</span>
-      <strong class="metric-card__value">{{ formatMetric(m.lastKmPerL, 'common.kmPerL') }}</strong>
+      <strong class="metric-card__value" [class.metric--ghost]="m.lastKmPerL == null">
+        {{ formatMetric(m.lastKmPerL, 'common.kmPerL') }}
+      </strong>
     </article>
   </div>
 

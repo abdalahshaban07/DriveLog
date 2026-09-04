@@ -129,7 +129,9 @@
 }
 
 .update-card__icon {
-  font-size: 1.25rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--cta);
 }
 
 .update-card__title {
@@ -143,6 +145,29 @@
   color: var(--muted);
 }
 
+.update-sheet__dots {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+}
+
+.update-sheet__dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--hairline);
+  cursor: pointer;
+  min-height: 8px;
+}
+
+.update-sheet__dot--on {
+  background: var(--cta);
+  transform: scale(1.15);
+}
+
 .update-sheet__actions {
   display: grid;
   gap: var(--space-2);
@@ -154,6 +179,10 @@
     grid-auto-columns: unset;
     overflow: visible;
     scroll-snap-type: none;
+  }
+
+  .update-sheet__dots {
+    display: none;
   }
 }
 

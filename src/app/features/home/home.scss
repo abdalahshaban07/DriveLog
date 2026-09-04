@@ -451,16 +451,8 @@
 }
 
 .ghost-cta {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: var(--tap);
+  /* styles live in tokens.scss (.ghost-cta) */
   margin-block-end: var(--space-4);
-  border-radius: var(--radius);
-  background: var(--cta);
-  color: var(--cta-text);
-  font-weight: 700;
-  text-decoration: none;
 }
 
 .month-outlook {
