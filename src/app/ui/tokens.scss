@@ -778,6 +778,19 @@ textarea.input {
   letter-spacing: 0.08em;
 }
 
+.ghost-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap);
+  margin-block-end: var(--space-4);
+  border-radius: var(--radius);
+  background: var(--cta);
+  color: var(--cta-text);
+  font-weight: 700;
+  text-decoration: none;
+}
+
 @keyframes metric-flash {
   0% {
     opacity: 0.55;

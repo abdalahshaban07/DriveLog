@@ -37,6 +37,10 @@
   color: var(--muted);
 }
 
+.ghost-cta {
+  margin-block-end: var(--space-4);
+}
+
 .tip-strip {
   padding: var(--space-4);
   background: color-mix(in srgb, var(--cta) 10%, var(--surface));

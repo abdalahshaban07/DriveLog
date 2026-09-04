@@ -52,6 +52,7 @@
     }
     @if (showWhatsNew()) {
       <app-update-modal
+        [title]="modalTitle()"
         [cards]="modalCards()"
         [lines]="modalLines()"
         [releaseId]="releaseId()"

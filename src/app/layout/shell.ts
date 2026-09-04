@@ -40,16 +40,23 @@ export class Shell {
   );
 
   readonly showNav = computed(() => !this.url().startsWith('/setup'));
+  readonly updateReady = computed(() => this.install.updateReady() && !this.updateDismissed());
+  /** SW update, first post-update once-view, or More → What's new */
   readonly showWhatsNew = computed(
     () =>
-      (this.install.updateReady() && !this.updateDismissed()) ||
-      this.whatsNew.manualOpen(),
+      this.updateReady() ||
+      this.whatsNew.manualOpen() ||
+      (this.whatsNew.visible() && !this.updateDismissed()),
   );
-  readonly updateReady = computed(() => this.install.updateReady() && !this.updateDismissed());
   readonly modalLines = computed(() => this.whatsNew.lines());
   readonly modalCards = computed(() => this.whatsNew.cards());
   readonly releaseId = computed(() => this.whatsNew.notes()?.id ?? '');
   readonly primaryIsUpdate = computed(() => this.updateReady());
+  readonly modalTitle = computed(() =>
+    this.primaryIsUpdate()
+      ? this.i18n.t('update.available')
+      : this.i18n.t('update.youAreOn', { id: this.releaseId() || '—' }),
+  );
 
   reload(): void {
     void this.whatsNew.dismiss();
