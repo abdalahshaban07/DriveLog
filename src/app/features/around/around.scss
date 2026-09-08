@@ -1,0 +1,31 @@
+.around-page {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.around-hero {
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--hairline);
+  background: color-mix(in srgb, var(--petrol) 12%, var(--surface));
+}
+
+.around-cta {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-5);
+}
+
+.around-cta__copy {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.around-retry {
+  justify-self: start;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* keep host motion-policy fallbacks; no extra press motion here */
+}

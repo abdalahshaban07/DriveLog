@@ -1,3 +1,40 @@
+.maint-dues {
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.maint-dues__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.maint-dues__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.maint-dues__ok {
+  margin: 0;
+}
+
+.maint-form__pair {
+  display: grid;
+  gap: var(--space-3);
+}
+
+@media (min-width: 768px) {
+  .maint-form__pair {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .due-dot {
   display: inline-block;
   width: 0.55rem;

@@ -10,7 +10,6 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
-import { getCoords, nearbyPoi, type NearbyPoi } from '../../data/remote';
 import { buildDueItems, nextDueItem, todayDateOnly } from '../../domain/dues';
 import {
   activePeriod,
@@ -54,7 +53,6 @@ import { PrimaryButton } from '../../ui/primary-button';
 import { SelectField } from '../../ui/select-field';
 import { InstallCard } from './cards/install-card/install-card';
 import { MonthInsight } from './cards/month-insight/month-insight';
-import { NearbyStations } from './cards/nearby-stations/nearby-stations';
 import { QuickLog } from './cards/quick-log/quick-log';
 import { SampleBanner } from './cards/sample-banner/sample-banner';
 import {
@@ -79,7 +77,6 @@ type ChartCategory = ExpenseCategory | 'all';
     DonutChart,
     AmbientCanvas,
     SelectField,
-    NearbyStations,
     SampleBanner,
     SetupChecklist,
     InstallCard,
@@ -107,10 +104,6 @@ export class HomePage {
   readonly showPeriodForm = signal(false);
   readonly periodCloseDate = signal(todayDateOnly());
   readonly periodStartDate = signal(todayDateOnly());
-  readonly nearbyKind = signal<'fuel' | 'charge'>('fuel');
-  readonly nearbyLoading = signal(false);
-  readonly nearbyError = signal<string | null>(null);
-  readonly nearbyItems = signal<NearbyPoi[]>([]);
   readonly aiTip = signal('');
   readonly aiTipBusy = signal(false);
   readonly aiTipSource = signal<'ai' | 'local'>('local');
@@ -185,9 +178,6 @@ export class HomePage {
   );
   readonly ledgerTotals = computed(() => ledgerCategoryTotals(this.ledgerRows()));
   readonly fuelMetrics = computed(() => fuelDashboardMetrics(this.db.fillUps()));
-  readonly filteredNearby = computed(() =>
-    this.nearbyItems().filter((poi) => poi.kind === this.nearbyKind()),
-  );
   readonly sampleMode = computed(() => this.db.settings().sampleMode === true);
   readonly hasRealFills = computed(() => this.db.fillUps().some(isRealFillUp));
   readonly showQuickLog = computed(
@@ -309,13 +299,8 @@ export class HomePage {
       if (this.view() === 'charts') {
         void this.animateCharts();
       }
-      void this.loadNearby();
       void this.loadAiTip();
     });
-  }
-
-  setNearbyKind(kind: 'fuel' | 'charge'): void {
-    this.nearbyKind.set(kind);
   }
 
   async clearSample(): Promise<void> {
@@ -339,26 +324,6 @@ export class HomePage {
     this.glanceFlash.set(true);
     this.glanceStrip()?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
     window.setTimeout(() => this.glanceFlash.set(false), 600);
-  }
-
-  async loadNearby(): Promise<void> {
-    this.nearbyLoading.set(true);
-    this.nearbyError.set(null);
-    try {
-      const coords = await getCoords();
-      if (!coords) {
-        this.nearbyError.set(this.i18n.t('home.nearbyGpsDenied'));
-        this.nearbyItems.set([]);
-        return;
-      }
-      const list = await nearbyPoi(coords);
-      this.nearbyItems.set(list);
-    } catch {
-      this.nearbyError.set(this.i18n.t('home.nearbyUnavailable'));
-      this.nearbyItems.set([]);
-    } finally {
-      this.nearbyLoading.set(false);
-    }
   }
 
   recTitle(rec: Recommendation): string {

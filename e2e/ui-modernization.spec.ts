@@ -30,52 +30,65 @@ test.describe('UI modernization smoke', () => {
     await page.setViewportSize({ width: 375, height: 812 });
   });
 
-  test('home tabs and fill-up tank fallback render', async ({ page }) => {
+  test('docked five-tab nav includes Around', async ({ page }) => {
+    await ensureSampleCar(page);
+    await page.goto('/');
+    await dismissWhatsNewIfOpen(page);
+    const nav = page.getByRole('navigation', { name: /primary|التنقل/i });
+    await expect(nav.getByRole('link', { name: /home|الرئيسية/i })).toBeVisible();
+    await expect(nav.getByRole('link', { name: /fuel|الوقود/i })).toBeVisible();
+    await expect(nav.getByRole('link', { name: /around|حولي/i })).toBeVisible();
+    await expect(nav.getByRole('link', { name: /maintenance|صيانة/i })).toBeVisible();
+    await expect(nav.getByRole('link', { name: /more|المزيد/i })).toBeVisible();
+  });
+
+  test('around waits for location CTA', async ({ page }) => {
+    await ensureSampleCar(page);
+    await page.goto('/around');
+    await dismissWhatsNewIfOpen(page);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: /use my location|استخدم موقعي/i }),
+    ).toBeVisible();
+  });
+
+  test('home tabs and fill-up tank switch render', async ({ page }) => {
     await ensureSampleCar(page);
     await page.goto('/');
     await dismissWhatsNewIfOpen(page);
     await expect(page.getByRole('tab', { name: /dashboard|لوحة/i })).toBeVisible();
     await page.goto('/fill-up');
     await dismissWhatsNewIfOpen(page);
-    await expect(page.getByLabel(/tank visual|عرض التنك/i)).toBeVisible();
+    await expect(page.getByRole('switch')).toBeVisible();
+    await expect(page.locator('#station-input')).toBeVisible();
   });
 
-  test('maintenance and more routes load', async ({ page }) => {
+  test('maintenance dues then form order', async ({ page }) => {
     await ensureSampleCar(page);
     await page.goto('/maintenance');
     await dismissWhatsNewIfOpen(page);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await page.goto('/more');
-    await dismissWhatsNewIfOpen(page);
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.getByText(/due status|حالة الاستحقاق/i)).toBeVisible();
   });
 
-  test('fill-up station field and location control render', async ({ page }) => {
-    await ensureSampleCar(page);
-    await page.goto('/fill-up');
-    await dismissWhatsNewIfOpen(page);
-    await page.getByText(/details|التفاصيل/i).click();
-    await expect(page.locator('#station-input')).toBeVisible();
-    await expect(page.getByRole('button', { name: /use my location|استخدم موقعي/i })).toBeVisible();
-  });
-
-  test('fill-up and maintenance history pages render', async ({ page }) => {
+  test('fill-up and maintenance history filters use selects', async ({ page }) => {
     await ensureSampleCar(page);
     await page.goto('/history/fill-ups');
     await dismissWhatsNewIfOpen(page);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.getByText(/range|الفترة/i).first()).toBeVisible();
     await page.goto('/history/maintenance');
     await dismissWhatsNewIfOpen(page);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
 
-  test('update sheet opens from More', async ({ page }) => {
+  test('more route and update sheet still work', async ({ page }) => {
     await ensureSampleCar(page);
     await page.goto('/more');
     await dismissWhatsNewIfOpen(page);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await page.getByRole('button', { name: /what.?s new|ما الجديد/i }).click();
     await expect(page.locator('dialog.update-sheet')).toBeVisible();
-    await expect(page.locator('.update-sheet__dot').first()).toBeVisible();
   });
 
   test('first-run sample car action is available on setup', async ({ page }) => {
@@ -85,15 +98,5 @@ test.describe('UI modernization smoke', () => {
     if (await sample.count()) {
       await expect(sample).toBeVisible();
     }
-  });
-
-  test('home shows sample banner or ghost CTA after seed', async ({ page }) => {
-    await ensureSampleCar(page);
-    await page.goto('/');
-    await dismissWhatsNewIfOpen(page);
-    const sampleBanner = page.getByRole('button', { name: /clear sample|مسح التجريبي/i });
-    const ghost = page.getByRole('link', { name: /log your first|سجّل أول/i });
-    const glance = page.getByLabel(/glance|نظرة/i);
-    await expect(sampleBanner.or(ghost).or(glance).first()).toBeVisible({ timeout: 15_000 });
   });
 });

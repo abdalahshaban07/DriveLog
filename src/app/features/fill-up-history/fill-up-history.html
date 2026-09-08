@@ -2,22 +2,12 @@
   <app-page-header [title]="i18n.t('history.title')" />
 
   <div class="history-filter">
-    <div
-      class="seg history-filter__presets"
-      role="group"
-      [attr.aria-label]="i18n.t('history.range')"
-    >
-      @for (preset of rangePresets; track preset.id) {
-        <button
-          type="button"
-          class="seg__btn"
-          [class.seg__btn--on]="rangePreset() === preset.id"
-          (click)="setRangePreset(preset.id)"
-        >
-          {{ i18n.t(preset.labelKey) }}
-        </button>
-      }
-    </div>
+    <app-select-field
+      [label]="i18n.t('history.range')"
+      [options]="rangeOptions()"
+      [value]="rangePreset()"
+      (valueChange)="setRangePreset($event)"
+    />
 
     @if (rangePreset() === 'custom') {
       <div class="history-filter__dates">
@@ -34,20 +24,12 @@
       </div>
     }
 
-    <div class="history-filter__extra">
-      <div class="seg chips" role="group" [attr.aria-label]="i18n.t('history.filterGrade')">
-        @for (chip of gradeChips; track chip.id) {
-          <button
-            type="button"
-            class="seg__btn"
-            [class.seg__btn--on]="gradeFilter() === chip.id"
-            (click)="setGrade(chip.id)"
-          >
-            {{ i18n.t(chip.labelKey) }}
-          </button>
-        }
-      </div>
-    </div>
+    <app-select-field
+      [label]="i18n.t('history.filterGrade')"
+      [options]="gradeOptions()"
+      [value]="gradeFilter()"
+      (valueChange)="setGrade($event)"
+    />
   </div>
 
   @if (rows().length === 0) {
@@ -67,38 +49,107 @@
         <section class="history-month">
           <div class="history-month__head">
             <h2 class="history-month__title">{{ monthLabel(group.month) }}</h2>
-            <p class="history-month__total">{{ formatMoney(group.total) }}</p>
+            <div class="history-month__totals">
+              <p class="history-month__total">{{ formatMoney(group.total) }}</p>
+              <p class="history-month__secondary">
+                {{
+                  i18n.t('history.monthLiters', {
+                    liters: i18n.formatNumber(group.liters, { maximumFractionDigits: 1 }),
+                  })
+                }}
+              </p>
+            </div>
           </div>
           <ul class="history-ledger">
             @for (f of group.items; track f.id) {
-              <li class="history-ledger__row">
-                <a [routerLink]="['/fill-up']" [queryParams]="{ id: f.id }" class="history-ledger__link">
-                  <div class="history-ledger__main">
-                    <span class="pill">{{ datePill(f.date) }}</span>
-                    <div class="history-ledger__meta">
-                      <span class="chip">
-                        {{ i18n.formatUnit(f.liters, 'common.liters', 1) }}
-                      </span>
-                      @if (f.fuelGrade) {
-                        <span class="chip chip--fuel">{{ gradeLabel(f.fuelGrade) }}</span>
-                      }
-                      @if (kmDrivenLabel(f); as kmLabel) {
-                        <span class="chip">{{ kmLabel }}</span>
+              <li
+                class="history-ledger__row"
+                [class.history-ledger__row--open]="swipeId() === f.id"
+                (pointerdown)="onPointerDown(f.id, $event)"
+                (pointerup)="onPointerUp(f.id, $event)"
+                (pointercancel)="onPointerUp(f.id, $event)"
+              >
+                <div class="history-ledger__reveal" aria-hidden="true">
+                  <button type="button" class="history-ledger__reveal-btn" (click)="editRow(f.id)">
+                    {{ i18n.t('history.edit') }}
+                  </button>
+                  <button
+                    type="button"
+                    class="history-ledger__reveal-btn history-ledger__reveal-btn--danger"
+                    (click)="askDelete(f.id)"
+                  >
+                    {{ i18n.t('history.delete') }}
+                  </button>
+                </div>
+                <div class="history-ledger__card">
+                  <a
+                    [routerLink]="['/fill-up']"
+                    [queryParams]="{ id: f.id }"
+                    class="history-ledger__link"
+                  >
+                    <div class="history-ledger__main">
+                      <span class="pill">{{ datePill(f.date) }}</span>
+                      <div class="history-ledger__meta">
+                        <span class="chip">
+                          {{ i18n.formatUnit(f.liters, 'common.liters', 1) }}
+                        </span>
+                        @if (f.fuelGrade) {
+                          <span class="chip chip--fuel">{{ gradeLabel(f.fuelGrade) }}</span>
+                        }
+                        @if (kmDrivenLabel(f); as kmLabel) {
+                          <span class="chip">{{ kmLabel }}</span>
+                        }
+                      </div>
+                      @if (f.placeLabel) {
+                        <span class="history-ledger__place">{{ f.placeLabel }}</span>
                       }
                     </div>
-                    @if (f.placeLabel) {
-                      <span class="history-ledger__place">{{ f.placeLabel }}</span>
+                    <div class="history-ledger__side">
+                      <strong class="history-ledger__cost">{{ formatMoney(f.cost) }}</strong>
+                    </div>
+                  </a>
+                  <div class="history-ledger__menu">
+                    <button
+                      type="button"
+                      class="history-ledger__menu-btn"
+                      [attr.aria-label]="i18n.t('history.actions')"
+                      [attr.aria-expanded]="openMenuId() === f.id"
+                      (click)="toggleMenu(f.id)"
+                    >
+                      ⋯
+                    </button>
+                    @if (openMenuId() === f.id) {
+                      <div class="history-ledger__menu-panel" role="menu">
+                        <button type="button" role="menuitem" (click)="editRow(f.id)">
+                          {{ i18n.t('history.edit') }}
+                        </button>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          class="danger-text"
+                          (click)="askDelete(f.id)"
+                        >
+                          {{ i18n.t('history.delete') }}
+                        </button>
+                      </div>
                     }
                   </div>
-                  <div class="history-ledger__side">
-                    <strong class="history-ledger__cost">{{ formatMoney(f.cost) }}</strong>
-                  </div>
-                </a>
+                </div>
               </li>
             }
           </ul>
         </section>
       }
     </div>
+  }
+
+  @if (pendingDelete()) {
+    <app-confirm-bar
+      [message]="i18n.t('history.deleteConfirmFill')"
+      [confirmLabel]="i18n.t('history.delete')"
+      [cancelLabel]="i18n.t('common.cancel')"
+      (confirmed)="doDelete()"
+      (cancelled)="pendingDelete.set(null)"
+    />
   }
 </div>

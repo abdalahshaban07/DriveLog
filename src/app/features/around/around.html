@@ -1,0 +1,34 @@
+<div class="stack around-page">
+  <app-page-header
+    [title]="i18n.t('around.title')"
+    [subtitle]="i18n.t('around.subtitle')"
+  />
+
+  <div class="around-hero">
+    <app-ambient-canvas />
+  </div>
+
+  @if (!requested()) {
+    <section class="card around-cta" role="status" aria-live="polite">
+      <p class="around-cta__copy">{{ i18n.t('around.explain') }}</p>
+      <app-primary-button
+        [label]="i18n.t('around.useLocation')"
+        [stretch]="true"
+        (pressed)="useMyLocation()"
+      />
+    </section>
+  } @else {
+    <app-nearby-stations
+      [items]="filteredNearby()"
+      [loading]="nearbyLoading()"
+      [error]="nearbyError()"
+      [kind]="nearbyKind()"
+      (kindChange)="setNearbyKind($event)"
+    />
+    @if (nearbyError()) {
+      <button type="button" class="ghost-btn around-retry" (click)="useMyLocation()">
+        {{ i18n.t('around.retry') }}
+      </button>
+    }
+  }
+</div>

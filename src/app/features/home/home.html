@@ -122,14 +122,6 @@
             (dismiss)="dismissInstallCard()"
           />
         }
-
-        <app-nearby-stations
-          [items]="filteredNearby()"
-          [loading]="nearbyLoading()"
-          [error]="nearbyError()"
-          [kind]="nearbyKind()"
-          (kindChange)="setNearbyKind($event)"
-        />
       }
 
       @if (recommendations().length) {

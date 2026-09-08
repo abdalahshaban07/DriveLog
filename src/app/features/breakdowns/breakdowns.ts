@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Db } from '../../data/db';
 import { todayDateOnly } from '../../domain/dues';
+import { odometerInputValue, roundOdometerKm } from '../../domain/odometer';
 import type { Breakdown, BreakdownCategory } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
@@ -36,7 +37,7 @@ export class BreakdownsPage {
   readonly saving = signal(false);
   readonly symptom = signal('');
   readonly repairCost = signal('');
-  readonly odometer = signal(String(this.db.car()?.currentOdometer ?? ''));
+  readonly odometer = signal(odometerInputValue(this.db.car()?.currentOdometer));
   readonly date = signal(todayDateOnly());
   readonly shopName = signal('');
   readonly category = signal<BreakdownCategory>('mechanical');
@@ -66,7 +67,7 @@ export class BreakdownsPage {
     this.editId.set(null);
     this.symptom.set('');
     this.repairCost.set('');
-    this.odometer.set(String(this.db.car()?.currentOdometer ?? ''));
+    this.odometer.set(odometerInputValue(this.db.car()?.currentOdometer));
     this.date.set(todayDateOnly());
     this.shopName.set('');
     this.category.set('mechanical');
@@ -80,7 +81,7 @@ export class BreakdownsPage {
     this.editId.set(row.id);
     this.symptom.set(row.symptom);
     this.repairCost.set(String(row.repairCost));
-    this.odometer.set(String(row.odometer));
+    this.odometer.set(odometerInputValue(row.odometer));
     this.date.set(row.date);
     this.shopName.set(row.shopName ?? '');
     this.category.set(row.category);

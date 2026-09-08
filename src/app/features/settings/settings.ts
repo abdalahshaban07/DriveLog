@@ -8,6 +8,7 @@ import {
   TANK_MAX,
   TANK_MIN,
 } from '../../domain/fill-up-distance';
+import { odometerInputValue, roundOdometerKm } from '../../domain/odometer';
 import { THEMES, type BackupFile, type Theme } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import { InstallPwa } from '../../pwa/install-pwa';
@@ -72,7 +73,7 @@ export class SettingsPage {
   readonly tankCapacity = signal(
     this.db.car()?.tankCapacityLiters != null ? String(this.db.car()!.tankCapacityLiters) : '',
   );
-  readonly correctOdometer = signal(String(this.db.car()?.currentOdometer ?? ''));
+  readonly correctOdometer = signal(odometerInputValue(this.db.car()?.currentOdometer));
   readonly tankCapacityError = signal('');
   readonly odometerError = signal('');
   readonly pendingImport = signal<BackupFile | null>(null);
@@ -144,7 +145,7 @@ export class SettingsPage {
     this.tankCapacity.set(
       car?.tankCapacityLiters != null ? String(car.tankCapacityLiters) : '',
     );
-    this.correctOdometer.set(String(car?.currentOdometer ?? ''));
+    this.correctOdometer.set(odometerInputValue(car?.currentOdometer));
     this.tankCapacityError.set('');
     this.odometerError.set('');
   }
