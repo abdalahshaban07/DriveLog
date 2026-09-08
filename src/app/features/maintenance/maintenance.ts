@@ -2,13 +2,14 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
 import { buildDueItems, todayDateOnly } from '../../domain/dues';
+import { odometerInputValue, roundOdometerKm } from '../../domain/odometer';
 import { MAINTENANCE_TYPES } from '../../domain/models';
-import type { DueStatus } from '../../domain/models';
-import type { Maintenance, MaintenanceType } from '../../domain/models';
+import type { DueItem, DueStatus, Maintenance, MaintenanceType } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { ConfirmBar } from '../../ui/confirm-bar';
 import { DateField } from '../../ui/date-field';
+import { DueRow } from '../../ui/due-row';
 import { NumericField } from '../../ui/numeric-field';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
@@ -28,6 +29,7 @@ const ADD_TYPE = '__add__';
     SelectField,
     PrimaryButton,
     ConfirmBar,
+    DueRow,
     RouterLink,
   ],
   templateUrl: './maintenance.html',
@@ -40,7 +42,7 @@ export class MaintenancePage {
 
   readonly type = signal('oil');
   readonly cost = signal('');
-  readonly odometer = signal(String(this.db.car()?.currentOdometer ?? ''));
+  readonly odometer = signal(odometerInputValue(this.db.car()?.currentOdometer));
   readonly date = signal(todayDateOnly());
   readonly note = signal('');
   readonly dueKm = signal('');
@@ -77,6 +79,27 @@ export class MaintenancePage {
 
   readonly hasMoreHistory = computed(() => this.history().length > 3);
 
+  readonly dues = computed((): DueItem[] => {
+    const car = this.db.car();
+    if (!car) {
+      return [];
+    }
+    return buildDueItems(
+      this.db.settings(),
+      this.db.maintenance(),
+      car.currentOdometer,
+      todayDateOnly(),
+      car,
+    ).filter((d) => d.status === 'overdue' || d.status === 'dueSoon');
+  });
+
+  readonly duesSummary = computed(() => {
+    const items = this.dues();
+    const overdue = items.filter((d) => d.status === 'overdue').length;
+    const soon = items.filter((d) => d.status === 'dueSoon').length;
+    return { overdue, soon, total: items.length };
+  });
+
   constructor() {
     const id = this.route.snapshot.queryParamMap.get('id');
     if (id) {
@@ -85,6 +108,10 @@ export class MaintenancePage {
         this.startEdit(row);
       }
     }
+  }
+
+  dueLabel(d: DueItem): string {
+    return this.i18n.t(d.labelKey as MsgKey);
   }
 
   dueStatus(m: Maintenance): DueStatus | null {
@@ -108,7 +135,7 @@ export class MaintenancePage {
     this.editId.set(null);
     this.type.set('oil');
     this.cost.set('');
-    this.odometer.set(String(this.db.car()?.currentOdometer ?? ''));
+    this.odometer.set(odometerInputValue(this.db.car()?.currentOdometer));
     this.date.set(todayDateOnly());
     this.note.set('');
     this.dueKm.set('');
@@ -123,7 +150,7 @@ export class MaintenancePage {
     this.editId.set(row.id);
     this.type.set(row.otherLabel ? `custom:${row.otherLabel}` : row.type);
     this.cost.set(String(row.cost));
-    this.odometer.set(String(row.odometer));
+    this.odometer.set(odometerInputValue(row.odometer));
     this.date.set(row.date);
     this.note.set(row.note ?? '');
     this.dueKm.set(row.dueKm != null ? String(row.dueKm) : '');
@@ -157,7 +184,7 @@ export class MaintenancePage {
       return;
     }
     const cost = Number(this.cost());
-    const odometer = Number(this.odometer());
+    const odometer = roundOdometerKm(Number(this.odometer()));
     this.odoError.set('');
     this.costError.set('');
     let ok = true;

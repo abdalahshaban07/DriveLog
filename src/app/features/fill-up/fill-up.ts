@@ -32,12 +32,12 @@ import {
   buildGradeOptions,
   FuelGradeSelector,
 } from '../../ui/fuel-grade-selector';
-import { FuelTank3d } from '../../ui/fuel-tank-3d/fuel-tank-3d';
-import { FuelTankCanvas } from '../../ui/fuel-tank-canvas/fuel-tank-canvas';
 import { NumericField } from '../../ui/numeric-field';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
 import { ReceiptPreview } from '../../ui/receipt-preview';
+import { TankFullCanvas } from '../../ui/tank-full-canvas/tank-full-canvas';
+import { TextField } from '../../ui/text-field';
 
 const GRADE_KEYS: Record<FuelGrade, MsgKey> = {
   gasoline92: 'home.fuel92',
@@ -54,10 +54,10 @@ const GRADE_KEYS: Record<FuelGrade, MsgKey> = {
     PageHeader,
     NumericField,
     FuelGradeSelector,
-    FuelTank3d,
-    FuelTankCanvas,
+    TankFullCanvas,
     ReceiptPreview,
     DateField,
+    TextField,
     PrimaryButton,
     ConfirmBar,
     RouterLink,
@@ -76,6 +76,8 @@ export class FillUpPage {
   readonly fuelGrade = signal<FuelGrade | null>(null);
   readonly date = signal(todayDateOnly());
   readonly placeLabel = signal('');
+  readonly note = signal('');
+  readonly tankFull = signal(false);
   readonly dateError = signal('');
   readonly distanceError = signal('');
   readonly distanceWarn = signal('');
@@ -229,6 +231,8 @@ export class FillUpPage {
     this.fuelGrade.set(existing.fuelGrade ?? 'custom');
     this.date.set(existing.date);
     this.placeLabel.set(existing.placeLabel ?? '');
+    this.note.set(existing.note ?? '');
+    this.tankFull.set(existing.tankFull === true);
     this.distanceError.set('');
     this.litersError.set('');
     this.dateError.set('');
@@ -392,10 +396,11 @@ export class FillUpPage {
         cost,
         unitPrice: unit,
         fuelGrade: grade,
-        tankFull: false,
+        tankFull: this.tankFull(),
         distanceKm: persistDistance ? distance : undefined,
         date,
         placeLabel: station,
+        note: this.note().trim() || undefined,
         lat: selected?.lat,
         lon: selected?.lon,
       });

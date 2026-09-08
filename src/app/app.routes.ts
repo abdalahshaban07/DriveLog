@@ -23,6 +23,12 @@ export const routes: Routes = [
     canActivate: [setupGuard],
   },
   {
+    path: 'around',
+    loadComponent: () =>
+      import('./features/around/around').then((m) => m.AroundPage),
+    canActivate: [setupGuard],
+  },
+  {
     path: 'fill-up',
     loadComponent: () =>
       import('./features/fill-up/fill-up').then((m) => m.FillUpPage),

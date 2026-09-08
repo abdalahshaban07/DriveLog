@@ -10,6 +10,7 @@ import {
   SCHEMA_STORES,
 } from '../core/config';
 import { knownOdometer } from '../domain/economy';
+import { roundOdometerKm } from '../domain/odometer';
 import {
   activePeriod,
   newOpenPeriod,
@@ -325,7 +326,9 @@ export class Db {
     if (!car) {
       return;
     }
-    const next = knownOdometer(car.initialOdometer, this.fillUps(), this.maintenance());
+    const next = roundOdometerKm(
+      knownOdometer(car.initialOdometer, this.fillUps(), this.maintenance()),
+    );
     if (next !== car.currentOdometer) {
       const updated: Car = { ...car, currentOdometer: next, updatedAt: nowIso() };
       this._car.set(updated);
@@ -356,8 +359,8 @@ export class Db {
     const car: Car = {
       id: crypto.randomUUID(),
       nickname: nickname.trim(),
-      initialOdometer,
-      currentOdometer: initialOdometer,
+      initialOdometer: roundOdometerKm(initialOdometer),
+      currentOdometer: roundOdometerKm(initialOdometer),
       ...carDocFields(extras),
       createdAt: ts,
       updatedAt: ts,
@@ -464,7 +467,9 @@ export class Db {
         : {}),
       nickname: patch.nickname != null ? patch.nickname.trim() : car.nickname,
       currentOdometer:
-        patch.currentOdometer != null ? Number(patch.currentOdometer) : car.currentOdometer,
+        patch.currentOdometer != null
+          ? roundOdometerKm(Number(patch.currentOdometer))
+          : roundOdometerKm(car.currentOdometer),
       updatedAt: nowIso(),
     };
     await this.put('car', updated);
@@ -519,7 +524,7 @@ export class Db {
     const row: FillUp = {
       id: existing?.id ?? crypto.randomUUID(),
       carId: existing?.carId ?? car.id,
-      odometer: input.odometer,
+      odometer: roundOdometerKm(input.odometer),
       distanceKm: input.distanceKm,
       liters: input.liters,
       cost: input.cost,
@@ -561,7 +566,7 @@ export class Db {
       id: existing?.id ?? crypto.randomUUID(),
       carId: existing?.carId ?? input.carId ?? car?.id,
       type: input.type,
-      odometer: input.odometer,
+      odometer: roundOdometerKm(input.odometer),
       cost: input.cost,
       date: input.date,
       note: input.note?.trim() || undefined,
@@ -600,7 +605,7 @@ export class Db {
       carId: existing?.carId ?? car.id,
       symptom: input.symptom.trim(),
       repairCost: input.repairCost,
-      odometer: input.odometer,
+      odometer: roundOdometerKm(input.odometer),
       date: input.date,
       shopName: input.shopName?.trim() || undefined,
       category: input.category,

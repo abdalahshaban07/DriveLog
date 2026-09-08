@@ -1,6 +1,48 @@
 <div class="stack page-narrow maint">
   <app-page-header [title]="i18n.t('maint.title')" />
 
+  <section class="card stack maint-dues" [attr.aria-label]="i18n.t('maint.duesTitle')">
+    <h2 class="section-title">{{ i18n.t('maint.duesTitle') }}</h2>
+    @if (dues().length === 0) {
+      <p class="empty-state maint-dues__ok">{{ i18n.t('maint.duesOk') }}</p>
+    } @else {
+      <p class="maint-dues__summary" role="status">
+        @if (duesSummary().overdue) {
+          <span>{{ i18n.t('maint.duesOverdue', { count: duesSummary().overdue }) }}</span>
+        }
+        @if (duesSummary().soon) {
+          <span>{{ i18n.t('maint.duesSoon', { count: duesSummary().soon }) }}</span>
+        }
+      </p>
+      <ul class="maint-dues__list">
+        @for (d of dues(); track d.id) {
+          <li>
+            <app-due-row
+              [title]="dueLabel(d)"
+              [status]="d.status"
+              [statusLabel]="
+                d.status === 'overdue'
+                  ? i18n.t('due.overdue')
+                  : d.status === 'dueSoon'
+                    ? i18n.t('due.dueSoon')
+                    : ''
+              "
+              [meta]="
+                d.dueKm != null
+                  ? i18n.formatNumber(d.dueKm, { maximumFractionDigits: 0 }) +
+                    ' ' +
+                    i18n.t('common.km')
+                  : d.dueDate
+                    ? i18n.formatDate(d.dueDate, { day: 'numeric', month: 'short' })
+                    : ''
+              "
+            />
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
   <section class="card stack maint-form" [attr.aria-label]="i18n.t('maint.add')">
     @if (editId()) {
       <p class="label">{{ i18n.t('maint.editing') }}</p>
@@ -28,19 +70,23 @@
         <a class="maint-new-type__link" routerLink="/settings/types">{{ i18n.t('maint.manageTypes') }}</a>
       </div>
     }
-    <app-numeric-field
-      [label]="i18n.t('maint.odometer')"
-      [(value)]="odometer"
-      [error]="odoError()"
-    />
-    <app-date-field [label]="i18n.t('maint.date')" [(value)]="date" />
+    <div class="maint-form__pair">
+      <app-numeric-field
+        [label]="i18n.t('maint.odometer')"
+        [(value)]="odometer"
+        [error]="odoError()"
+      />
+      <app-date-field [label]="i18n.t('maint.date')" [(value)]="date" />
+    </div>
     <app-numeric-field
       [label]="i18n.t('maint.cost')"
       [(value)]="cost"
       [error]="costError()"
     />
-    <app-numeric-field [label]="i18n.t('maint.dueKm')" [(value)]="dueKm" />
-    <app-date-field [label]="i18n.t('maint.dueDate')" [(value)]="dueDate" />
+    <div class="maint-form__pair">
+      <app-numeric-field [label]="i18n.t('maint.dueKm')" [(value)]="dueKm" />
+      <app-date-field [label]="i18n.t('maint.dueDate')" [(value)]="dueDate" />
+    </div>
     <app-text-field [label]="i18n.t('maint.note')" [(value)]="note" [multiline]="true" />
     <div class="maint-form__actions">
       @if (editId()) {
@@ -84,7 +130,8 @@
             </strong>
             <p class="meta">
               <span class="pill">{{ i18n.formatDate(m.date, { day: 'numeric', month: 'short' }) }}</span>
-              {{ i18n.formatNumber(m.odometer, { maximumFractionDigits: 0 }) }} {{ i18n.t('common.km') }} · {{ formatMoney(m.cost) }}
+              {{ i18n.formatNumber(m.odometer, { maximumFractionDigits: 0 }) }}
+              {{ i18n.t('common.km') }} · {{ formatMoney(m.cost) }}
             </p>
           </div>
           <div class="actions">

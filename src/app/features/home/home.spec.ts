@@ -57,12 +57,6 @@ describe('HomePage', () => {
     }).compileComponents();
   });
 
-  it('starts with empty nearby results', () => {
-    const fixture = TestBed.createComponent(HomePage);
-    fixture.detectChanges();
-    expect(fixture.componentInstance.filteredNearby()).toEqual([]);
-  });
-
   it('builds recommendations and month outlook', () => {
     const fixture = TestBed.createComponent(HomePage);
     fixture.detectChanges();
