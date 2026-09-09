@@ -41,7 +41,6 @@ import { buildSmartReports } from '../../domain/smart-reports';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { InstallPwa } from '../../pwa/install-pwa';
-import { AmbientCanvas } from '../../ui/ambient-canvas/ambient-canvas';
 import { Sparkline } from '../../ui/charts/sparkline';
 import { BarChart } from '../../ui/charts/bar-chart';
 import { LineChart } from '../../ui/charts/line-chart';
@@ -75,7 +74,6 @@ type ChartCategory = ExpenseCategory | 'all';
     BarChart,
     LineChart,
     DonutChart,
-    AmbientCanvas,
     SelectField,
     SampleBanner,
     SetupChecklist,

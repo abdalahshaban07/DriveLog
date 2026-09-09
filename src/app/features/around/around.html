@@ -4,10 +4,6 @@
     [subtitle]="i18n.t('around.subtitle')"
   />
 
-  <div class="around-hero">
-    <app-ambient-canvas />
-  </div>
-
   @if (!requested()) {
     <section class="card around-cta" role="status" aria-live="polite">
       <p class="around-cta__copy">{{ i18n.t('around.explain') }}</p>

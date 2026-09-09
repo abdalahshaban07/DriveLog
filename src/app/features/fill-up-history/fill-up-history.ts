@@ -21,6 +21,7 @@ import type { MsgKey } from '../../i18n/en';
 import { ConfirmBar } from '../../ui/confirm-bar';
 import { DateField } from '../../ui/date-field';
 import { PageHeader } from '../../ui/page-header';
+import { SectionTabs, type SectionTab } from '../../ui/section-tabs/section-tabs';
 import { SelectField } from '../../ui/select-field';
 
 type GradeFilter = FuelGrade | 'all';
@@ -28,7 +29,7 @@ type GradeFilter = FuelGrade | 'all';
 @Component({
   selector: 'app-fill-up-history',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, RouterLink, DateField, SelectField, ConfirmBar],
+  imports: [PageHeader, SectionTabs, RouterLink, DateField, SelectField, ConfirmBar],
   templateUrl: './fill-up-history.html',
   styleUrl: './fill-up-history.scss',
 })
@@ -37,13 +38,17 @@ export class FillUpHistoryPage {
   readonly db = inject(Db);
   private readonly router = inject(Router);
 
+  readonly sectionTabs: SectionTab[] = [
+    { labelKey: 'fillUp.title', link: '/fill-up' },
+    { labelKey: 'section.history', link: '/history/fill-ups' },
+  ];
+
   readonly gradeFilter = signal<GradeFilter>('all');
   readonly rangePreset = signal<HistoryRangePreset>('3months');
   readonly fromDate = signal('');
   readonly toDate = signal('');
   readonly shareBusy = signal(false);
   readonly shareError = signal('');
-  readonly openMenuId = signal<string | null>(null);
   readonly swipeId = signal<string | null>(null);
   readonly pendingDelete = signal<string | null>(null);
 
@@ -187,18 +192,12 @@ export class FillUpHistoryPage {
     this.gradeFilter.set(id as GradeFilter);
   }
 
-  toggleMenu(id: string): void {
-    this.openMenuId.update((cur) => (cur === id ? null : id));
-  }
-
   editRow(id: string): void {
-    this.openMenuId.set(null);
     this.swipeId.set(null);
     void this.router.navigate(['/fill-up'], { queryParams: { id } });
   }
 
   askDelete(id: string): void {
-    this.openMenuId.set(null);
     this.swipeId.set(null);
     this.pendingDelete.set(id);
   }

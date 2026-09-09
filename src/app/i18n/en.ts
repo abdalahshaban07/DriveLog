@@ -279,6 +279,7 @@ export const en = {
   'insights.latestSegment': 'Latest full-tank segment',
   'insights.monthlySpend': 'Monthly spend',
   'insights.viewHistory': 'Fill-up history',
+  'section.history': 'History',
   'history.title': 'Fill-up history',
   'history.maintTitle': 'Maintenance history',
   'history.range': 'Date range',

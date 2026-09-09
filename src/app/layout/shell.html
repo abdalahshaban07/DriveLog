@@ -5,7 +5,7 @@
         {{ i18n.t('persist.initFailed') }}
       </div>
     }
-    <main class="main" [class.main--setup]="!showNav()">
+    <main #main class="main" [class.main--setup]="!showNav()">
       <router-outlet />
     </main>
     @if (showNav()) {

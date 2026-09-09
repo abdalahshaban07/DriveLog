@@ -7,7 +7,6 @@ import {
 } from '@angular/core';
 import { getCoords, nearbyPoi, type NearbyPoi } from '../../data/remote';
 import { I18n } from '../../i18n/i18n';
-import { AmbientCanvas } from '../../ui/ambient-canvas/ambient-canvas';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
 import { NearbyStations } from '../home/cards/nearby-stations/nearby-stations';
@@ -15,7 +14,7 @@ import { NearbyStations } from '../home/cards/nearby-stations/nearby-stations';
 @Component({
   selector: 'app-around-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, AmbientCanvas, NearbyStations, PrimaryButton],
+  imports: [PageHeader, NearbyStations, PrimaryButton],
   templateUrl: './around.html',
   styleUrl: './around.scss',
 })

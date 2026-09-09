@@ -281,6 +281,7 @@ export const ar: Record<MsgKey, string> = {
   'insights.latestSegment': 'آخر مقطع تنك ممتلئ',
   'insights.monthlySpend': 'الإنفاق الشهري',
   'insights.viewHistory': 'سجل التعبئات',
+  'section.history': 'السجل',
   'history.title': 'سجل التعبئات',
   'history.maintTitle': 'سجل الصيانة',
   'history.range': 'الفترة',

@@ -1,5 +1,9 @@
 <div class="stack fill-up page-narrow">
   <app-page-header [title]="editId() ? i18n.t('fillUp.edit') : i18n.t('fillUp.title')" />
+  <app-section-tabs
+    [tabs]="sectionTabs"
+    [ariaLabel]="i18n.t('fillUp.title')"
+  />
 
   <p class="hint fill-up__odo" role="status">
     {{ i18n.t('fillUp.lastOdo') }}:
@@ -74,9 +78,8 @@
       </div>
     }
 
-    <app-tank-full-canvas
+    <app-tank-toggle
       [(value)]="tankFull"
-      [label]="i18n.t('fillUp.tankFull')"
       [onLabel]="i18n.t('fillUp.tankFull')"
       [offLabel]="i18n.t('fillUp.tankPartial')"
     />
@@ -178,10 +181,4 @@
     />
   }
 
-  <a routerLink="/history/fill-ups" class="history">
-    <span>{{ i18n.t('insights.viewHistory') }}</span>
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M9 6l6 6-6 6" />
-    </svg>
-  </a>
 </div>

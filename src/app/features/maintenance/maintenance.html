@@ -1,5 +1,9 @@
 <div class="stack page-narrow maint">
   <app-page-header [title]="i18n.t('maint.title')" />
+  <app-section-tabs
+    [tabs]="sectionTabs"
+    [ariaLabel]="i18n.t('maint.title')"
+  />
 
   <section class="card stack maint-dues" [attr.aria-label]="i18n.t('maint.duesTitle')">
     <h2 class="section-title">{{ i18n.t('maint.duesTitle') }}</h2>
@@ -116,7 +120,7 @@
       @for (m of recentHistory(); track m.id) {
         @let status = dueStatus(m);
         <li class="due-card">
-          <div>
+          <div class="due-card__body">
             <strong>
               @if (status) {
                 <span
@@ -134,10 +138,29 @@
               {{ i18n.t('common.km') }} · {{ formatMoney(m.cost) }}
             </p>
           </div>
-          <div class="actions">
-            <button type="button" (click)="startEdit(m)">{{ i18n.t('common.edit') }}</button>
-            <button type="button" class="danger" (click)="askDelete(m.id)">
-              {{ i18n.t('maint.delete') }}
+          <div class="due-card__actions">
+            <button
+              type="button"
+              class="icon-action"
+              [attr.aria-label]="i18n.t('common.edit')"
+              (click)="startEdit(m)"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="icon-action icon-action--danger"
+              [attr.aria-label]="i18n.t('maint.delete')"
+              (click)="askDelete(m.id)"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 6h18" />
+                <path d="M8 6V4h8v2" />
+                <path d="M19 6l-1 14H6L5 6" />
+              </svg>
             </button>
           </div>
         </li>

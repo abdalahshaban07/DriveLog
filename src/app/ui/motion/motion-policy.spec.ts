@@ -11,11 +11,10 @@ describe('MotionPolicy', () => {
     }));
     const policy = new MotionPolicy();
     expect(policy.allowAnime('ledger')).toBe(false);
-    expect(policy.allowWebGL('homeAmbient')).toBe(false);
     vi.unstubAllGlobals();
   });
 
-  it('allows only one WebGL surface at a time', () => {
+  it('allows anime when reduced motion is off', () => {
     vi.stubGlobal('matchMedia', () => ({
       matches: false,
       media: '',
@@ -23,10 +22,7 @@ describe('MotionPolicy', () => {
       removeEventListener: () => undefined,
     }));
     const policy = new MotionPolicy();
-    expect(policy.claimWebGL('homeAmbient')).toBe(true);
-    expect(policy.claimWebGL('homeAmbient')).toBe(true);
-    policy.releaseWebGL('homeAmbient');
-    expect(policy.claimWebGL('homeAmbient')).toBe(true);
+    expect(policy.allowAnime('receipt')).toBe(true);
     vi.unstubAllGlobals();
   });
 });

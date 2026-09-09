@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import {
   NavigationEnd,
   Router,
@@ -6,8 +14,8 @@ import {
   RouterLinkActive,
   RouterOutlet,
 } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { filter, map, startWith } from 'rxjs';
+import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { filter, map, skip, startWith } from 'rxjs';
 import { Db } from '../data/db';
 import { I18n } from '../i18n/i18n';
 import { InstallPwa } from '../pwa/install-pwa';
@@ -27,6 +35,7 @@ export class Shell {
   readonly whatsNew = inject(WhatsNew);
   private readonly router = inject(Router);
   private readonly install = inject(InstallPwa);
+  private readonly main = viewChild<ElementRef<HTMLElement>>('main');
 
   readonly updateDismissed = signal(false);
 
@@ -57,6 +66,21 @@ export class Shell {
       ? this.i18n.t('update.available')
       : this.i18n.t('update.youAreOn', { id: this.releaseId() || '—' }),
   );
+
+  constructor() {
+    this.router.events
+      .pipe(
+        filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+        skip(1),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => {
+        const el = this.main()?.nativeElement;
+        if (el) {
+          el.scrollTop = 0;
+        }
+      });
+  }
 
   reload(): void {
     void this.whatsNew.dismiss();
