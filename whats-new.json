@@ -18,8 +18,8 @@
     },
     {
       "icon": "fuel",
-      "title": "Station + 3D tank",
-      "body": "Pick a station from nearby chips and enjoy a modern glass tank gauge on fill-up."
+      "title": "Nearby stations",
+      "body": "Pick a station from nearby chips when logging a fill-up."
     },
     {
       "icon": "wrench",
@@ -65,8 +65,8 @@
     },
     {
       "icon": "fuel",
-      "title": "محطة وخزان ثلاثي",
-      "body": "اختر محطة من الشرائح القريبة واستمتع بمقياس خزان زجاجي حديث."
+      "title": "محطات قريبة",
+      "body": "اختر محطة من الشرائح القريبة عند تسجيل التعبئة."
     },
     {
       "icon": "wrench",
