@@ -7,10 +7,12 @@ import {
   lastFillUnitPrice,
   parseCountryFuelPrices,
   parseNearbyPoi,
+  parseOpenChargeMap,
   parseRecallCount,
   parseVinDecode,
   parseWeather,
 } from '../data/remote';
+import { isOpenNow } from './opening-hours';
 
 function assert(cond: unknown, msg: string): void {
   if (!cond) {
@@ -108,13 +110,24 @@ export function runPhase2SelfCheck(): void {
           id: 1,
           lat: 30.05,
           lon: 31.24,
-          tags: { amenity: 'fuel', name: 'Shell', brand: 'Shell' },
+          tags: {
+            amenity: 'fuel',
+            name: 'Shell',
+            brand: 'Shell',
+            opening_hours: '24/7',
+            'addr:city': 'Cairo',
+          },
         },
         {
           id: 2,
           lat: 30.06,
           lon: 31.25,
-          tags: { amenity: 'charging_station', name: 'EV Hub' },
+          tags: {
+            amenity: 'charging_station',
+            name: 'EV Hub',
+            'socket:ccs': 'yes',
+            'socket:type2': 'yes',
+          },
         },
         {
           id: 3,
@@ -128,6 +141,58 @@ export function runPhase2SelfCheck(): void {
   );
   assert(pois.length === 3 && pois.some((p) => p.id === 3), 'overpass way center');
   assert(pois[0]!.kind === 'fuel', 'overpass poi');
+  const shell = pois.find((p) => p.id === 1);
+  assert(shell?.openNow === true && shell.addressLine === 'Cairo', 'overpass open/addr');
+  const ev = pois.find((p) => p.id === 2);
+  assert(
+    ev?.connectors?.some((c) => c.type === 'CCS') &&
+      ev.connectors?.some((c) => c.type === 'Type 2'),
+    'overpass sockets',
+  );
+
+  assert(isOpenNow('24/7') === true, 'opening 24/7');
+  assert(isOpenNow('Mo-Fr 08:00-12:00,13:00-18:00') === null, 'opening complex');
+
+  const ocm = parseOpenChargeMap(
+    [
+      {
+        ID: 99,
+        AddressInfo: {
+          Title: 'Infinity Charge',
+          Latitude: 30.05,
+          Longitude: 31.24,
+          Town: 'Cairo',
+          StateOrProvince: 'Cairo Governorate',
+        },
+        OperatorInfo: { Title: 'Infinity' },
+        StatusType: { IsOperational: true },
+        Connections: [
+          {
+            ConnectionType: { Title: 'CCS2' },
+            PowerKW: 60,
+            Quantity: 2,
+          },
+        ],
+      },
+      {
+        ID: 100,
+        AddressInfo: {
+          Title: 'Offline Charge',
+          Latitude: 30.06,
+          Longitude: 31.25,
+        },
+        StatusType: { IsOperational: false },
+        Connections: [],
+      },
+    ],
+    { lat: 30.04, lon: 31.23 },
+  );
+  assert(ocm.length === 2 && ocm[0]!.kind === 'charge', 'ocm parse');
+  assert(ocm[0]!.connectors?.[0]?.type === 'CCS2', 'ocm connector');
+  assert(ocm[0]!.connectors?.[0]?.speed === 'fast', 'ocm fast');
+  assert(ocm[0]!.source === 'ocm', 'ocm source');
+  assert(ocm[0]!.openNow === true, 'ocm operational open');
+  assert(ocm.find((p) => p.id === 100)?.openNow === false, 'ocm offline closed');
 
   const maint: Maintenance[] = [
     {
