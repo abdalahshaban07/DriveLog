@@ -1,0 +1,148 @@
+<section
+  class="around-results"
+  role="status"
+  aria-live="polite"
+  [attr.aria-label]="i18n.t('home.aroundYou')"
+>
+  <div class="seg around-results__seg" role="group" [attr.aria-label]="i18n.t('home.nearby')">
+    <button
+      type="button"
+      class="seg__btn"
+      [class.seg__btn--on]="kind() === 'fuel'"
+      [attr.aria-pressed]="kind() === 'fuel'"
+      (click)="kindChange.emit('fuel')"
+    >
+      {{ i18n.t('home.nearbyFuel') }}
+    </button>
+    <button
+      type="button"
+      class="seg__btn"
+      [class.seg__btn--on]="kind() === 'charge'"
+      [attr.aria-pressed]="kind() === 'charge'"
+      (click)="kindChange.emit('charge')"
+    >
+      {{ i18n.t('home.nearbyCharge') }}
+    </button>
+  </div>
+
+  <div
+    class="around-filters"
+    role="toolbar"
+    [attr.aria-label]="i18n.t('around.filters')"
+  >
+    <button
+      type="button"
+      class="around-chip"
+      [class.around-chip--on]="filter() === 'best'"
+      [attr.aria-pressed]="filter() === 'best'"
+      (click)="setFilter('best')"
+    >
+      {{ i18n.t('around.filterBest') }}
+    </button>
+    <button
+      type="button"
+      class="around-chip"
+      [class.around-chip--on]="filter() === 'open'"
+      [attr.aria-pressed]="filter() === 'open'"
+      (click)="setFilter('open')"
+    >
+      {{ i18n.t('around.filterOpen') }}
+    </button>
+    <button
+      type="button"
+      class="around-chip"
+      [class.around-chip--on]="filter() === 'more'"
+      [attr.aria-pressed]="filter() === 'more'"
+      (click)="setFilter('more')"
+    >
+      {{ i18n.t('around.filterMore') }}
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="around-results__body">
+      <div class="skeleton skeleton--row" aria-hidden="true"></div>
+      <div class="skeleton skeleton--row" aria-hidden="true"></div>
+      <div class="skeleton skeleton--row" aria-hidden="true"></div>
+    </div>
+  } @else if (error()) {
+    <div class="error-state" role="alert">
+      <p>{{ error() }}</p>
+    </div>
+  } @else if (list().length === 0) {
+    <div class="empty-state">
+      <p>{{ i18n.t('home.nearbyEmpty') }}</p>
+    </div>
+  } @else {
+    <ul class="around-list list-reveal">
+      @for (poi of list(); track poi.id) {
+        <li class="around-list__item">
+          <a
+            class="around-list__link"
+            [href]="mapsUrl(poi)"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="around-list__icon" aria-hidden="true">
+              @if (poi.kind === 'fuel') {
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M4 20V8a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v12" />
+                  <path d="M4 20h12" />
+                  <path d="M14 10h2.5a2.5 2.5 0 0 1 2.5 2.5V16a2 2 0 0 0 2 2" />
+                  <path d="M8 10h4" />
+                </svg>
+              } @else {
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <rect x="5" y="7" width="10" height="12" rx="1.5" />
+                  <path d="M9 11h2M15 10l3 2-3 2" />
+                </svg>
+              }
+            </span>
+            <span class="around-list__main">
+              <span class="around-list__top">
+                <span class="around-list__name">{{ poi.name }}</span>
+                <span class="around-list__dist">{{ distanceLabel(poi) }}</span>
+              </span>
+              <span class="around-list__badges">
+                @if (poi.openNow === true) {
+                  <span class="around-badge around-badge--ok">{{
+                    i18n.t('around.openNow')
+                  }}</span>
+                }
+              </span>
+              @if (poi.addressLine) {
+                <span class="around-list__addr">{{ poi.addressLine }}</span>
+              }
+              @if (poi.connectors?.length) {
+                <ul class="around-connectors">
+                  @for (c of poi.connectors; track c.type + (c.powerKw ?? 0)) {
+                    <li class="around-connectors__row">
+                      <span class="around-connectors__type">{{ c.type }}</span>
+                      <span class="around-connectors__speed">{{ speedLabel(c.speed) }}</span>
+                      @if (c.count != null) {
+                        <span class="around-connectors__count">{{
+                          i18n.t('around.connectorTotal', {
+                            count: i18n.formatNumber(c.count),
+                          })
+                        }}</span>
+                      }
+                    </li>
+                  }
+                </ul>
+              } @else if (poi.detail) {
+                <span class="around-list__detail">{{ poi.detail }}</span>
+              }
+            </span>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+
+  <p class="around-results__attr">
+    {{ i18n.t('around.attrOsm') }}
+    @if (showOcmAttr()) {
+      · {{ i18n.t('around.attrOcm') }}
+    }
+  </p>
+</section>

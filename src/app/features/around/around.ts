@@ -1,20 +1,20 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  computed,
   inject,
   signal,
 } from '@angular/core';
-import { getCoords, nearbyPoi, type NearbyPoi } from '../../data/remote';
+import { getCoords, nearbyAround, type NearbyPoi } from '../../data/remote';
+import type { AroundFilter } from '../../domain/around-filter';
 import { I18n } from '../../i18n/i18n';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
-import { NearbyStations } from '../home/cards/nearby-stations/nearby-stations';
+import { AroundResults } from './around-results';
 
 @Component({
   selector: 'app-around-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, NearbyStations, PrimaryButton],
+  imports: [PageHeader, AroundResults, PrimaryButton],
   templateUrl: './around.html',
   styleUrl: './around.scss',
 })
@@ -23,16 +23,17 @@ export class AroundPage {
 
   readonly requested = signal(false);
   readonly nearbyKind = signal<'fuel' | 'charge'>('fuel');
+  readonly nearbyFilter = signal<AroundFilter>('best');
   readonly nearbyLoading = signal(false);
   readonly nearbyError = signal<string | null>(null);
   readonly nearbyItems = signal<NearbyPoi[]>([]);
 
-  readonly filteredNearby = computed(() =>
-    this.nearbyItems().filter((poi) => poi.kind === this.nearbyKind()),
-  );
-
   setNearbyKind(kind: 'fuel' | 'charge'): void {
     this.nearbyKind.set(kind);
+  }
+
+  setNearbyFilter(filter: AroundFilter): void {
+    this.nearbyFilter.set(filter);
   }
 
   async useMyLocation(): Promise<void> {
@@ -46,7 +47,7 @@ export class AroundPage {
         this.nearbyItems.set([]);
         return;
       }
-      const list = await nearbyPoi(coords);
+      const list = await nearbyAround(coords);
       this.nearbyItems.set(list);
     } catch {
       this.nearbyError.set(this.i18n.t('home.nearbyUnavailable'));
