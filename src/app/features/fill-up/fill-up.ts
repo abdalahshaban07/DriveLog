@@ -37,7 +37,6 @@ import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
 import { ReceiptPreview } from '../../ui/receipt-preview';
 import { SectionTabs, type SectionTab } from '../../ui/section-tabs/section-tabs';
-import { TankToggle } from '../../ui/tank-toggle';
 import { TextField } from '../../ui/text-field';
 
 const GRADE_KEYS: Record<FuelGrade, MsgKey> = {
@@ -56,7 +55,6 @@ const GRADE_KEYS: Record<FuelGrade, MsgKey> = {
     SectionTabs,
     NumericField,
     FuelGradeSelector,
-    TankToggle,
     ReceiptPreview,
     DateField,
     TextField,
@@ -83,7 +81,6 @@ export class FillUpPage {
   readonly date = signal(todayDateOnly());
   readonly placeLabel = signal('');
   readonly note = signal('');
-  readonly tankFull = signal(false);
   readonly dateError = signal('');
   readonly distanceError = signal('');
   readonly distanceWarn = signal('');
@@ -238,7 +235,6 @@ export class FillUpPage {
     this.date.set(existing.date);
     this.placeLabel.set(existing.placeLabel ?? '');
     this.note.set(existing.note ?? '');
-    this.tankFull.set(existing.tankFull === true);
     this.distanceError.set('');
     this.litersError.set('');
     this.dateError.set('');
@@ -402,7 +398,7 @@ export class FillUpPage {
         cost,
         unitPrice: unit,
         fuelGrade: grade,
-        tankFull: this.tankFull(),
+        tankFull: existing?.tankFull ?? false,
         distanceKm: persistDistance ? distance : undefined,
         date,
         placeLabel: station,

@@ -95,8 +95,6 @@ export const en = {
   'fillUp.grade.custom': 'Custom',
   'fillUp.note': 'Note',
   'fillUp.tankVisualLabel': 'Tank visual: {liters} liters, {pct}% full',
-  'fillUp.tankFull': 'Tank full',
-  'fillUp.tankPartial': 'Partial',
   'fillUp.save': 'Save',
   'fillUp.date': 'Date',
   'fillUp.lastOdo': 'Last odometer',
