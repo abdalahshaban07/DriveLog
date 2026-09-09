@@ -97,8 +97,6 @@ export const ar: Record<MsgKey, string> = {
   'fillUp.grade.custom': 'مخصص',
   'fillUp.note': 'ملاحظة',
   'fillUp.tankVisualLabel': 'عرض التنك: {liters} لتر، {pct}٪',
-  'fillUp.tankFull': 'تنك ممتلئ',
-  'fillUp.tankPartial': 'جزئي',
   'fillUp.save': 'حفظ',
   'fillUp.date': 'التاريخ',
   'fillUp.lastOdo': 'آخر قراءة',

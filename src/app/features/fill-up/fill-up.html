@@ -78,12 +78,6 @@
       </div>
     }
 
-    <app-tank-toggle
-      [(value)]="tankFull"
-      [onLabel]="i18n.t('fillUp.tankFull')"
-      [offLabel]="i18n.t('fillUp.tankPartial')"
-    />
-
     @if (showTankHint()) {
       <p class="hint tank-hint">{{ i18n.t('fillUp.tankSizeHint') }}</p>
     }
