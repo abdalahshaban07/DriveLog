@@ -1,5 +1,9 @@
 <div class="stack history-page">
   <app-page-header [title]="i18n.t('history.maintTitle')" />
+  <app-section-tabs
+    [tabs]="sectionTabs"
+    [ariaLabel]="i18n.t('history.maintTitle')"
+  />
 
   <div class="history-filter">
     <app-select-field
@@ -70,15 +74,28 @@
                 (pointercancel)="onPointerUp(m.id, $event)"
               >
                 <div class="history-ledger__reveal" aria-hidden="true">
-                  <button type="button" class="history-ledger__reveal-btn" (click)="editRow(m.id)">
-                    {{ i18n.t('history.edit') }}
+                  <button
+                    type="button"
+                    class="history-ledger__reveal-btn"
+                    [attr.aria-label]="i18n.t('history.edit')"
+                    (click)="editRow(m.id)"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 20h9" />
+                      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                    </svg>
                   </button>
                   <button
                     type="button"
                     class="history-ledger__reveal-btn history-ledger__reveal-btn--danger"
+                    [attr.aria-label]="i18n.t('history.delete')"
                     (click)="askDelete(m.id)"
                   >
-                    {{ i18n.t('history.delete') }}
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M3 6h18" />
+                      <path d="M8 6V4h8v2" />
+                      <path d="M19 6l-1 14H6L5 6" />
+                    </svg>
                   </button>
                 </div>
                 <div class="history-ledger__card">
@@ -104,31 +121,30 @@
                       <strong class="history-ledger__cost">{{ formatMoney(m.cost) }}</strong>
                     </div>
                   </a>
-                  <div class="history-ledger__menu">
+                  <div class="history-ledger__icon-actions">
                     <button
                       type="button"
-                      class="history-ledger__menu-btn"
-                      [attr.aria-label]="i18n.t('history.actions')"
-                      [attr.aria-expanded]="openMenuId() === m.id"
-                      (click)="toggleMenu(m.id)"
+                      class="icon-action"
+                      [attr.aria-label]="i18n.t('history.edit')"
+                      (click)="editRow(m.id)"
                     >
-                      ⋯
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 20h9" />
+                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                      </svg>
                     </button>
-                    @if (openMenuId() === m.id) {
-                      <div class="history-ledger__menu-panel" role="menu">
-                        <button type="button" role="menuitem" (click)="editRow(m.id)">
-                          {{ i18n.t('history.edit') }}
-                        </button>
-                        <button
-                          type="button"
-                          role="menuitem"
-                          class="danger-text"
-                          (click)="askDelete(m.id)"
-                        >
-                          {{ i18n.t('history.delete') }}
-                        </button>
-                      </div>
-                    }
+                    <button
+                      type="button"
+                      class="icon-action icon-action--danger"
+                      [attr.aria-label]="i18n.t('history.delete')"
+                      (click)="askDelete(m.id)"
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M3 6h18" />
+                        <path d="M8 6V4h8v2" />
+                        <path d="M19 6l-1 14H6L5 6" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
               </li>

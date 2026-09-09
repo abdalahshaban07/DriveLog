@@ -54,7 +54,7 @@
   max-inline-size: var(--shell);
   margin-inline: auto;
   min-height: var(--tap);
-  padding-inline: var(--space-1);
+  padding-inline: 0;
 }
 
 .nav a {
@@ -83,6 +83,16 @@
 
 .nav a:active {
   transform: scale(0.97);
+}
+
+.nav a:first-child {
+  border-start-start-radius: var(--radius);
+  border-end-start-radius: 0;
+}
+
+.nav a:last-child {
+  border-start-end-radius: var(--radius);
+  border-end-end-radius: 0;
 }
 
 .nav a > span {

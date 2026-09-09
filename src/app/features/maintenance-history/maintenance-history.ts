@@ -21,12 +21,13 @@ import type { MsgKey } from '../../i18n/en';
 import { ConfirmBar } from '../../ui/confirm-bar';
 import { DateField } from '../../ui/date-field';
 import { PageHeader } from '../../ui/page-header';
+import { SectionTabs, type SectionTab } from '../../ui/section-tabs/section-tabs';
 import { SelectField } from '../../ui/select-field';
 
 @Component({
   selector: 'app-maintenance-history',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, RouterLink, DateField, SelectField, ConfirmBar],
+  imports: [PageHeader, SectionTabs, RouterLink, DateField, SelectField, ConfirmBar],
   templateUrl: './maintenance-history.html',
   styleUrl: './maintenance-history.scss',
 })
@@ -35,13 +36,17 @@ export class MaintenanceHistoryPage {
   readonly db = inject(Db);
   private readonly router = inject(Router);
 
+  readonly sectionTabs: SectionTab[] = [
+    { labelKey: 'maint.title', link: '/maintenance' },
+    { labelKey: 'section.history', link: '/history/maintenance' },
+  ];
+
   readonly typeFilter = signal<string>('all');
   readonly rangePreset = signal<HistoryRangePreset>('3months');
   readonly fromDate = signal('');
   readonly toDate = signal('');
   readonly shareBusy = signal(false);
   readonly shareError = signal('');
-  readonly openMenuId = signal<string | null>(null);
   readonly swipeId = signal<string | null>(null);
   readonly pendingDelete = signal<string | null>(null);
 
@@ -168,18 +173,12 @@ export class MaintenanceHistoryPage {
     this.rangePreset.set(id as HistoryRangePreset);
   }
 
-  toggleMenu(id: string): void {
-    this.openMenuId.update((cur) => (cur === id ? null : id));
-  }
-
   editRow(id: string): void {
-    this.openMenuId.set(null);
     this.swipeId.set(null);
     void this.router.navigate(['/maintenance'], { queryParams: { id } });
   }
 
   askDelete(id: string): void {
-    this.openMenuId.set(null);
     this.swipeId.set(null);
     this.pendingDelete.set(id);
   }

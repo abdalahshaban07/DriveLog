@@ -9,10 +9,10 @@ Cold Night Pump: a phone-first automotive utility interface with cool slate
 surfaces, amber as the only strong accent, self-hosted Outfit typography, and
 restrained motion.
 
-**Motion libraries:** `animejs` and `three` are allowed only as lazy-loaded islands
-(sparklines, receipt count-up, chart stagger; fill-up tank + Home ambient canvas).
-Nav, filters, and grade chips stay CSS/instant. Honor `prefers-reduced-motion` and
-dispose WebGL on route leave. See `src/app/ui/motion/motion-policy.ts`.
+**Motion libraries:** `animejs` is allowed only as lazy-loaded islands
+(sparklines, receipt count-up, chart stagger). Nav, filters, and grade chips
+stay CSS/instant. Honor `prefers-reduced-motion`. See
+`src/app/ui/motion/motion-policy.ts`.
 
 Use [Hallmark](https://www.usehallmark.com/) as an audit lens only: purposeful
 screen macrostructures, biased hierarchy, one restrained accent, and no generic

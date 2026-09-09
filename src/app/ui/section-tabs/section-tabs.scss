@@ -1,0 +1,53 @@
+.section-tabs {
+  display: flex;
+  gap: var(--space-2);
+  margin-block-end: var(--space-4);
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-block-end: 1px solid var(--hairline);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.section-tabs::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.section-tabs__link {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: var(--tap);
+  padding: 0 var(--space-4) var(--space-2);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.section-tabs__link--on {
+  color: var(--text);
+}
+
+.section-tabs__link--on::after {
+  content: '';
+  position: absolute;
+  inset-inline: var(--space-2);
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--cta);
+}
+
+.section-tabs__link:focus-visible {
+  outline: 2px solid var(--fuel);
+  outline-offset: 2px;
+}

@@ -13,6 +13,7 @@ import { DueRow } from '../../ui/due-row';
 import { NumericField } from '../../ui/numeric-field';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
+import { SectionTabs, type SectionTab } from '../../ui/section-tabs/section-tabs';
 import { SelectField } from '../../ui/select-field';
 import { TextField } from '../../ui/text-field';
 
@@ -23,6 +24,7 @@ const ADD_TYPE = '__add__';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     PageHeader,
+    SectionTabs,
     TextField,
     NumericField,
     DateField,
@@ -39,6 +41,11 @@ export class MaintenancePage {
   readonly i18n = inject(I18n);
   readonly db = inject(Db);
   private readonly route = inject(ActivatedRoute);
+
+  readonly sectionTabs: SectionTab[] = [
+    { labelKey: 'maint.title', link: '/maintenance' },
+    { labelKey: 'section.history', link: '/history/maintenance' },
+  ];
 
   readonly type = signal('oil');
   readonly cost = signal('');

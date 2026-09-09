@@ -206,43 +206,6 @@
   background: color-mix(in srgb, var(--bg) 88%, transparent);
 }
 
-.history {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-3);
-  min-height: var(--tap);
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--text);
-  text-decoration: none;
-  transition:
-    background var(--motion) var(--ease),
-    border-color var(--motion) var(--ease);
-}
-
-.history svg {
-  flex-shrink: 0;
-  width: 22px;
-  height: 22px;
-  fill: none;
-  stroke: var(--muted);
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-:host-context([dir='rtl']) .history svg {
-  transform: scaleX(-1);
-}
-
-.history:hover {
-  border-color: color-mix(in srgb, var(--fuel) 40%, var(--hairline));
-  background: color-mix(in srgb, var(--fuel) 8%, var(--surface));
-}
-
 @media (prefers-reduced-motion: reduce) {
   .danger:active {
     transform: none;

@@ -5,7 +5,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Db } from '../../data/db';
 import {
   computeFillUpCost,
@@ -36,7 +36,8 @@ import { NumericField } from '../../ui/numeric-field';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
 import { ReceiptPreview } from '../../ui/receipt-preview';
-import { TankFullCanvas } from '../../ui/tank-full-canvas/tank-full-canvas';
+import { SectionTabs, type SectionTab } from '../../ui/section-tabs/section-tabs';
+import { TankToggle } from '../../ui/tank-toggle';
 import { TextField } from '../../ui/text-field';
 
 const GRADE_KEYS: Record<FuelGrade, MsgKey> = {
@@ -52,15 +53,15 @@ const GRADE_KEYS: Record<FuelGrade, MsgKey> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     PageHeader,
+    SectionTabs,
     NumericField,
     FuelGradeSelector,
-    TankFullCanvas,
+    TankToggle,
     ReceiptPreview,
     DateField,
     TextField,
     PrimaryButton,
     ConfirmBar,
-    RouterLink,
   ],
   templateUrl: './fill-up.html',
   styleUrl: './fill-up.scss',
@@ -70,6 +71,11 @@ export class FillUpPage {
   readonly db = inject(Db);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+
+  readonly sectionTabs: SectionTab[] = [
+    { labelKey: 'fillUp.title', link: '/fill-up' },
+    { labelKey: 'section.history', link: '/history/fill-ups' },
+  ];
 
   readonly distanceKm = signal('');
   readonly liters = signal('');

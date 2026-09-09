@@ -1,0 +1,13 @@
+<nav class="section-tabs" [attr.aria-label]="ariaLabel()">
+  @for (tab of tabs(); track tab.link) {
+    <a
+      class="section-tabs__link"
+      [routerLink]="tab.link"
+      routerLinkActive="section-tabs__link--on"
+      [routerLinkActiveOptions]="{ exact: tab.exact !== false }"
+      ariaCurrentWhenActive="page"
+    >
+      {{ i18n.t(tab.labelKey) }}
+    </a>
+  }
+</nav>
