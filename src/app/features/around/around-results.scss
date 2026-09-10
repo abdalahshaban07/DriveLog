@@ -1,0 +1,164 @@
+:host {
+  display: block;
+}
+
+.around-results {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.around-results__seg {
+  margin: 0;
+}
+
+.around-results__body {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.around-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.around-error .error-state {
+  flex: 1;
+  min-width: 0;
+}
+
+.around-retry {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  min-width: var(--tap);
+  min-height: var(--tap);
+  padding: 0;
+  border: 1px solid var(--hairline);
+  border-radius: 50%;
+  background: var(--well);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.around-retry svg {
+  display: block;
+}
+
+.around-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.around-list__item {
+  border-block-end: 1px solid var(--hairline);
+}
+
+.around-list__item:last-child {
+  border-block-end: 0;
+}
+
+.around-list__link {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: var(--space-3);
+  min-height: var(--tap);
+  padding-block: var(--space-2);
+  color: inherit;
+  text-decoration: none;
+}
+
+.around-list__icon {
+  display: grid;
+  place-items: center;
+  width: calc(var(--tap) - 16px);
+  height: calc(var(--tap) - 16px);
+  margin-block-start: 4px;
+  border-radius: calc(var(--radius) - 6px);
+  background: var(--well);
+  color: var(--muted);
+}
+
+.around-list__main {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  padding-block-start: 6px;
+}
+
+.around-list__name-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.around-list__name {
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.around-list__dist {
+  padding-block-start: 8px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  justify-self: end;
+  text-align: end;
+}
+
+.around-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.around-badge--ok {
+  background: color-mix(in srgb, var(--ok) 22%, var(--surface));
+  color: color-mix(in srgb, var(--ok) 70%, var(--text));
+}
+
+.around-list__addr,
+.around-list__detail {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.around-connectors {
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 2px;
+}
+
+.around-connectors__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.around-connectors__type {
+  font-weight: 600;
+}
+
+.around-connectors__count {
+  margin-inline-start: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.around-results__attr {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+}

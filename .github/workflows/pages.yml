@@ -17,11 +17,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Generate whats-new.json
+        run: |
+          node scripts/generate-whats-new.mjs --self-check
+          node scripts/generate-whats-new.mjs
       - run: npx ng build --base-href /DriveLog/
       - name: SPA fallback for Pages
         run: |
@@ -40,8 +46,11 @@ jobs:
             echo "- Site: https://abdalahshaban07.github.io/DriveLog/"
             echo "- Commit: \`${GITHUB_SHA}\`"
             echo "- Users with the PWA installed get an update banner + optional browser notification when \`ngsw\` picks up the new build."
-            echo "- Edit \`public/whats-new.json\` before merge so the in-app What's new list matches this deploy."
+            echo "- \`whats-new.json\` is generated for this deploy from recent commits."
             if [ -f public/whats-new.json ]; then
+              echo ""
+              id=$(node -e "console.log(JSON.parse(require('fs').readFileSync('public/whats-new.json','utf8')).id)")
+              echo "- What's new id: \`${id}\`"
               echo ""
               echo "### whats-new.json"
               echo '```json'

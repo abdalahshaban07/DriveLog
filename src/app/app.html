@@ -1,1 +1,14 @@
 <app-shell />
+@if (splashVisible()) {
+  <div class="splash" role="status" [attr.aria-label]="i18n.t('app.name')">
+    <img
+      class="splash__logo"
+      src="icons/icon-192x192.png"
+      width="192"
+      height="192"
+      alt=""
+      aria-hidden="true"
+    />
+    <p class="splash__ver">v{{ version }}</p>
+  </div>
+}

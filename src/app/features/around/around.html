@@ -14,17 +14,13 @@
       />
     </section>
   } @else {
-    <app-nearby-stations
-      [items]="filteredNearby()"
+    <app-around-results
+      [items]="nearbyItems()"
       [loading]="nearbyLoading()"
       [error]="nearbyError()"
       [kind]="nearbyKind()"
       (kindChange)="setNearbyKind($event)"
+      (retry)="useMyLocation()"
     />
-    @if (nearbyError()) {
-      <button type="button" class="ghost-btn around-retry" (click)="useMyLocation()">
-        {{ i18n.t('around.retry') }}
-      </button>
-    }
   }
 </div>

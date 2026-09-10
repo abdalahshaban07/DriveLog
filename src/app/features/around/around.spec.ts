@@ -39,4 +39,10 @@ describe('AroundPage', () => {
     expect(fixture.componentInstance.nearbyError()).toBe('home.nearbyGpsDenied');
     expect(fixture.componentInstance.nearbyItems()).toEqual([]);
   });
+
+  it('updates kind signal', () => {
+    const fixture = TestBed.createComponent(AroundPage);
+    fixture.componentInstance.setNearbyKind('charge');
+    expect(fixture.componentInstance.nearbyKind()).toBe('charge');
+  });
 });

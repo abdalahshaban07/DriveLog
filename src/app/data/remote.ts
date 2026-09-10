@@ -1,4 +1,7 @@
+import { OCM_API_KEY } from '../core/config';
+import { connectorSpeed } from '../domain/connector-speed';
 import { parsePublicHolidays, type PublicHoliday } from '../domain/holidays';
+import { isOpenNow } from '../domain/opening-hours';
 
 const TIMEOUT_MS = 8000;
 const PRICE_CACHE_KEY = 'drivelog.fuelPrices.v2';
@@ -36,6 +39,13 @@ export type CountryFuelPrices = {
 /** Overpass search radii (m). Expand until results, cap 50 km. */
 const NEARBY_RADII_M = [5_000, 15_000, 30_000, 50_000] as const;
 
+export type NearbyConnector = {
+  type: string;
+  powerKw?: number;
+  count?: number;
+  speed?: 'fast' | 'medium' | 'slow';
+};
+
 export type NearbyPoi = {
   id: number;
   kind: 'fuel' | 'charge';
@@ -45,6 +55,11 @@ export type NearbyPoi = {
   distanceKm: number;
   brand?: string;
   detail?: string;
+  addressLine?: string;
+  openNow?: boolean | null;
+  openingHours?: string;
+  connectors?: NearbyConnector[];
+  source?: 'osm' | 'ocm';
 };
 
 async function fetchJson(
@@ -297,9 +312,53 @@ function haversineKm(a: Coords, b: Coords): number {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
+function addressFromOsmTags(tags: Record<string, string>): string | undefined {
+  const parts = [
+    tags['addr:suburb'],
+    tags['addr:neighbourhood'],
+    tags['addr:city'],
+    tags['addr:state'],
+    tags['addr:province'],
+  ].filter((p) => p && String(p).trim());
+  const uniq = [...new Set(parts.map((p) => String(p).trim()))];
+  return uniq.length ? uniq.join(' · ') : undefined;
+}
+
+function connectorsFromOsmTags(tags: Record<string, string>): NearbyConnector[] | undefined {
+  const out: NearbyConnector[] = [];
+  const push = (type: string, countRaw?: string) => {
+    const count = countRaw ? Number(countRaw) : undefined;
+    out.push({
+      type,
+      count: Number.isFinite(count) ? count : undefined,
+      speed: 'medium',
+    });
+  };
+  if (tags['socket:type2'] === 'yes' || tags['socket:type2']) {
+    push('Type 2', tags['socket:type2'] !== 'yes' ? tags['socket:type2'] : undefined);
+  }
+  if (tags['socket:ccs'] === 'yes' || tags['socket:ccs'] || tags['socket:type2_combo'] === 'yes') {
+    push('CCS', tags['socket:ccs'] !== 'yes' ? tags['socket:ccs'] : undefined);
+  }
+  if (tags['socket:chademo'] === 'yes' || tags['socket:chademo']) {
+    push(
+      'CHAdeMO',
+      tags['socket:chademo'] !== 'yes' ? tags['socket:chademo'] : undefined,
+    );
+  }
+  if (!out.length && tags['capacity']) {
+    const n = Number(tags['capacity']);
+    if (Number.isFinite(n) && n > 0) {
+      out.push({ type: 'EV', count: n, speed: 'medium' });
+    }
+  }
+  return out.length ? out : undefined;
+}
+
 export function parseNearbyPoi(
   raw: unknown,
   origin: Coords,
+  now: Date = new Date(),
 ): NearbyPoi[] {
   if (!raw || typeof raw !== 'object') {
     return [];
@@ -332,17 +391,19 @@ export function parseNearbyPoi(
       continue;
     }
     const name =
-      tags['name'] || tags['brand'] || tags['operator'] || (kind === 'fuel' ? 'Gas station' : 'Charger');
+      tags['name'] ||
+      tags['brand'] ||
+      tags['operator'] ||
+      (kind === 'fuel' ? 'Gas station' : 'Charger');
+    const openingHours = tags['opening_hours']?.trim() || undefined;
+    const connectors =
+      kind === 'charge' ? connectorsFromOsmTags(tags) : undefined;
     const detail =
       kind === 'fuel'
         ? [tags['fuel:diesel'] === 'yes' ? 'diesel' : '', tags['fuel:octane_95'] === 'yes' ? '95' : '']
             .filter(Boolean)
             .join(' · ') || undefined
-        : tags['socket:type2'] === 'yes'
-          ? 'Type2'
-          : tags['socket:ccs'] === 'yes'
-            ? 'CCS'
-            : undefined;
+        : connectors?.[0]?.type;
     list.push({
       id: Number(e['id']),
       kind,
@@ -352,6 +413,107 @@ export function parseNearbyPoi(
       distanceKm: haversineKm(origin, { lat, lon }),
       brand: tags['brand'] || tags['operator'],
       detail,
+      addressLine: addressFromOsmTags(tags),
+      openingHours,
+      openNow: isOpenNow(openingHours, now),
+      connectors,
+      source: 'osm',
+    });
+  }
+  return list.sort((a, b) => a.distanceKm - b.distanceKm).slice(0, 20);
+}
+
+function ocmConnectionType(raw: unknown): string {
+  if (!raw || typeof raw !== 'object') {
+    return 'EV';
+  }
+  const c = raw as Record<string, unknown>;
+  const title = c['Title'] ?? c['FormalName'];
+  return typeof title === 'string' && title.trim() ? title.trim() : 'EV';
+}
+
+export function parseOpenChargeMap(
+  raw: unknown,
+  origin: Coords,
+): NearbyPoi[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  const list: NearbyPoi[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== 'object') {
+      continue;
+    }
+    const r = row as Record<string, unknown>;
+    const addr = r['AddressInfo'];
+    if (!addr || typeof addr !== 'object') {
+      continue;
+    }
+    const a = addr as Record<string, unknown>;
+    const lat = Number(a['Latitude']);
+    const lon = Number(a['Longitude']);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+      continue;
+    }
+    const id = Number(r['ID']);
+    if (!Number.isFinite(id)) {
+      continue;
+    }
+    const name =
+      (typeof a['Title'] === 'string' && a['Title']) ||
+      (typeof (r['OperatorInfo'] as { Title?: string } | undefined)?.Title ===
+        'string' &&
+        (r['OperatorInfo'] as { Title: string }).Title) ||
+      'Charger';
+    const addressParts = [
+      a['AddressLine1'],
+      a['Town'],
+      a['StateOrProvince'],
+    ]
+      .filter((p) => typeof p === 'string' && p.trim())
+      .map((p) => String(p).trim());
+    const connections = Array.isArray(r['Connections']) ? r['Connections'] : [];
+    const connectors: NearbyConnector[] = [];
+    for (const conn of connections) {
+      if (!conn || typeof conn !== 'object') {
+        continue;
+      }
+      const c = conn as Record<string, unknown>;
+      const powerKw = numOrNull(c['PowerKW']) ?? undefined;
+      const count = numOrNull(c['Quantity']) ?? undefined;
+      connectors.push({
+        type: ocmConnectionType(c['ConnectionType']),
+        powerKw: powerKw ?? undefined,
+        count: count ?? undefined,
+        speed: connectorSpeed(powerKw ?? undefined),
+      });
+    }
+    const op =
+      r['OperatorInfo'] && typeof r['OperatorInfo'] === 'object'
+        ? (r['OperatorInfo'] as { Title?: string }).Title
+        : undefined;
+    // ponytail: OCM has no opening_hours; StatusType.IsOperational is the usable open signal
+    const status = r['StatusType'];
+    let openNow: boolean | null = null;
+    if (status && typeof status === 'object') {
+      const operational = (status as { IsOperational?: unknown }).IsOperational;
+      if (typeof operational === 'boolean') {
+        openNow = operational;
+      }
+    }
+    list.push({
+      id,
+      kind: 'charge',
+      name: String(name),
+      lat,
+      lon,
+      distanceKm: haversineKm(origin, { lat, lon }),
+      brand: typeof op === 'string' ? op : undefined,
+      detail: connectors[0]?.type,
+      addressLine: addressParts.length ? addressParts.join(' · ') : undefined,
+      openNow,
+      connectors: connectors.length ? connectors : undefined,
+      source: 'ocm',
     });
   }
   return list.sort((a, b) => a.distanceKm - b.distanceKm).slice(0, 20);
@@ -374,6 +536,53 @@ export async function nearbyPoi(
   return last;
 }
 
+/** Around page: OSM fuel + OpenChargeMap charge (OSM charge fallback). */
+export async function nearbyAround(origin: Coords): Promise<NearbyPoi[]> {
+  // preferKind so a nearby charger cannot stop fuel radius expansion (and vice versa).
+  if (!OCM_API_KEY) {
+    const [fuelList, chargeList] = await Promise.all([
+      nearbyPoi(origin, 'fuel'),
+      nearbyPoi(origin, 'charge'),
+    ]);
+    return [
+      ...fuelList.filter((p) => p.kind === 'fuel'),
+      ...chargeList.filter((p) => p.kind === 'charge'),
+    ].sort((a, b) => a.distanceKm - b.distanceKm);
+  }
+  const [fuelList, ocm] = await Promise.all([
+    nearbyPoi(origin, 'fuel'),
+    fetchOpenChargeMap(origin),
+  ]);
+  const fuel = fuelList.filter((p) => p.kind === 'fuel');
+  const charge = ocm.length
+    ? ocm
+    : (await nearbyPoi(origin, 'charge')).filter((p) => p.kind === 'charge');
+  return [...fuel, ...charge].sort((a, b) => a.distanceKm - b.distanceKm);
+}
+
+async function fetchOpenChargeMap(origin: Coords): Promise<NearbyPoi[]> {
+  // ponytail: OCM requires a free key; without it skip and use OSM charge nodes
+  if (!OCM_API_KEY) {
+    return [];
+  }
+  const q = new URLSearchParams({
+    latitude: String(origin.lat),
+    longitude: String(origin.lon),
+    distance: '50',
+    distanceunit: 'KM',
+    maxresults: '20',
+    // ponytail: avoid compact — need ConnectionType.Title for connector rows
+    verbose: 'false',
+    key: OCM_API_KEY,
+  });
+  const raw = await fetchJson(
+    `https://api.openchargemap.io/v3/poi/?${q}`,
+    { headers: { Accept: 'application/json' } },
+    15_000,
+  );
+  return parseOpenChargeMap(raw, origin);
+}
+
 async function fetchNearbyAt(
   origin: Coords,
   radiusM: number,
@@ -388,7 +597,7 @@ async function fetchNearbyAt(
   node["amenity"="charging_station"](around:${radiusM},${origin.lat},${origin.lon});
   way["amenity"="charging_station"](around:${radiusM},${origin.lat},${origin.lon});
 );
-out center;`;
+out tags center;`;
   const raw = await fetchJson(
     'https://overpass-api.de/api/interpreter',
     {

@@ -1,97 +1,47 @@
 {
-  "id": "2026-09-03-ui-sweep",
+  "id": "2026-09-10-around",
   "en": [
     {
-      "icon": "palette",
-      "title": "One amber accent",
-      "body": "CTAs, focus rings, and metric washes now share a single fuel amber — clearer and calmer."
+      "icon": "fuel",
+      "title": "Around you",
+      "body": "Fuel and charge points near you, sorted by distance."
     },
     {
       "icon": "sparkle",
-      "title": "Arabic digits & units",
-      "body": "Numbers and units (L, km, L/100 km) render with Eastern Arabic digits in Arabic."
+      "title": "Open now + EV detail",
+      "body": "Open stations and charger connector rows sit on the list."
     },
     {
-      "icon": "chart",
-      "title": "Richer charts",
-      "body": "Home charts add bar, line, and fuel-grade donut views beside the category stack."
-    },
-    {
-      "icon": "fuel",
-      "title": "Nearby stations",
-      "body": "Pick a station from nearby chips when logging a fill-up."
+      "icon": "palette",
+      "title": "Calmer ledger",
+      "body": "Hairline rows and a single amber accent — denser, quieter Around."
     },
     {
       "icon": "wrench",
-      "title": "History refresh",
-      "body": "Fill-up and maintenance histories share a modern ledger layout with CSV export."
-    },
-    {
-      "icon": "sparkle",
-      "title": "Nearby accordion",
-      "body": "Top stations stay visible; the rest group by brand so the list never overwhelms."
-    },
-    {
-      "icon": "sparkle",
-      "title": "First-run polish",
-      "body": "Try a sample car, follow a setup checklist, and install the PWA when ready."
-    },
-    {
-      "icon": "fuel",
-      "title": "Quick log",
-      "body": "Log a fill-up from Home in seconds — distance, liters, grade, done."
-    },
-    {
-      "icon": "chart",
-      "title": "Month insight",
-      "body": "See how this month's spend compares to last month at a glance."
+      "title": "Fill-up nearby",
+      "body": "Pick a nearby station chip when logging a fill-up."
     }
   ],
   "ar": [
     {
-      "icon": "palette",
-      "title": "لون كهرماني واحد",
-      "body": "الأزرار والتركيز وبطاقات المقاييس تشترك الآن في كهرمان الوقود نفسه."
+      "icon": "fuel",
+      "title": "من حولك",
+      "body": "محطات وقود وشحن قريبة مرتبة حسب المسافة."
     },
     {
       "icon": "sparkle",
-      "title": "أرقام ووحدات عربية",
-      "body": "الأرقام والوحدات (لتر، كم، ل/١٠٠ كم) تظهر بالأرقام العربية الشرقية."
+      "title": "مفتوح الآن وتفاصيل الشحن",
+      "body": "المحطات المفتوحة وصفوف الموصلات ظاهرة في القائمة."
     },
     {
-      "icon": "chart",
-      "title": "رسوم أوضح",
-      "body": "أضفنا مخططات أعمدة وخط ودونات حسب نوع الوقود بجانب شريط الفئات."
-    },
-    {
-      "icon": "fuel",
-      "title": "محطات قريبة",
-      "body": "اختر محطة من الشرائح القريبة عند تسجيل التعبئة."
+      "icon": "palette",
+      "title": "دفتر أوضح",
+      "body": "صفوف رفيعة ولكنة كهرمانية واحدة — قائمة من حولك أوضح وأهدأ."
     },
     {
       "icon": "wrench",
-      "title": "تحديث السجلات",
-      "body": "سجلات التعبئة والصيانة بتخطيط دفتر حديث مع تصدير CSV."
-    },
-    {
-      "icon": "sparkle",
-      "title": "المحطات القريبة",
-      "body": "أقرب المحطات ظاهرة دائماً والباقي مجمّع حسب العلامة."
-    },
-    {
-      "icon": "sparkle",
-      "title": "بداية أوضح",
-      "body": "جرّب سيارة تجريبية، اتبع قائمة الإعداد، وثبّت التطبيق عند الجاهزية."
-    },
-    {
-      "icon": "fuel",
-      "title": "تسجيل سريع",
-      "body": "سجّل تعبئة من الرئيسية خلال ثوانٍ — مسافة ولترات ونوع الوقود."
-    },
-    {
-      "icon": "chart",
-      "title": "لمحة الشهر",
-      "body": "قارن إنفاق هذا الشهر بالشهر الماضي بنظرة واحدة."
+      "title": "محطات قريبة عند التعبئة",
+      "body": "اختر محطة من الشرائح القريبة عند تسجيل التعبئة."
     }
   ]
 }

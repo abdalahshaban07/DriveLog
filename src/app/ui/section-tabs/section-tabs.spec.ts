@@ -1,27 +1,23 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { describe, expect, it } from 'vitest';
-import { Db } from '../../data/db';
 import { I18n } from '../../i18n/i18n';
 import { SectionTabs, type SectionTab } from './section-tabs';
-
-const dbStub = {
-  settings: () => ({
-    language: 'en' as const,
-    theme: 'dark' as const,
-    currency: 'EGP',
-    unitSystem: 'metric' as const,
-    installBannerDismissed: true,
-    remindersEnabled: true,
-  }),
-  updateSettings: async () => undefined,
-};
 
 describe('SectionTabs', () => {
   it('renders router links for each tab', async () => {
     await TestBed.configureTestingModule({
       imports: [SectionTabs],
-      providers: [provideRouter([]), { provide: Db, useValue: dbStub }, I18n],
+      providers: [
+        provideRouter([]),
+        {
+          provide: I18n,
+          useValue: {
+            t: (k: string) =>
+              ({ 'fillUp.title': 'Fill-up', 'section.history': 'History' }[k] ?? k),
+          },
+        },
+      ],
     }).compileComponents();
 
     const i18n = TestBed.inject(I18n);

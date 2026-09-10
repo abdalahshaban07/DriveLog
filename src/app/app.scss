@@ -2,3 +2,34 @@
   display: block;
   min-height: 100dvh;
 }
+
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+}
+
+.splash__logo {
+  width: 6rem;
+  height: 6rem;
+}
+
+.splash__ver {
+  position: absolute;
+  inset-inline: 0;
+  bottom: max(var(--space-5), env(safe-area-inset-bottom, 0px));
+  margin: 0;
+  text-align: center;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash {
+    display: none;
+  }
+}
