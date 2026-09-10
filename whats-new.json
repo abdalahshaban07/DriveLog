@@ -1,97 +1,37 @@
 {
-  "id": "2026-09-03-ui-sweep",
+  "id": "2026-09-10-92096f3",
   "en": [
     {
-      "icon": "palette",
-      "title": "One amber accent",
-      "body": "CTAs, focus rings, and metric washes now share a single fuel amber — clearer and calmer."
-    },
-    {
-      "icon": "sparkle",
-      "title": "Arabic digits & units",
-      "body": "Numbers and units (L, km, L/100 km) render with Eastern Arabic digits in Arabic."
-    },
-    {
-      "icon": "chart",
-      "title": "Richer charts",
-      "body": "Home charts add bar, line, and fuel-grade donut views beside the category stack."
+      "icon": "bug",
+      "title": "Generate whats-new.json on each Pages deploy",
+      "body": "Unique release ids from git history so dismissed users see notes again after a publish."
     },
     {
       "icon": "fuel",
-      "title": "Nearby stations",
-      "body": "Pick a station from nearby chips when logging a fill-up."
+      "title": "Redesign Around with OSM fuel and OpenChargeMap charge",
+      "body": "Dense list UI with filter chips, opening-hours/open badges, and EV"
     },
     {
-      "icon": "wrench",
-      "title": "History refresh",
-      "body": "Fill-up and maintenance histories share a modern ledger layout with CSV export."
-    },
-    {
-      "icon": "sparkle",
-      "title": "Nearby accordion",
-      "body": "Top stations stay visible; the rest group by brand so the list never overwhelms."
-    },
-    {
-      "icon": "sparkle",
-      "title": "First-run polish",
-      "body": "Try a sample car, follow a setup checklist, and install the PWA when ready."
-    },
-    {
-      "icon": "fuel",
-      "title": "Quick log",
-      "body": "Log a fill-up from Home in seconds — distance, liters, grade, done."
-    },
-    {
-      "icon": "chart",
-      "title": "Month insight",
-      "body": "See how this month's spend compares to last month at a glance."
+      "icon": "bug",
+      "title": "Remove full/partial tank toggle from fill-up",
+      "body": "Drop the unused tank-toggle UI; keep domain tankFull as false on new fills and preserve existing on edit."
     }
   ],
   "ar": [
     {
-      "icon": "palette",
-      "title": "لون كهرماني واحد",
-      "body": "الأزرار والتركيز وبطاقات المقاييس تشترك الآن في كهرمان الوقود نفسه."
-    },
-    {
-      "icon": "sparkle",
-      "title": "أرقام ووحدات عربية",
-      "body": "الأرقام والوحدات (لتر، كم، ل/١٠٠ كم) تظهر بالأرقام العربية الشرقية."
-    },
-    {
-      "icon": "chart",
-      "title": "رسوم أوضح",
-      "body": "أضفنا مخططات أعمدة وخط ودونات حسب نوع الوقود بجانب شريط الفئات."
+      "icon": "bug",
+      "title": "Generate whats-new.json on each Pages deploy",
+      "body": "Unique release ids from git history so dismissed users see notes again after a publish."
     },
     {
       "icon": "fuel",
-      "title": "محطات قريبة",
-      "body": "اختر محطة من الشرائح القريبة عند تسجيل التعبئة."
+      "title": "Redesign Around with OSM fuel and OpenChargeMap charge",
+      "body": "Dense list UI with filter chips, opening-hours/open badges, and EV"
     },
     {
-      "icon": "wrench",
-      "title": "تحديث السجلات",
-      "body": "سجلات التعبئة والصيانة بتخطيط دفتر حديث مع تصدير CSV."
-    },
-    {
-      "icon": "sparkle",
-      "title": "المحطات القريبة",
-      "body": "أقرب المحطات ظاهرة دائماً والباقي مجمّع حسب العلامة."
-    },
-    {
-      "icon": "sparkle",
-      "title": "بداية أوضح",
-      "body": "جرّب سيارة تجريبية، اتبع قائمة الإعداد، وثبّت التطبيق عند الجاهزية."
-    },
-    {
-      "icon": "fuel",
-      "title": "تسجيل سريع",
-      "body": "سجّل تعبئة من الرئيسية خلال ثوانٍ — مسافة ولترات ونوع الوقود."
-    },
-    {
-      "icon": "chart",
-      "title": "لمحة الشهر",
-      "body": "قارن إنفاق هذا الشهر بالشهر الماضي بنظرة واحدة."
+      "icon": "bug",
+      "title": "Remove full/partial tank toggle from fill-up",
+      "body": "Drop the unused tank-toggle UI; keep domain tankFull as false on new fills and preserve existing on edit."
     }
   ]
 }
