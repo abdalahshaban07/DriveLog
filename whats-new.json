@@ -1,37 +1,47 @@
 {
-  "id": "2026-09-10-92096f3",
+  "id": "2026-09-10-3f36741",
   "en": [
     {
-      "icon": "bug",
-      "title": "Generate whats-new.json on each Pages deploy",
-      "body": "Unique release ids from git history so dismissed users see notes again after a publish."
-    },
-    {
       "icon": "fuel",
-      "title": "Redesign Around with OSM fuel and OpenChargeMap charge",
-      "body": "Dense list UI with filter chips, opening-hours/open badges, and EV"
+      "title": "Around you",
+      "body": "Fuel and charge points near you, sorted by distance."
     },
     {
-      "icon": "bug",
-      "title": "Remove full/partial tank toggle from fill-up",
-      "body": "Drop the unused tank-toggle UI; keep domain tankFull as false on new fills and preserve existing on edit."
+      "icon": "sparkle",
+      "title": "Open now + EV detail",
+      "body": "Open stations and charger connector rows sit on the list."
+    },
+    {
+      "icon": "palette",
+      "title": "Calmer ledger",
+      "body": "Hairline rows and a single amber accent — denser, quieter Around."
+    },
+    {
+      "icon": "wrench",
+      "title": "Fill-up nearby",
+      "body": "Pick a nearby station chip when logging a fill-up."
     }
   ],
   "ar": [
     {
-      "icon": "bug",
-      "title": "Generate whats-new.json on each Pages deploy",
-      "body": "Unique release ids from git history so dismissed users see notes again after a publish."
-    },
-    {
       "icon": "fuel",
-      "title": "Redesign Around with OSM fuel and OpenChargeMap charge",
-      "body": "Dense list UI with filter chips, opening-hours/open badges, and EV"
+      "title": "من حولك",
+      "body": "محطات وقود وشحن قريبة مرتبة حسب المسافة."
     },
     {
-      "icon": "bug",
-      "title": "Remove full/partial tank toggle from fill-up",
-      "body": "Drop the unused tank-toggle UI; keep domain tankFull as false on new fills and preserve existing on edit."
+      "icon": "sparkle",
+      "title": "مفتوح الآن وتفاصيل الشحن",
+      "body": "المحطات المفتوحة وصفوف الموصلات ظاهرة في القائمة."
+    },
+    {
+      "icon": "palette",
+      "title": "دفتر أوضح",
+      "body": "صفوف رفيعة ولكنة كهرمانية واحدة — قائمة من حولك أوضح وأهدأ."
+    },
+    {
+      "icon": "wrench",
+      "title": "محطات قريبة عند التعبئة",
+      "body": "اختر محطة من الشرائح القريبة عند تسجيل التعبئة."
     }
   ]
 }
