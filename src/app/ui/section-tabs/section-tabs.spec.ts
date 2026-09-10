@@ -20,6 +20,7 @@ describe('SectionTabs', () => {
       ],
     }).compileComponents();
 
+    const i18n = TestBed.inject(I18n);
     const fixture = TestBed.createComponent(SectionTabs);
     const tabs: SectionTab[] = [
       { labelKey: 'fillUp.title', link: '/fill-up' },
@@ -33,7 +34,7 @@ describe('SectionTabs', () => {
     expect(links).toHaveLength(2);
     expect(links[0]?.getAttribute('href')).toContain('/fill-up');
     expect(links[1]?.getAttribute('href')).toContain('/history/fill-ups');
-    expect(links[0]?.textContent?.trim()).toBe('Fill-up');
-    expect(links[1]?.textContent?.trim()).toBe('History');
+    expect(links[0]?.textContent?.trim()).toBe(i18n.t('fillUp.title'));
+    expect(links[1]?.textContent?.trim()).toBe(i18n.t('section.history'));
   });
 });

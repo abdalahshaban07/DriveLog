@@ -7,6 +7,16 @@
 
   <section class="card stack maint-dues" [attr.aria-label]="i18n.t('maint.duesTitle')">
     <h2 class="section-title">{{ i18n.t('maint.duesTitle') }}</h2>
+    @if (holidayNudge(); as h) {
+      <p class="maint-holiday" role="status" aria-live="polite">
+        {{
+          i18n.t('maint.holidayDue', {
+            name: h.localName,
+            date: i18n.formatDate(h.date, { day: 'numeric', month: 'short' }),
+          })
+        }}
+      </p>
+    }
     @if (dues().length === 0) {
       <p class="empty-state maint-dues__ok">{{ i18n.t('maint.duesOk') }}</p>
     } @else {

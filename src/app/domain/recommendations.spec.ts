@@ -117,6 +117,34 @@ describe('buildRecommendations', () => {
     expect(recs.some((r) => r.kind === 'dueSoon')).toBe(true);
   });
 
+  it('returns holiday recommendation when due overlaps public holiday', () => {
+    const recs = buildRecommendations({
+      settings,
+      car: car({ id: 'c1' }),
+      fills: [],
+      maintenance: [
+        {
+          id: 'm1',
+          carId: 'c1',
+          type: 'oil',
+          odometer: 4000,
+          cost: 100,
+          date: '2026-05-01',
+          dueDate: '2026-06-10',
+          createdAt: '2026-05-01T00:00:00.000Z',
+          updatedAt: '2026-05-01T00:00:00.000Z',
+        },
+      ],
+      breakdowns: [],
+      other: [],
+      periods: [],
+      today: '2026-06-01',
+      holidays: [{ date: '2026-06-07', localName: 'Eid' }],
+    });
+    expect(recs.some((r) => r.kind === 'holiday')).toBe(true);
+    expect(recs.find((r) => r.kind === 'holiday')?.route).toBe('/maintenance');
+  });
+
   it('returns fuel recommendation when consumption is high', () => {
     const recs = buildRecommendations({
       settings,
