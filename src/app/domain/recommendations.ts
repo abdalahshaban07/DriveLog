@@ -1,6 +1,7 @@
 import { buildDueItems, todayDateOnly } from './dues';
 import { activePeriod, daysUntil, periodTotals } from './expense-period';
 import { fuelDashboardMetrics } from './fuel-dashboard';
+import { firstDueHolidayNudge, type PublicHoliday } from './holidays';
 import { pickFuelTipKey } from './local-coach';
 import type {
   Breakdown,
@@ -16,7 +17,13 @@ import type {
 
 export type RecommendationTone = 'overdue' | 'soon' | 'fuel' | 'spending' | 'tip';
 
-export type RecommendationKind = 'overdue' | 'dueSoon' | 'fuel' | 'spending' | 'localTip';
+export type RecommendationKind =
+  | 'overdue'
+  | 'dueSoon'
+  | 'holiday'
+  | 'fuel'
+  | 'spending'
+  | 'localTip';
 
 export interface Recommendation {
   id: string;
@@ -39,9 +46,10 @@ export interface MonthOutlook {
 const KIND_RANK: Record<RecommendationKind, number> = {
   overdue: 0,
   dueSoon: 1,
-  fuel: 2,
-  spending: 3,
-  localTip: 4,
+  holiday: 2,
+  fuel: 3,
+  spending: 4,
+  localTip: 5,
 };
 
 const REC_DUE_SOON_DAYS = 30;
@@ -189,6 +197,7 @@ export function buildRecommendations(input: {
   other: readonly OtherExpense[];
   periods: readonly ExpensePeriod[];
   today?: DateOnly;
+  holidays?: readonly PublicHoliday[];
 }): Recommendation[] {
   const today = input.today ?? todayDateOnly();
   const candidates: Recommendation[] = [];
@@ -214,6 +223,23 @@ export function buildRecommendations(input: {
     today,
     car,
   );
+
+  const holiday = firstDueHolidayNudge(
+    dueItems.map((d) => d.dueDate),
+    input.holidays ?? [],
+    today,
+  );
+  if (holiday) {
+    candidates.push({
+      id: `holiday-${holiday.date}`,
+      kind: 'holiday',
+      titleKey: 'rec.holiday.title',
+      bodyKey: 'home.holidayDue',
+      bodyParams: { name: holiday.localName, date: holiday.date },
+      tone: 'soon',
+      route: '/maintenance',
+    });
+  }
 
   for (const item of dueItems.filter((i) => i.status === 'overdue')) {
     candidates.push({

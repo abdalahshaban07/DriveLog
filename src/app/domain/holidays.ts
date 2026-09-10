@@ -60,3 +60,20 @@ export function dueHolidayNudge(
   }
   return holidayWithinDays(holidays, today, holidayLookahead);
 }
+
+/** First holiday that overlaps any calendar due in the nudge windows. */
+export function firstDueHolidayNudge(
+  dueDates: readonly (string | undefined)[],
+  holidays: readonly PublicHoliday[],
+  today: string,
+  dueSoonDays = 14,
+  holidayLookahead = 7,
+): PublicHoliday | null {
+  for (const dueDate of dueDates) {
+    const hit = dueHolidayNudge(dueDate, holidays, today, dueSoonDays, holidayLookahead);
+    if (hit) {
+      return hit;
+    }
+  }
+  return null;
+}

@@ -114,6 +114,7 @@
             [other]="db.otherExpenses()"
             [currency]="db.settings().currency"
           />
+          <app-weather-tip [weather]="weather()" [busy]="weatherBusy()" />
         }
 
         @if (showInstallCard()) {

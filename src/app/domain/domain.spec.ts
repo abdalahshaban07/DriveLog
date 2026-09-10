@@ -257,6 +257,16 @@ describe('holidays', () => {
     expect(dueHolidayNudge('2026-06-10', holidays, '2026-06-01')?.localName).toBe('Eid');
     expect(dueHolidayNudge('2026-08-01', holidays, '2026-06-01')).toBeNull();
   });
+
+  it('picks first overlapping due date', async () => {
+    const { firstDueHolidayNudge, parsePublicHolidays } = await import('./holidays');
+    const holidays = parsePublicHolidays([
+      { date: '2026-06-07', localName: 'Eid' },
+    ]);
+    expect(
+      firstDueHolidayNudge(['2026-08-01', '2026-06-10'], holidays, '2026-06-01')?.localName,
+    ).toBe('Eid');
+  });
 });
 
 describe('insights series', () => {

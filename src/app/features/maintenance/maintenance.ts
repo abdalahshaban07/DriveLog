@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
+import { publicHolidays } from '../../data/remote';
+import { countryFromCurrency } from '../../domain/country';
 import { buildDueItems, todayDateOnly } from '../../domain/dues';
+import { firstDueHolidayNudge, type PublicHoliday } from '../../domain/holidays';
 import { odometerInputValue, roundOdometerKm } from '../../domain/odometer';
 import { MAINTENANCE_TYPES } from '../../domain/models';
 import type { DueItem, DueStatus, Maintenance, MaintenanceType } from '../../domain/models';
@@ -61,6 +64,7 @@ export class MaintenancePage {
   readonly costError = signal('');
   readonly newTypeName = signal('');
   readonly newTypeError = signal('');
+  readonly holidays = signal<PublicHoliday[]>([]);
 
   readonly addingType = computed(() => this.type() === ADD_TYPE);
 
@@ -107,6 +111,26 @@ export class MaintenancePage {
     return { overdue, soon, total: items.length };
   });
 
+  readonly holidayNudge = computed(() => {
+    const car = this.db.car();
+    if (!car) {
+      return null;
+    }
+    const today = todayDateOnly();
+    const items = buildDueItems(
+      this.db.settings(),
+      this.db.maintenance(),
+      car.currentOdometer,
+      today,
+      car,
+    );
+    return firstDueHolidayNudge(
+      items.map((d) => d.dueDate),
+      this.holidays(),
+      today,
+    );
+  });
+
   constructor() {
     const id = this.route.snapshot.queryParamMap.get('id');
     if (id) {
@@ -115,6 +139,17 @@ export class MaintenancePage {
         this.startEdit(row);
       }
     }
+    void this.loadHolidays();
+  }
+
+  private async loadHolidays(): Promise<void> {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      return;
+    }
+    const today = todayDateOnly();
+    const cc = countryFromCurrency(this.db.settings().currency);
+    const year = Number(today.slice(0, 4));
+    this.holidays.set(await publicHolidays(cc, year));
   }
 
   dueLabel(d: DueItem): string {

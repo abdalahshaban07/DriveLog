@@ -10,7 +10,15 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
+import {
+  currentWeather,
+  getCoords,
+  publicHolidays,
+  type WeatherNow,
+} from '../../data/remote';
+import { countryFromCurrency } from '../../domain/country';
 import { buildDueItems, nextDueItem, todayDateOnly } from '../../domain/dues';
+import { type PublicHoliday } from '../../domain/holidays';
 import {
   activePeriod,
   daysUntil,
@@ -58,6 +66,7 @@ import {
   SetupChecklist,
   type ChecklistItem,
 } from './cards/setup-checklist/setup-checklist';
+import { WeatherTipCard } from './cards/weather-tip/weather-tip';
 
 type HomeView = 'dashboard' | 'reports' | 'charts';
 type ChartCategory = ExpenseCategory | 'all';
@@ -80,6 +89,7 @@ type ChartCategory = ExpenseCategory | 'all';
     InstallCard,
     QuickLog,
     MonthInsight,
+    WeatherTipCard,
   ],
   templateUrl: './home.html',
   styleUrl: './home.scss',
@@ -106,6 +116,9 @@ export class HomePage {
   readonly aiTipBusy = signal(false);
   readonly aiTipSource = signal<'ai' | 'local'>('local');
   readonly glanceFlash = signal(false);
+  readonly weather = signal<WeatherNow | null>(null);
+  readonly weatherBusy = signal(false);
+  readonly holidays = signal<PublicHoliday[]>([]);
 
   readonly tabOptions: { id: HomeView; labelKey: MsgKey }[] = [
     { id: 'dashboard', labelKey: 'home.tab.dashboard' },
@@ -277,6 +290,7 @@ export class HomePage {
       breakdowns: this.db.breakdowns(),
       other: this.db.otherExpenses(),
       periods: this.db.expensePeriods(),
+      holidays: this.holidays(),
     }),
   );
   readonly assistantOnline = computed(
@@ -298,7 +312,35 @@ export class HomePage {
         void this.animateCharts();
       }
       void this.loadAiTip();
+      void this.loadWeather();
+      void this.loadHolidays();
     });
+  }
+
+  private async loadWeather(): Promise<void> {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      return;
+    }
+    this.weatherBusy.set(true);
+    try {
+      const coords = await getCoords();
+      if (!coords) {
+        return;
+      }
+      this.weather.set(await currentWeather(coords.lat, coords.lon));
+    } finally {
+      this.weatherBusy.set(false);
+    }
+  }
+
+  private async loadHolidays(): Promise<void> {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      return;
+    }
+    const today = todayDateOnly();
+    const cc = countryFromCurrency(this.db.settings().currency);
+    const year = Number(today.slice(0, 4));
+    this.holidays.set(await publicHolidays(cc, year));
   }
 
   async clearSample(): Promise<void> {
@@ -329,7 +371,14 @@ export class HomePage {
   }
 
   recBody(rec: Recommendation): string {
-    return this.i18n.t(rec.bodyKey as MsgKey, rec.bodyParams);
+    const params = { ...(rec.bodyParams ?? {}) };
+    if (rec.kind === 'holiday' && typeof params['date'] === 'string') {
+      params['date'] = this.i18n.formatDate(String(params['date']), {
+        day: 'numeric',
+        month: 'short',
+      });
+    }
+    return this.i18n.t(rec.bodyKey as MsgKey, params);
   }
 
   async loadAiTip(): Promise<void> {

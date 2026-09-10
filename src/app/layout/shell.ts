@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   ElementRef,
+  afterNextRender,
   inject,
   signal,
   viewChild,
@@ -18,6 +19,7 @@ import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter, map, skip, startWith } from 'rxjs';
 import { Db } from '../data/db';
 import { I18n } from '../i18n/i18n';
+import { HolidayReminder } from '../pwa/holiday-reminder';
 import { InstallPwa } from '../pwa/install-pwa';
 import { WhatsNew } from '../pwa/whats-new';
 import { UpdateModal } from '../ui/update-modal';
@@ -35,6 +37,7 @@ export class Shell {
   readonly whatsNew = inject(WhatsNew);
   private readonly router = inject(Router);
   private readonly install = inject(InstallPwa);
+  private readonly holidayReminder = inject(HolidayReminder);
   private readonly main = viewChild<ElementRef<HTMLElement>>('main');
 
   readonly updateDismissed = signal(false);
@@ -80,6 +83,9 @@ export class Shell {
           el.scrollTop = 0;
         }
       });
+    afterNextRender(() => {
+      void this.holidayReminder.check();
+    });
   }
 
   reload(): void {
