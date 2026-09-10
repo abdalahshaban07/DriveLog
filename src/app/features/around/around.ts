@@ -5,7 +5,6 @@ import {
   signal,
 } from '@angular/core';
 import { getCoords, nearbyAround, type NearbyPoi } from '../../data/remote';
-import type { AroundFilter } from '../../domain/around-filter';
 import { I18n } from '../../i18n/i18n';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
@@ -23,17 +22,12 @@ export class AroundPage {
 
   readonly requested = signal(false);
   readonly nearbyKind = signal<'fuel' | 'charge'>('fuel');
-  readonly nearbyFilter = signal<AroundFilter>('best');
   readonly nearbyLoading = signal(false);
   readonly nearbyError = signal<string | null>(null);
   readonly nearbyItems = signal<NearbyPoi[]>([]);
 
   setNearbyKind(kind: 'fuel' | 'charge'): void {
     this.nearbyKind.set(kind);
-  }
-
-  setNearbyFilter(filter: AroundFilter): void {
-    this.nearbyFilter.set(filter);
   }
 
   async useMyLocation(): Promise<void> {

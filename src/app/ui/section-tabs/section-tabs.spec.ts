@@ -8,7 +8,16 @@ describe('SectionTabs', () => {
   it('renders router links for each tab', async () => {
     await TestBed.configureTestingModule({
       imports: [SectionTabs],
-      providers: [provideRouter([]), I18n],
+      providers: [
+        provideRouter([]),
+        {
+          provide: I18n,
+          useValue: {
+            t: (k: string) =>
+              ({ 'fillUp.title': 'Fill-up', 'section.history': 'History' }[k] ?? k),
+          },
+        },
+      ],
     }).compileComponents();
 
     const fixture = TestBed.createComponent(SectionTabs);

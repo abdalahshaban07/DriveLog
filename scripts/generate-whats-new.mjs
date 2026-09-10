@@ -4,7 +4,7 @@
  * Local/dev keeps the committed fallback; CI overwrites before ng build.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, renameSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, renameSync, mkdirSync, readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -106,6 +106,21 @@ export function genericCards() {
   return {
     en: [{ icon: 'sparkle', title: 'App update', body: DEFAULT_BODY }],
     ar: [{ icon: 'sparkle', title: 'تحديث التطبيق', body: DEFAULT_BODY }],
+  };
+}
+
+const ARABIC_RE = /[\u0600-\u06FF]/;
+
+export function hasArabicText(value) {
+  return ARABIC_RE.test(JSON.stringify(value ?? ''));
+}
+
+export function stampWhatsNewId(existing, { date, sha }) {
+  const short = String(sha).replace(/^#/, '').slice(0, 7);
+  return {
+    id: `${date}-${short}`,
+    en: existing.en,
+    ar: existing.ar,
   };
 }
 
@@ -223,6 +238,19 @@ export function selfCheck() {
   const empty = buildWhatsNewFile({ date: '2026-09-10', sha: 'deadbee', cards: [] });
   strictEqual(empty.en[0].title, 'App update', 'generic en');
   strictEqual(empty.ar[0].title, 'تحديث التطبيق', 'generic ar');
+  strictEqual(hasArabicText([{ title: 'من حولك' }]), true, 'detect ar');
+  strictEqual(hasArabicText([{ title: 'Around you' }]), false, 'no ar');
+  const stamped = stampWhatsNewId(
+    {
+      id: 'old',
+      en: [{ icon: 'fuel', title: 'Around you', body: 'x' }],
+      ar: [{ icon: 'fuel', title: 'من حولك', body: 'قائمة' }],
+    },
+    { date: '2026-09-10', sha: 'deadbee' },
+  );
+  strictEqual(stamped.id, '2026-09-10-deadbee', 'stamp id');
+  strictEqual(stamped.ar[0].title, 'من حولك', 'keep ar');
+  strictEqual(stamped.en[0].title, 'Around you', 'keep en');
   console.log('generate-whats-new self-check ok');
 }
 
@@ -241,6 +269,16 @@ function main() {
     selfCheck();
     return;
   }
+  const existing = readExistingWhatsNew();
+  if (existing && hasArabicText(existing.ar)) {
+    const file = stampWhatsNewId(existing, {
+      date: todayUtc(),
+      sha: shortSha(),
+    });
+    writeAtomic(OUT, file);
+    console.log(`wrote ${OUT} id=${file.id} cards=${file.en.length} (preserved ar)`);
+    return;
+  }
   const cards = cardsFromCommits(collectCommits());
   const file = buildWhatsNewFile({
     date: todayUtc(),
@@ -249,6 +287,18 @@ function main() {
   });
   writeAtomic(OUT, file);
   console.log(`wrote ${OUT} id=${file.id} cards=${file.en.length}`);
+}
+
+function readExistingWhatsNew() {
+  try {
+    const raw = JSON.parse(readFileSync(OUT, 'utf8'));
+    if (!raw || !Array.isArray(raw.en) || !raw.en.length) {
+      return null;
+    }
+    return raw;
+  } catch {
+    return null;
+  }
 }
 
 const isMain =

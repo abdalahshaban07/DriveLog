@@ -2,6 +2,8 @@ export const APP_NAME_EN = 'DriveLog';
 export const APP_NAME_AR = 'سجل القيادة';
 export const APP_SUBTITLE_EN = 'Fuel, maintenance & reminders';
 export const APP_SUBTITLE_AR = 'الوقود والصيانة والتذكيرات';
+/** Marketing/splash version. Bump for v1.3 — do not use package.json 0.0.0. */
+export const APP_VERSION = '1.2';
 
 export const DB_NAME = 'drivelog';
 export const DB_VERSION = 4;

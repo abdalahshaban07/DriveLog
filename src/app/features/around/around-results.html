@@ -25,40 +25,6 @@
     </button>
   </div>
 
-  <div
-    class="around-filters"
-    role="toolbar"
-    [attr.aria-label]="i18n.t('around.filters')"
-  >
-    <button
-      type="button"
-      class="around-chip"
-      [class.around-chip--on]="filter() === 'best'"
-      [attr.aria-pressed]="filter() === 'best'"
-      (click)="setFilter('best')"
-    >
-      {{ i18n.t('around.filterBest') }}
-    </button>
-    <button
-      type="button"
-      class="around-chip"
-      [class.around-chip--on]="filter() === 'open'"
-      [attr.aria-pressed]="filter() === 'open'"
-      (click)="setFilter('open')"
-    >
-      {{ i18n.t('around.filterOpen') }}
-    </button>
-    <button
-      type="button"
-      class="around-chip"
-      [class.around-chip--on]="filter() === 'more'"
-      [attr.aria-pressed]="filter() === 'more'"
-      (click)="setFilter('more')"
-    >
-      {{ i18n.t('around.filterMore') }}
-    </button>
-  </div>
-
   @if (loading()) {
     <div class="around-results__body">
       <div class="skeleton skeleton--row" aria-hidden="true"></div>
@@ -66,8 +32,23 @@
       <div class="skeleton skeleton--row" aria-hidden="true"></div>
     </div>
   } @else if (error()) {
-    <div class="error-state" role="alert">
-      <p>{{ error() }}</p>
+    <div class="around-error">
+      <div class="error-state" role="alert">
+        <p>{{ error() }}</p>
+      </div>
+      <button
+        type="button"
+        class="around-retry"
+        [attr.aria-label]="i18n.t('around.retry')"
+        (click)="retry.emit()"
+      >
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M4.5 12a7.5 7.5 0 0 1 12.7-5.4L20 9" />
+          <path d="M20 4v5h-5" />
+          <path d="M19.5 12a7.5 7.5 0 0 1-12.7 5.4L4 15" />
+          <path d="M4 20v-5h5" />
+        </svg>
+      </button>
     </div>
   } @else if (list().length === 0) {
     <div class="empty-state">
@@ -99,11 +80,8 @@
               }
             </span>
             <span class="around-list__main">
-              <span class="around-list__top">
+              <span class="around-list__name-row">
                 <span class="around-list__name">{{ poi.name }}</span>
-                <span class="around-list__dist">{{ distanceLabel(poi) }}</span>
-              </span>
-              <span class="around-list__badges">
                 @if (poi.openNow === true) {
                   <span class="around-badge around-badge--ok">{{
                     i18n.t('around.openNow')
@@ -133,6 +111,7 @@
                 <span class="around-list__detail">{{ poi.detail }}</span>
               }
             </span>
+            <span class="around-list__dist">{{ distanceLabel(poi) }}</span>
           </a>
         </li>
       }
