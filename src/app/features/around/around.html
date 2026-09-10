@@ -19,14 +19,8 @@
       [loading]="nearbyLoading()"
       [error]="nearbyError()"
       [kind]="nearbyKind()"
-      [filter]="nearbyFilter()"
       (kindChange)="setNearbyKind($event)"
-      (filterChange)="setNearbyFilter($event)"
+      (retry)="useMyLocation()"
     />
-    @if (nearbyError()) {
-      <button type="button" class="ghost-btn around-retry" (click)="useMyLocation()">
-        {{ i18n.t('around.retry') }}
-      </button>
-    }
   }
 </div>

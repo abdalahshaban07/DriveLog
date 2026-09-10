@@ -11,11 +11,7 @@ import {
   type NearbyConnector,
   type NearbyPoi,
 } from '../../data/remote';
-import {
-  filterAroundPois,
-  formatNearbyDistance,
-  type AroundFilter,
-} from '../../domain/around-filter';
+import { filterAroundPois, formatNearbyDistance } from '../../domain/around-filter';
 import { I18n } from '../../i18n/i18n';
 
 @Component({
@@ -31,13 +27,10 @@ export class AroundResults {
   readonly loading = input(false);
   readonly error = input<string | null>(null);
   readonly kind = input<'fuel' | 'charge'>('fuel');
-  readonly filter = input<AroundFilter>('best');
   readonly kindChange = output<'fuel' | 'charge'>();
-  readonly filterChange = output<AroundFilter>();
+  readonly retry = output<void>();
 
-  readonly list = computed(() =>
-    filterAroundPois(this.items(), this.kind(), this.filter()),
-  );
+  readonly list = computed(() => filterAroundPois(this.items(), this.kind()));
 
   readonly showOcmAttr = computed(() =>
     this.items().some((p) => p.source === 'ocm'),
@@ -63,9 +56,5 @@ export class AroundResults {
       return this.i18n.t('around.connectorSlow');
     }
     return this.i18n.t('around.connectorMedium');
-  }
-
-  setFilter(next: AroundFilter): void {
-    this.filterChange.emit(next);
   }
 }

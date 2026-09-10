@@ -24,33 +24,21 @@ describe('filterAroundPois', () => {
     poi({ id: 4, kind: 'charge', distanceKm: 0.2, openNow: true }),
   ];
 
-  it('filters by kind and sorts by distance for best', () => {
-    const list = filterAroundPois(items, 'fuel', 'best');
+  it('filters by kind and sorts by distance', () => {
+    const list = filterAroundPois(items, 'fuel');
     expect(list.map((p) => p.id)).toEqual([2, 3, 1]);
   });
 
-  it('open filter keeps only openNow === true', () => {
-    const list = filterAroundPois(items, 'fuel', 'open');
-    expect(list.map((p) => p.id)).toEqual([1]);
-  });
-
-  it('open filter works for charge (OCM operational)', () => {
-    const charges: NearbyPoi[] = [
-      poi({ id: 10, kind: 'charge', distanceKm: 1, openNow: true }),
-      poi({ id: 11, kind: 'charge', distanceKm: 0.5, openNow: false }),
-      poi({ id: 12, kind: 'charge', distanceKm: 0.2, openNow: null }),
-    ];
-    expect(filterAroundPois(charges, 'charge', 'open').map((p) => p.id)).toEqual([
-      10,
-    ]);
-  });
-
-  it('more returns full sorted list for kind', () => {
+  it('returns the full sorted list for the kind', () => {
     const many = Array.from({ length: 15 }, (_, i) =>
       poi({ id: i + 1, kind: 'fuel', distanceKm: 15 - i }),
     );
-    expect(filterAroundPois(many, 'fuel', 'best')).toHaveLength(12);
-    expect(filterAroundPois(many, 'fuel', 'more')).toHaveLength(15);
+    expect(filterAroundPois(many, 'fuel')).toHaveLength(15);
+    expect(filterAroundPois(many, 'fuel')[0]?.id).toBe(15);
+  });
+
+  it('keeps only charge points for charge kind', () => {
+    expect(filterAroundPois(items, 'charge').map((p) => p.id)).toEqual([4]);
   });
 });
 
