@@ -106,16 +106,14 @@
           </div>
         </section>
 
-        @if (!sampleMode()) {
-          <app-month-insight
-            [fills]="db.fillUps()"
-            [maintenance]="db.maintenance()"
-            [breakdowns]="db.breakdowns()"
-            [other]="db.otherExpenses()"
-            [currency]="db.settings().currency"
-          />
-          <app-weather-tip [weather]="weather()" [busy]="weatherBusy()" />
-        }
+        <app-month-insight
+          [fills]="db.fillUps()"
+          [maintenance]="db.maintenance()"
+          [breakdowns]="db.breakdowns()"
+          [other]="db.otherExpenses()"
+          [currency]="db.settings().currency"
+        />
+        <app-weather-tip [weather]="weather()" [busy]="weatherBusy()" />
 
         @if (showInstallCard()) {
           <app-install-card
