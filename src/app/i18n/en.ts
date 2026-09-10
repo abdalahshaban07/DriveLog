@@ -47,6 +47,7 @@ export const en = {
   'home.sample.title': 'Sample data',
   'home.sample.body': 'Exploring a demo car. Clear it when you are ready to log your own.',
   'home.sample.clear': 'Clear sample',
+  'home.sample.holiday': 'Demo holiday',
   'home.checklist.title': 'Get set up',
   'home.checklist.dismiss': 'Dismiss',
   'home.checklist.car': 'Add your vehicle',

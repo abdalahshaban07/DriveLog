@@ -4,6 +4,7 @@ import { publicHolidays } from '../data/remote';
 import { countryFromCurrency } from '../domain/country';
 import { buildDueItems, todayDateOnly } from '../domain/dues';
 import { dueHolidayNudge } from '../domain/holidays';
+import { sampleDiscoveryHoliday } from '../domain/sample-data';
 import type { MsgKey } from '../i18n/en';
 import { I18n } from '../i18n/i18n';
 import { Notify } from './notify';
@@ -31,7 +32,11 @@ export class HolidayReminder {
     const today = todayDateOnly();
     const cc = countryFromCurrency(this.db.settings().currency);
     const year = Number(today.slice(0, 4));
-    const holidays = await publicHolidays(cc, year);
+    const remote = await publicHolidays(cc, year);
+    const demo = this.db.settings().sampleMode
+      ? sampleDiscoveryHoliday(today, this.i18n.t('home.sample.holiday' as MsgKey))
+      : null;
+    const holidays = demo ? [demo, ...remote] : remote;
     if (!holidays.length) {
       return;
     }

@@ -5,6 +5,7 @@ import { publicHolidays } from '../../data/remote';
 import { countryFromCurrency } from '../../domain/country';
 import { buildDueItems, todayDateOnly } from '../../domain/dues';
 import { firstDueHolidayNudge, type PublicHoliday } from '../../domain/holidays';
+import { sampleDiscoveryHoliday } from '../../domain/sample-data';
 import { odometerInputValue, roundOdometerKm } from '../../domain/odometer';
 import { MAINTENANCE_TYPES } from '../../domain/models';
 import type { DueItem, DueStatus, Maintenance, MaintenanceType } from '../../domain/models';
@@ -143,13 +144,18 @@ export class MaintenancePage {
   }
 
   private async loadHolidays(): Promise<void> {
+    const today = todayDateOnly();
+    const demo = this.db.settings().sampleMode
+      ? sampleDiscoveryHoliday(today, this.i18n.t('home.sample.holiday'))
+      : null;
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      this.holidays.set(demo ? [demo] : []);
       return;
     }
-    const today = todayDateOnly();
     const cc = countryFromCurrency(this.db.settings().currency);
     const year = Number(today.slice(0, 4));
-    this.holidays.set(await publicHolidays(cc, year));
+    const list = await publicHolidays(cc, year);
+    this.holidays.set(demo ? [demo, ...list] : list);
   }
 
   dueLabel(d: DueItem): string {

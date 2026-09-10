@@ -49,6 +49,7 @@ export const ar: Record<MsgKey, string> = {
   'home.sample.title': 'بيانات تجريبية',
   'home.sample.body': 'تستكشف سيارة تجريبية. امسحها عندما تكون جاهزاً لتسجيل بياناتك.',
   'home.sample.clear': 'مسح العينة',
+  'home.sample.holiday': 'عطلة تجريبية',
   'home.checklist.title': 'أكمل الإعداد',
   'home.checklist.dismiss': 'إخفاء',
   'home.checklist.car': 'أضف سيارتك',

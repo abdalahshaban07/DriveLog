@@ -39,7 +39,7 @@ import {
   buildRecommendations,
   type Recommendation,
 } from '../../domain/recommendations';
-import { SAMPLE_CAR_ID } from '../../domain/sample-data';
+import { SAMPLE_CAR_ID, sampleDiscoveryHoliday } from '../../domain/sample-data';
 import {
   buildSetupChecklist,
   isRealFillUp,
@@ -334,13 +334,18 @@ export class HomePage {
   }
 
   private async loadHolidays(): Promise<void> {
+    const today = todayDateOnly();
+    const demo = this.db.settings().sampleMode
+      ? sampleDiscoveryHoliday(today, this.i18n.t('home.sample.holiday'))
+      : null;
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      this.holidays.set(demo ? [demo] : []);
       return;
     }
-    const today = todayDateOnly();
     const cc = countryFromCurrency(this.db.settings().currency);
     const year = Number(today.slice(0, 4));
-    this.holidays.set(await publicHolidays(cc, year));
+    const list = await publicHolidays(cc, year);
+    this.holidays.set(demo ? [demo, ...list] : list);
   }
 
   async clearSample(): Promise<void> {

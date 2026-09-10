@@ -1,6 +1,18 @@
+import type { PublicHoliday } from './holidays';
 import type { Car, FillUp, Maintenance } from './models';
 
 export const SAMPLE_CAR_ID = 'sample-car';
+
+/** Demo holiday ~4 days out so discovery always shows the nudge. */
+export function sampleDiscoveryHoliday(
+  today: string,
+  localName: string,
+  daysAhead = 4,
+): PublicHoliday {
+  const d = new Date(`${today}T12:00:00`);
+  d.setDate(d.getDate() + daysAhead);
+  return { date: d.toISOString().slice(0, 10), localName };
+}
 
 /** Deterministic demo dataset for first-run explore mode. */
 export function buildSampleDataset(now = new Date()): {
@@ -13,12 +25,21 @@ export function buildSampleDataset(now = new Date()): {
   const day = (y: number, m: number, d: number) =>
     `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 
+  // ponytail: due/license within 14d so holiday nudges show in discovery
+  const dueSoon = new Date(now);
+  dueSoon.setDate(dueSoon.getDate() + 10);
+  const dueSoonDate = dueSoon.toISOString().slice(0, 10);
+  const licenseSoon = new Date(now);
+  licenseSoon.setDate(licenseSoon.getDate() + 12);
+  const licenseSoonDate = licenseSoon.toISOString().slice(0, 10);
+
   const car: Car = {
     id: SAMPLE_CAR_ID,
     nickname: 'Demo Hatch',
     initialOdometer: 42000,
     currentOdometer: 45540,
     tankCapacityLiters: 45,
+    licenseExpiry: licenseSoonDate,
     createdAt: `${day(year, month - 5, 1)}T08:00:00.000Z`,
     updatedAt: `${day(year, month, 1)}T08:00:00.000Z`,
   };
@@ -77,7 +98,7 @@ export function buildSampleDataset(now = new Date()): {
       odometer: 44900,
       cost: 1400,
       date: day(year, month - 1, 10),
-      dueDate: day(year, month + 1, 10),
+      dueDate: dueSoonDate,
       createdAt: `${day(year, month - 1, 10)}T12:00:00.000Z`,
       updatedAt: `${day(year, month - 1, 10)}T12:00:00.000Z`,
     },
