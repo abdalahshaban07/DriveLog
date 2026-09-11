@@ -115,7 +115,7 @@ export class DateField {
   readonly hintId = `date-hint-${this.uid}`;
 
   readonly locale = computed(() =>
-    this.i18n.language() === 'ar' ? 'ar-EG' : 'en-US',
+    this.i18n.language() === 'ar' ? 'ar-EG-u-nu-arab' : 'en-US',
   );
   readonly weekStart = computed(() =>
     weekStartDay(this.locale(), this.i18n.language()),

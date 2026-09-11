@@ -104,14 +104,6 @@ export class OtherExpensesPage {
   }
 
   formatMoney(value: number): string {
-    try {
-      return new Intl.NumberFormat(this.i18n.language(), {
-        style: 'currency',
-        currency: this.db.settings().currency,
-        maximumFractionDigits: 0,
-      }).format(value);
-    } catch {
-      return `${value}`;
-    }
+    return this.i18n.formatMoney(value, this.db.settings().currency, 0);
   }
 }

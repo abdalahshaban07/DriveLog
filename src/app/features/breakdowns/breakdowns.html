@@ -57,7 +57,7 @@
           <div class="record-row__main">
             <strong>{{ row.symptom }}</strong>
             <span class="record-row__meta">
-              {{ categoryLabel(row.category) }} · {{ row.date }}
+              {{ categoryLabel(row.category) }} · {{ i18n.formatDate(row.date) }}
             </span>
           </div>
           <div class="record-row__side">
