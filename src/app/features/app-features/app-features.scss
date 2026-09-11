@@ -1,0 +1,42 @@
+.features {
+  gap: var(--space-3);
+  max-inline-size: 28rem;
+  margin-inline: auto;
+  width: 100%;
+}
+
+:host .card {
+  padding: 0;
+  box-shadow: var(--shadow-soft);
+}
+
+.list {
+  display: grid;
+}
+
+.list > * + * {
+  border-block-start: 1px solid var(--hairline);
+}
+
+.line {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--tap);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+}
+
+.line__text {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.line__sub {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 400;
+  line-height: 1.4;
+}

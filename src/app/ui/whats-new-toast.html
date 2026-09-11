@@ -1,0 +1,20 @@
+<dialog
+  #dialog
+  class="wn-toast"
+  [attr.aria-labelledby]="titleId"
+  (cancel)="onCancel($event)"
+  (click)="onBackdropClick($event)"
+>
+  <div class="wn-toast__panel" role="document">
+    @if (version()) {
+      <p class="wn-toast__ver">{{ version() }}</p>
+    }
+    <h2 [id]="titleId" class="wn-toast__title">{{ i18n.t('update.found') }}</h2>
+    <p class="wn-toast__body">{{ i18n.t('update.foundBody') }}</p>
+    <app-primary-button
+      [label]="i18n.t('update.dismiss')"
+      [stretch]="true"
+      (pressed)="dismissed.emit()"
+    />
+  </div>
+</dialog>

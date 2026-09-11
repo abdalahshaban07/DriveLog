@@ -1,4 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { APP_VERSION } from '../core/config';
 import { Db } from '../data/db';
 import { I18n } from '../i18n/i18n';
 
@@ -19,6 +20,10 @@ export type WhatsNewFile = {
 };
 
 const ICONS = new Set<WhatsNewIcon>(['fuel', 'chart', 'wrench', 'palette', 'sparkle', 'bug']);
+
+export function whatsNewDisplayVersion(version = APP_VERSION): string {
+  return `v${version}`;
+}
 
 /** ponytail: legacy strings become body-only cards with sparkle icon */
 export function normalizeWhatsNewEntry(entry: WhatsNewEntry): WhatsNewCard {
@@ -47,6 +52,7 @@ export class WhatsNew {
 
   readonly notes = this._notes.asReadonly();
   readonly manualOpen = this._manualOpen.asReadonly();
+  readonly displayVersion = whatsNewDisplayVersion();
 
   readonly visible = computed(() => {
     const n = this._notes();
@@ -75,8 +81,6 @@ export class WhatsNew {
     return first ? (first.title || first.body) : '';
   });
 
-  readonly sheetOpen = computed(() => this._manualOpen() || this.visible());
-
   async load(): Promise<void> {
     try {
       const res = await fetch('whats-new.json', { cache: 'no-cache' });
@@ -99,7 +103,7 @@ export class WhatsNew {
 
   openManual(): void {
     void this.load().then(() => {
-      if (this.cards().length) {
+      if (this.notes()?.id) {
         this._manualOpen.set(true);
       }
     });

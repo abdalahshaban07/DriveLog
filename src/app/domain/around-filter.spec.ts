@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { NearbyPoi } from '../data/remote';
 import {
+  clampAroundRadiusKm,
   connectorSpeed,
   filterAroundPois,
   formatNearbyDistance,
@@ -54,6 +55,15 @@ describe('formatNearbyDistance', () => {
     const fmt1 = (n: number, opts?: Intl.NumberFormatOptions) =>
       opts?.maximumFractionDigits === 1 ? n.toFixed(1) : String(n);
     expect(formatNearbyDistance(1.14, fmt1, labels)).toBe('1.1 km');
+  });
+});
+
+describe('clampAroundRadiusKm', () => {
+  it('defaults, clamps, and rounds', () => {
+    expect(clampAroundRadiusKm(Number.NaN)).toBe(15);
+    expect(clampAroundRadiusKm(0)).toBe(1);
+    expect(clampAroundRadiusKm(80)).toBe(50);
+    expect(clampAroundRadiusKm(12.4)).toBe(12);
   });
 });
 

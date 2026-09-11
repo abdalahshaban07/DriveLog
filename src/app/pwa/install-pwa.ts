@@ -5,6 +5,25 @@ import { I18n } from '../i18n/i18n';
 import { Notify } from './notify';
 import { WhatsNew } from './whats-new';
 
+export const SW_RELOAD_KEY = 'drivelog.swReloaded';
+
+export function shouldAutoApplySwUpdate(
+  storage: Pick<Storage, 'getItem' | 'setItem'> | null,
+): boolean {
+  if (!storage) {
+    return true;
+  }
+  try {
+    if (storage.getItem(SW_RELOAD_KEY)) {
+      return false;
+    }
+    storage.setItem(SW_RELOAD_KEY, '1');
+    return true;
+  } catch {
+    return true;
+  }
+}
+
 @Injectable({ providedIn: 'root' })
 export class InstallPwa {
   private deferred: BeforeInstallPromptEvent | null = null;
@@ -79,11 +98,15 @@ export class InstallPwa {
       .pipe(filter((e): e is VersionReadyEvent => e.type === 'VERSION_READY'))
       .subscribe(() => {
         this.updateReady.set(true);
-        // Notes file may still be the old cached one until reload.
         this.notify.notifyUpdate(
           this.i18n.t('update.available'),
           this.i18n.t('update.notifyBody'),
         );
+        const storage =
+          typeof sessionStorage === 'undefined' ? null : sessionStorage;
+        if (shouldAutoApplySwUpdate(storage)) {
+          void this.applyUpdate();
+        }
       });
 
     // ponytail: poll while tab open so gh-pages deploys surface without a hard refresh

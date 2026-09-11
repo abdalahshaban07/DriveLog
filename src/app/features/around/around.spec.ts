@@ -28,6 +28,18 @@ describe('AroundPage', () => {
     expect(fixture.componentInstance.nearbyLoading()).toBe(false);
     expect(fixture.componentInstance.nearbyItems()).toEqual([]);
     expect(fixture.componentInstance.nearbyError()).toBeNull();
+    expect(fixture.componentInstance.rangeKm()).toBe(15);
+  });
+
+  it('clamps range and blocks search when invalid', async () => {
+    const fixture = TestBed.createComponent(AroundPage);
+    fixture.componentInstance.onRange('0');
+    expect(fixture.componentInstance.rangeError()).toBe('around.rangeError');
+    await fixture.componentInstance.useMyLocation();
+    expect(fixture.componentInstance.requested()).toBe(false);
+    fixture.componentInstance.onRange('20');
+    expect(fixture.componentInstance.rangeKm()).toBe(20);
+    expect(fixture.componentInstance.rangeError()).toBe('');
   });
 
   it('requests location only after Use my location', async () => {

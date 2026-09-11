@@ -3,6 +3,20 @@ import { connectorSpeed } from './connector-speed';
 
 export { connectorSpeed };
 
+export const AROUND_RADIUS_DEFAULT_KM = 15;
+export const AROUND_RADIUS_MIN_KM = 1;
+export const AROUND_RADIUS_MAX_KM = 50;
+
+export function clampAroundRadiusKm(raw: number): number {
+  if (!Number.isFinite(raw)) {
+    return AROUND_RADIUS_DEFAULT_KM;
+  }
+  return Math.min(
+    AROUND_RADIUS_MAX_KM,
+    Math.max(AROUND_RADIUS_MIN_KM, Math.round(raw)),
+  );
+}
+
 /** Kind filter + distance sort for the Around list. */
 export function filterAroundPois(
   pois: readonly NearbyPoi[],

@@ -39,6 +39,12 @@ export type CountryFuelPrices = {
 /** Overpass search radii (m). Expand until results, cap 50 km. */
 const NEARBY_RADII_M = [5_000, 15_000, 30_000, 50_000] as const;
 
+const OVERPASS_ENDPOINTS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.openstreetmap.fr/api/interpreter',
+] as const;
+
 export type NearbyConnector = {
   type: string;
   powerKw?: number;
@@ -525,7 +531,11 @@ export async function nearbyPoi(
 ): Promise<NearbyPoi[]> {
   let last: NearbyPoi[] = [];
   for (const radiusM of NEARBY_RADII_M) {
-    last = await fetchNearbyAt(origin, radiusM);
+    const got = await fetchNearbyAt(origin, radiusM);
+    if (got == null) {
+      continue;
+    }
+    last = got;
     const hit = preferKind
       ? last.filter((p) => p.kind === preferKind)
       : last;
@@ -536,31 +546,55 @@ export async function nearbyPoi(
   return last;
 }
 
-/** Around page: OSM fuel + OpenChargeMap charge (OSM charge fallback). */
-export async function nearbyAround(origin: Coords): Promise<NearbyPoi[]> {
-  // preferKind so a nearby charger cannot stop fuel radius expansion (and vice versa).
-  if (!OCM_API_KEY) {
-    const [fuelList, chargeList] = await Promise.all([
-      nearbyPoi(origin, 'fuel'),
-      nearbyPoi(origin, 'charge'),
-    ]);
-    return [
-      ...fuelList.filter((p) => p.kind === 'fuel'),
-      ...chargeList.filter((p) => p.kind === 'charge'),
-    ].sort((a, b) => a.distanceKm - b.distanceKm);
+/** Around page: one user radius. Fetch fail throws; empty JSON is []. */
+export async function nearbyAround(
+  origin: Coords,
+  radiusKm = 15,
+): Promise<NearbyPoi[]> {
+  const km = Number.isFinite(radiusKm)
+    ? Math.min(50, Math.max(1, Math.round(radiusKm)))
+    : 15;
+  const first = await fetchAroundAt(origin, km);
+  if (first == null) {
+    throw new Error('nearby-unavailable');
   }
-  const [fuelList, ocm] = await Promise.all([
-    nearbyPoi(origin, 'fuel'),
-    fetchOpenChargeMap(origin),
+  if (first.length || km >= 50) {
+    return first;
+  }
+  const retryKm = Math.min(50, km * 2);
+  if (retryKm === km) {
+    return first;
+  }
+  const retry = await fetchAroundAt(origin, retryKm);
+  return retry ?? first;
+}
+
+async function fetchAroundAt(
+  origin: Coords,
+  radiusKm: number,
+): Promise<NearbyPoi[] | null> {
+  const radiusM = radiusKm * 1000;
+  if (!OCM_API_KEY) {
+    return fetchNearbyAt(origin, radiusM);
+  }
+  const [osm, ocm] = await Promise.all([
+    fetchNearbyAt(origin, radiusM),
+    fetchOpenChargeMap(origin, radiusKm),
   ]);
-  const fuel = fuelList.filter((p) => p.kind === 'fuel');
+  if (osm == null && !ocm.length) {
+    return null;
+  }
+  const fuel = (osm ?? []).filter((p) => p.kind === 'fuel');
   const charge = ocm.length
     ? ocm
-    : (await nearbyPoi(origin, 'charge')).filter((p) => p.kind === 'charge');
+    : (osm ?? []).filter((p) => p.kind === 'charge');
   return [...fuel, ...charge].sort((a, b) => a.distanceKm - b.distanceKm);
 }
 
-async function fetchOpenChargeMap(origin: Coords): Promise<NearbyPoi[]> {
+async function fetchOpenChargeMap(
+  origin: Coords,
+  radiusKm = 50,
+): Promise<NearbyPoi[]> {
   // ponytail: OCM requires a free key; without it skip and use OSM charge nodes
   if (!OCM_API_KEY) {
     return [];
@@ -568,7 +602,7 @@ async function fetchOpenChargeMap(origin: Coords): Promise<NearbyPoi[]> {
   const q = new URLSearchParams({
     latitude: String(origin.lat),
     longitude: String(origin.lon),
-    distance: '50',
+    distance: String(radiusKm),
     distanceunit: 'KM',
     maxresults: '20',
     // ponytail: avoid compact — need ConnectionType.Title for connector rows
@@ -580,13 +614,35 @@ async function fetchOpenChargeMap(origin: Coords): Promise<NearbyPoi[]> {
     { headers: { Accept: 'application/json' } },
     15_000,
   );
+  if (raw == null) {
+    return [];
+  }
   return parseOpenChargeMap(raw, origin);
+}
+
+async function fetchOverpass(query: string): Promise<unknown | null> {
+  const body = `data=${encodeURIComponent(query)}`;
+  for (const url of OVERPASS_ENDPOINTS) {
+    const raw = await fetchJson(
+      url,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body,
+      },
+      25_000,
+    );
+    if (raw != null) {
+      return raw;
+    }
+  }
+  return null;
 }
 
 async function fetchNearbyAt(
   origin: Coords,
   radiusM: number,
-): Promise<NearbyPoi[]> {
+): Promise<NearbyPoi[] | null> {
   // Nodes + ways (stations often mapped as areas); shop=fuel covers a few brand footprints.
   const q = `[out:json][timeout:25];
 (
@@ -598,15 +654,10 @@ async function fetchNearbyAt(
   way["amenity"="charging_station"](around:${radiusM},${origin.lat},${origin.lon});
 );
 out tags center;`;
-  const raw = await fetchJson(
-    'https://overpass-api.de/api/interpreter',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `data=${encodeURIComponent(q)}`,
-    },
-    25_000,
-  );
+  const raw = await fetchOverpass(q);
+  if (raw == null) {
+    return null;
+  }
   return parseNearbyPoi(raw, origin);
 }
 

@@ -4,6 +4,14 @@
     [subtitle]="i18n.t('around.subtitle')"
   />
 
+  <app-numeric-field
+    [label]="i18n.t('around.range')"
+    [value]="rangeText()"
+    [error]="rangeError()"
+    (valueChange)="onRange($event)"
+    (touch)="onRangeCommit()"
+  />
+
   @if (!requested()) {
     <section class="card around-cta" role="status" aria-live="polite">
       <p class="around-cta__copy">{{ i18n.t('around.explain') }}</p>

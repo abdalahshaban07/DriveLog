@@ -95,6 +95,14 @@ export const routes: Routes = [
     canActivate: [setupGuard],
   },
   {
+    path: 'settings/features',
+    loadComponent: () =>
+      import('./features/app-features/app-features').then(
+        (m) => m.AppFeaturesPage,
+      ),
+    canActivate: [setupGuard],
+  },
+  {
     path: 'settings',
     loadComponent: () =>
       import('./features/settings/settings').then((m) => m.SettingsPage),

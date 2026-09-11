@@ -1,0 +1,19 @@
+<div class="stack page-narrow features">
+  <app-page-header
+    [title]="i18n.t('settings.features')"
+    [subtitle]="i18n.t('settings.featuresLead')"
+    [showBack]="true"
+    (back)="router.navigateByUrl('/settings')"
+  />
+
+  <section class="card list" [attr.aria-label]="i18n.t('settings.features')">
+    @for (item of items; track item.titleKey) {
+      <div class="line">
+        <span class="line__text">
+          <strong>{{ i18n.t(item.titleKey) }}</strong>
+          <span class="line__sub">{{ i18n.t(item.bodyKey) }}</span>
+        </span>
+      </div>
+    }
+  </section>
+</div>
