@@ -497,6 +497,7 @@ export class Db {
     );
     if (result.ok) {
       await this.updateSettings({ customMaintenanceTypes: result.list });
+      this.flashSaved();
     }
     return result;
   }
@@ -949,7 +950,7 @@ export class Db {
 
   private flashSaved(): void {
     this._savedFlash.set(true);
-    setTimeout(() => this._savedFlash.set(false), 1200);
+    setTimeout(() => this._savedFlash.set(false), 2200);
   }
 }
 

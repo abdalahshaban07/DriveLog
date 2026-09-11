@@ -99,7 +99,11 @@
     />
     <div class="maint-form__pair">
       <app-numeric-field [label]="i18n.t('maint.dueKm')" [(value)]="dueKm" />
-      <app-date-field [label]="i18n.t('maint.dueDate')" [(value)]="dueDate" />
+      <app-date-field
+        [label]="i18n.t('maint.dueDate')"
+        [(value)]="dueDate"
+        mode="due"
+      />
     </div>
     <app-text-field [label]="i18n.t('maint.note')" [(value)]="note" [multiline]="true" />
     <div class="maint-form__actions">

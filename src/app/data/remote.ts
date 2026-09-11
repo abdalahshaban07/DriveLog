@@ -97,7 +97,8 @@ export function getCoords(): Promise<Coords | null> {
       (pos) =>
         resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
       () => resolve(null),
-      { enableHighAccuracy: false, timeout: TIMEOUT_MS, maximumAge: 60_000 },
+      // High accuracy + short cache: better Around/nearby distances (GPS may take longer outdoors).
+      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 10_000 },
     );
   });
 }
@@ -552,16 +553,16 @@ export async function nearbyAround(
   radiusKm = 15,
 ): Promise<NearbyPoi[]> {
   const km = Number.isFinite(radiusKm)
-    ? Math.min(50, Math.max(1, Math.round(radiusKm)))
+    ? Math.min(300, Math.max(1, Math.round(radiusKm)))
     : 15;
   const first = await fetchAroundAt(origin, km);
   if (first == null) {
     throw new Error('nearby-unavailable');
   }
-  if (first.length || km >= 50) {
+  if (first.length || km >= 300) {
     return first;
   }
-  const retryKm = Math.min(50, km * 2);
+  const retryKm = Math.min(300, km * 2);
   if (retryKm === km) {
     return first;
   }
