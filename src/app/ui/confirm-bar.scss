@@ -10,7 +10,8 @@
 .scrim {
   position: absolute;
   inset: 0;
-  background: color-mix(in srgb, var(--bg) 55%, #000 45%);
+  /* Dark mix buried page under modal; keep content readable behind dialog. */
+  background: color-mix(in srgb, #000 40%, transparent);
 }
 
 .bar {
