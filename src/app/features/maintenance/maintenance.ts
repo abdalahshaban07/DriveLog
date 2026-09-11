@@ -250,6 +250,8 @@ export class MaintenancePage {
     const { type, otherLabel } = this.parseType(this.type());
     const dueKmRaw = this.dueKm().trim();
     const dueKm = dueKmRaw ? Number(dueKmRaw) : undefined;
+    const dueDate = this.dueDate().trim() || undefined;
+    const dueKmVal = Number.isFinite(dueKm) ? dueKm : undefined;
     this.saving.set(true);
     try {
       await this.db.saveMaintenance({
@@ -260,9 +262,18 @@ export class MaintenancePage {
         odometer,
         date: this.date(),
         note: this.note().trim() || undefined,
-        dueKm: Number.isFinite(dueKm) ? dueKm : undefined,
-        dueDate: this.dueDate().trim() || undefined,
+        dueKm: dueKmVal,
+        dueDate,
       });
+      if (
+        (dueKmVal != null || !!dueDate) &&
+        !this.db.settings().firstDueAt &&
+        this.db.settings().sampleMode !== true
+      ) {
+        await this.db.updateSettings({
+          firstDueAt: new Date().toISOString(),
+        });
+      }
       this.resetForm();
     } finally {
       this.saving.set(false);

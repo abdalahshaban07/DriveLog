@@ -148,6 +148,12 @@ export interface Settings {
   checklistDismissed?: boolean;
   /** User dismissed Home PWA install card. */
   installCardDismissed?: boolean;
+  /** ISO timestamp when real-car setup finished. */
+  setupCompletedAt?: string;
+  /** ISO timestamp of first non-sample fill-up. */
+  firstRealFillAt?: string;
+  /** ISO timestamp of first maintenance with dueDate or dueKm. */
+  firstDueAt?: string;
   customMaintenanceTypes?: string[];
   assistantEnabled?: boolean;
   assistantApiKey?: string;

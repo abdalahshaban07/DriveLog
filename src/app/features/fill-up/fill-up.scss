@@ -26,6 +26,59 @@
   gap: var(--space-3);
 }
 
+.next-due-banner {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.next-due-banner__title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.next-due-banner__body {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.next-due-banner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.next-due-banner__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap);
+  padding-inline: var(--space-4);
+  border-radius: var(--radius);
+  background: var(--fuel);
+  color: var(--cta-text);
+  font-weight: 700;
+  text-decoration: none;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.next-due-banner__dismiss {
+  min-height: var(--tap);
+  padding-inline: var(--space-4);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .next-due-banner__cta {
+    transition: none;
+  }
+}
+
 .warn-hint,
 .economy-live,
 .tank-hint {

@@ -5,7 +5,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
 import {
   computeFillUpCost,
@@ -23,6 +23,7 @@ import {
 } from '../../domain/fill-up-distance';
 import type { FuelGrade } from '../../domain/models';
 import { distinctPlaceLabels } from '../../domain/place-labels';
+import { isRealFillUp } from '../../domain/setup-checklist';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { countryFuelPrices, getCoords, nearbyPoi, type NearbyPoi } from '../../data/remote';
@@ -60,6 +61,7 @@ const GRADE_KEYS: Record<FuelGrade, MsgKey> = {
     TextField,
     PrimaryButton,
     ConfirmBar,
+    RouterLink,
   ],
   templateUrl: './fill-up.html',
   styleUrl: './fill-up.scss',
@@ -98,6 +100,7 @@ export class FillUpPage {
   readonly legacyDistanceEdit = signal(false);
   readonly distanceTouched = signal(false);
   readonly fuelPrices = signal<Awaited<ReturnType<typeof countryFuelPrices>>>(null);
+  readonly nextDueBanner = signal(false);
 
   readonly lastUnit = computed(() => lastFillUnitPriceFromHistory(this.db.fillUps()));
 
@@ -388,6 +391,9 @@ export class FillUpPage {
 
     const station = this.placeLabel().trim() || undefined;
     const selected = this.fuelNearby().find((p) => p.id === this.selectedStationId());
+    const wasFirstReal =
+      !this.editId() && !this.db.fillUps().some(isRealFillUp);
+    const sampleMode = this.db.settings().sampleMode === true;
 
     this.saving.set(true);
     try {
@@ -406,9 +412,52 @@ export class FillUpPage {
         lat: selected?.lat,
         lon: selected?.lon,
       });
-      await this.router.navigateByUrl('/fuel');
+      if (wasFirstReal && !sampleMode) {
+        if (!this.db.settings().firstRealFillAt) {
+          await this.db.updateSettings({
+            firstRealFillAt: new Date().toISOString(),
+          });
+        }
+        this.resetFormAfterFirstSave();
+        this.nextDueBanner.set(true);
+      } else {
+        await this.router.navigateByUrl('/fuel');
+      }
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  dismissNextDueBanner(): void {
+    this.nextDueBanner.set(false);
+  }
+
+  private resetFormAfterFirstSave(): void {
+    this.distanceKm.set('');
+    this.liters.set('');
+    this.date.set(todayDateOnly());
+    this.placeLabel.set('');
+    this.note.set('');
+    this.dateError.set('');
+    this.distanceError.set('');
+    this.distanceWarn.set('');
+    this.litersError.set('');
+    this.capacityWarn.set('');
+    this.locationError.set('');
+    this.nearbyStations.set([]);
+    this.selectedStationId.set(null);
+    this.distanceTouched.set(false);
+    this.legacyDistanceEdit.set(false);
+    this.editId.set(null);
+    const lastGrade = lastFuelGrade(this.db.fillUps());
+    if (lastGrade) {
+      this.fuelGrade.set(lastGrade);
+    } else if (this.gradeOptions().length) {
+      this.fuelGrade.set(this.gradeOptions()[0]!.grade);
+    } else if (this.lastUnit()) {
+      this.fuelGrade.set('custom');
+    } else {
+      this.fuelGrade.set(null);
     }
   }
 }
