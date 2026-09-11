@@ -85,35 +85,37 @@
           <app-quick-log (saved)="onQuickSaved()" />
         }
 
-        @let outlook = monthOutlook();
-        <section class="month-outlook" role="status" [attr.aria-label]="i18n.t('home.monthOutlook')">
-          <h2 class="month-outlook__title">{{ i18n.t('home.monthOutlook') }}</h2>
-          <div class="month-outlook__strip">
-            <div class="month-outlook__cell">
-              <span class="month-outlook__label">{{ i18n.t('home.monthSpend') }}</span>
-              <strong>{{ formatMoney(outlook.actual) }}</strong>
+        @if (hasRealFills() || sampleMode()) {
+          @let outlook = monthOutlook();
+          <section class="month-outlook" role="status" [attr.aria-label]="i18n.t('home.monthOutlook')">
+            <h2 class="month-outlook__title">{{ i18n.t('home.monthOutlook') }}</h2>
+            <div class="month-outlook__strip">
+              <div class="month-outlook__cell">
+                <span class="month-outlook__label">{{ i18n.t('home.monthSpend') }}</span>
+                <strong>{{ formatMoney(outlook.actual) }}</strong>
+              </div>
+              <div class="month-outlook__cell month-outlook__cell--projected">
+                <span class="month-outlook__label">{{ i18n.t('home.projectedSpend') }}</span>
+                <strong>
+                  @if (outlook.projected != null) {
+                    {{ formatMoney(outlook.projected) }}
+                  } @else {
+                    —
+                  }
+                </strong>
+              </div>
             </div>
-            <div class="month-outlook__cell month-outlook__cell--projected">
-              <span class="month-outlook__label">{{ i18n.t('home.projectedSpend') }}</span>
-              <strong>
-                @if (outlook.projected != null) {
-                  {{ formatMoney(outlook.projected) }}
-                } @else {
-                  —
-                }
-              </strong>
-            </div>
-          </div>
-        </section>
+          </section>
 
-        <app-month-insight
-          [fills]="db.fillUps()"
-          [maintenance]="db.maintenance()"
-          [breakdowns]="db.breakdowns()"
-          [other]="db.otherExpenses()"
-          [currency]="db.settings().currency"
-        />
-        <app-weather-tip [weather]="weather()" [busy]="weatherBusy()" />
+          <app-month-insight
+            [fills]="db.fillUps()"
+            [maintenance]="db.maintenance()"
+            [breakdowns]="db.breakdowns()"
+            [other]="db.otherExpenses()"
+            [currency]="db.settings().currency"
+          />
+          <app-weather-tip [weather]="weather()" [busy]="weatherBusy()" />
+        }
 
         @if (showInstallCard()) {
           <app-install-card

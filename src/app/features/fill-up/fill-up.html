@@ -5,6 +5,29 @@
     [ariaLabel]="i18n.t('fillUp.title')"
   />
 
+  @if (nextDueBanner()) {
+    <section
+      class="card next-due-banner"
+      role="status"
+      aria-live="polite"
+    >
+      <h2 class="next-due-banner__title">{{ i18n.t('fillUp.nextDue.title') }}</h2>
+      <p class="next-due-banner__body">{{ i18n.t('fillUp.nextDue.body') }}</p>
+      <div class="next-due-banner__actions">
+        <a routerLink="/maintenance" class="next-due-banner__cta">{{
+          i18n.t('fillUp.nextDue.action')
+        }}</a>
+        <button
+          type="button"
+          class="next-due-banner__dismiss"
+          (click)="dismissNextDueBanner()"
+        >
+          {{ i18n.t('fillUp.nextDue.dismiss') }}
+        </button>
+      </div>
+    </section>
+  }
+
   <p class="hint fill-up__odo" role="status">
     {{ i18n.t('fillUp.lastOdo') }}:
     {{

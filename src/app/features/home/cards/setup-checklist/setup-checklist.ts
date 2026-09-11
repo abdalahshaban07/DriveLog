@@ -41,7 +41,11 @@ export type ChecklistItem = {
       <ul class="checklist__list">
         @for (item of items(); track item.id) {
           <li>
-            <a class="checklist__row" [routerLink]="item.route">
+            <a
+              class="checklist__row"
+              [class.checklist__row--focus]="item.id === focusId()"
+              [routerLink]="item.route"
+            >
               <span class="checklist__check" [class.checklist__check--on]="item.done" aria-hidden="true"></span>
               <span>{{ i18n.t(item.labelKey) }}</span>
             </a>
@@ -92,6 +96,13 @@ export type ChecklistItem = {
       color: inherit;
       text-decoration: none;
       font-weight: 600;
+      border-radius: var(--radius);
+      padding-inline: var(--space-2);
+    }
+    .checklist__row--focus {
+      outline: 2px solid var(--fuel);
+      outline-offset: 2px;
+      background: color-mix(in srgb, var(--fuel) 12%, transparent);
     }
     .checklist__check {
       width: 1.1rem;
@@ -114,4 +125,13 @@ export class SetupChecklist {
   readonly progressPct = computed(() =>
     this.items().length ? (this.doneCount() / this.items().length) * 100 : 0,
   );
+  /** Prefer incomplete fill row; else first incomplete. */
+  readonly focusId = computed(() => {
+    const items = this.items();
+    const fill = items.find((i) => i.id === 'fill' && !i.done);
+    if (fill) {
+      return fill.id;
+    }
+    return items.find((i) => !i.done)?.id ?? null;
+  });
 }

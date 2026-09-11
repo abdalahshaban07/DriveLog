@@ -133,6 +133,7 @@ export class FirstRunPage {
         language: this.language(),
         theme: this.theme(),
         currency: validCurrency(this.currency()),
+        setupCompletedAt: this.db.settings().setupCompletedAt ?? new Date().toISOString(),
       });
       await this.db.createCar(nickname.trim(), Number(odometer), {
         plate: this.plate().trim() || undefined,

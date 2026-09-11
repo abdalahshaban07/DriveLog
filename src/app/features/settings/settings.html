@@ -118,6 +118,28 @@
       <p class="ok">{{ i18n.t('backup.done') }}</p>
     }
 
+    <div class="activation" role="status" [attr.aria-label]="i18n.t('settings.activation')">
+      <p class="section-label">{{ i18n.t('settings.activation') }}</p>
+      <div class="line">
+        <span class="line__text">
+          <strong>{{ i18n.t('settings.activation.setup') }}</strong>
+          <span class="line__sub">{{ activationLabel(db.settings().setupCompletedAt) }}</span>
+        </span>
+      </div>
+      <div class="line">
+        <span class="line__text">
+          <strong>{{ i18n.t('settings.activation.firstFill') }}</strong>
+          <span class="line__sub">{{ activationLabel(db.settings().firstRealFillAt) }}</span>
+        </span>
+      </div>
+      <div class="line">
+        <span class="line__text">
+          <strong>{{ i18n.t('settings.activation.firstDue') }}</strong>
+          <span class="line__sub">{{ activationLabel(db.settings().firstDueAt) }}</span>
+        </span>
+      </div>
+    </div>
+
     @if (db.hasCar()) {
       <button type="button" class="line line--danger" (click)="askRemoveCar()">
         <span class="line__text">

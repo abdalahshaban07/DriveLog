@@ -205,6 +205,17 @@ export class SettingsPage {
     URL.revokeObjectURL(url);
   }
 
+  activationLabel(iso?: string): string {
+    if (!iso) {
+      return '—';
+    }
+    return this.i18n.formatDate(iso.slice(0, 10), {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  }
+
   async onFile(event: Event): Promise<void> {
     this.importError.set('');
     this.importOk.set(false);
