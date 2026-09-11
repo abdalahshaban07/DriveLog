@@ -66,6 +66,11 @@
         </div>
       </nav>
     }
+    @if (db.savedFlash()) {
+      <p class="save-toast" role="status" aria-live="polite">
+        {{ i18n.t('common.saved') }}
+      </p>
+    }
     @if (showUpdate()) {
       <app-update-modal
         [title]="modalTitle()"

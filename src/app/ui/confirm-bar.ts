@@ -23,7 +23,7 @@ export class ConfirmBar {
   readonly cancelLabel = input.required<string>();
   readonly secondaryLabel = input('');
   readonly destructive = input(true);
-  readonly modal = input(false);
+  readonly modal = input(true);
   readonly confirmed = output<void>();
   readonly secondary = output<void>();
   readonly cancelled = output<void>();

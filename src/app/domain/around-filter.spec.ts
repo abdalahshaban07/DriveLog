@@ -62,7 +62,8 @@ describe('clampAroundRadiusKm', () => {
   it('defaults, clamps, and rounds', () => {
     expect(clampAroundRadiusKm(Number.NaN)).toBe(15);
     expect(clampAroundRadiusKm(0)).toBe(1);
-    expect(clampAroundRadiusKm(80)).toBe(50);
+    expect(clampAroundRadiusKm(80)).toBe(80);
+    expect(clampAroundRadiusKm(400)).toBe(300);
     expect(clampAroundRadiusKm(12.4)).toBe(12);
   });
 });

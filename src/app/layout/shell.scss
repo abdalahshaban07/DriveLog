@@ -26,6 +26,23 @@
   padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
 }
 
+.save-toast {
+  position: fixed;
+  z-index: 150;
+  inset-inline: var(--space-4);
+  bottom: calc(var(--nav-height) + var(--space-3));
+  max-inline-size: var(--shell);
+  margin-inline: auto;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--ok) 35%, var(--hairline));
+  background: color-mix(in srgb, var(--ok) 16%, var(--surface));
+  color: var(--text);
+  font-weight: 700;
+  text-align: center;
+  box-shadow: var(--shadow-soft);
+}
+
 .boot-error {
   padding: var(--space-3) var(--space-4);
   background: color-mix(in srgb, var(--stop) 16%, var(--surface));
