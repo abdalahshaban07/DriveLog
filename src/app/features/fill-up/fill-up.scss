@@ -93,20 +93,53 @@
 .economy-live {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: var(--petrol-muted);
+  color: var(--paper-text);
 }
 
 .tank-hint {
-  color: var(--muted);
+  color: var(--paper-muted);
 }
 
 .console {
   display: grid;
   gap: var(--space-3);
-  padding: var(--space-4);
-  border: 1px solid var(--hairline);
+  padding: var(--space-5) var(--space-4);
   border-radius: var(--radius);
-  background: var(--surface);
+  background: var(--paper);
+  color: var(--paper-text);
+  border: 1px dashed color-mix(in srgb, var(--paper-muted) 45%, transparent);
+}
+
+.console .label,
+.console .hint {
+  color: var(--paper-muted);
+}
+
+.console .input,
+.console .station-field__input {
+  background: color-mix(in srgb, var(--paper-text) 4%, var(--paper));
+  color: var(--paper-text);
+  border-color: color-mix(in srgb, var(--paper-muted) 35%, transparent);
+}
+
+.console .station-loc-btn {
+  background: color-mix(in srgb, var(--paper-text) 6%, var(--paper));
+  border-color: color-mix(in srgb, var(--paper-muted) 35%, transparent);
+}
+
+.console .station-chip {
+  background: color-mix(in srgb, var(--paper-text) 5%, var(--paper));
+  border-color: color-mix(in srgb, var(--paper-muted) 30%, transparent);
+  color: var(--paper-text);
+}
+
+.console .station-chip--on {
+  border-color: color-mix(in srgb, var(--fuel) 55%, transparent);
+  background: color-mix(in srgb, var(--fuel) 14%, var(--paper));
+}
+
+.console .station-chip__dist {
+  color: var(--paper-muted);
 }
 
 .console__face {

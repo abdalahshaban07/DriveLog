@@ -58,7 +58,7 @@
   bottom: 0;
   z-index: 100;
   border-block-start: 1px solid var(--hairline);
-  background: var(--surface);
+  background: var(--bg);
   padding-block-end: env(safe-area-inset-bottom, 0px);
 }
 

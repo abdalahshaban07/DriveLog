@@ -1,7 +1,7 @@
 <div class="stack fuel">
   <app-page-header [title]="i18n.t('fuel.title')" />
 
-  <section class="card last-fill-strip" role="status" [attr.aria-label]="i18n.t('fuel.lastFillStrip')">
+  <section class="card last-fill-strip receipt-slip" role="status" [attr.aria-label]="i18n.t('fuel.lastFillStrip')">
     @if (lastFill(); as f) {
       <div class="last-fill-strip__col">
         <span class="last-fill-strip__label">{{ i18n.t('fillUp.date') }}</span>

@@ -36,17 +36,31 @@ import { I18n } from '../i18n/i18n';
     .receipt {
       padding: var(--space-4);
       border-radius: calc(var(--radius) - 4px);
-      background: var(--well);
-      border: 1px solid var(--hairline);
-      box-shadow: var(--well-inset);
+      background: color-mix(in srgb, var(--paper-text) 4%, var(--paper));
+      color: var(--paper-text);
+      border: 1px dashed color-mix(in srgb, var(--paper-muted) 40%, transparent);
+      box-shadow: none;
+    }
+    .receipt-line {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-3);
+      font-size: 0.9rem;
+    }
+    .receipt-line--total {
+      margin-block-start: var(--space-2);
+      padding-block-start: var(--space-2);
+      border-block-start: 1px dashed color-mix(in srgb, var(--paper-muted) 40%, transparent);
+      font-weight: 600;
     }
     .receipt-line--total strong {
       font-variant-numeric: tabular-nums;
-      font-size: 1.25rem;
+      font-size: 1.5rem;
+      letter-spacing: -0.02em;
     }
     .receipt__hint {
       margin: 0;
-      color: var(--muted);
+      color: var(--paper-muted);
       font-size: 0.9rem;
     }
   `,

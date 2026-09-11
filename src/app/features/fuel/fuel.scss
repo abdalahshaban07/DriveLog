@@ -6,7 +6,7 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-2);
-  padding: var(--space-3);
+  padding: var(--space-4);
 }
 
 .last-fill-strip__col {
@@ -20,12 +20,13 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--paper-muted);
 }
 
 .last-fill-strip__col strong {
   font-variant-numeric: tabular-nums;
   font-size: 0.9rem;
+  color: var(--paper-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
