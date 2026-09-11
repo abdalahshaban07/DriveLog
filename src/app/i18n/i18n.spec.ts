@@ -37,6 +37,32 @@ describe('I18n.formatNumber', () => {
   });
 });
 
+describe('I18n.formatMoney', () => {
+  it('formats Arabic money with Eastern Arabic digits', async () => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: Db, useValue: dbStub }, I18n],
+    });
+    const i18n = TestBed.inject(I18n);
+    await i18n.setLanguage('ar');
+    const formatted = i18n.formatMoney(250, 'EGP', 0);
+    expect(formatted).toMatch(/[\u0660-\u0669]/);
+    expect(formatted).not.toMatch(/[0-9]/);
+  });
+});
+
+describe('I18n.formatDate', () => {
+  it('formats Arabic ISO dates with Eastern Arabic digits', async () => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: Db, useValue: dbStub }, I18n],
+    });
+    const i18n = TestBed.inject(I18n);
+    await i18n.setLanguage('ar');
+    const formatted = i18n.formatDate('2026-03-15');
+    expect(formatted).toMatch(/[\u0660-\u0669]/);
+    expect(formatted).not.toMatch(/[0-9]/);
+  });
+});
+
 describe('I18n.formatUnit', () => {
   it('formats English value with unit label', async () => {
     TestBed.configureTestingModule({
@@ -57,7 +83,8 @@ describe('I18n.formatUnit', () => {
     const formatted = i18n.formatUnit(9.2, 'common.lPer100', 1);
     expect(formatted).toMatch(/[\u0660-\u0669]/);
     expect(formatted).toMatch(/٩/);
-    expect(formatted).toContain('ل/100 كم');
+    expect(formatted).toContain('ل/١٠٠ كم');
+    expect(formatted).not.toMatch(/[0-9]/);
   });
 
   it('formats l100 param in t() via formatUnit', async () => {
@@ -69,5 +96,34 @@ describe('I18n.formatUnit', () => {
     expect(i18n.t('assistant.local.economy', { l100: 9.2 })).toBe(
       'Your latest full-tank segment is 9.2 L/100 km.',
     );
+  });
+
+  it('formats numeric and ISO date params with Eastern digits in Arabic', async () => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: Db, useValue: dbStub }, I18n],
+    });
+    const i18n = TestBed.inject(I18n);
+    await i18n.setLanguage('ar');
+    const withPct = i18n.t('reports.biggest.fuel', { pct: 52 });
+    expect(withPct).toMatch(/[\u0660-\u0669]/);
+    expect(withPct).not.toMatch(/[0-9]/);
+    const withDate = i18n.t('home.period.since', { date: '2026-03-15' });
+    expect(withDate).toMatch(/[\u0660-\u0669]/);
+    expect(withDate).not.toMatch(/[0-9]/);
+  });
+});
+
+describe('I18n Arabic static copy', () => {
+  it('uses Eastern digits in fuel grade and L/100 labels', async () => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: Db, useValue: dbStub }, I18n],
+    });
+    const i18n = TestBed.inject(I18n);
+    await i18n.setLanguage('ar');
+    expect(i18n.t('home.fuel92')).toBe('٩٢');
+    expect(i18n.t('home.fuel95')).toBe('٩٥');
+    expect(i18n.t('fillUp.grade.gasoline92')).toBe('٩٢');
+    expect(i18n.t('common.lPer100')).toBe('ل/١٠٠ كم');
+    expect(i18n.t('charts.period30d')).toBe('آخر ٣٠ يوم');
   });
 });

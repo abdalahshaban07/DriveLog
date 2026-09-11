@@ -180,7 +180,7 @@ export class LineChart {
     return picks.map((i) => ({
       i,
       x: scale(i),
-      label: String(i + 1),
+      label: this.i18n.formatNumber(i + 1, { maximumFractionDigits: 0 }),
     }));
   });
 

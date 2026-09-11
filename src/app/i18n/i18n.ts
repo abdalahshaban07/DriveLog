@@ -99,9 +99,17 @@ export class I18n {
   }
 
   private formatParams(params: Record<string, string | number>): Record<string, string | number> {
-    const out = { ...params };
-    if (typeof out['l100'] === 'number') {
-      out['l100'] = this.formatUnit(out['l100'], 'common.lPer100', 1);
+    const out: Record<string, string | number> = {};
+    for (const [k, v] of Object.entries(params)) {
+      if (k === 'l100' && typeof v === 'number') {
+        out[k] = this.formatUnit(v, 'common.lPer100', 1);
+      } else if (typeof v === 'number') {
+        out[k] = this.formatNumber(v);
+      } else if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) {
+        out[k] = this.formatDate(v);
+      } else {
+        out[k] = v;
+      }
     }
     return out;
   }
@@ -109,6 +117,23 @@ export class I18n {
   formatNumber(value: number, options?: Intl.NumberFormatOptions): string {
     const locale = this.lang() === 'ar' ? 'ar-EG-u-nu-arab' : 'en-GB';
     return new Intl.NumberFormat(locale, options).format(value);
+  }
+
+  formatMoney(
+    value: number,
+    currency: string,
+    maximumFractionDigits = 0,
+  ): string {
+    const locale = this.lang() === 'ar' ? 'ar-EG-u-nu-arab' : 'en-GB';
+    try {
+      return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency,
+        maximumFractionDigits,
+      }).format(value);
+    } catch {
+      return `${this.formatNumber(value)} ${currency}`;
+    }
   }
 
   formatDate(value: string | Date, options?: Intl.DateTimeFormatOptions): string {

@@ -7,6 +7,7 @@ import {
   signal,
   afterNextRender,
 } from '@angular/core';
+import { I18n } from '../../i18n/i18n';
 import { MotionPolicy } from '../motion/motion-policy';
 
 export interface DonutSlice {
@@ -127,6 +128,7 @@ export class DonutChart {
   readonly draw = signal(false);
 
   private readonly policy = inject(MotionPolicy);
+  private readonly i18n = inject(I18n);
 
   private static readonly palette = [
     'var(--fuel)',
@@ -182,7 +184,9 @@ export class DonutChart {
       .map((s, i) => ({
         label: s.label,
         color: s.color ?? DonutChart.palette[i % DonutChart.palette.length]!,
-        pct: Math.round((s.value / total) * 100),
+        pct: this.i18n.formatNumber(Math.round((s.value / total) * 100), {
+          maximumFractionDigits: 0,
+        }),
       }));
   });
 

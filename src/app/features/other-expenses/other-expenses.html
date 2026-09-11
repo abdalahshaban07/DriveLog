@@ -44,7 +44,7 @@
         <li class="record-row">
           <div class="record-row__main">
             <strong>{{ row.label }}</strong>
-            <span class="record-row__meta">{{ row.date }}</span>
+            <span class="record-row__meta">{{ i18n.formatDate(row.date) }}</span>
             @if (row.note) {
               <span class="record-row__meta">{{ row.note }}</span>
             }

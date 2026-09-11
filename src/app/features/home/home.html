@@ -58,7 +58,7 @@
           <div class="glance-strip__cell">
             <span class="glance-strip__label">{{ i18n.t('home.lastFill') }}</span>
             <strong [class.metric--ghost]="!hasRealFills()">
-              {{ hasRealFills() ? (lastFillDate() ?? '—') : '—.—' }}
+              {{ hasRealFills() ? (lastFillDate() ? i18n.formatDate(lastFillDate()!) : '—') : '—.—' }}
             </strong>
           </div>
           <div class="glance-strip__cell">
@@ -242,7 +242,7 @@
             <p class="license-card__body">{{ i18n.t('home.license.missing') }}</p>
           } @else {
             <p class="license-card__days">{{ i18n.t('home.license.days', { days: i18n.formatNumber(licDays, { maximumFractionDigits: 0 }) }) }}</p>
-            <p class="license-card__date">{{ db.car()?.licenseExpiry }}</p>
+            <p class="license-card__date">{{ i18n.formatDate(db.car()!.licenseExpiry!) }}</p>
           }
         </article>
         <article
@@ -255,7 +255,7 @@
             <p class="license-card__body">{{ i18n.t('home.license.missing') }}</p>
           } @else {
             <p class="license-card__days">{{ i18n.t('home.license.days', { days: i18n.formatNumber(regDays, { maximumFractionDigits: 0 }) }) }}</p>
-            <p class="license-card__date">{{ db.car()?.registrationExpiry }}</p>
+            <p class="license-card__date">{{ i18n.formatDate(db.car()!.registrationExpiry!) }}</p>
           }
         </article>
       </div>
