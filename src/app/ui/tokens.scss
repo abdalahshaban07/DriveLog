@@ -1,4 +1,4 @@
-/* DriveLog · Dos Benzin Ledger — Design Tokens SSOT */
+/* DriveLog · Night Receipt — Design Tokens SSOT */
 
 @font-face {
   font-family: 'Outfit';
@@ -102,25 +102,29 @@
 
 :root,
 html[data-theme='light'] {
-  /* Brand — petrol surfaces, amber single accent; mint for success only */
-  --petrol: #0f4545;
-  --petrol-muted: #1a5c5c;
-  --mint: #5cdba8;
-  --mint-bright: #7aecc0;
+  /* Night Receipt — warm paper room, ink, amber single accent */
+  --petrol: #2a2620;
+  --petrol-muted: #5a5248;
+  --mint: #3d9b72;
+  --mint-bright: #4fb888;
   --fuel: #e8a317;
   --cta: var(--fuel);
-  --cta-text: #0b0d10;
+  --cta-text: #1a1814;
   --focus: var(--fuel);
-  --card-dark: var(--petrol);
-  --card-dark-text: #eef8f4;
+  --warn: #d97706;
+  --card-dark: #1c1a17;
+  --card-dark-text: #f3eee4;
+  --paper: #fff9f0;
+  --paper-text: #1a1814;
+  --paper-muted: #6b6358;
 
-  /* Unified metric card tint (aliases kept one release) */
-  --metric-tint: color-mix(in srgb, var(--fuel) 12%, var(--surface));
+  /* Unified metric tint */
+  --metric-tint: color-mix(in srgb, var(--fuel) 10%, var(--surface));
   --metric-blue: var(--metric-tint);
   --metric-green: var(--metric-tint);
   --metric-orange: var(--metric-tint);
 
-  --radius: 12px; /* concentric rule: inner radius = outer radius − that element's padding */
+  --radius: 10px;
   --page-head-gap: var(--space-4);
   --tap: 56px;
   --shell: 32rem;
@@ -146,39 +150,43 @@ html[data-theme='light'] {
   --type-label: 0.75rem;
   --type-nav: 0.6875rem;
   --shell-wide: 48rem;
-  --bg: #f2f5f7;
-  --surface: #ffffff;
-  --well: #e8edf1;
-  --text: #122022;
-  --muted: #5a6b6e;
+  --bg: #e6dfd2;
+  --surface: #f7f1e6;
+  --well: #ddd4c4;
+  --text: #1a1814;
+  --muted: #6b6358;
   --ok: var(--mint);
   --stop: #c44747;
-  --aura-1: #c8e8e0;
-  --aura-2: #b8d4e8;
+  --aura-1: #dcc9a0;
+  --aura-2: #c4b8a4;
   --glow: color-mix(in srgb, var(--fuel) 28%, transparent);
-  --hairline: color-mix(in srgb, #708890 28%, transparent);
-  --input-border: color-mix(in srgb, var(--muted) 38%, transparent);
-  --well-inset: inset 0 2px 8px color-mix(in srgb, #122022 6%, transparent);
-  --shadow-soft: 0 1px 3px color-mix(in srgb, #122022 8%, transparent);
+  --hairline: color-mix(in srgb, #5a5248 22%, transparent);
+  --input-border: color-mix(in srgb, var(--muted) 40%, transparent);
+  --well-inset: inset 0 2px 8px color-mix(in srgb, #1a1814 6%, transparent);
+  --shadow-soft: 0 1px 3px color-mix(in srgb, #1a1814 10%, transparent);
   color-scheme: light;
 }
 
 html[data-theme='system'] {
-  --bg: #f2f5f7;
-  --surface: #ffffff;
-  --well: #e8edf1;
-  --text: #122022;
-  --muted: #5a6b6e;
+  --bg: #e6dfd2;
+  --surface: #f7f1e6;
+  --well: #ddd4c4;
+  --text: #1a1814;
+  --muted: #6b6358;
+  --paper: #fff9f0;
+  --paper-text: #1a1814;
+  --paper-muted: #6b6358;
   --ok: var(--mint);
   --stop: #c44747;
-  --aura-1: #c8e8e0;
-  --aura-2: #b8d4e8;
+  --warn: #d97706;
+  --aura-1: #dcc9a0;
+  --aura-2: #c4b8a4;
   --glow: color-mix(in srgb, var(--fuel) 28%, transparent);
-  --hairline: color-mix(in srgb, #708890 28%, transparent);
-  --input-border: color-mix(in srgb, var(--muted) 38%, transparent);
-  --well-inset: inset 0 2px 8px color-mix(in srgb, #122022 6%, transparent);
-  --shadow-soft: 0 1px 3px color-mix(in srgb, #122022 8%, transparent);
-  --metric-tint: color-mix(in srgb, var(--fuel) 12%, var(--surface));
+  --hairline: color-mix(in srgb, #5a5248 22%, transparent);
+  --input-border: color-mix(in srgb, var(--muted) 40%, transparent);
+  --well-inset: inset 0 2px 8px color-mix(in srgb, #1a1814 6%, transparent);
+  --shadow-soft: 0 1px 3px color-mix(in srgb, #1a1814 10%, transparent);
+  --metric-tint: color-mix(in srgb, var(--fuel) 10%, var(--surface));
   --metric-blue: var(--metric-tint);
   --metric-green: var(--metric-tint);
   --metric-orange: var(--metric-tint);
@@ -187,25 +195,29 @@ html[data-theme='system'] {
 
 @media (prefers-color-scheme: dark) {
   html[data-theme='system'] {
-    --petrol: #0c3838;
-    --petrol-muted: #145050;
+    --petrol: #0e1014;
+    --petrol-muted: #8a8278;
     --mint: #5cdba8;
     --mint-bright: #7aecc0;
-    --cta-text: #0a2828;
-    --card-dark: var(--petrol);
-    --card-dark-text: #eef8f4;
-    --bg: #0a1214;
-    --surface: #122022;
-    --well: #081012;
-    --text: #eef4f2;
-    --muted: #8ea3a0;
+    --cta-text: #1a1814;
+    --warn: #f0a020;
+    --card-dark: #0e1014;
+    --card-dark-text: #f3eee4;
+    --paper: #ebe4d8;
+    --paper-text: #1a1814;
+    --paper-muted: #6b6358;
+    --bg: #07080a;
+    --surface: #12141a;
+    --well: #0a0b0e;
+    --text: #efeae2;
+    --muted: #a39a8c;
     --ok: var(--mint);
     --stop: #f87171;
-    --aura-1: #0f2828;
-    --aura-2: #0a1e22;
+    --aura-1: #2a2210;
+    --aura-2: #141018;
     --glow: color-mix(in srgb, var(--fuel) 42%, transparent);
     --hairline: color-mix(in srgb, var(--text) 10%, transparent);
-    --input-border: color-mix(in srgb, var(--muted) 22%, transparent);
+    --input-border: color-mix(in srgb, var(--muted) 28%, transparent);
     --well-inset: inset 0 2px 10px color-mix(in srgb, #000 42%, transparent);
     --shadow-soft: 0 1px 2px color-mix(in srgb, #000 40%, transparent);
     --metric-tint: color-mix(in srgb, var(--fuel) 12%, var(--surface));
@@ -217,28 +229,32 @@ html[data-theme='system'] {
 }
 
 html[data-theme='dark'] {
-  --petrol: #0c3838;
-  --petrol-muted: #145050;
+  --petrol: #0e1014;
+  --petrol-muted: #8a8278;
   --mint: #5cdba8;
   --mint-bright: #7aecc0;
-  --cta-text: #0a2828;
-  --card-dark: var(--petrol);
-  --card-dark-text: #eef8f4;
-  --bg: #0a1214;
-  --surface: #122022;
-  --well: #081012;
-  --text: #eef4f2;
-  --muted: #8ea3a0;
+  --cta-text: #1a1814;
+  --warn: #f0a020;
+  --card-dark: #0e1014;
+  --card-dark-text: #f3eee4;
+  --paper: #ebe4d8;
+  --paper-text: #1a1814;
+  --paper-muted: #6b6358;
+  --bg: #07080a;
+  --surface: #12141a;
+  --well: #0a0b0e;
+  --text: #efeae2;
+  --muted: #a39a8c;
   --ok: var(--mint);
   --stop: #f87171;
-  --aura-1: #0f2828;
-  --aura-2: #0a1e22;
+  --aura-1: #2a2210;
+  --aura-2: #141018;
   --glow: color-mix(in srgb, var(--fuel) 42%, transparent);
   --hairline: color-mix(in srgb, var(--text) 10%, transparent);
-  --input-border: color-mix(in srgb, var(--muted) 22%, transparent);
+  --input-border: color-mix(in srgb, var(--muted) 28%, transparent);
   --well-inset: inset 0 2px 10px color-mix(in srgb, #000 42%, transparent);
   --shadow-soft: 0 1px 2px color-mix(in srgb, #000 40%, transparent);
-  --metric-tint: color-mix(in srgb, var(--fuel) 14%, var(--surface));
+  --metric-tint: color-mix(in srgb, var(--fuel) 12%, var(--surface));
   --metric-blue: var(--metric-tint);
   --metric-green: var(--metric-tint);
   --metric-orange: var(--metric-tint);
@@ -246,14 +262,18 @@ html[data-theme='dark'] {
 }
 
 html[data-theme='contrast'] {
-  --petrol: #0a3030;
-  --petrol-muted: #145050;
+  --petrol: #000000;
+  --petrol-muted: #c8c8c8;
   --mint: #6eecc0;
   --mint-bright: #9af5dc;
   --cta-text: #000000;
   --focus: var(--fuel);
-  --card-dark: #0a3030;
+  --warn: #ffb020;
+  --card-dark: #000000;
   --card-dark-text: #ffffff;
+  --paper: #ffffff;
+  --paper-text: #000000;
+  --paper-muted: #444444;
   --bg: #000000;
   --surface: #121212;
   --well: #000000;
@@ -261,8 +281,8 @@ html[data-theme='contrast'] {
   --muted: #c8c8c8;
   --ok: var(--mint);
   --stop: #ff6b6b;
-  --aura-1: #0a2020;
-  --aura-2: #051010;
+  --aura-1: #2a2000;
+  --aura-2: #101010;
   --glow: color-mix(in srgb, var(--fuel) 55%, transparent);
   --hairline: color-mix(in srgb, var(--text) 40%, transparent);
   --input-border: color-mix(in srgb, var(--text) 70%, transparent);
@@ -276,22 +296,26 @@ html[data-theme='contrast'] {
 }
 
 html[data-theme='dusk'] {
-  --petrol: #123838;
-  --petrol-muted: #1a5050;
+  --petrol: #141018;
+  --petrol-muted: #9a9084;
   --mint: #5cdba8;
   --mint-bright: #7aecc0;
-  --cta-text: #0a2828;
-  --card-dark: var(--petrol);
-  --card-dark-text: #eef8f4;
-  --bg: #121820;
-  --surface: #1a2430;
-  --well: #0e141c;
-  --text: #e8f0ee;
-  --muted: #8e9ea8;
+  --cta-text: #1a1814;
+  --warn: #f0a020;
+  --card-dark: #141018;
+  --card-dark-text: #f3eee4;
+  --paper: #e8e0d2;
+  --paper-text: #1a1814;
+  --paper-muted: #6b6358;
+  --bg: #0e0c10;
+  --surface: #1a1620;
+  --well: #0a080c;
+  --text: #efeae2;
+  --muted: #a39a8c;
   --ok: var(--mint);
   --stop: #f87171;
-  --aura-1: #1a2830;
-  --aura-2: #141c28;
+  --aura-1: #2a1c28;
+  --aura-2: #181420;
   --glow: color-mix(in srgb, var(--fuel) 38%, transparent);
   --hairline: color-mix(in srgb, var(--text) 12%, transparent);
   --input-border: color-mix(in srgb, var(--muted) 28%, transparent);
@@ -381,6 +405,23 @@ a {
   background: var(--card-dark);
   color: var(--card-dark-text);
   border-color: color-mix(in srgb, var(--card-dark-text) 12%, transparent);
+}
+
+/* Night Receipt slip — warm paper island on canvas */
+.card--paper,
+.receipt-slip {
+  background: var(--paper);
+  color: var(--paper-text);
+  border: 1px dashed color-mix(in srgb, var(--paper-muted) 45%, transparent);
+  box-shadow: var(--shadow-soft);
+}
+
+.card--paper .hint,
+.receipt-slip .hint,
+.card--paper .muted,
+.receipt-slip [class*='__label'],
+.receipt-slip [class*='__hint'] {
+  color: var(--paper-muted);
 }
 
 .cta {

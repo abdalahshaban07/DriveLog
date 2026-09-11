@@ -4,7 +4,7 @@ Phone-first **Operate** PWA for personal fuel + maintenance. Local-first Indexed
 
 ## Visual world
 
-**Dos Benzin Ledger** (replaces Kinetic Pulse / Cold Night Pump): system light/dark default, petrol teal surfaces, amber `--cta` single accent (~5% UI), `--mint` for success only, unified `--metric-tint` cards, Outfit, dense card ledger. Themes: system / light / dark / contrast / dusk.
+**Night Receipt:** near-black / warm-paper dual surfaces, amber `--cta` single accent, ink `--text`, paper slips for fill-up. Home keeps a flat glance strip (not a hero card). Themes: system / light / dark / contrast / dusk.
 
 ## Core flows
 
@@ -13,7 +13,7 @@ Phone-first **Operate** PWA for personal fuel + maintenance. Local-first Indexed
 | Shell | Fixed bottom nav (Home, Fuel, Maintenance, More); update as modal |
 | Setup | 2 steps: vehicle → theme/lang/currency (no VIN) |
 | Fill-up | Numeric fields + fuel grade chips; cost = liters × unit price |
-| Home | Dense metric ledger, dues cluster, grade prices (no sparse hero) |
+| Home | Glance strip + quick log, spend outlook, recommendations |
 | Maintenance | Service log + due reminders |
 | More | Settings, data, appearance, reminders (no VIN decode) |
 

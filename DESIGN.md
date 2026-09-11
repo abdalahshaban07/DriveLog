@@ -5,9 +5,9 @@ Read it before changing any user-facing interface.
 
 ## Direction
 
-Cold Night Pump: a phone-first automotive utility interface with cool slate
-surfaces, amber as the only strong accent, self-hosted Outfit typography, and
-restrained motion.
+Night Receipt: a phone-first fuel utility with night canvas / warm paper slips,
+amber as the only strong accent, self-hosted Outfit typography, and
+restrained motion. Home uses a flat glance strip — not a paper hero card.
 
 **Motion libraries:** `animejs` is allowed only as lazy-loaded islands
 (sparklines, receipt count-up, chart stagger). Nav, filters, and grade chips

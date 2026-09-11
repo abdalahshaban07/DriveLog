@@ -1,14 +1,14 @@
-# DriveLog design system — Dos Benzin Ledger
+# DriveLog design system — Night Receipt
 
 > Visual SSOT. Live tokens: `src/app/ui/tokens.scss`. Product: `PRODUCT.md`.
 
-**Updated:** 2026-08-23 · **Product:** Personal fuel + maintenance PWA (phone-first, EN+AR)
+**Updated:** 2026-09-11 · **Product:** Personal fuel + maintenance PWA (phone-first, EN+AR)
 
 ## Design read
 
-Phone-first Operate PWA. **Dos Benzin ledger** world: deep petrol teal surfaces, amber single accent, unified metric tints, cool off-white canvas. Dense card grid — no Tesla-sparse Home hero. System light/dark default. Instrument density (VISUAL_DENSITY 8). MOTION 7 via CSS + View Transitions only.
+Phone-first Operate PWA. **Night Receipt** world: near-black canvas (dark) / warm paper room (light), amber single accent, paper slips for money surfaces (fill-up). Home = flat glance strip — not a hero card. System light/dark default. MOTION via CSS + View Transitions; `animejs` islands only.
 
-**Dials:** `DESIGN_VARIANCE: 6` · `MOTION_INTENSITY: 7` · `VISUAL_DENSITY: 8`
+**Dials:** `DESIGN_VARIANCE: 5` · `MOTION_INTENSITY: 5` · `VISUAL_DENSITY: 6`
 
 **Stack:** Angular 22 + SCSS tokens. No Tailwind / Material / GSAP / Motion npm.
 
@@ -16,39 +16,37 @@ Phone-first Operate PWA. **Dos Benzin ledger** world: deep petrol teal surfaces,
 
 | Token | Role |
 |-------|------|
-| `--petrol` | Deep teal for dark cards / primary surfaces (`.card--dark`) |
-| `--fuel` / `--cta` | Warm amber single accent for CTAs, focus, glow (~5% UI) |
+| `--bg` | Night canvas / warm room |
+| `--paper` / `--paper-text` | Receipt slip islands (fill-up, Home hero, last fill) |
+| `--surface` | Secondary cards on canvas |
+| `--fuel` / `--cta` | Amber single accent for CTAs, focus, glow (~5% UI) |
 | `--mint` | Success semantics only (`--ok`) |
-| `--metric-tint` | Unified metric card background (fuel-tinted surface mix) |
-| `--metric-blue/green/orange` | Aliases of `--metric-tint` (one release) |
+| `--warn` | Soft amber caution (dues soon) |
+| `--petrol` | Ink charcoal (legacy name; dark cards / charts) |
 | `--focus` | Amber focus ring (2px, `var(--fuel)`) |
 
-Light: cool off-white `--bg` `#f2f5f7`, white `--surface`, soft `--radius` 15px. Dark / dusk / contrast themes retokened with petrol undertones. `data-theme="system"` follows `prefers-color-scheme`.
-
-Never: cream/beige, purple mesh, glass nav, brass second accent, mint CTA chrome.
+Never: petrol teal brand, purple mesh, glass nav, second accent, doodle/sketch chrome.
 
 ## Type
 
-Outfit (self-hosted) + Arabic OS fallback. Tabular nums on meters/economy/cost.
+Outfit (self-hosted) + Arabic OS fallback. Tabular nums on meters/economy/cost. Hero size on Home L/100 and receipt total.
 
 ## Layout
 
-**Dense cards** — metric tiles, dues, and Home stack in a ledger grid. Petrol hero/summary cards on white canvas. No single floating hero number with empty whitespace.
+**Sparse glance** — flat three-metric strip (no hero card). Fill-up console is a paper receipt. Lists stay scannable rows on canvas.
 
-## Motion (Emil contract)
+## Motion
 
 | Surface | Decision |
 |---------|----------|
 | Tab nav | Instant |
 | Fuel chip | 50–100ms color/border |
-| Receipt total | Instant / opacity flash |
+| Receipt total | Morph / opacity flash |
 | Update modal | 200–300ms fade + scale(0.95→1) |
 
 Tokens: `--motion-fast` 160ms · `--motion-normal` 250ms · `--ease-out` · `--nav-height`.
 
 Hard bans: no `transition: all`, no `scale(0)`, honor `prefers-reduced-motion`.
-
-**Motion libraries (Operate-safe):** `animejs` on occasional surfaces only (sparklines, receipt count-up, chart stagger). CSS fallback when reduced motion.
 
 ## Shell
 
@@ -56,7 +54,7 @@ Hard bans: no `transition: all`, no `scale(0)`, honor `prefers-reduced-motion`.
 
 ## Fill-up
 
-No keypad. Fuel grade chips (`--fuel`) + read-only receipt preview. Cost computed.
+No keypad. Fuel grade chips (`--fuel`) + paper receipt preview. Cost computed.
 
 ## Accessibility
 
