@@ -1,0 +1,52 @@
+:host {
+  display: contents;
+}
+
+.wn-toast {
+  margin: auto;
+  padding: 0;
+  border: 0;
+  width: min(20rem, calc(100% - var(--space-5) * 2));
+  background: transparent;
+  color: inherit;
+}
+
+.wn-toast::backdrop {
+  background: color-mix(in srgb, var(--bg) 55%, #000 45%);
+}
+
+.wn-toast__panel {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--shadow-soft);
+}
+
+.wn-toast__ver {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--cta);
+}
+
+.wn-toast__title {
+  margin: 0;
+  font-size: var(--type-title);
+  font-weight: 700;
+}
+
+.wn-toast__body {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wn-toast {
+    transition: none;
+  }
+}

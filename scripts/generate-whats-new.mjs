@@ -115,24 +115,38 @@ export function hasArabicText(value) {
   return ARABIC_RE.test(JSON.stringify(value ?? ''));
 }
 
-export function stampWhatsNewId(existing, { date, sha }) {
-  const short = String(sha).replace(/^#/, '').slice(0, 7);
+/** Stable id from card copy so unchanged notes do not re-prompt. */
+export function contentIdFromCards(cards) {
+  const payload = JSON.stringify(
+    (Array.isArray(cards) ? cards : []).map((c) =>
+      typeof c === 'string'
+        ? [c, '']
+        : [String(c?.title ?? ''), String(c?.body ?? '')],
+    ),
+  );
+  let h = 2166136261;
+  for (let i = 0; i < payload.length; i++) {
+    h ^= payload.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return `notes-${(h >>> 0).toString(16)}`;
+}
+
+export function stampWhatsNewId(existing) {
   return {
-    id: `${date}-${short}`,
+    id: contentIdFromCards(existing.en),
     en: existing.en,
     ar: existing.ar,
   };
 }
 
-export function buildWhatsNewFile({ date, sha, cards }) {
-  const short = String(sha).replace(/^#/, '').slice(0, 7);
-  const id = `${date}-${short}`;
+export function buildWhatsNewFile({ cards }) {
   if (!cards.length) {
     const g = genericCards();
-    return { id, en: g.en, ar: g.ar };
+    return { id: contentIdFromCards(g.en), en: g.en, ar: g.ar };
   }
   // ponytail: no translation API — mirror EN into AR
-  return { id, en: cards, ar: cards };
+  return { id: contentIdFromCards(cards), en: cards, ar: cards };
 }
 
 function git(args, opts = {}) {
@@ -188,18 +202,6 @@ function collectCommits() {
   return parseLog(raw);
 }
 
-function todayUtc() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function shortSha() {
-  const env = process.env['GITHUB_SHA'];
-  if (env) {
-    return env.slice(0, 7);
-  }
-  return git(['rev-parse', '--short', 'HEAD']);
-}
-
 function writeAtomic(path, json) {
   mkdirSync(dirname(path), { recursive: true });
   const dir = mkdtempSync(join(tmpdir(), 'whats-new-'));
@@ -228,27 +230,22 @@ export function selfCheck() {
   strictEqual(cards[0].title, 'Nearby stations', 'title case');
   strictEqual(cards[0].body, 'Pick a station chip.', 'body line');
   strictEqual(cards[1].icon, 'bug', 'fix icon');
-  const file = buildWhatsNewFile({
-    date: '2026-09-10',
-    sha: 'abc1234def',
-    cards,
-  });
-  strictEqual(file.id, '2026-09-10-abc1234', 'id date+sha');
+  const file = buildWhatsNewFile({ cards });
+  strictEqual(file.id, contentIdFromCards(cards), 'id from content');
   strictEqual(file.ar.length, file.en.length, 'ar mirrors en');
-  const empty = buildWhatsNewFile({ date: '2026-09-10', sha: 'deadbee', cards: [] });
+  const empty = buildWhatsNewFile({ cards: [] });
   strictEqual(empty.en[0].title, 'App update', 'generic en');
   strictEqual(empty.ar[0].title, 'تحديث التطبيق', 'generic ar');
   strictEqual(hasArabicText([{ title: 'من حولك' }]), true, 'detect ar');
   strictEqual(hasArabicText([{ title: 'Around you' }]), false, 'no ar');
-  const stamped = stampWhatsNewId(
-    {
-      id: 'old',
-      en: [{ icon: 'fuel', title: 'Around you', body: 'x' }],
-      ar: [{ icon: 'fuel', title: 'من حولك', body: 'قائمة' }],
-    },
-    { date: '2026-09-10', sha: 'deadbee' },
-  );
-  strictEqual(stamped.id, '2026-09-10-deadbee', 'stamp id');
+  const stamped = stampWhatsNewId({
+    id: 'old',
+    en: [{ icon: 'fuel', title: 'Around you', body: 'x' }],
+    ar: [{ icon: 'fuel', title: 'من حولك', body: 'قائمة' }],
+  });
+  strictEqual(stamped.id, contentIdFromCards(stamped.en), 'stamp content id');
+  const again = stampWhatsNewId(stamped);
+  strictEqual(again.id, stamped.id, 'same cards same id');
   strictEqual(stamped.ar[0].title, 'من حولك', 'keep ar');
   strictEqual(stamped.en[0].title, 'Around you', 'keep en');
   console.log('generate-whats-new self-check ok');
@@ -271,20 +268,13 @@ function main() {
   }
   const existing = readExistingWhatsNew();
   if (existing && hasArabicText(existing.ar)) {
-    const file = stampWhatsNewId(existing, {
-      date: todayUtc(),
-      sha: shortSha(),
-    });
+    const file = stampWhatsNewId(existing);
     writeAtomic(OUT, file);
     console.log(`wrote ${OUT} id=${file.id} cards=${file.en.length} (preserved ar)`);
     return;
   }
   const cards = cardsFromCommits(collectCommits());
-  const file = buildWhatsNewFile({
-    date: todayUtc(),
-    sha: shortSha(),
-    cards,
-  });
+  const file = buildWhatsNewFile({ cards });
   writeAtomic(OUT, file);
   console.log(`wrote ${OUT} id=${file.id} cards=${file.en.length}`);
 }

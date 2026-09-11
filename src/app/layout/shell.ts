@@ -23,11 +23,12 @@ import { HolidayReminder } from '../pwa/holiday-reminder';
 import { InstallPwa } from '../pwa/install-pwa';
 import { WhatsNew } from '../pwa/whats-new';
 import { UpdateModal } from '../ui/update-modal';
+import { WhatsNewToast } from '../ui/whats-new-toast';
 
 @Component({
   selector: 'app-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, UpdateModal],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, UpdateModal, WhatsNewToast],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
 })
@@ -52,23 +53,17 @@ export class Shell {
   );
 
   readonly showNav = computed(() => !this.url().startsWith('/setup'));
-  readonly updateReady = computed(() => this.install.updateReady() && !this.updateDismissed());
-  /** SW update, first post-update once-view, or More → What's new */
-  readonly showWhatsNew = computed(
+  readonly updateReady = computed(
+    () => this.install.updateReady() && !this.updateDismissed(),
+  );
+  readonly showUpdate = this.updateReady;
+  readonly showNotes = computed(
     () =>
-      this.updateReady() ||
-      this.whatsNew.manualOpen() ||
-      (this.whatsNew.visible() && !this.updateDismissed()),
+      !this.updateReady() &&
+      (this.whatsNew.visible() || this.whatsNew.manualOpen()),
   );
-  readonly modalLines = computed(() => this.whatsNew.lines());
-  readonly modalCards = computed(() => this.whatsNew.cards());
-  readonly releaseId = computed(() => this.whatsNew.notes()?.id ?? '');
-  readonly primaryIsUpdate = computed(() => this.updateReady());
-  readonly modalTitle = computed(() =>
-    this.primaryIsUpdate()
-      ? this.i18n.t('update.available')
-      : this.i18n.t('update.youAreOn', { id: this.releaseId() || '—' }),
-  );
+  readonly modalTitle = computed(() => this.i18n.t('update.available'));
+  readonly releaseId = computed(() => this.whatsNew.displayVersion);
 
   constructor() {
     this.router.events
@@ -89,15 +84,14 @@ export class Shell {
   }
 
   reload(): void {
-    void this.whatsNew.dismiss();
     void this.install.applyUpdate();
   }
 
   dismissUpdate(): void {
     this.updateDismissed.set(true);
-    this.whatsNew.closeManual();
-    if (this.whatsNew.visible()) {
-      void this.whatsNew.dismiss();
-    }
+  }
+
+  dismissNotes(): void {
+    void this.whatsNew.dismiss();
   }
 }

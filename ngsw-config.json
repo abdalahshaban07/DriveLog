@@ -11,7 +11,6 @@
           "/index.csr.html",
           "/index.html",
           "/manifest.webmanifest",
-          "/whats-new.json",
           "/*.css",
           "/*.js"
         ]
@@ -23,6 +22,18 @@
       "updateMode": "prefetch",
       "resources": {
         "files": ["/**/*.(svg|cur|jpg|jpeg|png|apng|webp|avif|gif|otf|ttf|woff|woff2)"]
+      }
+    }
+  ],
+  "dataGroups": [
+    {
+      "name": "whats-new",
+      "urls": ["/whats-new.json"],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxSize": 2,
+        "maxAge": "1h",
+        "timeout": "3s"
       }
     }
   ]

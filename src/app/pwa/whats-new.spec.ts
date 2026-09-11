@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeWhatsNewEntry, type WhatsNewEntry } from './whats-new';
+import {
+  normalizeWhatsNewEntry,
+  whatsNewDisplayVersion,
+  type WhatsNewEntry,
+} from './whats-new';
 
 describe('normalizeWhatsNewEntry', () => {
   it('maps legacy strings to sparkle body-only cards', () => {
@@ -20,5 +24,11 @@ describe('normalizeWhatsNewEntry', () => {
         body: 'B',
       }).icon,
     ).toBe('sparkle');
+  });
+});
+
+describe('whatsNewDisplayVersion', () => {
+  it('prefixes APP_VERSION with v', () => {
+    expect(whatsNewDisplayVersion('1.2')).toBe('v1.2');
   });
 });

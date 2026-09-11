@@ -66,15 +66,18 @@
         </div>
       </nav>
     }
-    @if (showWhatsNew()) {
+    @if (showUpdate()) {
       <app-update-modal
         [title]="modalTitle()"
-        [cards]="modalCards()"
-        [lines]="modalLines()"
         [releaseId]="releaseId()"
-        [isUpdate]="primaryIsUpdate()"
+        [isUpdate]="true"
         (later)="dismissUpdate()"
         (updateNow)="reload()"
+      />
+    } @else if (showNotes()) {
+      <app-whats-new-toast
+        [version]="releaseId()"
+        (dismissed)="dismissNotes()"
       />
     }
   </div>
