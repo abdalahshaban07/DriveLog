@@ -117,33 +117,45 @@
 .glance-strip {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-2);
-  margin-block-end: var(--space-4);
-  padding: var(--space-3) 0;
+  gap: var(--space-3);
+  margin-block-end: var(--space-5);
+  padding: var(--space-4) 0;
   border-block: 1px solid var(--hairline);
   background: transparent;
 }
 
 .glance-strip__cell {
   display: grid;
-  gap: 2px;
+  gap: var(--space-1);
   min-width: 0;
+  align-content: start;
 }
 
 .glance-strip__label {
-  font-size: 0.72rem;
+  font-size: var(--type-label);
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--muted);
+  line-height: 1.2;
 }
 
 .glance-strip__cell strong {
   font-variant-numeric: tabular-nums;
-  font-size: 0.95rem;
+  font-size: var(--type-body);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Economy is the glance primary — denser utility, not a hero card */
+.glance-strip__cell--primary strong {
+  font-size: var(--type-metric);
+  letter-spacing: -0.02em;
 }
 
 .spark-grid,
@@ -472,8 +484,8 @@
 .month-outlook__strip {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-2);
-  padding: var(--space-3);
+  gap: var(--space-3);
+  padding: var(--space-4);
   border: 1px solid var(--hairline);
   border-radius: var(--radius);
   background: var(--surface);
@@ -481,7 +493,7 @@
 
 .month-outlook__cell {
   display: grid;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .month-outlook__cell--projected strong {
@@ -489,16 +501,19 @@
 }
 
 .month-outlook__label {
-  font-size: 0.72rem;
+  font-size: var(--type-label);
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--muted);
 }
 
 .month-outlook__cell strong {
   font-variant-numeric: tabular-nums;
-  font-size: 1.1rem;
+  font-size: var(--type-metric);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
 .rec-section {

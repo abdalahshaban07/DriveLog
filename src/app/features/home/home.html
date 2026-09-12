@@ -61,7 +61,7 @@
               {{ hasRealFills() ? (lastFillDate() ? i18n.formatDate(lastFillDate()!) : '—') : '—.—' }}
             </strong>
           </div>
-          <div class="glance-strip__cell">
+          <div class="glance-strip__cell glance-strip__cell--primary">
             <span class="glance-strip__label">{{ i18n.t('home.economy') }}</span>
             <strong [class.metric--ghost]="fuelMetrics().lastL100 == null">
               @if (fuelMetrics().lastL100 != null) {
