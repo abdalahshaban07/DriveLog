@@ -93,6 +93,8 @@
 .economy-live {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  font-size: var(--type-metric);
+  letter-spacing: -0.02em;
   color: var(--paper-text);
 }
 
@@ -102,12 +104,9 @@
 
 .console {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-4);
   padding: var(--space-5) var(--space-4);
-  border-radius: var(--radius);
-  background: var(--paper);
-  color: var(--paper-text);
-  border: 1px dashed color-mix(in srgb, var(--paper-muted) 45%, transparent);
+  /* paper look from .receipt-slip in tokens — avoid double border */
 }
 
 .console .label,

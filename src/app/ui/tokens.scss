@@ -412,8 +412,10 @@ a {
 .receipt-slip {
   background: var(--paper);
   color: var(--paper-text);
-  border: 1px dashed color-mix(in srgb, var(--paper-muted) 45%, transparent);
-  box-shadow: var(--shadow-soft);
+  border: 1px solid color-mix(in srgb, var(--paper-muted) 28%, transparent);
+  box-shadow:
+    var(--shadow-soft),
+    0 0 0 1px color-mix(in srgb, var(--paper-text) 4%, transparent);
 }
 
 .card--paper .hint,
@@ -623,14 +625,28 @@ textarea.input {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  padding-block: 12px;
-  border-bottom: 1px solid color-mix(in srgb, var(--muted) 25%, transparent);
+  gap: var(--space-3);
+  padding-block: var(--space-3);
+  border-bottom: 1px dashed color-mix(in srgb, var(--paper-muted) 35%, transparent);
+  color: var(--paper-text);
+  font-size: 0.9rem;
 }
 
 .receipt-line:last-child {
   border-bottom: 0;
   padding-block-end: 0;
+}
+
+.receipt-line--total {
+  font-weight: 600;
+}
+
+.receipt-line--total strong {
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(1.5rem, 6vw, 1.85rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
 .hero-number {
