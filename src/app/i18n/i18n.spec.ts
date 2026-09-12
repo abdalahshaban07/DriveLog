@@ -25,7 +25,7 @@ describe('I18n.formatNumber', () => {
     expect(i18n.formatNumber(1234.5, { maximumFractionDigits: 1 })).toBe('1,234.5');
   });
 
-  it('formats Arabic with Eastern Arabic digits and no grouping commas', async () => {
+  it('formats Arabic with Eastern Arabic digits and Western thousands comma', async () => {
     TestBed.configureTestingModule({
       providers: [{ provide: Db, useValue: dbStub }, I18n],
     });
@@ -34,19 +34,18 @@ describe('I18n.formatNumber', () => {
     const whole = i18n.formatNumber(1234, { maximumFractionDigits: 0 });
     expect(whole).toMatch(/[\u0660-\u0669]/);
     expect(whole).not.toMatch(/[0-9]/);
-    expect(whole).not.toMatch(/[,،٬]/);
+    expect(whole).toContain(',');
+    expect(whole).not.toMatch(/[،٬]/);
 
     const decimal = i18n.formatNumber(1234.5, { maximumFractionDigits: 1 });
     expect(decimal).toMatch(/[\u0660-\u0669]/);
-    expect(decimal).not.toMatch(/[0-9]/);
-    expect(decimal).not.toMatch(/[,،٬]/);
-    const separators = decimal.replace(/[\u0660-\u0669]/g, '');
-    expect(separators.length).toBeLessThanOrEqual(1);
+    expect(decimal).toContain(',');
+    expect(decimal).not.toMatch(/[،٬]/);
   });
 });
 
 describe('I18n.formatMoney', () => {
-  it('formats Arabic money with Eastern Arabic digits and no grouping commas', async () => {
+  it('formats Arabic money with Eastern digits and Western thousands comma', async () => {
     TestBed.configureTestingModule({
       providers: [{ provide: Db, useValue: dbStub }, I18n],
     });
@@ -55,7 +54,8 @@ describe('I18n.formatMoney', () => {
     const formatted = i18n.formatMoney(1234.5, 'EGP', 2);
     expect(formatted).toMatch(/[\u0660-\u0669]/);
     expect(formatted).not.toMatch(/[0-9]/);
-    expect(formatted).not.toMatch(/[,،٬]/);
+    expect(formatted).toContain(',');
+    expect(formatted).not.toMatch(/[،٬]/);
   });
 });
 

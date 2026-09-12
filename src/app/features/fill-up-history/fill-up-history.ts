@@ -9,10 +9,10 @@ import { Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
 import {
   filterFillUps,
+  fillUpsToCsv,
   fillUpsToPdf,
-  fillUpsToXlsx,
   rangeBoundsForPreset,
-  shareOrDownloadFile,
+  downloadFile,
   type HistoryRangePreset,
 } from '../../domain/export-history';
 import { previousFillForCar } from '../../domain/fill-up-distance';
@@ -241,7 +241,7 @@ export class FillUpHistoryPage {
     this.swipeActiveId = null;
   }
 
-  async exportExcel(): Promise<void> {
+  async shareCsv(): Promise<void> {
     this.shareError.set('');
     const rows = this.rows();
     if (!rows.length) {
@@ -249,15 +249,14 @@ export class FillUpHistoryPage {
     }
     this.shareBusy.set(true);
     try {
-      const blob = fillUpsToXlsx(rows);
+      const csv = fillUpsToCsv(rows);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
       const file = new File(
         [blob],
-        `drivelog-fill-ups-${new Date().toISOString().slice(0, 10)}.xlsx`,
-        {
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        },
+        `drivelog-fill-ups-${new Date().toISOString().slice(0, 10)}.csv`,
+        { type: 'text/csv' },
       );
-      await shareOrDownloadFile(file, this.i18n.t('history.shareTitle'));
+      downloadFile(file);
     } catch {
       this.shareError.set(this.i18n.t('history.shareFailed'));
     } finally {
@@ -291,7 +290,7 @@ export class FillUpHistoryPage {
       if (hasKm) {
         totalKm = kmSum;
       }
-      const blob = fillUpsToPdf(
+      const blob = await fillUpsToPdf(
         rows,
         {
           title: this.i18n.t('history.pdfTitleFill'),
@@ -306,6 +305,16 @@ export class FillUpHistoryPage {
           rangeLabel: rangeLabel
             ? `${this.i18n.t('history.pdfRange')}: ${rangeLabel}`
             : undefined,
+          columnHeaders: [
+            this.i18n.t('history.pdf.col.date'),
+            this.i18n.t('history.pdf.col.odometer'),
+            this.i18n.t('history.pdf.col.liters'),
+            this.i18n.t('history.pdf.col.cost'),
+            this.i18n.t('history.pdf.col.unitPrice'),
+            this.i18n.t('history.pdf.col.fuelGrade'),
+            this.i18n.t('history.pdf.col.place'),
+            this.i18n.t('history.pdf.col.note'),
+          ],
         },
         { rtl: this.i18n.dir() === 'rtl', totalKm },
       );
@@ -314,7 +323,7 @@ export class FillUpHistoryPage {
         `drivelog-fill-ups-${new Date().toISOString().slice(0, 10)}.pdf`,
         { type: 'application/pdf' },
       );
-      await shareOrDownloadFile(file, this.i18n.t('history.shareTitle'));
+      downloadFile(file);
     } catch {
       this.shareError.set(this.i18n.t('history.shareFailed'));
     } finally {

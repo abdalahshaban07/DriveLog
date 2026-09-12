@@ -6,14 +6,21 @@
     (back)="router.navigateByUrl('/more')"
   />
 
-  <section class="card list" [attr.aria-label]="i18n.t('settings.features')">
-    @for (item of items; track item.titleKey) {
-      <div class="line">
-        <span class="line__text">
-          <strong>{{ i18n.t(item.titleKey) }}</strong>
-          <span class="line__sub">{{ i18n.t(item.bodyKey) }}</span>
-        </span>
-      </div>
+  <div class="features__ledger list-reveal">
+    @for (group of groups; track group.headingKey; let gi = $index) {
+      <section class="feature-group" [attr.aria-labelledby]="'feat-g-' + gi">
+        <h2 class="feature-group__title" [id]="'feat-g-' + gi">
+          {{ i18n.t(group.headingKey) }}
+        </h2>
+        <ul class="feature-group__list">
+          @for (item of group.items; track item.titleKey) {
+            <li class="feature-row">
+              <strong class="feature-row__title">{{ i18n.t(item.titleKey) }}</strong>
+              <span class="feature-row__body">{{ i18n.t(item.bodyKey) }}</span>
+            </li>
+          }
+        </ul>
+      </section>
     }
-  </section>
+  </div>
 </div>

@@ -9,10 +9,10 @@ import { Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
 import {
   filterMaintenance,
+  maintenanceToCsv,
   maintenanceToPdf,
-  maintenanceToXlsx,
   rangeBoundsForPreset,
-  shareOrDownloadFile,
+  downloadFile,
   type HistoryRangePreset,
 } from '../../domain/export-history';
 import { todayDateOnly } from '../../domain/dues';
@@ -210,7 +210,7 @@ export class MaintenanceHistoryPage {
     this.swipeActiveId = null;
   }
 
-  async exportExcel(): Promise<void> {
+  async shareCsv(): Promise<void> {
     this.shareError.set('');
     const rows = this.rows();
     if (!rows.length) {
@@ -218,15 +218,14 @@ export class MaintenanceHistoryPage {
     }
     this.shareBusy.set(true);
     try {
-      const blob = maintenanceToXlsx(rows);
+      const csv = maintenanceToCsv(rows);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
       const file = new File(
         [blob],
-        `drivelog-maintenance-${new Date().toISOString().slice(0, 10)}.xlsx`,
-        {
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        },
+        `drivelog-maintenance-${new Date().toISOString().slice(0, 10)}.csv`,
+        { type: 'text/csv' },
       );
-      await shareOrDownloadFile(file, this.i18n.t('history.maintShareTitle'));
+      downloadFile(file);
     } catch {
       this.shareError.set(this.i18n.t('history.shareFailed'));
     } finally {
@@ -247,7 +246,7 @@ export class MaintenanceHistoryPage {
         range.from || range.to
           ? `${range.from ?? '…'} → ${range.to ?? '…'}`
           : undefined;
-      const blob = maintenanceToPdf(
+      const blob = await maintenanceToPdf(
         rows,
         {
           title: this.i18n.t('history.pdfTitleMaint'),
@@ -260,6 +259,21 @@ export class MaintenanceHistoryPage {
           rangeLabel: rangeLabel
             ? `${this.i18n.t('history.pdfRange')}: ${rangeLabel}`
             : undefined,
+          columnHeaders: [
+            this.i18n.t('history.pdf.col.date'),
+            this.i18n.t('history.pdf.col.type'),
+            this.i18n.t('history.pdf.col.otherLabel'),
+            this.i18n.t('history.pdf.col.odometer'),
+            this.i18n.t('history.pdf.col.cost'),
+            this.i18n.t('history.pdf.col.dueKm'),
+            this.i18n.t('history.pdf.col.dueDate'),
+            this.i18n.t('history.pdf.col.note'),
+            this.i18n.t('history.pdf.col.center'),
+            this.i18n.t('history.pdf.col.technician'),
+            this.i18n.t('history.pdf.col.partBrand'),
+            this.i18n.t('history.pdf.col.partCost'),
+            this.i18n.t('history.pdf.col.laborCost'),
+          ],
         },
         { rtl: this.i18n.dir() === 'rtl' },
       );
@@ -268,7 +282,7 @@ export class MaintenanceHistoryPage {
         `drivelog-maintenance-${new Date().toISOString().slice(0, 10)}.pdf`,
         { type: 'application/pdf' },
       );
-      await shareOrDownloadFile(file, this.i18n.t('history.maintShareTitle'));
+      downloadFile(file);
     } catch {
       this.shareError.set(this.i18n.t('history.shareFailed'));
     } finally {

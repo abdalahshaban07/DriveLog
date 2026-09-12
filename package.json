@@ -21,11 +21,9 @@
     "@angular/router": "^22.1.0",
     "@angular/service-worker": "^22.1.0",
     "animejs": "^4.5.0",
-    "jspdf": "^4.2.1",
-    "jspdf-autotable": "^5.0.8",
+    "pdfmake-rtl": "^2.1.2",
     "rxjs": "~7.8.0",
-    "tslib": "^2.3.0",
-    "xlsx": "^0.18.5"
+    "tslib": "^2.3.0"
   },
   "devDependencies": {
     "@angular/build": "^22.1.3",

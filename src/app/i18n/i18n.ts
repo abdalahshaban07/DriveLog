@@ -117,11 +117,9 @@ export class I18n {
   formatNumber(value: number, options?: Intl.NumberFormatOptions): string {
     const ar = this.lang() === 'ar';
     const locale = ar ? 'ar-EG-u-nu-arab' : 'en-GB';
-    // ponytail: ar thousands ٬ + decimal ٫ look like mixed commas; one mark only
-    return new Intl.NumberFormat(locale, {
-      ...options,
-      ...(ar ? { useGrouping: false } : {}),
-    }).format(value);
+    const formatted = new Intl.NumberFormat(locale, options).format(value);
+    // ponytail: ar-EG uses ٬; UI wants Western thousands comma
+    return ar ? formatted.replaceAll('\u066C', ',') : formatted;
   }
 
   formatMoney(
@@ -132,12 +130,12 @@ export class I18n {
     const ar = this.lang() === 'ar';
     const locale = ar ? 'ar-EG-u-nu-arab' : 'en-GB';
     try {
-      return new Intl.NumberFormat(locale, {
+      const formatted = new Intl.NumberFormat(locale, {
         style: 'currency',
         currency,
         maximumFractionDigits,
-        ...(ar ? { useGrouping: false } : {}),
       }).format(value);
+      return ar ? formatted.replaceAll('\u066C', ',') : formatted;
     } catch {
       return `${this.formatNumber(value)} ${currency}`;
     }
