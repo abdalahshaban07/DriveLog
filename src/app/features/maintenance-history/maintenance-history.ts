@@ -9,10 +9,12 @@ import { Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
 import {
   filterMaintenance,
-  maintenanceToCsv,
+  maintenanceToPdf,
+  maintenanceToXlsx,
   rangeBoundsForPreset,
+  shareOrDownloadFile,
   type HistoryRangePreset,
-} from '../../domain/export-csv';
+} from '../../domain/export-history';
 import { todayDateOnly } from '../../domain/dues';
 import { MAINTENANCE_TYPES } from '../../domain/models';
 import type { Maintenance } from '../../domain/models';
@@ -146,16 +148,7 @@ export class MaintenanceHistoryPage {
   }
 
   formatMoney(value: number): string {
-    const locale = this.i18n.language() === 'ar' ? 'ar-EG-u-nu-arab' : 'en-GB';
-    try {
-      return new Intl.NumberFormat(locale, {
-        style: 'currency',
-        currency: this.db.settings().currency,
-        maximumFractionDigits: 2,
-      }).format(value);
-    } catch {
-      return `${this.i18n.formatNumber(value)} ${this.db.settings().currency}`;
-    }
+    return this.i18n.formatMoney(value, this.db.settings().currency, 2);
   }
 
   chipLabel(chip: { id: string; labelKey?: MsgKey; label?: string }): string {
@@ -217,7 +210,7 @@ export class MaintenanceHistoryPage {
     this.swipeActiveId = null;
   }
 
-  async shareCsv(): Promise<void> {
+  async exportExcel(): Promise<void> {
     this.shareError.set('');
     const rows = this.rows();
     if (!rows.length) {
@@ -225,26 +218,57 @@ export class MaintenanceHistoryPage {
     }
     this.shareBusy.set(true);
     try {
-      const csv = maintenanceToCsv(rows);
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const blob = maintenanceToXlsx(rows);
       const file = new File(
         [blob],
-        `drivelog-maintenance-${new Date().toISOString().slice(0, 10)}.csv`,
-        { type: 'text/csv' },
+        `drivelog-maintenance-${new Date().toISOString().slice(0, 10)}.xlsx`,
+        {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        },
       );
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: this.i18n.t('history.maintShareTitle'),
-        });
-        return;
-      }
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = file.name;
-      a.click();
-      URL.revokeObjectURL(url);
+      await shareOrDownloadFile(file, this.i18n.t('history.maintShareTitle'));
+    } catch {
+      this.shareError.set(this.i18n.t('history.shareFailed'));
+    } finally {
+      this.shareBusy.set(false);
+    }
+  }
+
+  async exportPdf(): Promise<void> {
+    this.shareError.set('');
+    const rows = this.rows();
+    if (!rows.length) {
+      return;
+    }
+    this.shareBusy.set(true);
+    try {
+      const range = this.activeRange();
+      const rangeLabel =
+        range.from || range.to
+          ? `${range.from ?? '…'} → ${range.to ?? '…'}`
+          : undefined;
+      const blob = maintenanceToPdf(
+        rows,
+        {
+          title: this.i18n.t('history.pdfTitleMaint'),
+          generated: this.i18n.t('history.pdfGenerated', {
+            date: new Date().toISOString().slice(0, 10),
+          }),
+          summary: this.i18n.t('history.pdfSummary'),
+          entries: this.i18n.t('history.pdfEntries'),
+          totalCost: this.i18n.t('history.pdfTotalCost'),
+          rangeLabel: rangeLabel
+            ? `${this.i18n.t('history.pdfRange')}: ${rangeLabel}`
+            : undefined,
+        },
+        { rtl: this.i18n.dir() === 'rtl' },
+      );
+      const file = new File(
+        [blob],
+        `drivelog-maintenance-${new Date().toISOString().slice(0, 10)}.pdf`,
+        { type: 'application/pdf' },
+      );
+      await shareOrDownloadFile(file, this.i18n.t('history.maintShareTitle'));
     } catch {
       this.shareError.set(this.i18n.t('history.shareFailed'));
     } finally {
