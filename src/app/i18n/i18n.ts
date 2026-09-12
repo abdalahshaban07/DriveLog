@@ -115,8 +115,13 @@ export class I18n {
   }
 
   formatNumber(value: number, options?: Intl.NumberFormatOptions): string {
-    const locale = this.lang() === 'ar' ? 'ar-EG-u-nu-arab' : 'en-GB';
-    return new Intl.NumberFormat(locale, options).format(value);
+    const ar = this.lang() === 'ar';
+    const locale = ar ? 'ar-EG-u-nu-arab' : 'en-GB';
+    // ponytail: ar thousands ٬ + decimal ٫ look like mixed commas; one mark only
+    return new Intl.NumberFormat(locale, {
+      ...options,
+      ...(ar ? { useGrouping: false } : {}),
+    }).format(value);
   }
 
   formatMoney(
@@ -124,12 +129,14 @@ export class I18n {
     currency: string,
     maximumFractionDigits = 0,
   ): string {
-    const locale = this.lang() === 'ar' ? 'ar-EG-u-nu-arab' : 'en-GB';
+    const ar = this.lang() === 'ar';
+    const locale = ar ? 'ar-EG-u-nu-arab' : 'en-GB';
     try {
       return new Intl.NumberFormat(locale, {
         style: 'currency',
         currency,
         maximumFractionDigits,
+        ...(ar ? { useGrouping: false } : {}),
       }).format(value);
     } catch {
       return `${this.formatNumber(value)} ${currency}`;

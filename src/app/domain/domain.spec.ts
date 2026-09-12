@@ -204,20 +204,40 @@ describe('currencies', () => {
   });
 });
 
-describe('export csv', () => {
-  it('filters by grade and date range', async () => {
-    const { filterFillUps, fillUpsToCsv } = await import('./export-csv');
+describe('export history', () => {
+  it('filters by grade and date range and builds xlsx/pdf', async () => {
+    const { filterFillUps, fillUpsToXlsx, fillUpsToPdf } = await import('./export-history');
     const rows = [
       fill({ id: 'a', odometer: 1000, liters: 40, cost: 50, tankFull: true, fuelGrade: 'diesel' }),
-      fill({ id: 'b', odometer: 1100, liters: 40, cost: 50, tankFull: true, fuelGrade: 'gasoline92', date: '2026-02-01' }),
+      fill({
+        id: 'b',
+        odometer: 1100,
+        liters: 40,
+        cost: 50,
+        tankFull: true,
+        fuelGrade: 'gasoline92',
+        date: '2026-02-01',
+      }),
     ];
     expect(filterFillUps(rows, { grade: 'diesel' }).map((f) => f.id)).toEqual(['a']);
     expect(filterFillUps(rows, { from: '2026-02-01' }).map((f) => f.id)).toEqual(['b']);
-    expect(fillUpsToCsv(rows)).toContain('diesel');
+    const xlsx = fillUpsToXlsx(rows);
+    expect(xlsx.size).toBeGreaterThan(100);
+    const pdf = fillUpsToPdf(rows, {
+      title: 'Fill-up report',
+      generated: 'Generated 2026-09-12',
+      summary: 'Summary',
+      entries: 'Entries',
+      totalCost: 'Total cost',
+      totalLiters: 'Total liters',
+      totalKm: 'Total km',
+    });
+    expect(pdf.size).toBeGreaterThan(100);
   });
 
-  it('filters maintenance by type and exports csv', async () => {
-    const { filterMaintenance, maintenanceToCsv, rangeBoundsForPreset } = await import('./export-csv');
+  it('filters maintenance by type and builds xlsx/pdf', async () => {
+    const { filterMaintenance, maintenanceToXlsx, maintenanceToPdf, rangeBoundsForPreset } =
+      await import('./export-history');
     const rows = [
       {
         id: 'm1',
@@ -240,7 +260,16 @@ describe('export csv', () => {
     ];
     expect(filterMaintenance(rows, { type: 'oil' }).map((m) => m.id)).toEqual(['m1']);
     expect(filterMaintenance(rows, { from: '2026-03-01' }).map((m) => m.id)).toEqual(['m2']);
-    expect(maintenanceToCsv(rows)).toContain('brakes');
+    expect(maintenanceToXlsx(rows).size).toBeGreaterThan(100);
+    expect(
+      maintenanceToPdf(rows, {
+        title: 'Maintenance report',
+        generated: 'Generated 2026-09-12',
+        summary: 'Summary',
+        entries: 'Entries',
+        totalCost: 'Total cost',
+      }).size,
+    ).toBeGreaterThan(100);
     expect(rangeBoundsForPreset('year', '2026-09-03')).toEqual({
       from: '2026-01-01',
       to: '2026-09-03',

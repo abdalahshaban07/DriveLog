@@ -126,15 +126,6 @@ export class ReceiptPreview {
   }
 
   formatMoney(value: number): string {
-    const locale = this.i18n.language() === 'ar' ? 'ar-EG-u-nu-arab' : 'en-GB';
-    try {
-      return new Intl.NumberFormat(locale, {
-        style: 'currency',
-        currency: this.currency(),
-        maximumFractionDigits: 2,
-      }).format(value);
-    } catch {
-      return `${this.i18n.formatNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${this.currency()}`;
-    }
+    return this.i18n.formatMoney(value, this.currency(), 2);
   }
 }
