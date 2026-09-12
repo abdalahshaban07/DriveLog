@@ -205,8 +205,9 @@ describe('currencies', () => {
 });
 
 describe('export history', () => {
-  it('filters by grade and date range and builds xlsx/pdf', async () => {
-    const { filterFillUps, fillUpsToXlsx, fillUpsToPdf } = await import('./export-history');
+  it('filters by grade and date range and builds csv/pdf', async () => {
+    const { filterFillUps, fillUpsToCsv, fillUpsToPdf, formatFuelGradeLabel } =
+      await import('./export-history');
     const rows = [
       fill({ id: 'a', odometer: 1000, liters: 40, cost: 50, tankFull: true, fuelGrade: 'diesel' }),
       fill({
@@ -221,9 +222,15 @@ describe('export history', () => {
     ];
     expect(filterFillUps(rows, { grade: 'diesel' }).map((f) => f.id)).toEqual(['a']);
     expect(filterFillUps(rows, { from: '2026-02-01' }).map((f) => f.id)).toEqual(['b']);
-    const xlsx = fillUpsToXlsx(rows);
-    expect(xlsx.size).toBeGreaterThan(100);
-    const pdf = fillUpsToPdf(rows, {
+    expect(formatFuelGradeLabel('gasoline92')).toBe('92');
+    expect(formatFuelGradeLabel('gasoline95')).toBe('95');
+    expect(formatFuelGradeLabel('diesel')).toBe('diesel');
+    const csv = fillUpsToCsv(rows);
+    expect(csv).toContain('diesel');
+    expect(csv).toContain(',92,');
+    expect(csv).not.toContain('gasoline92');
+    expect(csv).not.toContain('tankFull');
+    const pdf = await fillUpsToPdf(rows, {
       title: 'Fill-up report',
       generated: 'Generated 2026-09-12',
       summary: 'Summary',
@@ -231,12 +238,22 @@ describe('export history', () => {
       totalCost: 'Total cost',
       totalLiters: 'Total liters',
       totalKm: 'Total km',
+      columnHeaders: [
+        'date',
+        'odometer',
+        'liters',
+        'cost',
+        'unitPrice',
+        'fuelGrade',
+        'placeLabel',
+        'note',
+      ],
     });
     expect(pdf.size).toBeGreaterThan(100);
   });
 
-  it('filters maintenance by type and builds xlsx/pdf', async () => {
-    const { filterMaintenance, maintenanceToXlsx, maintenanceToPdf, rangeBoundsForPreset } =
+  it('filters maintenance by type and builds csv/pdf', async () => {
+    const { filterMaintenance, maintenanceToCsv, maintenanceToPdf, rangeBoundsForPreset } =
       await import('./export-history');
     const rows = [
       {
@@ -260,15 +277,32 @@ describe('export history', () => {
     ];
     expect(filterMaintenance(rows, { type: 'oil' }).map((m) => m.id)).toEqual(['m1']);
     expect(filterMaintenance(rows, { from: '2026-03-01' }).map((m) => m.id)).toEqual(['m2']);
-    expect(maintenanceToXlsx(rows).size).toBeGreaterThan(100);
+    expect(maintenanceToCsv(rows)).toContain('brakes');
     expect(
-      maintenanceToPdf(rows, {
-        title: 'Maintenance report',
-        generated: 'Generated 2026-09-12',
-        summary: 'Summary',
-        entries: 'Entries',
-        totalCost: 'Total cost',
-      }).size,
+      (
+        await maintenanceToPdf(rows, {
+          title: 'Maintenance report',
+          generated: 'Generated 2026-09-12',
+          summary: 'Summary',
+          entries: 'Entries',
+          totalCost: 'Total cost',
+          columnHeaders: [
+            'date',
+            'type',
+            'otherLabel',
+            'odometer',
+            'cost',
+            'dueKm',
+            'dueDate',
+            'note',
+            'centerName',
+            'technicianName',
+            'partBrand',
+            'partCost',
+            'laborCost',
+          ],
+        })
+      ).size,
     ).toBeGreaterThan(100);
     expect(rangeBoundsForPreset('year', '2026-09-03')).toEqual({
       from: '2026-01-01',

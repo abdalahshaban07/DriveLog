@@ -41,8 +41,8 @@
     <a routerLink="/maintenance" class="cta">{{ i18n.t('maint.add') }}</a>
   } @else {
     <div class="history-actions">
-      <button type="button" class="ghost-btn" [disabled]="shareBusy()" (click)="exportExcel()">
-        {{ shareBusy() ? i18n.t('common.loading') : i18n.t('history.exportExcel') }}
+      <button type="button" class="ghost-btn" [disabled]="shareBusy()" (click)="shareCsv()">
+        {{ shareBusy() ? i18n.t('common.loading') : i18n.t('history.share') }}
       </button>
       <button type="button" class="ghost-btn" [disabled]="shareBusy()" (click)="exportPdf()">
         {{ shareBusy() ? i18n.t('common.loading') : i18n.t('history.exportPdf') }}

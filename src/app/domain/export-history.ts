@@ -1,6 +1,3 @@
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
 import { todayDateOnly } from './dues';
 import type { DateOnly, FillUp, FuelGrade, Maintenance } from './models';
 
@@ -15,7 +12,53 @@ export type ExportPdfCopy = {
   totalLiters?: string;
   totalKm?: string;
   rangeLabel?: string;
+  /** Localized column headers for the PDF table (CSV stays English keys). */
+  columnHeaders: string[];
 };
+
+type PdfMakeApi = {
+  addVirtualFileSystem?: (vfs: unknown) => void;
+  vfs?: unknown;
+  fonts?: Record<string, unknown>;
+  createPdf: (doc: unknown) => {
+    getBlob: () => Promise<Blob>;
+    getBuffer?: () => Promise<Uint8Array | ArrayBuffer>;
+  };
+};
+
+let pdfApi: PdfMakeApi | null = null;
+
+async function getPdfMake(): Promise<PdfMakeApi> {
+  if (pdfApi) {
+    return pdfApi;
+  }
+  const [{ default: pdfMake }, { default: pdfVfs }] = await Promise.all([
+    import('pdfmake-rtl/build/pdfmake'),
+    import('pdfmake-rtl/build/vfs_fonts'),
+  ]);
+  const pdf = pdfMake as unknown as PdfMakeApi;
+  if (typeof pdf.addVirtualFileSystem === 'function') {
+    pdf.addVirtualFileSystem(pdfVfs);
+  } else {
+    pdf.vfs = pdfVfs;
+  }
+  pdf.fonts = {
+    Roboto: {
+      normal: 'Roboto-Regular.ttf',
+      bold: 'Roboto-Medium.ttf',
+      italics: 'Roboto-Italic.ttf',
+      bolditalics: 'Roboto-MediumItalic.ttf',
+    },
+    Cairo: {
+      normal: 'Cairo-Regular.ttf',
+      bold: 'Cairo-Bold.ttf',
+      italics: 'Cairo-Regular.ttf',
+      bolditalics: 'Cairo-Bold.ttf',
+    },
+  };
+  pdfApi = pdf;
+  return pdf;
+}
 
 const FILL_HEADERS = [
   'date',
@@ -24,7 +67,6 @@ const FILL_HEADERS = [
   'cost',
   'unitPrice',
   'fuelGrade',
-  'tankFull',
   'placeLabel',
   'note',
 ] as const;
@@ -55,6 +97,34 @@ function toDateOnly(dt: Date): DateOnly {
   const m = String(dt.getMonth() + 1).padStart(2, '0');
   const d = String(dt.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
+}
+
+function csvEscape(value: string): string {
+  if (/[",\n]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+/**
+ * Short fuel-grade labels for CSV/PDF: gasoline92 → 92, keep diesel/solar/custom.
+ */
+export function formatFuelGradeLabel(grade: string | undefined | null): string {
+  if (!grade) {
+    return '';
+  }
+  switch (grade) {
+    case 'gasoline92':
+      return '92';
+    case 'gasoline95':
+      return '95';
+    case 'diesel':
+    case 'solar':
+    case 'custom':
+      return grade;
+    default:
+      return grade;
+  }
 }
 
 /** Calendar-month bounds for history range presets (custom uses caller-supplied dates). */
@@ -119,15 +189,6 @@ export function filterMaintenance(
   });
 }
 
-function sheetToBlob(sheet: XLSX.WorkSheet, sheetName: string): Blob {
-  const book = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(book, sheet, sheetName);
-  const buffer = XLSX.write(book, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
-  return new Blob([buffer], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  });
-}
-
 function fillUpRows(rows: readonly FillUp[]): (string | number)[][] {
   return rows.map((f) => [
     f.date,
@@ -135,8 +196,7 @@ function fillUpRows(rows: readonly FillUp[]): (string | number)[][] {
     f.liters,
     f.cost,
     f.unitPrice ?? '',
-    f.fuelGrade ?? '',
-    f.tankFull ? 1 : 0,
+    formatFuelGradeLabel(f.fuelGrade),
     f.placeLabel ?? '',
     f.note ?? '',
   ]);
@@ -160,145 +220,210 @@ function maintenanceRows(rows: readonly Maintenance[]): (string | number)[][] {
   ]);
 }
 
-export function fillUpsToXlsx(rows: readonly FillUp[]): Blob {
-  const sheet = XLSX.utils.aoa_to_sheet([FILL_HEADERS.slice(), ...fillUpRows(rows)]);
-  return sheetToBlob(sheet, 'Fill-ups');
+export function fillUpsToCsv(rows: readonly FillUp[]): string {
+  const lines = [FILL_HEADERS.join(',')];
+  for (const f of rows) {
+    lines.push(
+      [
+        f.date,
+        f.odometer,
+        f.liters,
+        f.cost,
+        f.unitPrice ?? '',
+        formatFuelGradeLabel(f.fuelGrade),
+        csvEscape(f.placeLabel ?? ''),
+        csvEscape(f.note ?? ''),
+      ].join(','),
+    );
+  }
+  return lines.join('\n');
 }
 
-export function maintenanceToXlsx(rows: readonly Maintenance[]): Blob {
-  const sheet = XLSX.utils.aoa_to_sheet([MAINT_HEADERS.slice(), ...maintenanceRows(rows)]);
-  return sheetToBlob(sheet, 'Maintenance');
+export function maintenanceToCsv(rows: readonly Maintenance[]): string {
+  const lines = [MAINT_HEADERS.join(',')];
+  for (const m of rows) {
+    lines.push(
+      [
+        m.date,
+        m.type,
+        csvEscape(m.otherLabel ?? ''),
+        m.odometer,
+        m.cost,
+        m.dueKm ?? '',
+        m.dueDate ?? '',
+        csvEscape(m.note ?? ''),
+        csvEscape(m.centerName ?? ''),
+        csvEscape(m.technicianName ?? ''),
+        csvEscape(m.partBrand ?? ''),
+        m.partCost ?? '',
+        m.laborCost ?? '',
+      ].join(','),
+    );
+  }
+  return lines.join('\n');
 }
 
-function drawPdfChrome(
-  doc: jsPDF,
+function cell(text: string | number, opts?: { bold?: boolean; color?: string }): Record<string, unknown> {
+  return {
+    text: String(text),
+    bold: opts?.bold === true,
+    color: opts?.color,
+    noWrap: false,
+  };
+}
+
+function buildDocDefinition(
   copy: ExportPdfCopy,
   summaryLines: string[],
+  headers: string[],
+  body: (string | number)[][],
   rtl: boolean,
-): number {
-  const pageW = doc.internal.pageSize.getWidth();
-  doc.setFillColor(PDF_HEADER);
-  doc.rect(0, 0, pageW, 36, 'F');
-  doc.setFillColor(PDF_ACCENT);
-  doc.rect(0, 36, pageW, 2, 'F');
+): Record<string, unknown> {
+  const font = rtl ? 'Cairo' : 'Roboto';
+  const align = rtl ? 'right' : 'left';
+  const colCount = Math.max(headers.length, 1);
+  const widths = Array.from({ length: colCount }, () => '*');
 
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(18);
-  doc.setFont('helvetica', 'bold');
-  const titleX = rtl ? pageW - 14 : 14;
-  doc.text(copy.title, titleX, 16, { align: rtl ? 'right' : 'left' });
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text(copy.generated, titleX, 26, { align: rtl ? 'right' : 'left' });
+  const tableBody = [
+    headers.map((h) =>
+      cell(h, { bold: true, color: '#ffffff' }),
+    ),
+    ...body.map((row) => row.map((c) => cell(c))),
+  ];
 
-  let y = 48;
-  doc.setTextColor(PDF_TEXT);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text(copy.summary, titleX, y, { align: rtl ? 'right' : 'left' });
-  y += 8;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  for (const line of summaryLines) {
-    doc.text(line, titleX, y, { align: rtl ? 'right' : 'left' });
-    y += 6;
-  }
-  return y + 4;
+  return {
+    pageOrientation: 'landscape',
+    pageMargins: [28, 28, 28, 36],
+    // pdfmake-rtl: forces RTL layout + Cairo for Arabic
+    ...(rtl ? { rtl: true } : {}),
+    defaultStyle: {
+      font,
+      fontSize: 9,
+      color: PDF_TEXT,
+      alignment: align,
+    },
+    content: [
+      {
+        table: {
+          widths: ['*'],
+          body: [
+            [
+              {
+                stack: [
+                  { text: copy.title, fontSize: 18, bold: true, color: '#ffffff', margin: [0, 0, 0, 4] },
+                  { text: copy.generated, fontSize: 10, color: '#ffffff' },
+                ],
+                fillColor: PDF_HEADER,
+                margin: [12, 10, 12, 10],
+              },
+            ],
+          ],
+        },
+        layout: 'noBorders',
+        margin: [0, 0, 0, 0],
+      },
+      {
+        canvas: [{ type: 'rect', x: 0, y: 0, w: 785, h: 3, color: PDF_ACCENT }],
+        margin: [0, 0, 0, 12],
+      },
+      { text: copy.summary, fontSize: 13, bold: true, margin: [0, 0, 0, 6] },
+      ...summaryLines.map((line) => ({
+        text: line,
+        fontSize: 10,
+        margin: [0, 0, 0, 2],
+      })),
+      {
+        table: {
+          headerRows: 1,
+          widths,
+          ...(rtl ? { rtl: true } : {}),
+          body: tableBody,
+        },
+        layout: {
+          fillColor: (rowIndex: number) => {
+            if (rowIndex === 0) {
+              return PDF_HEADER;
+            }
+            return rowIndex % 2 === 0 ? PDF_ZEBRA : null;
+          },
+          hLineWidth: () => 0.4,
+          vLineWidth: () => 0,
+          hLineColor: () => '#e2e8ee',
+          paddingLeft: () => 6,
+          paddingRight: () => 6,
+          paddingTop: () => 5,
+          paddingBottom: () => 5,
+        },
+        margin: [0, 12, 0, 0],
+      },
+    ],
+    footer: (currentPage: number, pageCount: number) => ({
+      text: `${currentPage} / ${pageCount}`,
+      alignment: 'center',
+      fontSize: 8,
+      color: '#888888',
+      margin: [0, 8, 0, 0],
+      font: 'Roboto',
+    }),
+  };
 }
 
-function finishPdf(doc: jsPDF): Blob {
-  const pageCount = doc.getNumberOfPages();
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setTextColor(120);
-    doc.text(`${i} / ${pageCount}`, pageW / 2, pageH - 8, { align: 'center' });
+async function createPdfBlob(docDefinition: Record<string, unknown>): Promise<Blob> {
+  const pdf = await getPdfMake();
+  const doc = pdf.createPdf(docDefinition);
+  if (typeof doc.getBlob === 'function') {
+    return doc.getBlob();
   }
-  return doc.output('blob');
+  // Node/test fallback
+  const buffer = await doc.getBuffer!();
+  return new Blob([buffer as BlobPart], { type: 'application/pdf' });
 }
 
-export function fillUpsToPdf(
+export async function fillUpsToPdf(
   rows: readonly FillUp[],
   copy: ExportPdfCopy,
   opts?: { rtl?: boolean; totalKm?: number | null },
-): Blob {
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+): Promise<Blob> {
   const rtl = opts?.rtl === true;
   const totalCost = rows.reduce((s, f) => s + f.cost, 0);
   const totalLiters = rows.reduce((s, f) => s + f.liters, 0);
   const summary = [
-    copy.rangeLabel ? `${copy.entries}: ${rows.length} · ${copy.rangeLabel}` : `${copy.entries}: ${rows.length}`,
+    copy.rangeLabel
+      ? `${copy.entries}: ${rows.length} · ${copy.rangeLabel}`
+      : `${copy.entries}: ${rows.length}`,
     `${copy.totalCost}: ${totalCost.toFixed(2)}`,
     copy.totalLiters ? `${copy.totalLiters}: ${totalLiters.toFixed(1)}` : '',
-    opts?.totalKm != null && copy.totalKm ? `${copy.totalKm}: ${Math.round(opts.totalKm)}` : '',
+    opts?.totalKm != null && copy.totalKm
+      ? `${copy.totalKm}: ${Math.round(opts.totalKm)}`
+      : '',
   ].filter(Boolean);
 
-  const startY = drawPdfChrome(doc, copy, summary, rtl);
-  autoTable(doc, {
-    startY,
-    head: [FILL_HEADERS.slice()],
-    body: fillUpRows(rows),
-    styles: {
-      font: 'helvetica',
-      fontSize: 8,
-      textColor: PDF_TEXT,
-      cellPadding: 2,
-      halign: rtl ? 'right' : 'left',
-    },
-    headStyles: {
-      fillColor: PDF_HEADER,
-      textColor: 255,
-      fontStyle: 'bold',
-    },
-    alternateRowStyles: { fillColor: PDF_ZEBRA },
-    margin: { left: 14, right: 14 },
-  });
-  return finishPdf(doc);
+  return createPdfBlob(
+    buildDocDefinition(copy, summary, copy.columnHeaders, fillUpRows(rows), rtl),
+  );
 }
 
-export function maintenanceToPdf(
+export async function maintenanceToPdf(
   rows: readonly Maintenance[],
   copy: ExportPdfCopy,
   opts?: { rtl?: boolean },
-): Blob {
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+): Promise<Blob> {
   const rtl = opts?.rtl === true;
   const totalCost = rows.reduce((s, m) => s + m.cost, 0);
   const summary = [
-    copy.rangeLabel ? `${copy.entries}: ${rows.length} · ${copy.rangeLabel}` : `${copy.entries}: ${rows.length}`,
+    copy.rangeLabel
+      ? `${copy.entries}: ${rows.length} · ${copy.rangeLabel}`
+      : `${copy.entries}: ${rows.length}`,
     `${copy.totalCost}: ${totalCost.toFixed(2)}`,
   ];
 
-  const startY = drawPdfChrome(doc, copy, summary, rtl);
-  autoTable(doc, {
-    startY,
-    head: [MAINT_HEADERS.slice()],
-    body: maintenanceRows(rows),
-    styles: {
-      font: 'helvetica',
-      fontSize: 8,
-      textColor: PDF_TEXT,
-      cellPadding: 2,
-      halign: rtl ? 'right' : 'left',
-    },
-    headStyles: {
-      fillColor: PDF_HEADER,
-      textColor: 255,
-      fontStyle: 'bold',
-    },
-    alternateRowStyles: { fillColor: PDF_ZEBRA },
-    margin: { left: 14, right: 14 },
-  });
-  return finishPdf(doc);
+  return createPdfBlob(
+    buildDocDefinition(copy, summary, copy.columnHeaders, maintenanceRows(rows), rtl),
+  );
 }
 
-export async function shareOrDownloadFile(file: File, title: string): Promise<void> {
-  if (navigator.share && navigator.canShare?.({ files: [file] })) {
-    await navigator.share({ files: [file], title });
-    return;
-  }
+/** Always download — user shares from their file manager if they want. */
+export function downloadFile(file: File): void {
   const url = URL.createObjectURL(file);
   const a = document.createElement('a');
   a.href = url;
