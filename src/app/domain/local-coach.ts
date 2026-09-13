@@ -18,8 +18,11 @@ export type CoachReply = {
   source: CoachSource;
 };
 
-const POLLINATIONS_TIMEOUT_MS = 12_000;
-const POLLINATIONS_RETRIES = 2;
+const COACH_TIMEOUT_MS = 12_000;
+const COACH_RETRIES = 2;
+/** ponytail: shared free Worker AI; daily neuron cap — local templates always backstop. */
+const DEVTOOLBOX_GENERATE_URL =
+  'https://devtoolbox-api.devtoolbox-api.workers.dev/ai/generate';
 
 export function pickFuelTipKey(seed = Date.now()): MsgKey {
   const i = Math.abs(seed) % FUEL_TIP_KEYS.length;
@@ -69,12 +72,16 @@ function coachPrompt(db: Db, question: string, lang: 'en' | 'ar'): string {
   });
   const langLine =
     lang === 'ar'
-      ? 'أجب بالعربية الفصحى المبسطة. استخدم الأرقام العربية الهندية عند ذكر الأرقام.'
-      : 'Reply in English.';
+      ? [
+          'جاوب بالمصري العامية (لهجة مصر)، مش فصحى تقيلة.',
+          'كلمات طبيعية زي: بنزين، تنك، كاوتش، عربية، عشان، دلوقتي، أوفر.',
+          'الأرقام بالهندي الشرقي (٠١٢٣٤٥٦٧٨٩) لما تذكر أرقام.',
+          'جملة أو جملتين قصّار. بلاش إنجليزي وبلاش ماركدوان.',
+        ].join(' ')
+      : 'Reply in clear English. One or two short sentences. No markdown.';
   return [
-    'You are a concise car expense coach for a personal fuel app.',
+    'You are a concise car expense coach for a personal fuel + maintenance app used in Egypt.',
     langLine,
-    'One short paragraph max. No markdown.',
     `Context: ${JSON.stringify(ctx)}`,
     `Question: ${question}`,
   ].join('\n');
@@ -84,22 +91,67 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** ponytail: free no-key text API; falls back to local templates offline. */
+/** Normalize DevToolBox / Workers AI JSON into plain tip text. */
+export function parseCoachApiText(payload: unknown): string | null {
+  if (typeof payload === 'string') {
+    const s = payload.trim().replace(/\s+/g, ' ');
+    return s.length >= 8 ? s.slice(0, 480) : null;
+  }
+  if (!payload || typeof payload !== 'object') {
+    return null;
+  }
+  const o = payload as Record<string, unknown>;
+  const candidates: unknown[] = [
+    o['result'],
+    o['text'],
+    o['generated'],
+    o['response'],
+    o['output'],
+    o['content'],
+    o['message'],
+    (o['data'] as Record<string, unknown> | undefined)?.['text'],
+    (o['data'] as Record<string, unknown> | undefined)?.['result'],
+    (o['choices'] as { message?: { content?: string } }[] | undefined)?.[0]?.message
+      ?.content,
+  ];
+  for (const c of candidates) {
+    if (typeof c === 'string') {
+      const s = c.trim().replace(/\s+/g, ' ');
+      if (s.length >= 8) {
+        return s.slice(0, 480);
+      }
+    }
+  }
+  return null;
+}
+
+/** ponytail: DevToolBox Workers AI (no key); falls back to local templates. */
 export async function fetchFreeCoachText(prompt: string): Promise<string | null> {
-  const url = `https://text.pollinations.ai/${encodeURIComponent(prompt)}`;
-  for (let attempt = 0; attempt <= POLLINATIONS_RETRIES; attempt++) {
+  for (let attempt = 0; attempt <= COACH_RETRIES; attempt++) {
     const ctrl = new AbortController();
-    const timer = window.setTimeout(() => ctrl.abort(), POLLINATIONS_TIMEOUT_MS);
+    const timer = window.setTimeout(() => ctrl.abort(), COACH_TIMEOUT_MS);
     try {
-      const res = await fetch(url, {
-        headers: { Accept: 'text/plain' },
+      const res = await fetch(DEVTOOLBOX_GENERATE_URL, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt, max_tokens: 180 }),
         signal: ctrl.signal,
       });
       if (!res.ok) {
         continue;
       }
-      const text = (await res.text()).trim().replace(/\s+/g, ' ').slice(0, 480);
-      if (text.length >= 8) {
+      const rawText = await res.text();
+      let raw: unknown = rawText;
+      try {
+        raw = JSON.parse(rawText) as unknown;
+      } catch {
+        /* plain text body */
+      }
+      const text = parseCoachApiText(raw);
+      if (text) {
         return text;
       }
     } catch {
@@ -107,7 +159,7 @@ export async function fetchFreeCoachText(prompt: string): Promise<string | null>
     } finally {
       window.clearTimeout(timer);
     }
-    if (attempt < POLLINATIONS_RETRIES) {
+    if (attempt < COACH_RETRIES) {
       await sleep(400 * (attempt + 1));
     }
   }
@@ -166,22 +218,25 @@ function localCoachReply(
     db.otherExpenses(),
   );
   const fuel = fuelDashboardMetrics(db.fillUps());
-  if (q.includes('economy') || q.includes('fuel') || q.includes('وقود') || q.includes('اقتصاد')) {
+  // EN + Egyptian AR colloquial triggers
+  if (
+    /economy|fuel|consumption|بنزين|وقود|استهلاك|لتر|تنك|اقتصاد|توفير/.test(q)
+  ) {
     if (fuel.lastL100 != null) {
       return t('assistant.local.economy', { l100: fuel.lastL100 });
     }
     return t('assistant.local.economyEmpty');
   }
-  if (q.includes('period') || q.includes('spend') || q.includes('مصروف') || q.includes('فترة')) {
+  if (/period|spend|cost|مصروف|مصاريف|فترة|صرفت|فلوس/.test(q)) {
     return t('assistant.local.period', {
       total: Math.round(totals.total),
       currency: db.settings().currency,
     });
   }
-  if (q.includes('maint') || q.includes('service') || q.includes('صيان')) {
+  if (/maint|service|صيان|خدمة|زيت|فلتر/.test(q)) {
     return t('assistant.local.maint', { count: db.maintenance().length });
   }
-  if (q.includes('break') || q.includes('fault') || q.includes('عطل')) {
+  if (/break|fault|عطل|أعطال|عواطل|مشكلة/.test(q)) {
     return t('assistant.local.breakdown', { count: db.breakdowns().length });
   }
   return t('assistant.local.generic');
