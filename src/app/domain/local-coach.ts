@@ -190,25 +190,82 @@ export async function fetchCoachReply(
   question: string,
   lang: 'en' | 'ar',
   t: (key: MsgKey, params?: Record<string, string | number>) => string,
+  intentHint?: CoachIntent,
 ): Promise<CoachReply> {
   const prompt = coachPrompt(db, question, lang);
   const remote = await fetchFreeCoachText(prompt);
   if (remote) {
     return { text: remote, source: 'ai' };
   }
-  return { text: localCoachReply(db, question, t), source: 'local' };
+  return { text: localCoachReply(db, question, t, intentHint), source: 'local' };
+}
+
+export type CoachIntent = 'economy' | 'period' | 'maint' | 'breakdown' | 'generic';
+
+/** Strip tashkeel/tatweel and normalize Alef/Ya/Ta so Egyptian stems match. */
+export function normalizeCoachQuery(raw: string): string {
+  return raw
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+    .replace(/[أإآٱ]/g, 'ا')
+    .replace(/ة/g, 'ه')
+    .replace(/ى/g, 'ي')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function detectCoachIntent(question: string): CoachIntent {
+  const q = normalizeCoachQuery(question);
+  if (
+    /economy|fuel|consumption|mpg|l\/100|بنزين|وقود|استهلاك|تستهلك|ستهلك|لتر|تنك|اقتصاد|توفير|اوفر|سواقه|كاوتش/.test(
+      q,
+    )
+  ) {
+    return 'economy';
+  }
+  if (
+    /period|spend|cost|expense|budget|مصروف|مصاريف|فتره|صرفت|دفعت|دفع|فلوس|كلفن|كلف|حساب|ميزانيه/.test(
+      q,
+    )
+  ) {
+    return 'period';
+  }
+  if (/maint|service|oil|صيان|خدمه|زيت|فلتر|غيرت\s*الزيت|تغيير\s*زيت/.test(q)) {
+    return 'maint';
+  }
+  if (/break|fault|repair|عطل|اعطال|عواطل|مشكل|صلحت|تصليح|خربان/.test(q)) {
+    return 'breakdown';
+  }
+  return 'generic';
+}
+
+export function intentFromFaqKey(key: MsgKey): CoachIntent | undefined {
+  switch (key) {
+    case 'assistant.faq.economy':
+      return 'economy';
+    case 'assistant.faq.period':
+      return 'period';
+    case 'assistant.faq.maintenance':
+      return 'maint';
+    case 'assistant.faq.breakdown':
+      return 'breakdown';
+    default:
+      return undefined;
+  }
 }
 
 function localCoachReply(
   db: Db,
   question: string,
   t: (key: MsgKey, params?: Record<string, string | number>) => string,
+  intentHint?: CoachIntent,
 ): string {
-  const q = question.toLowerCase();
   const car = db.car();
   if (!car) {
     return t('assistant.local.noCar');
   }
+  const intent = intentHint ?? detectCoachIntent(question);
   const period = activePeriod(db.expensePeriods(), car.id);
   const totals = periodTotals(
     period,
@@ -218,26 +275,26 @@ function localCoachReply(
     db.otherExpenses(),
   );
   const fuel = fuelDashboardMetrics(db.fillUps());
-  // EN + Egyptian AR colloquial triggers
-  if (
-    /economy|fuel|consumption|بنزين|وقود|استهلاك|لتر|تنك|اقتصاد|توفير/.test(q)
-  ) {
-    if (fuel.lastL100 != null) {
-      return t('assistant.local.economy', { l100: fuel.lastL100 });
+  switch (intent) {
+    case 'economy':
+      if (fuel.lastL100 != null) {
+        return t('assistant.local.economy', { l100: fuel.lastL100 });
+      }
+      return t('assistant.local.economyEmpty');
+    case 'period':
+      return t('assistant.local.period', {
+        total: Math.round(totals.total),
+        currency: db.settings().currency,
+      });
+    case 'maint':
+      return t('assistant.local.maint', { count: db.maintenance().length });
+    case 'breakdown':
+      return t('assistant.local.breakdown', { count: db.breakdowns().length });
+    case 'generic':
+      return t('assistant.local.generic');
+    default: {
+      const _exhaustive: never = intent;
+      return _exhaustive;
     }
-    return t('assistant.local.economyEmpty');
   }
-  if (/period|spend|cost|مصروف|مصاريف|فترة|صرفت|فلوس/.test(q)) {
-    return t('assistant.local.period', {
-      total: Math.round(totals.total),
-      currency: db.settings().currency,
-    });
-  }
-  if (/maint|service|صيان|خدمة|زيت|فلتر/.test(q)) {
-    return t('assistant.local.maint', { count: db.maintenance().length });
-  }
-  if (/break|fault|عطل|أعطال|عواطل|مشكلة/.test(q)) {
-    return t('assistant.local.breakdown', { count: db.breakdowns().length });
-  }
-  return t('assistant.local.generic');
 }

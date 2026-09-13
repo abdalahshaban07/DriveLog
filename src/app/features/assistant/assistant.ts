@@ -6,6 +6,7 @@ import {
 } from '@angular/core';
 import { fetchChatReply, type ChatMessage } from '../../data/assistant';
 import { Db } from '../../data/db';
+import { intentFromFaqKey } from '../../domain/local-coach';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { PageHeader } from '../../ui/page-header';
@@ -37,7 +38,7 @@ export class AssistantPage {
 
   askFaq(key: MsgKey): void {
     this.input.set(this.i18n.t(key));
-    void this.send();
+    void this.send(intentFromFaqKey(key));
   }
 
   clearChat(): void {
@@ -45,7 +46,7 @@ export class AssistantPage {
     this.error.set('');
   }
 
-  async send(): Promise<void> {
+  async send(intentHint?: ReturnType<typeof intentFromFaqKey>): Promise<void> {
     const text = this.input().trim();
     if (!text || this.busy()) {
       return;
@@ -56,8 +57,12 @@ export class AssistantPage {
     this.input.set('');
     this.busy.set(true);
     try {
-      const reply = await fetchChatReply(this.db, text, this.i18n.language(), (k, p) =>
-        this.i18n.t(k as MsgKey, p),
+      const reply = await fetchChatReply(
+        this.db,
+        text,
+        this.i18n.language(),
+        (k, p) => this.i18n.t(k as MsgKey, p),
+        intentHint,
       );
       this.messages.set([...nextHistory, { role: 'assistant', content: reply.text }]);
     } catch {

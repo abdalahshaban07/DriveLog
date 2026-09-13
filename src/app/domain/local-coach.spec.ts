@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { FUEL_TIP_KEYS, nextFuelTipKey, parseCoachApiText } from './local-coach';
+import {
+  FUEL_TIP_KEYS,
+  detectCoachIntent,
+  nextFuelTipKey,
+  normalizeCoachQuery,
+  parseCoachApiText,
+} from './local-coach';
 import type { Db } from '../data/db';
 
 function mockDb(): Db {
@@ -47,5 +53,22 @@ describe('parseCoachApiText', () => {
     );
     expect(parseCoachApiText({ text: 'سجّل تنك مليان عشان الاستهلاك يبقى أدق.' })).toMatch(/تنك/);
     expect(parseCoachApiText({ short: 'x' })).toBeNull();
+  });
+});
+
+describe('detectCoachIntent (Egyptian AR)', () => {
+  it('normalizes tashkeel and ta marbuta', () => {
+    expect(normalizeCoachQuery('الصِّيَانَة')).toContain('الصيانه');
+  });
+
+  it('maps FAQ-like and colloquial sentences', () => {
+    expect(detectCoachIntent('إزاي أحسّن استهلاك البنزين؟')).toBe('economy');
+    expect(detectCoachIntent('العربيه بتستهلك كتير اوي')).toBe('economy');
+    expect(detectCoachIntent('صرفت كام الفترة دي؟')).toBe('period');
+    expect(detectCoachIntent('كام دفعت الشهر ده')).toBe('period');
+    expect(detectCoachIntent('عندي كام سجل صيانة؟')).toBe('maint');
+    expect(detectCoachIntent('محتاج اغير الزيت امتى')).toBe('maint');
+    expect(detectCoachIntent('في أعطال متكررة؟')).toBe('breakdown');
+    expect(detectCoachIntent('العربيه خربانه تاني')).toBe('breakdown');
   });
 });
