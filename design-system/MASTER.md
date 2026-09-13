@@ -1,60 +1,49 @@
-# DriveLog design system — Night Receipt
+# DriveLog design system — Night Receipt (+ Look packs)
 
 > Visual SSOT. Live tokens: `src/app/ui/tokens.scss`. Product: `PRODUCT.md`.
 
-**Updated:** 2026-09-11 · **Product:** Personal fuel + maintenance PWA (phone-first, EN+AR)
+**Updated:** 2026-09-13 · **Product:** Personal fuel + maintenance PWA (phone-first, EN+AR)
 
 ## Design read
 
-Phone-first Operate PWA. **Night Receipt** world: near-black canvas (dark) / warm paper room (light), amber single accent, paper slips for money surfaces (fill-up). Home = flat glance strip — not a hero card. System light/dark default. MOTION via CSS + View Transitions; `animejs` islands only.
+Phone-first Operate PWA. **Default look: Night Receipt** — near-black canvas (dark) / warm paper room (light), amber single accent, paper slips for money. Home = flat glance strip. Settings **Look** switches chrome packs via `html[data-look]` (orthogonal to color `theme`). MOTION via CSS + View Transitions; `animejs` islands only.
 
 **Dials:** `DESIGN_VARIANCE: 5` · `MOTION_INTENSITY: 5` · `VISUAL_DENSITY: 6`
 
 **Stack:** Angular 22 + SCSS tokens. No Tailwind / Material / GSAP / Motion npm.
 
-## Color
+## Theme vs Look
+
+| Axis | Attribute | Owns |
+|------|-----------|------|
+| Theme | `data-theme` | `--bg`, `--surface`, `--text`, `--muted`, `--paper-text`, `--cta-text`, accents |
+| Look | `data-look` | radius, shadows, bevels, blur, borders, fill opacity, mesh — **not** body/label ink |
+
+**Looks:** `receipt` (default) · `skeuo` · `neu` · `glass` · `spatial` · `neo` · `aurora`
+
+Contrast theme + `prefers-reduced-transparency`: opaque fills, `--glass-blur: 0` for glass/spatial/aurora.
+
+## Color (theme-owned)
 
 | Token | Role |
 |-------|------|
 | `--bg` | Night canvas / warm room |
-| `--paper` / `--paper-text` | Receipt slip islands (fill-up, Home hero, last fill) |
-| `--surface` | Secondary cards on canvas |
-| `--fuel` / `--cta` | Amber single accent for CTAs, focus, glow (~5% UI) |
-| `--mint` | Success semantics only (`--ok`) |
-| `--warn` | Soft amber caution (dues soon) |
-| `--petrol` | Ink charcoal (legacy name; dark cards / charts) |
-| `--focus` | Amber focus ring (2px, `var(--fuel)`) |
+| `--paper` / `--paper-text` | Receipt slip islands |
+| `--surface` | Secondary cards |
+| `--fuel` / `--cta` | Amber accent (~5% UI) |
+| `--mint` | Success only (`--ok`) |
+| `--text` / `--muted` | Body / secondary ink (never overridden by look) |
+| `--focus` | Amber focus ring (2px) |
 
-Never: petrol teal brand, purple mesh, glass nav, second accent, doodle/sketch chrome.
+Never: purple mesh as brand, second accent, doodle chrome. Glass/frost chrome allowed only when Look = glass/spatial.
 
 ## Type
 
-Outfit (self-hosted) + Arabic OS fallback. Tabular nums on meters/economy/cost. Hero size on Home L/100 and receipt total.
+Outfit (self-hosted) + Arabic OS fallback. Tabular nums on meters/economy/cost.
 
-## Layout
+## Layout / Shell / Fill-up
 
-**Sparse glance** — flat three-metric strip (no hero card). Fill-up console is a paper receipt. Lists stay scannable rows on canvas.
-
-## Motion
-
-| Surface | Decision |
-|---------|----------|
-| Tab nav | Instant |
-| Fuel chip | 50–100ms color/border |
-| Receipt total | Morph / opacity flash |
-| Update modal | 200–300ms fade + scale(0.95→1) |
-
-Tokens: `--motion-fast` 160ms · `--motion-normal` 250ms · `--ease-out` · `--nav-height`.
-
-Hard bans: no `transition: all`, no `scale(0)`, honor `prefers-reduced-motion`.
-
-## Shell
-
-4-tab fixed bottom nav: **Home / Fuel / Maintenance / More** (`position: fixed; bottom: 0` + safe-area). Main padding accounts for `--nav-height`. Update = modal (Later / Update now), not top strip.
-
-## Fill-up
-
-No keypad. Fuel grade chips (`--fuel`) + paper receipt preview. Cost computed.
+Sparse glance strip; fill-up paper receipt (or elevated panel under spatial). Fixed bottom nav + safe-area. Update = modal.
 
 ## Accessibility
 

@@ -1,12 +1,16 @@
 .btn {
   width: 100%;
   min-height: var(--tap);
-  border: 0;
-  border-radius: var(--radius);
-  background: var(--fuel);
+  border: var(--btn-border, 0);
+  border-radius: var(--btn-radius, var(--radius));
+  background: var(--btn-bg, var(--cta-surface, var(--fuel)));
   color: var(--cta-text);
   font-weight: 700;
   font-size: 1.05rem;
+  letter-spacing: var(--btn-tracking, 0);
+  box-shadow: var(--btn-shadow, none);
+  backdrop-filter: blur(var(--btn-blur, 0px));
+  -webkit-backdrop-filter: blur(var(--btn-blur, 0px));
   transition:
     box-shadow var(--motion) var(--ease),
     transform var(--motion) var(--ease),
@@ -18,13 +22,14 @@
   min-inline-size: 0;
 }
 .btn--mint {
-  background: var(--cta);
+  background: var(--btn-bg, var(--cta-surface, var(--cta)));
 }
 .btn:hover:not(:disabled) {
-  box-shadow: 0 0 16px var(--glow);
+  box-shadow: var(--btn-hover-shadow, 0 0 16px var(--glow));
 }
 .btn:active:not(:disabled) {
-  transform: scale(0.98);
+  transform: translate(var(--btn-press-x, 0), var(--btn-press-y, 1px));
+  box-shadow: var(--btn-press-shadow, none);
 }
 .btn:disabled {
   opacity: 0.4;

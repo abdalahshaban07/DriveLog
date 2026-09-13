@@ -110,7 +110,7 @@ import { linearScale } from './scale';
     .line-chart--empty {
       height: 9rem;
       border-radius: calc(var(--radius) - 8px);
-      background: var(--well);
+      background: var(--fill-well);
     }
   `,
 })

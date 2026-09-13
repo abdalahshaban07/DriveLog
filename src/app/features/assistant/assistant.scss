@@ -13,7 +13,7 @@
   padding: var(--space-3);
   border: 1px solid var(--hairline);
   border-radius: var(--radius);
-  background: var(--surface);
+  background: var(--fill-surface);
   text-align: start;
   font-weight: 600;
   cursor: pointer;
@@ -30,7 +30,7 @@
 .chat__row {
   padding: var(--space-3);
   border-radius: var(--radius);
-  background: var(--well);
+  background: var(--fill-well);
 }
 
 .chat__row--user {
@@ -47,7 +47,7 @@
   padding: 0 var(--space-3);
   border: 1px solid var(--hairline);
   border-radius: var(--radius);
-  background: var(--surface);
+  background: var(--fill-surface);
   font-weight: 600;
   cursor: pointer;
 }

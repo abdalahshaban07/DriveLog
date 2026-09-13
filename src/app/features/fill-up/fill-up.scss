@@ -116,25 +116,25 @@
 
 .console .input,
 .console .station-field__input {
-  background: color-mix(in srgb, var(--paper-text) 4%, var(--paper));
+  background: color-mix(in srgb, var(--paper-text) 4%, var(--fill-paper));
   color: var(--paper-text);
   border-color: color-mix(in srgb, var(--paper-muted) 35%, transparent);
 }
 
 .console .station-loc-btn {
-  background: color-mix(in srgb, var(--paper-text) 6%, var(--paper));
+  background: color-mix(in srgb, var(--paper-text) 6%, var(--fill-paper));
   border-color: color-mix(in srgb, var(--paper-muted) 35%, transparent);
 }
 
 .console .station-chip {
-  background: color-mix(in srgb, var(--paper-text) 5%, var(--paper));
+  background: color-mix(in srgb, var(--paper-text) 5%, var(--fill-paper));
   border-color: color-mix(in srgb, var(--paper-muted) 30%, transparent);
   color: var(--paper-text);
 }
 
 .console .station-chip--on {
   border-color: color-mix(in srgb, var(--fuel) 55%, transparent);
-  background: color-mix(in srgb, var(--fuel) 14%, var(--paper));
+  background: color-mix(in srgb, var(--fuel) 14%, var(--fill-paper));
 }
 
 .console .station-chip__dist {
@@ -199,7 +199,7 @@
   min-height: var(--tap);
   border: 1px solid var(--hairline);
   border-radius: var(--radius);
-  background: var(--well);
+  background: var(--fill-well);
   color: var(--fuel);
   cursor: pointer;
   transition:
@@ -242,7 +242,7 @@
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--hairline);
   border-radius: calc(var(--radius) - 4px);
-  background: var(--well);
+  background: var(--fill-well);
   color: var(--text);
   text-align: start;
   cursor: pointer;

@@ -4,7 +4,13 @@
   margin-block-end: var(--space-4);
   overflow-x: auto;
   overflow-y: hidden;
-  border-block-end: 1px solid var(--hairline);
+  padding: var(--tab-track-pad, 0);
+  border-block-end: var(--tab-track-border, 1px solid var(--hairline));
+  border-radius: var(--tab-track-radius, 0);
+  background: var(--tab-track, transparent);
+  box-shadow: var(--tab-track-shadow, none);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -19,10 +25,10 @@
   position: relative;
   flex: 1 1 auto;
   min-height: var(--tap);
-  padding: 0 var(--space-4) var(--space-2);
-  border: 0;
-  border-radius: 0;
-  background: transparent;
+  padding: 0 var(--space-4);
+  border: var(--tab-btn-border, 0);
+  border-radius: var(--tab-btn-radius, 0);
+  background: var(--tab-btn-bg, transparent);
   color: var(--muted);
   font-weight: 600;
   text-decoration: none;
@@ -31,10 +37,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-shadow: var(--tab-btn-shadow, none);
+  transition:
+    color var(--motion-fast) var(--ease-out),
+    background var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-fast) var(--ease-out);
 }
 
 .section-tabs__link--on {
   color: var(--text);
+  background: var(--tab-btn-on-bg, transparent);
+  box-shadow: var(--tab-btn-on-shadow, var(--tab-btn-shadow, none));
 }
 
 .section-tabs__link--on::after {
@@ -42,9 +55,9 @@
   position: absolute;
   inset-inline: var(--space-2);
   bottom: -1px;
-  height: 2px;
+  height: var(--tab-underline-h, 2px);
   border-radius: 2px;
-  background: var(--cta);
+  background: var(--tab-underline, var(--cta));
 }
 
 .section-tabs__link:focus-visible {

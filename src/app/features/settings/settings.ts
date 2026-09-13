@@ -9,7 +9,7 @@ import {
   TANK_MIN,
 } from '../../domain/fill-up-distance';
 import { odometerInputValue, roundOdometerKm } from '../../domain/odometer';
-import { THEMES, type BackupFile, type Theme } from '../../domain/models';
+import { THEMES, LOOKS, type BackupFile, type Look, type Theme } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import { InstallPwa } from '../../pwa/install-pwa';
 import { Notify } from '../../pwa/notify';
@@ -46,12 +46,19 @@ export class SettingsPage {
 
   readonly remindersLbl = 'settings-reminders';
   readonly theme = computed(() => this.db.settings().theme);
+  readonly look = computed(() => this.db.settings().look);
   readonly remindersEnabled = computed(() => this.db.settings().remindersEnabled === true);
   readonly notifyPerm = signal(this.notify.permission());
   readonly themeOptions = computed(() =>
     THEMES.map((value) => ({
       value,
       label: this.i18n.t(`settings.theme.${value}`),
+    })),
+  );
+  readonly lookOptions = computed(() =>
+    LOOKS.map((value) => ({
+      value,
+      label: this.i18n.t(`settings.look.${value}`),
     })),
   );
   readonly currency = signal(validCurrency(this.db.settings().currency));
@@ -120,6 +127,13 @@ export class SettingsPage {
       return;
     }
     await this.db.updateSettings({ theme: value as Theme });
+  }
+
+  async onLook(value: string): Promise<void> {
+    if (!(LOOKS as readonly string[]).includes(value)) {
+      return;
+    }
+    await this.db.updateSettings({ look: value as Look });
   }
 
   async onReminders(event: Event): Promise<void> {
