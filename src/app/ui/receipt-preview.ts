@@ -36,9 +36,9 @@ import { I18n } from '../i18n/i18n';
     .receipt {
       padding: var(--space-4);
       border-radius: calc(var(--radius) - 4px);
-      background: color-mix(in srgb, var(--paper-text) 3%, var(--paper));
+      background: color-mix(in srgb, var(--paper-text) 3%, var(--fill-paper));
       color: var(--paper-text);
-      border: 1px dashed color-mix(in srgb, var(--paper-muted) 38%, transparent);
+      border: var(--border-width) dashed color-mix(in srgb, var(--paper-muted) 38%, transparent);
     }
     .receipt-line {
       display: flex;

@@ -37,7 +37,7 @@
   padding: 0;
   border: 1px solid var(--hairline);
   border-radius: 50%;
-  background: var(--well);
+  background: var(--fill-well);
   color: var(--text);
   cursor: pointer;
 }
@@ -78,7 +78,7 @@
   height: calc(var(--tap) - 16px);
   margin-block-start: 4px;
   border-radius: calc(var(--radius) - 6px);
-  background: var(--well);
+  background: var(--fill-well);
   color: var(--muted);
 }
 

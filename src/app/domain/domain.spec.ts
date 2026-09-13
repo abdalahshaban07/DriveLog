@@ -66,6 +66,7 @@ describe('dues', () => {
       {
         language: 'en',
         theme: 'dark',
+        look: 'receipt',
         currency: 'EGP',
         unitSystem: 'metric',
         installBannerDismissed: false,
@@ -97,6 +98,7 @@ describe('dues', () => {
       {
         language: 'en',
         theme: 'dark',
+        look: 'receipt',
         currency: 'EGP',
         unitSystem: 'metric',
         installBannerDismissed: false,
@@ -129,6 +131,7 @@ describe('dues', () => {
         {
           language: 'en',
           theme: 'dark',
+          look: 'receipt',
           currency: 'EGP',
           unitSystem: 'metric',
           installBannerDismissed: false,
@@ -150,6 +153,7 @@ describe('dues', () => {
       {
         language: 'en',
         theme: 'dark',
+        look: 'receipt',
         currency: 'EGP',
         unitSystem: 'metric',
         installBannerDismissed: false,
@@ -170,6 +174,7 @@ describe('dues', () => {
       {
         language: 'en',
         theme: 'dark',
+        look: 'receipt',
         currency: 'EGP',
         unitSystem: 'metric',
         installBannerDismissed: false,
@@ -407,5 +412,21 @@ describe('i18n parity', () => {
     for (const key of enKeys) {
       expect(ar[key as keyof typeof ar].trim().length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('look packs', () => {
+  it('defaults to receipt and lists all looks', async () => {
+    const { DEFAULT_LOOK, LOOKS } = await import('./models');
+    expect(DEFAULT_LOOK).toBe('receipt');
+    expect([...LOOKS]).toEqual([
+      'receipt',
+      'skeuo',
+      'neu',
+      'glass',
+      'spatial',
+      'neo',
+      'aurora',
+    ]);
   });
 });

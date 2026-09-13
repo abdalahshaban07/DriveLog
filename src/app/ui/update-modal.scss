@@ -46,9 +46,12 @@
   max-height: min(90dvh, 40rem);
   padding: var(--space-5);
   border-radius: var(--radius);
-  background: var(--surface);
-  border: 1px solid var(--hairline);
-  box-shadow: var(--shadow-soft);
+  background: var(--fill-surface);
+  border: var(--border-width, 1px) solid var(--hairline);
+  box-shadow: var(--plate-shadow, var(--shadow-soft));
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  color: var(--text);
 }
 
 .update-sheet__head {
@@ -67,7 +70,7 @@
 }
 
 .update-sheet__icon {
-  border-radius: 12px;
+  border-radius: var(--radius);
 }
 
 .update-sheet__title {
@@ -89,7 +92,7 @@
   padding: 0 var(--space-3);
   border: 0;
   border-radius: calc(var(--radius) - 4px);
-  background: var(--well);
+  background: var(--fill-well);
   color: var(--muted);
   font-weight: 600;
   cursor: pointer;
@@ -150,8 +153,9 @@
   padding: var(--space-5);
   text-align: center;
   border-radius: calc(var(--radius) - 4px);
-  background: color-mix(in srgb, var(--cta) 8%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--cta) 18%, var(--hairline));
+  background: color-mix(in srgb, var(--cta) 8%, var(--fill-surface));
+  border: var(--border-width, 1px) solid color-mix(in srgb, var(--cta) 18%, var(--hairline));
+  box-shadow: var(--raise-1, none);
   min-height: 100%;
   box-sizing: border-box;
 }

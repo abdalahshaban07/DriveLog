@@ -1,6 +1,7 @@
 import { Injectable, computed, effect, signal } from '@angular/core';
 import { Db } from '../data/db';
 import type { Theme } from '../domain/models';
+import { DEFAULT_LOOK } from '../domain/models';
 import { ar } from './ar';
 import { en, type MsgKey } from './en';
 
@@ -53,6 +54,7 @@ export class I18n {
     });
     effect(() => {
       const pref = this.db.settings().theme;
+      const look = this.db.settings().look ?? DEFAULT_LOOK;
       this.systemDark();
       const resolved = resolveTheme(pref);
       const dir = this.dir();
@@ -61,6 +63,7 @@ export class I18n {
       root.dir = dir;
       root.lang = this.lang();
       root.dataset['theme'] = pref === 'system' ? 'system' : resolved;
+      root.dataset['look'] = look;
       if (pref === 'system') {
         root.dataset['resolvedTheme'] = resolved;
       } else {

@@ -77,7 +77,7 @@
   list-style: none;
   border-radius: var(--radius);
   border: 1px solid color-mix(in srgb, var(--fuel) 28%, transparent);
-  background: var(--surface);
+  background: var(--fill-surface);
   box-shadow:
     0 16px 40px color-mix(in srgb, var(--bg) 80%, transparent),
     0 0 0 1px color-mix(in srgb, var(--well) 80%, transparent);

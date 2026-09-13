@@ -74,7 +74,7 @@ export type ChecklistItem = {
     .checklist__bar {
       height: 8px;
       border-radius: 999px;
-      background: var(--well);
+      background: var(--fill-well);
       overflow: hidden;
       margin-block-end: var(--space-3);
     }

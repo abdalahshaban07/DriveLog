@@ -70,7 +70,7 @@ type GradeOption = { grade: FuelGrade; labelKey: MsgKey; price: number | null };
       padding: var(--space-2) var(--space-3);
       border: 1px solid var(--hairline);
       border-radius: calc(var(--radius) - 4px);
-      background: var(--well);
+      background: var(--fill-well);
       color: var(--text);
       text-align: center;
       cursor: pointer;

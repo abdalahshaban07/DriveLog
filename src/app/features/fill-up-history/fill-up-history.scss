@@ -128,7 +128,7 @@
   align-items: stretch;
   border: 1px solid var(--hairline);
   border-radius: var(--radius);
-  background: var(--surface);
+  background: var(--fill-surface);
   transition: transform var(--motion-fast) var(--ease-out);
 }
 

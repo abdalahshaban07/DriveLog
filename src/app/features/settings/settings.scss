@@ -175,7 +175,7 @@ button.line:active {
   height: 100%;
   border-radius: 999px;
   border: 1px solid var(--input-border);
-  background: var(--well);
+  background: var(--fill-well);
   pointer-events: none;
   transition:
     background var(--motion) var(--ease),

@@ -5,6 +5,7 @@ import type { Breakdown, Car, FillUp, Maintenance, Settings } from './models';
 const settings: Settings = {
   language: 'en',
   theme: 'dark',
+  look: 'receipt',
   currency: 'EGP',
   unitSystem: 'metric',
   installBannerDismissed: true,

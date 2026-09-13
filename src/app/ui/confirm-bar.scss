@@ -19,15 +19,17 @@
   gap: 12px;
   padding: var(--space-5);
   border-radius: var(--radius);
-  background: var(--surface);
+  background: var(--fill-surface);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
 }
 
 :host(.modal) .bar {
   position: relative;
   z-index: 1;
   inline-size: min(22rem, 100%);
-  border: 1px solid var(--hairline);
-  box-shadow: var(--shadow-soft);
+  border: var(--border-width, 1px) solid var(--hairline);
+  box-shadow: var(--plate-shadow, var(--shadow-soft));
   animation: confirm-in var(--motion-normal) var(--ease-out);
 }
 
@@ -43,6 +45,7 @@
 }
 p {
   margin: 0;
+  color: var(--text);
 }
 .actions {
   display: flex;
@@ -50,25 +53,52 @@ p {
   gap: 8px;
 }
 button {
-  min-height: 44px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 12px;
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border: var(--btn-border, 0);
+  border-radius: var(--btn-radius, var(--radius));
   font-weight: 600;
+  letter-spacing: var(--btn-tracking, 0);
+  box-shadow: var(--btn-shadow, none);
+  backdrop-filter: blur(var(--btn-blur, 0px));
+  -webkit-backdrop-filter: blur(var(--btn-blur, 0px));
 }
 .ghost {
   background: transparent;
   color: var(--muted);
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  letter-spacing: 0;
 }
 .secondary {
-  background: var(--well);
+  background: var(--fill-well);
+  color: var(--text);
 }
 .danger {
   background: var(--stop);
   color: var(--cta-text);
 }
+.ok {
+  background: var(--btn-bg, var(--cta-surface, var(--fuel)));
+  color: var(--cta-text);
+}
+.ok:hover,
+.danger:hover,
+.secondary:hover {
+  box-shadow: var(--btn-hover-shadow, var(--btn-shadow, none));
+}
+.ghost:hover {
+  box-shadow: none;
+}
 button:active {
-  transform: scale(0.98);
+  transform: translate(var(--btn-press-x, 0), var(--btn-press-y, 1px));
+  box-shadow: var(--btn-press-shadow, none);
+}
+.ghost:active {
+  transform: none;
+  box-shadow: none;
 }
 @media (prefers-reduced-motion: reduce) {
   button:active {
@@ -78,8 +108,4 @@ button:active {
   :host(.modal) .bar {
     animation: none;
   }
-}
-.ok {
-  background: var(--fuel);
-  color: var(--cta-text);
 }

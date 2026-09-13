@@ -51,6 +51,7 @@ describe('App', () => {
             settings: () => ({
               language: 'en',
               theme: 'dark',
+              look: 'receipt',
               currency: 'EGP',
               unitSystem: 'metric',
               installBannerDismissed: true,

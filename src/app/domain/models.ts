@@ -1,6 +1,25 @@
 export type Language = 'en' | 'ar';
 export type Theme = 'system' | 'dark' | 'light' | 'contrast' | 'dusk';
 export const THEMES: readonly Theme[] = ['system', 'light', 'dark', 'contrast', 'dusk'];
+/** Visual chrome pack (orthogonal to color Theme). */
+export type Look =
+  | 'receipt'
+  | 'skeuo'
+  | 'neu'
+  | 'glass'
+  | 'spatial'
+  | 'neo'
+  | 'aurora';
+export const LOOKS: readonly Look[] = [
+  'receipt',
+  'skeuo',
+  'neu',
+  'glass',
+  'spatial',
+  'neo',
+  'aurora',
+] as const;
+export const DEFAULT_LOOK: Look = 'receipt';
 export type FuelGrade = 'gasoline92' | 'gasoline95' | 'diesel' | 'solar' | 'custom';
 export type UnitSystem = 'metric';
 export type MaintenanceType = 'oil' | 'filter' | 'tires' | 'brakes' | 'other';
@@ -132,6 +151,8 @@ export interface MaintenanceMilestone {
 export interface Settings {
   language: Language;
   theme: Theme;
+  /** Visual look pack; default Night Receipt. */
+  look: Look;
   currency: string;
   unitSystem: UnitSystem;
   installBannerDismissed: boolean;

@@ -82,7 +82,7 @@ const INNER_H = 84;
       position: relative;
       padding: var(--space-3);
       border-radius: calc(var(--radius) - 4px);
-      background: var(--well);
+      background: var(--fill-well);
       border: 1px solid var(--hairline);
     }
     .tank-svg {
@@ -123,7 +123,7 @@ const INNER_H = 84;
       justify-items: center;
       padding: var(--space-3);
       border-radius: calc(var(--radius) - 4px);
-      background: var(--well);
+      background: var(--fill-well);
       border: 1px solid var(--hairline);
     }
     .tank-fallback__shell {

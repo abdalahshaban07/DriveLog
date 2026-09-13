@@ -61,7 +61,7 @@ import { MotionPolicy } from '../motion/motion-policy';
     }
     .spark--empty {
       border-radius: calc(var(--radius) - 8px);
-      background: var(--well);
+      background: var(--fill-well);
     }
   `,
 })

@@ -25,6 +25,8 @@ import {
 import { seedMilestone } from '../domain/milestones';
 import {
   BREAKDOWN_CATEGORIES,
+  DEFAULT_LOOK,
+  LOOKS,
   MAINTENANCE_TYPES,
   THEMES,
   type BackupFile,
@@ -32,6 +34,7 @@ import {
   type Car,
   type ExpensePeriod,
   type FillUp,
+  type Look,
   type Maintenance,
   type MaintenanceMilestone,
   type MaintenanceTask,
@@ -49,6 +52,7 @@ function defaultSettings(): Settings {
   return {
     language: DEFAULT_LANGUAGE,
     theme: DEFAULT_THEME,
+    look: DEFAULT_LOOK,
     currency: DEFAULT_CURRENCY,
     unitSystem: DEFAULT_UNIT_SYSTEM,
     installBannerDismissed: false,
@@ -1172,11 +1176,16 @@ function isTheme(v: unknown): v is Theme {
   return (THEMES as readonly string[]).includes(String(v));
 }
 
+function isLook(v: unknown): v is Look {
+  return (LOOKS as readonly string[]).includes(String(v));
+}
+
 function normalizeSettings(raw: unknown): Settings {
   const o = raw as Settings;
   return {
     language: o.language === 'en' ? 'en' : 'ar',
     theme: isTheme(o.theme) ? o.theme : DEFAULT_THEME,
+    look: isLook(o.look) ? o.look : DEFAULT_LOOK,
     currency: String(o.currency || DEFAULT_CURRENCY),
     unitSystem: DEFAULT_UNIT_SYSTEM,
     installBannerDismissed: Boolean(o.installBannerDismissed),

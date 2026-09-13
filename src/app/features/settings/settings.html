@@ -21,6 +21,13 @@
     />
     <app-select-field
       class="as-row"
+      [label]="i18n.t('settings.look')"
+      [options]="lookOptions()"
+      [value]="look()"
+      (valueChange)="onLook($event)"
+    />
+    <app-select-field
+      class="as-row"
       [label]="i18n.t('settings.language')"
       [options]="langOptions()"
       [value]="i18n.language()"

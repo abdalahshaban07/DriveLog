@@ -164,6 +164,42 @@ html[data-theme='light'] {
   --input-border: color-mix(in srgb, var(--muted) 40%, transparent);
   --well-inset: inset 0 2px 8px color-mix(in srgb, #1a1814 6%, transparent);
   --shadow-soft: 0 1px 3px color-mix(in srgb, #1a1814 10%, transparent);
+  /* Look chrome defaults (receipt) — overridden by html[data-look] */
+  --raise-1: none;
+  --raise-2: none;
+  --bevel-hi: none;
+  --bevel-lo: none;
+  --press-inset: inset 0 2px 4px color-mix(in srgb, #1a1814 18%, transparent);
+  --plate-shadow: var(--shadow-soft);
+  --ink: #1a1814;
+  --border-width: 1px;
+  --fill-surface: var(--surface);
+  --fill-well: var(--well);
+  --fill-paper: var(--paper);
+  --glass-blur: 0px;
+  --glass-edge: transparent;
+  --mesh-canvas:
+    radial-gradient(
+      120% 80% at 100% 0%,
+      color-mix(in srgb, var(--aura-1) 55%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      90% 70% at 0% 100%,
+      color-mix(in srgb, var(--aura-2) 40%, transparent),
+      transparent 50%
+    );
+  --cta-surface: var(--cta);
+  --btn-bg: var(--cta);
+  --btn-border: 0;
+  --btn-radius: var(--radius);
+  --btn-shadow: none;
+  --btn-hover-shadow: 0 0 16px var(--glow);
+  --btn-press-shadow: inset 0 2px 4px color-mix(in srgb, #1a1814 18%, transparent);
+  --btn-press-x: 0;
+  --btn-press-y: 1px;
+  --btn-blur: 0px;
+  --btn-tracking: 0;
   color-scheme: light;
 }
 
@@ -328,6 +364,691 @@ html[data-theme='dusk'] {
   color-scheme: dark;
 }
 
+/* ——— Look packs: materials + chrome; text ink stays on data-theme ——— */
+:root,
+html[data-look='receipt'] {
+  /* Night Receipt warm room — theme already sets surfaces; reinforce chrome */
+  --radius: 10px;
+  --raise-1: none;
+  --raise-2: none;
+  --bevel-hi: none;
+  --bevel-lo: none;
+  --press-inset: inset 0 2px 4px color-mix(in srgb, var(--text) 14%, transparent);
+  --plate-shadow: var(--shadow-soft);
+  --border-width: 1px;
+  --ink: var(--text);
+  --fill-surface: var(--surface);
+  --fill-well: var(--well);
+  --fill-paper: var(--paper);
+  --glass-blur: 0px;
+  --glass-edge: transparent;
+  --nav-fill: var(--bg);
+  --nav-inset: 0px;
+  --cta-surface: var(--cta);
+  /* Primary CTA chrome — each look owns these */
+  --btn-bg: var(--cta);
+  --btn-border: 0;
+  --btn-radius: var(--radius);
+  --btn-shadow: none;
+  --btn-hover-shadow: 0 0 16px var(--glow);
+  --btn-press-shadow: var(--press-inset);
+  --btn-press-x: 0;
+  --btn-press-y: 1px;
+  --btn-blur: 0px;
+  --btn-tracking: 0;
+  --tab-track: transparent;
+  --tab-track-pad: 0;
+  --tab-track-radius: 0;
+  --tab-track-border: 1px solid var(--hairline);
+  --tab-track-shadow: none;
+  --tab-btn-bg: transparent;
+  --tab-btn-on-bg: transparent;
+  --tab-btn-radius: 0;
+  --tab-btn-border: 0;
+  --tab-btn-shadow: none;
+  --tab-btn-on-shadow: none;
+  --tab-underline: var(--cta);
+  --tab-underline-h: 2px;
+  --mesh-canvas:
+    radial-gradient(
+      120% 80% at 100% 0%,
+      color-mix(in srgb, var(--aura-1) 55%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      90% 70% at 0% 100%,
+      color-mix(in srgb, var(--aura-2) 40%, transparent),
+      transparent 50%
+    );
+}
+
+/* Pump Console — cool metal panel (light) */
+html[data-look='skeuo'] {
+  --bg: #c8ced6;
+  --surface: #e8ecf0;
+  --well: #aeb6c0;
+  --aura-1: #b8c0cc;
+  --aura-2: #9aa3b0;
+  --hairline: color-mix(in srgb, #3a4048 28%, transparent);
+  --radius: 12px;
+  --well-inset:
+    inset 0 4px 10px color-mix(in srgb, #1a1d22 32%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, #fff 40%, transparent);
+  --bevel-hi: inset 0 1px 0 color-mix(in srgb, #fff 72%, transparent);
+  --bevel-lo: inset 0 -1px 0 color-mix(in srgb, #1a1d22 22%, transparent);
+  --raise-1:
+    0 1px 2px color-mix(in srgb, #1a1d22 22%, transparent),
+    0 6px 14px color-mix(in srgb, #1a1d22 16%, transparent);
+  --raise-2:
+    0 2px 4px color-mix(in srgb, #1a1d22 26%, transparent),
+    0 10px 22px color-mix(in srgb, #1a1d22 18%, transparent);
+  --press-inset:
+    inset 0 3px 8px color-mix(in srgb, #1a1d22 40%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #1a1d22 22%, transparent);
+  --plate-shadow: var(--bevel-hi), var(--bevel-lo), var(--raise-1);
+  --shadow-soft: var(--raise-1);
+  --border-width: 1px;
+  --ink: var(--text);
+  --fill-surface: var(--surface);
+  --fill-well: var(--well);
+  --fill-paper: var(--paper);
+  --glass-blur: 0px;
+  --glass-edge: transparent;
+  --nav-fill: var(--bg);
+  --nav-inset: 0px;
+  --cta-surface: linear-gradient(
+    180deg,
+    color-mix(in srgb, #fff 42%, var(--cta)) 0%,
+    var(--cta) 46%,
+    color-mix(in srgb, #1a1d22 22%, var(--cta)) 100%
+  );
+  --btn-bg: var(--cta-surface);
+  --btn-border: 1px solid color-mix(in srgb, #1a1d22 28%, var(--cta));
+  --btn-radius: var(--radius);
+  --btn-shadow: var(--bevel-hi), var(--bevel-lo), var(--raise-1);
+  --btn-hover-shadow: var(--bevel-hi), var(--bevel-lo), var(--raise-2);
+  --btn-press-shadow: var(--press-inset);
+  --btn-press-x: 0;
+  --btn-press-y: 2px;
+  --btn-blur: 0px;
+  --btn-tracking: 0;
+  --tab-track: transparent;
+  --tab-track-pad: var(--space-1);
+  --tab-track-radius: var(--radius);
+  --tab-track-border: 0;
+  --tab-track-shadow: var(--well-inset);
+  --tab-btn-bg: var(--fill-surface);
+  --tab-btn-on-bg: var(--fill-surface);
+  --tab-btn-radius: calc(var(--radius) - 4px);
+  --tab-btn-border: 1px solid var(--hairline);
+  --tab-btn-shadow: var(--bevel-hi), var(--bevel-lo), var(--raise-1);
+  --tab-btn-on-shadow: var(--bevel-hi), var(--bevel-lo), var(--raise-2);
+  --tab-underline: transparent;
+  --tab-underline-h: 0;
+  --mesh-canvas:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, #fff 22%, transparent) 0%,
+      transparent 42%,
+      color-mix(in srgb, #1a1d22 10%, transparent) 100%
+    ),
+    radial-gradient(
+      100% 70% at 100% 0%,
+      color-mix(in srgb, var(--aura-1) 50%, transparent),
+      transparent 55%
+    );
+}
+
+html[data-theme='dark'][data-look='skeuo'],
+html[data-theme='dusk'][data-look='skeuo'] {
+  --bg: #0b0d10;
+  --surface: #1a1e24;
+  --well: #0e1116;
+  --aura-1: #2a3038;
+  --aura-2: #14181e;
+  --hairline: color-mix(in srgb, #fff 12%, transparent);
+  --well-inset:
+    inset 0 4px 12px color-mix(in srgb, #000 55%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, #fff 12%, transparent);
+  --bevel-hi: inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent);
+  --bevel-lo: inset 0 -1px 0 color-mix(in srgb, #000 55%, transparent);
+  --raise-1:
+    0 1px 2px color-mix(in srgb, #000 50%, transparent),
+    0 6px 16px color-mix(in srgb, #000 40%, transparent);
+  --raise-2:
+    0 2px 6px color-mix(in srgb, #000 55%, transparent),
+    0 12px 28px color-mix(in srgb, #000 45%, transparent);
+  --plate-shadow: var(--bevel-hi), var(--bevel-lo), var(--raise-1);
+  --shadow-soft: var(--raise-1);
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-theme='system'][data-look='skeuo'] {
+    --bg: #0b0d10;
+    --surface: #1a1e24;
+    --well: #0e1116;
+    --aura-1: #2a3038;
+    --aura-2: #14181e;
+    --hairline: color-mix(in srgb, #fff 12%, transparent);
+    --well-inset:
+      inset 0 4px 12px color-mix(in srgb, #000 55%, transparent),
+      inset 0 -1px 0 color-mix(in srgb, #fff 12%, transparent);
+    --bevel-hi: inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent);
+    --bevel-lo: inset 0 -1px 0 color-mix(in srgb, #000 55%, transparent);
+    --raise-1:
+      0 1px 2px color-mix(in srgb, #000 50%, transparent),
+      0 6px 16px color-mix(in srgb, #000 40%, transparent);
+    --plate-shadow: var(--bevel-hi), var(--bevel-lo), var(--raise-1);
+    --shadow-soft: var(--raise-1);
+  }
+}
+
+/* Soft Clay — mono clay canvas */
+html[data-look='neu'] {
+  --bg: #e4e7ec;
+  --surface: #e4e7ec;
+  --well: #d5d9e0;
+  --aura-1: #e4e7ec;
+  --aura-2: #e4e7ec;
+  --radius: 16px;
+  --hairline: transparent;
+  --input-border: transparent;
+  --well-inset:
+    5px 5px 12px color-mix(in srgb, #8a919c 45%, transparent) inset,
+    -4px -4px 10px color-mix(in srgb, #fff 85%, transparent) inset;
+  --raise-1: none;
+  --raise-2: none;
+  --bevel-hi: none;
+  --bevel-lo: none;
+  --shadow-soft:
+    8px 8px 18px color-mix(in srgb, #8a919c 42%, transparent),
+    -6px -6px 14px color-mix(in srgb, #fff 90%, transparent);
+  --press-inset: var(--well-inset);
+  --plate-shadow: var(--shadow-soft);
+  --border-width: 0px;
+  --ink: transparent;
+  --fill-surface: var(--surface);
+  --fill-well: var(--well);
+  --fill-paper: var(--surface);
+  --glass-blur: 0px;
+  --glass-edge: transparent;
+  --nav-fill: var(--bg);
+  --nav-inset: 0px;
+  --cta-surface: var(--cta);
+  --btn-bg: var(--cta);
+  --btn-border: 0;
+  --btn-radius: var(--radius);
+  --btn-shadow: var(--shadow-soft);
+  --btn-hover-shadow: var(--shadow-soft);
+  --btn-press-shadow: var(--well-inset);
+  --btn-press-x: 0;
+  --btn-press-y: 1px;
+  --btn-blur: 0px;
+  --btn-tracking: 0;
+  --mesh-canvas: none;
+  --glow: transparent;
+  --tab-track: var(--well);
+  --tab-track-pad: var(--space-1);
+  --tab-track-radius: var(--radius);
+  --tab-track-border: 0;
+  --tab-track-shadow: var(--well-inset);
+  --tab-btn-bg: transparent;
+  --tab-btn-on-bg: var(--surface);
+  --tab-btn-radius: calc(var(--radius) - 4px);
+  --tab-btn-border: 0;
+  --tab-btn-shadow: none;
+  --tab-btn-on-shadow: var(--shadow-soft);
+  --tab-underline: transparent;
+  --tab-underline-h: 0;
+}
+
+html[data-theme='dark'][data-look='neu'],
+html[data-theme='dusk'][data-look='neu'] {
+  --bg: #2c3038;
+  --surface: #2c3038;
+  --well: #22262e;
+  --aura-1: #2c3038;
+  --aura-2: #2c3038;
+  --well-inset:
+    5px 5px 14px color-mix(in srgb, #000 65%, transparent) inset,
+    -3px -3px 10px color-mix(in srgb, #fff 8%, transparent) inset;
+  --shadow-soft:
+    8px 8px 18px color-mix(in srgb, #000 60%, transparent),
+    -5px -5px 12px color-mix(in srgb, #fff 7%, transparent);
+  --plate-shadow: var(--shadow-soft);
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-theme='system'][data-look='neu'] {
+    --bg: #2c3038;
+    --surface: #2c3038;
+    --well: #22262e;
+    --aura-1: #2c3038;
+    --aura-2: #2c3038;
+    --well-inset:
+      5px 5px 14px color-mix(in srgb, #000 65%, transparent) inset,
+      -3px -3px 10px color-mix(in srgb, #fff 8%, transparent) inset;
+    --shadow-soft:
+      8px 8px 18px color-mix(in srgb, #000 60%, transparent),
+      -5px -5px 12px color-mix(in srgb, #fff 7%, transparent);
+    --plate-shadow: var(--shadow-soft);
+  }
+}
+
+html[data-theme='contrast'][data-look='neu'] {
+  --shadow-soft: none;
+  --plate-shadow: none;
+  --well-inset: none;
+  --btn-shadow: none;
+  --btn-hover-shadow: none;
+  --btn-press-shadow: none;
+  --btn-border: 1px solid var(--text);
+  --hairline: color-mix(in srgb, var(--text) 40%, transparent);
+  --input-border: color-mix(in srgb, var(--text) 70%, transparent);
+  --border-width: 1px;
+  --bg: #000000;
+  --surface: #121212;
+  --well: #000000;
+}
+
+/* Amber Glass — strong frost + aura bleed */
+html[data-look='glass'] {
+  --aura-1: color-mix(in srgb, var(--fuel) 28%, #dcc9a0);
+  --aura-2: color-mix(in srgb, var(--fuel) 12%, #c4b8a4);
+  --radius: 16px;
+  --raise-1: 0 10px 28px color-mix(in srgb, #000 20%, transparent);
+  --raise-2: 0 16px 40px color-mix(in srgb, #000 28%, transparent);
+  --bevel-hi: none;
+  --bevel-lo: none;
+  --shadow-soft: var(--raise-1);
+  --plate-shadow: var(--raise-1), inset 0 1px 0 color-mix(in srgb, #fff 40%, transparent);
+  --press-inset: inset 0 1px 0 color-mix(in srgb, #fff 30%, transparent);
+  --border-width: 1px;
+  --ink: color-mix(in srgb, #fff 45%, var(--hairline));
+  --fill-surface: color-mix(in srgb, var(--surface) 48%, transparent);
+  --fill-well: color-mix(in srgb, var(--well) 58%, transparent);
+  --fill-paper: color-mix(in srgb, var(--paper) 72%, transparent);
+  --glass-blur: 22px;
+  --glass-edge: color-mix(in srgb, #fff 42%, var(--hairline));
+  --nav-fill: color-mix(in srgb, var(--bg) 45%, transparent);
+  --nav-inset: 0px;
+  --cta-surface: color-mix(in srgb, var(--cta) 78%, transparent);
+  --btn-bg: var(--cta-surface);
+  --btn-border: 1px solid var(--glass-edge);
+  --btn-radius: var(--radius);
+  --btn-shadow:
+    var(--raise-1),
+    inset 0 1px 0 color-mix(in srgb, #fff 45%, transparent);
+  --btn-hover-shadow:
+    var(--raise-2),
+    inset 0 1px 0 color-mix(in srgb, #fff 50%, transparent),
+    0 0 20px var(--glow);
+  --btn-press-shadow: var(--press-inset);
+  --btn-press-x: 0;
+  --btn-press-y: 1px;
+  --btn-blur: 12px;
+  --btn-tracking: 0;
+  --tab-track: color-mix(in srgb, var(--surface) 40%, transparent);
+  --tab-track-pad: var(--space-1);
+  --tab-track-radius: var(--radius);
+  --tab-track-border: 1px solid var(--glass-edge);
+  --tab-track-shadow: none;
+  --tab-btn-bg: transparent;
+  --tab-btn-on-bg: color-mix(in srgb, var(--surface) 55%, transparent);
+  --tab-btn-radius: calc(var(--radius) - 4px);
+  --tab-btn-border: 0;
+  --tab-btn-shadow: none;
+  --tab-btn-on-shadow: inset 0 1px 0 color-mix(in srgb, #fff 35%, transparent);
+  --tab-underline: transparent;
+  --tab-underline-h: 0;
+  --mesh-canvas:
+    radial-gradient(
+      130% 90% at 100% 0%,
+      color-mix(in srgb, var(--aura-1) 85%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      100% 80% at 0% 100%,
+      color-mix(in srgb, var(--aura-2) 70%, transparent),
+      transparent 50%
+    ),
+    radial-gradient(
+      70% 55% at 50% 35%,
+      color-mix(in srgb, var(--fuel) 22%, transparent),
+      transparent 65%
+    );
+}
+
+html[data-theme='dark'][data-look='glass'],
+html[data-theme='dusk'][data-look='glass'] {
+  --aura-1: color-mix(in srgb, var(--fuel) 35%, #2a2210);
+  --aura-2: #1a1420;
+  --fill-surface: color-mix(in srgb, var(--surface) 42%, transparent);
+  --fill-well: color-mix(in srgb, var(--well) 52%, transparent);
+  --fill-paper: color-mix(in srgb, var(--paper) 78%, transparent);
+  --nav-fill: color-mix(in srgb, var(--bg) 40%, transparent);
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-theme='system'][data-look='glass'] {
+    --aura-1: color-mix(in srgb, var(--fuel) 35%, #2a2210);
+    --aura-2: #1a1420;
+    --fill-surface: color-mix(in srgb, var(--surface) 42%, transparent);
+    --fill-well: color-mix(in srgb, var(--well) 52%, transparent);
+    --nav-fill: color-mix(in srgb, var(--bg) 40%, transparent);
+  }
+}
+
+/* Cold Spatial — floating frost dock */
+html[data-look='spatial'] {
+  --bg: #d8dde6;
+  --surface: #eef1f6;
+  --well: #c5ccd8;
+  --aura-1: #c8d0dc;
+  --aura-2: #b0b8c8;
+  --radius: 20px;
+  --raise-1:
+    0 6px 20px color-mix(in srgb, #000 16%, transparent),
+    0 1px 0 color-mix(in srgb, #fff 50%, transparent);
+  --raise-2: 0 14px 36px color-mix(in srgb, #000 22%, transparent);
+  --bevel-hi: none;
+  --bevel-lo: none;
+  --shadow-soft: var(--raise-1);
+  --plate-shadow: var(--raise-2);
+  --press-inset: inset 0 2px 8px color-mix(in srgb, #000 18%, transparent);
+  --border-width: 1px;
+  --ink: color-mix(in srgb, #fff 35%, var(--hairline));
+  --fill-surface: color-mix(in srgb, var(--surface) 55%, transparent);
+  --fill-well: color-mix(in srgb, var(--well) 65%, transparent);
+  --fill-paper: color-mix(in srgb, var(--surface) 70%, transparent);
+  --glass-blur: 24px;
+  --glass-edge: color-mix(in srgb, #fff 40%, var(--hairline));
+  --nav-fill: color-mix(in srgb, var(--surface) 50%, transparent);
+  --nav-inset: 10px;
+  --cta-surface: var(--cta);
+  --btn-bg: var(--cta);
+  --btn-border: 1px solid color-mix(in srgb, #fff 40%, transparent);
+  --btn-radius: calc(var(--radius) - 2px);
+  --btn-shadow: var(--raise-2);
+  --btn-hover-shadow: 0 18px 44px color-mix(in srgb, #000 26%, transparent);
+  --btn-press-shadow: var(--press-inset);
+  --btn-press-x: 0;
+  --btn-press-y: 2px;
+  --btn-blur: 8px;
+  --btn-tracking: 0.02em;
+  --tab-track: color-mix(in srgb, var(--surface) 45%, transparent);
+  --tab-track-pad: var(--space-1);
+  --tab-track-radius: var(--radius);
+  --tab-track-border: 1px solid var(--glass-edge);
+  --tab-track-shadow: var(--raise-1);
+  --tab-btn-bg: transparent;
+  --tab-btn-on-bg: color-mix(in srgb, var(--surface) 60%, transparent);
+  --tab-btn-radius: calc(var(--radius) - 6px);
+  --tab-btn-border: 0;
+  --tab-btn-shadow: none;
+  --tab-btn-on-shadow: var(--raise-1);
+  --tab-underline: transparent;
+  --tab-underline-h: 0;
+  --mesh-canvas:
+    radial-gradient(
+      110% 85% at 85% 0%,
+      color-mix(in srgb, var(--aura-1) 65%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      90% 70% at 10% 95%,
+      color-mix(in srgb, var(--aura-2) 55%, transparent),
+      transparent 50%
+    );
+}
+
+html[data-theme='dark'][data-look='spatial'],
+html[data-theme='dusk'][data-look='spatial'] {
+  --bg: #080a10;
+  --surface: #141824;
+  --well: #0a0c12;
+  --aura-1: #1c2434;
+  --aura-2: #10141c;
+  --fill-surface: color-mix(in srgb, var(--surface) 50%, transparent);
+  --fill-well: color-mix(in srgb, var(--well) 60%, transparent);
+  --fill-paper: color-mix(in srgb, var(--surface) 65%, transparent);
+  --nav-fill: color-mix(in srgb, var(--surface) 45%, transparent);
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-theme='system'][data-look='spatial'] {
+    --bg: #080a10;
+    --surface: #141824;
+    --well: #0a0c12;
+    --aura-1: #1c2434;
+    --aura-2: #10141c;
+    --fill-surface: color-mix(in srgb, var(--surface) 50%, transparent);
+    --fill-well: color-mix(in srgb, var(--well) 60%, transparent);
+    --nav-fill: color-mix(in srgb, var(--surface) 45%, transparent);
+  }
+}
+
+/* Fuel Stamp neo — hard ink chrome */
+html[data-look='neo'] {
+  --bg: #f2f0ea;
+  --surface: #ffffff;
+  --well: #e8e4dc;
+  --aura-1: #f2f0ea;
+  --aura-2: #e8e4dc;
+  --radius: 4px;
+  --raise-1: 4px 4px 0 var(--ink);
+  --raise-2: 6px 6px 0 var(--ink);
+  --bevel-hi: none;
+  --bevel-lo: none;
+  --shadow-soft: var(--raise-1);
+  --plate-shadow: var(--raise-1);
+  --press-inset: none;
+  --well-inset: none;
+  --border-width: 2px;
+  --ink: #1a1814;
+  --hairline: #1a1814;
+  --input-border: #1a1814;
+  --glow: transparent;
+  --fill-surface: var(--surface);
+  --fill-well: var(--well);
+  --fill-paper: var(--paper);
+  --glass-blur: 0px;
+  --glass-edge: transparent;
+  --nav-fill: var(--surface);
+  --nav-inset: 0px;
+  --cta-surface: var(--cta);
+  --btn-bg: var(--cta);
+  --btn-border: 2px solid var(--ink);
+  --btn-radius: var(--radius);
+  --btn-shadow: var(--raise-1);
+  --btn-hover-shadow: var(--raise-2);
+  --btn-press-shadow: 1px 1px 0 var(--ink);
+  --btn-press-x: 2px;
+  --btn-press-y: 2px;
+  --btn-blur: 0px;
+  --btn-tracking: 0.06em;
+  --tab-track: transparent;
+  --tab-track-pad: 0;
+  --tab-track-radius: 0;
+  --tab-track-border: 2px solid var(--ink);
+  --tab-track-shadow: none;
+  --tab-btn-bg: var(--surface);
+  --tab-btn-on-bg: var(--cta);
+  --tab-btn-radius: var(--radius);
+  --tab-btn-border: 2px solid var(--ink);
+  --tab-btn-shadow: var(--raise-1);
+  --tab-btn-on-shadow: var(--raise-1);
+  --tab-underline: transparent;
+  --tab-underline-h: 0;
+  --mesh-canvas: none;
+}
+
+html[data-theme='dark'][data-look='neo'],
+html[data-theme='dusk'][data-look='neo'] {
+  --bg: #0a0a0a;
+  --surface: #161616;
+  --well: #0a0a0a;
+  --aura-1: #0a0a0a;
+  --aura-2: #0a0a0a;
+  --ink: #efeae2;
+  --hairline: #efeae2;
+  --input-border: #efeae2;
+  --nav-fill: var(--surface);
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-theme='system'][data-look='neo'] {
+    --bg: #0a0a0a;
+    --surface: #161616;
+    --well: #0a0a0a;
+    --ink: #efeae2;
+    --hairline: #efeae2;
+    --input-border: #efeae2;
+    --nav-fill: var(--surface);
+  }
+}
+
+html[data-theme='contrast'][data-look='neo'] {
+  --bg: #000000;
+  --surface: #121212;
+  --well: #000000;
+  --ink: #ffffff;
+  --hairline: #ffffff;
+  --input-border: #ffffff;
+  --raise-1: none;
+  --plate-shadow: none;
+  --shadow-soft: none;
+  --btn-shadow: none;
+  --btn-hover-shadow: none;
+  --btn-press-shadow: none;
+  --btn-press-x: 0;
+  --btn-press-y: 0;
+}
+
+/* Aurora Mesh — strong mesh + translucent cards */
+html[data-look='aurora'] {
+  --aura-1: color-mix(in srgb, var(--fuel) 40%, #dcc9a0);
+  --aura-2: color-mix(in srgb, var(--fuel) 18%, #c4b8a4);
+  --radius: 10px;
+  --raise-1: none;
+  --raise-2: none;
+  --bevel-hi: none;
+  --bevel-lo: none;
+  --press-inset: inset 0 2px 4px color-mix(in srgb, var(--text) 12%, transparent);
+  --plate-shadow: 0 1px 3px color-mix(in srgb, var(--text) 8%, transparent);
+  --shadow-soft: var(--plate-shadow);
+  --border-width: 1px;
+  --ink: var(--text);
+  --fill-surface: color-mix(in srgb, var(--surface) 58%, transparent);
+  --fill-well: color-mix(in srgb, var(--well) 68%, transparent);
+  --fill-paper: color-mix(in srgb, var(--paper) 88%, transparent);
+  --glass-blur: 0px;
+  --glass-edge: transparent;
+  --nav-fill: color-mix(in srgb, var(--bg) 70%, transparent);
+  --nav-inset: 0px;
+  --cta-surface: linear-gradient(
+    135deg,
+    color-mix(in srgb, #fff 28%, var(--cta)) 0%,
+    var(--cta) 55%,
+    color-mix(in srgb, var(--fuel) 70%, #b45309) 100%
+  );
+  --btn-bg: var(--cta-surface);
+  --btn-border: 1px solid color-mix(in srgb, var(--fuel) 40%, transparent);
+  --btn-radius: var(--radius);
+  --btn-shadow: 0 0 22px color-mix(in srgb, var(--fuel) 38%, transparent);
+  --btn-hover-shadow: 0 0 32px color-mix(in srgb, var(--fuel) 52%, transparent);
+  --btn-press-shadow: var(--press-inset);
+  --btn-press-x: 0;
+  --btn-press-y: 1px;
+  --btn-blur: 0px;
+  --btn-tracking: 0.02em;
+  --tab-track: color-mix(in srgb, var(--surface) 50%, transparent);
+  --tab-track-pad: var(--space-1);
+  --tab-track-radius: var(--radius);
+  --tab-track-border: 1px solid var(--hairline);
+  --tab-track-shadow: none;
+  --tab-btn-bg: transparent;
+  --tab-btn-on-bg: color-mix(in srgb, var(--surface) 70%, transparent);
+  --tab-btn-radius: calc(var(--radius) - 2px);
+  --tab-btn-border: 0;
+  --tab-btn-shadow: none;
+  --tab-btn-on-shadow: none;
+  --tab-underline: var(--cta);
+  --tab-underline-h: 2px;
+  --mesh-canvas:
+    radial-gradient(
+      140% 100% at 100% 0%,
+      color-mix(in srgb, var(--aura-1) 95%, transparent),
+      transparent 50%
+    ),
+    radial-gradient(
+      110% 90% at 0% 100%,
+      color-mix(in srgb, var(--aura-2) 80%, transparent),
+      transparent 48%
+    ),
+    radial-gradient(
+      80% 60% at 50% 30%,
+      color-mix(in srgb, var(--fuel) 28%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      50% 40% at 70% 70%,
+      color-mix(in srgb, var(--fuel) 12%, transparent),
+      transparent 70%
+    );
+}
+
+html[data-theme='dark'][data-look='aurora'],
+html[data-theme='dusk'][data-look='aurora'] {
+  --aura-1: color-mix(in srgb, var(--fuel) 45%, #2a2210);
+  --aura-2: #181420;
+  --fill-surface: color-mix(in srgb, var(--surface) 52%, transparent);
+  --fill-well: color-mix(in srgb, var(--well) 62%, transparent);
+  --nav-fill: color-mix(in srgb, var(--bg) 65%, transparent);
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-theme='system'][data-look='aurora'] {
+    --aura-1: color-mix(in srgb, var(--fuel) 45%, #2a2210);
+    --aura-2: #181420;
+    --fill-surface: color-mix(in srgb, var(--surface) 52%, transparent);
+    --fill-well: color-mix(in srgb, var(--well) 62%, transparent);
+    --nav-fill: color-mix(in srgb, var(--bg) 65%, transparent);
+  }
+}
+
+/* Glass / spatial / aurora: opaque + no blur for contrast or reduced transparency */
+@media (prefers-reduced-transparency: reduce) {
+  html[data-look='glass'],
+  html[data-look='spatial'],
+  html[data-look='aurora'] {
+    --fill-surface: var(--surface);
+    --fill-well: var(--well);
+    --fill-paper: var(--paper);
+    --glass-blur: 0px;
+    --btn-blur: 0px;
+    --btn-bg: var(--cta);
+    --cta-surface: var(--cta);
+    --nav-fill: var(--bg);
+  }
+}
+
+html[data-theme='contrast'][data-look='glass'],
+html[data-theme='contrast'][data-look='spatial'],
+html[data-theme='contrast'][data-look='aurora'] {
+  --fill-surface: var(--surface);
+  --fill-well: var(--well);
+  --fill-paper: var(--paper);
+  --glass-blur: 0px;
+  --btn-blur: 0px;
+  --btn-bg: var(--cta);
+  --cta-surface: var(--cta);
+  --plate-shadow: none;
+  --shadow-soft: none;
+  --nav-fill: var(--bg);
+  --nav-inset: 0px;
+}
+
 *,
 *::before,
 *::after {
@@ -339,17 +1060,7 @@ body {
   margin: 0;
   min-height: 100%;
   background-color: var(--bg);
-  background-image:
-    radial-gradient(
-      120% 80% at 100% 0%,
-      color-mix(in srgb, var(--aura-1) 55%, transparent),
-      transparent 55%
-    ),
-    radial-gradient(
-      90% 70% at 0% 100%,
-      color-mix(in srgb, var(--aura-2) 40%, transparent),
-      transparent 50%
-    );
+  background-image: var(--mesh-canvas);
   /* ponytail: no background-attachment:fixed — janks scroll on mobile */
   color: var(--text);
   font-family: 'Outfit', system-ui, 'Segoe UI', Tahoma, 'Noto Sans Arabic', 'Geeza Pro', sans-serif;
@@ -396,26 +1107,32 @@ a {
 .card {
   padding: var(--card-pad);
   border-radius: var(--radius);
-  background: var(--surface);
-  border: 1px solid color-mix(in srgb, var(--hairline) 85%, transparent);
-  box-shadow: none;
+  background: var(--fill-surface);
+  border: var(--border-width) solid color-mix(in srgb, var(--hairline) 85%, transparent);
+  box-shadow: var(--plate-shadow);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
 }
 
 .card--dark {
   background: var(--card-dark);
   color: var(--card-dark-text);
   border-color: color-mix(in srgb, var(--card-dark-text) 12%, transparent);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 /* Night Receipt slip — warm paper island on canvas */
 .card--paper,
 .receipt-slip {
-  background: var(--paper);
+  background: var(--fill-paper);
   color: var(--paper-text);
-  border: 1px solid color-mix(in srgb, var(--paper-muted) 28%, transparent);
+  border: var(--border-width) solid color-mix(in srgb, var(--paper-muted) 28%, transparent);
   box-shadow:
     var(--shadow-soft),
     0 0 0 1px color-mix(in srgb, var(--paper-text) 4%, transparent);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
 }
 
 .card--paper .hint,
@@ -431,12 +1148,16 @@ a {
   align-items: center;
   justify-content: center;
   min-height: var(--tap);
-  border-radius: var(--radius);
-  background: var(--cta);
+  border-radius: var(--btn-radius, var(--radius));
+  background: var(--btn-bg, var(--cta-surface));
   color: var(--cta-text);
   font-weight: 700;
+  letter-spacing: var(--btn-tracking, 0);
   text-decoration: none;
-  border: 0;
+  border: var(--btn-border, var(--border-width) solid transparent);
+  box-shadow: var(--btn-shadow, none);
+  backdrop-filter: blur(var(--btn-blur, 0px));
+  -webkit-backdrop-filter: blur(var(--btn-blur, 0px));
   transition:
     box-shadow var(--motion) var(--ease),
     transform var(--motion) var(--ease),
@@ -444,11 +1165,12 @@ a {
 }
 
 .cta:hover {
-  box-shadow: 0 0 16px var(--glow);
+  box-shadow: var(--btn-hover-shadow, 0 0 16px var(--glow));
 }
 
 .cta:active {
-  transform: scale(0.98);
+  transform: translate(var(--btn-press-x, 0), var(--btn-press-y, 1px));
+  box-shadow: var(--btn-press-shadow, none);
 }
 
 .cta:disabled,
@@ -462,7 +1184,8 @@ a {
   align-items: center;
   padding: 4px 10px;
   border-radius: 999px;
-  background: var(--well);
+  background: var(--fill-well);
+  color: var(--text);
   font-variant-numeric: tabular-nums;
   font-size: 0.85rem;
 }
@@ -473,7 +1196,7 @@ a {
   gap: 4px;
   padding: 4px;
   border-radius: var(--radius);
-  background: var(--well);
+  background: var(--fill-well);
 }
 
 .seg__btn {
@@ -489,7 +1212,7 @@ a {
 }
 
 .seg__btn--on {
-  background: var(--surface);
+  background: var(--fill-surface);
   color: var(--text);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--cta) 40%, transparent);
 }
@@ -519,10 +1242,13 @@ a {
   gap: var(--space-3);
   padding: var(--space-4);
   border-radius: var(--radius);
-  background: var(--surface);
-  border: 1px solid var(--hairline);
+  background: var(--fill-surface);
+  border: var(--border-width) solid var(--hairline);
   border-inline-start: 3px solid transparent;
   box-shadow: var(--shadow-soft);
+  color: var(--text);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
 }
 
 .due-card--overdue {
@@ -560,14 +1286,16 @@ a {
 .input,
 .file-pick {
   min-height: var(--tap);
-  border: 1px solid var(--input-border);
+  border: var(--border-width) solid var(--input-border);
   border-radius: var(--radius);
-  background: var(--well);
+  background: var(--fill-well);
   box-shadow: var(--well-inset);
   color: var(--text);
   transition:
     border-color var(--motion) var(--ease),
     box-shadow var(--motion) var(--ease);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
 }
 
 .file-pick {
@@ -666,10 +1394,12 @@ textarea.input {
 .disclosure {
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius);
-  border: 1px solid var(--hairline);
-  background: var(--surface);
+  border: var(--border-width, 1px) solid var(--hairline);
+  background: var(--fill-surface);
   box-shadow: var(--shadow-soft);
   color: var(--text);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
 }
 
 .disclosure > summary {
@@ -765,7 +1495,7 @@ textarea.input {
   border-radius: 999px;
   font-size: 0.8rem;
   font-weight: 600;
-  background: var(--well);
+  background: var(--fill-well);
   color: var(--muted);
 }
 
@@ -791,9 +1521,11 @@ textarea.input {
   gap: var(--space-2);
   padding: var(--space-4);
   border-radius: var(--radius);
-  background: var(--surface);
-  border: 1px solid var(--hairline);
+  background: var(--fill-surface);
+  border: var(--border-width, 1px) solid var(--hairline);
   box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
 }
 
 .ledger-card__head,
@@ -864,7 +1596,7 @@ textarea.input {
   padding: var(--space-3);
   border-radius: calc(var(--radius) - 4px);
   border: 1px solid var(--hairline);
-  background: var(--well);
+  background: var(--fill-well);
   color: var(--muted);
   font-size: 0.9rem;
   opacity: 1;
@@ -950,7 +1682,7 @@ textarea.input {
   min-height: var(--tap);
   border: 1px solid var(--hairline);
   border-radius: calc(var(--radius) - 4px);
-  background: var(--surface);
+  background: var(--fill-surface);
   color: var(--text);
   font-weight: 600;
   padding: 0 var(--space-4);
@@ -1113,6 +1845,56 @@ html[data-theme='contrast'] .file-pick:focus-within {
   :root {
     --shell: var(--shell-wide);
   }
+}
+
+html[data-look='neo'] .tab-on-fuel,
+html[data-look='neo'] .section-tabs__link--on,
+html[data-look='neo'] .home-tabs__btn--on {
+  color: var(--cta-text);
+}
+
+html[data-look='neo'] .pill,
+html[data-look='neo'] .chip {
+  border-radius: var(--radius);
+  border: var(--border-width) solid var(--ink);
+  box-shadow: var(--raise-1);
+}
+
+html[data-look='neo'] .cta,
+html[data-look='neo'] .card,
+html[data-look='neo'] .due-card,
+html[data-look='neo'] .nav,
+html[data-look='neo'] .input,
+html[data-look='neo'] .file-pick,
+html[data-look='neo'] .disclosure {
+  border-color: var(--ink);
+  box-shadow: var(--raise-1);
+}
+
+html[data-look='neo'] .cta:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+html[data-look='neo'] .cta:hover {
+  box-shadow: var(--raise-2);
+}
+
+html[data-look='skeuo'] .cta:hover {
+  box-shadow: 0 0 16px var(--glow), var(--raise-2);
+}
+
+html[data-look='neu'] .card,
+html[data-look='neu'] .due-card,
+html[data-look='neu'] .disclosure {
+  border-color: transparent;
+}
+
+html[data-look='glass'] .card,
+html[data-look='glass'] .due-card,
+html[data-look='spatial'] .card,
+html[data-look='spatial'] .due-card {
+  border-color: var(--glass-edge);
 }
 
 @media (prefers-reduced-motion: reduce) {
