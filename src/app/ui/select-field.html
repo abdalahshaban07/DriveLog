@@ -13,22 +13,37 @@
     >
       {{ currentLabel() }}
     </button>
-    @if (opened()) {
-      <div class="scrim" (click)="close()"></div>
-      <ul class="menu" role="listbox" [id]="listId" [attr.aria-labelledby]="labelId">
-        @for (opt of options(); track opt.value; let i = $index) {
-          <li
-            role="option"
-            [id]="optionId(i)"
-            [class.menu__item--active]="i === active()"
-            [attr.aria-selected]="opt.value === value()"
-            (click)="choose(opt.value)"
-            (mouseenter)="active.set(i)"
-          >
-            {{ opt.label }}
-          </li>
-        }
-      </ul>
-    }
   </div>
+  @if (opened()) {
+    <div
+      class="scrim"
+      [attr.data-select-portal]="uid"
+      (click)="close()"
+    ></div>
+    <ul
+      class="menu"
+      role="listbox"
+      [id]="listId"
+      [attr.data-select-portal]="uid"
+      [attr.aria-labelledby]="labelId"
+      [style.top]="menuBox().top"
+      [style.bottom]="menuBox().bottom"
+      [style.left]="menuBox().left"
+      [style.width]="menuBox().width"
+      [style.max-height]="menuBox().maxHeight"
+    >
+      @for (opt of options(); track opt.value; let i = $index) {
+        <li
+          role="option"
+          [id]="optionId(i)"
+          [class.menu__item--active]="i === active()"
+          [attr.aria-selected]="opt.value === value()"
+          (click)="choose(opt.value)"
+          (mouseenter)="active.set(i)"
+        >
+          {{ opt.label }}
+        </li>
+      }
+    </ul>
+  }
 </div>
