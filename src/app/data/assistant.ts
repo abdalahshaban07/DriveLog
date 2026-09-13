@@ -1,6 +1,7 @@
 import {
   fetchCoachReply,
   fetchFuelTipText,
+  type CoachIntent,
   type CoachReply,
 } from '../domain/local-coach';
 import type { Db } from './db';
@@ -23,6 +24,7 @@ export async function fetchChatReply(
   question: string,
   lang: 'en' | 'ar',
   t: (key: string, params?: Record<string, string | number>) => string,
+  intentHint?: CoachIntent,
 ): Promise<CoachReply> {
-  return fetchCoachReply(db, question, lang, t as typeof t);
+  return fetchCoachReply(db, question, lang, t as typeof t, intentHint);
 }
