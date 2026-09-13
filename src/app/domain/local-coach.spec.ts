@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FUEL_TIP_KEYS, nextFuelTipKey } from './local-coach';
+import { FUEL_TIP_KEYS, nextFuelTipKey, parseCoachApiText } from './local-coach';
 import type { Db } from '../data/db';
 
 function mockDb(): Db {
@@ -37,5 +37,15 @@ describe('nextFuelTipKey', () => {
     expect(second).not.toBe(first);
     const third = nextFuelTipKey(second, db);
     expect(third).not.toBe(second);
+  });
+});
+
+describe('parseCoachApiText', () => {
+  it('reads common DevToolBox-shaped JSON fields', () => {
+    expect(parseCoachApiText({ result: 'Check tire pressure monthly for better economy.' })).toMatch(
+      /tire pressure/i,
+    );
+    expect(parseCoachApiText({ text: 'سجّل تنك مليان عشان الاستهلاك يبقى أدق.' })).toMatch(/تنك/);
+    expect(parseCoachApiText({ short: 'x' })).toBeNull();
   });
 });
