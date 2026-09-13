@@ -2,6 +2,7 @@ import {
   afterRenderEffect,
   Component,
   computed,
+  DestroyRef,
   ElementRef,
   inject,
   input,
@@ -11,6 +12,14 @@ import {
 
 export type SelectOption = { value: string; label: string };
 
+type MenuBox = {
+  top: string;
+  bottom: string;
+  left: string;
+  width: string;
+  maxHeight: string;
+};
+
 @Component({
   selector: 'app-select-field',
   templateUrl: './select-field.html',
@@ -18,6 +27,7 @@ export type SelectOption = { value: string; label: string };
   host: {
     '(keydown)': 'onKey($event)',
     '[class.compact]': 'compact()',
+    '[class.open]': 'opened()',
   },
 })
 export class SelectField {
@@ -28,11 +38,22 @@ export class SelectField {
 
   readonly opened = signal(false);
   readonly active = signal(0);
+  /** Viewport box for body-ported menu. */
+  readonly menuBox = signal<MenuBox>({
+    top: '0',
+    bottom: 'auto',
+    left: '0',
+    width: '0',
+    maxHeight: '20rem',
+  });
 
   private readonly el = inject(ElementRef<HTMLElement>);
-  private readonly uid = crypto.randomUUID().slice(0, 8);
+  private readonly destroyRef = inject(DestroyRef);
+  /** Public for template portal attribute. */
+  readonly uid = crypto.randomUUID().slice(0, 8);
   private typed = '';
   private typedAt = 0;
+  private unbindPlace: (() => void) | null = null;
 
   readonly labelId = `sel-l-${this.uid}`;
   readonly listId = `sel-m-${this.uid}`;
@@ -42,15 +63,23 @@ export class SelectField {
     return this.options().find((o) => o.value === v)?.label ?? v;
   });
 
-  private readonly scrollActive = afterRenderEffect(() => {
+  /** Move scrim/menu to <body> so card backdrop-filter / .main overflow cannot trap z-index. */
+  private readonly portalEffect = afterRenderEffect(() => {
     if (!this.opened()) {
       return;
     }
-    const node = this.el.nativeElement.querySelector(
-      `#${this.optionId(this.active())}`,
-    );
+    this.mountPortal();
+    this.placeMenu();
+    const node = document.getElementById(this.optionId(this.active()));
     node?.scrollIntoView({ block: 'nearest' });
   });
+
+  constructor() {
+    this.destroyRef.onDestroy(() => {
+      this.stopPlaceListeners();
+      this.unmountPortal();
+    });
+  }
 
   optionId(index: number): string {
     return `sel-o-${this.uid}-${index}`;
@@ -68,10 +97,12 @@ export class SelectField {
     const i = this.options().findIndex((o) => o.value === this.value());
     this.active.set(i < 0 ? 0 : i);
     this.opened.set(true);
+    this.startPlaceListeners();
   }
 
   close(): void {
     this.opened.set(false);
+    this.stopPlaceListeners();
   }
 
   choose(value: string): void {
@@ -162,5 +193,83 @@ export class SelectField {
     if (i >= 0) {
       this.active.set(i);
     }
+  }
+
+  private mountPortal(): void {
+    const root = this.el.nativeElement as HTMLElement;
+    const scrim = root.querySelector('.scrim');
+    const menu = root.querySelector('.menu');
+    if (scrim && scrim.parentElement !== document.body) {
+      document.body.appendChild(scrim);
+    }
+    if (menu && menu.parentElement !== document.body) {
+      document.body.appendChild(menu);
+    }
+  }
+
+  private unmountPortal(): void {
+    document.querySelectorAll(`[data-select-portal="${this.uid}"]`).forEach((n) => n.remove());
+  }
+
+  private placeMenu(): void {
+    const trigger = this.el.nativeElement.querySelector(
+      '.select',
+    ) as HTMLElement | null;
+    if (!trigger) {
+      return;
+    }
+    const r = trigger.getBoundingClientRect();
+    const gap = 6;
+    const nav = 88;
+    const spaceBelow = window.innerHeight - r.bottom - gap - nav;
+    const spaceAbove = r.top - gap - 8;
+    // Prefer down; flip only when below can't fit ~3 rows
+    const openUp = spaceBelow < 10 * 16 && spaceAbove > spaceBelow;
+    const avail = Math.max(8 * 16, openUp ? spaceAbove : spaceBelow);
+    const maxH = Math.min(20 * 16, window.innerHeight * 0.5, avail);
+
+    if (openUp) {
+      this.menuBox.set({
+        top: 'auto',
+        bottom: `${window.innerHeight - r.top + gap}px`,
+        left: `${r.left}px`,
+        width: `${r.width}px`,
+        maxHeight: `${maxH}px`,
+      });
+      return;
+    }
+    this.menuBox.set({
+      top: `${r.bottom + gap}px`,
+      bottom: 'auto',
+      left: `${r.left}px`,
+      width: `${r.width}px`,
+      maxHeight: `${maxH}px`,
+    });
+  }
+
+  private startPlaceListeners(): void {
+    this.stopPlaceListeners();
+    const on = (): void => {
+      if (!this.opened()) {
+        return;
+      }
+      this.placeMenu();
+    };
+    window.addEventListener('resize', on);
+    document.addEventListener('scroll', on, true);
+    const vv = window.visualViewport;
+    vv?.addEventListener('resize', on);
+    vv?.addEventListener('scroll', on);
+    this.unbindPlace = () => {
+      window.removeEventListener('resize', on);
+      document.removeEventListener('scroll', on, true);
+      vv?.removeEventListener('resize', on);
+      vv?.removeEventListener('scroll', on);
+    };
+  }
+
+  private stopPlaceListeners(): void {
+    this.unbindPlace?.();
+    this.unbindPlace = null;
   }
 }

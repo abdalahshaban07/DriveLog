@@ -3,6 +3,11 @@
   min-inline-size: 0;
 }
 
+:host.open {
+  position: relative;
+  z-index: 30;
+}
+
 :host.compact .select {
   min-height: 48px;
   font-size: 0.95rem;
@@ -62,24 +67,25 @@
 .scrim {
   position: fixed;
   inset: 0;
-  z-index: 1;
+  z-index: 400;
 }
 
 .menu {
-  position: absolute;
-  inset-inline: 0;
-  inset-block-start: calc(100% + 6px);
-  z-index: 2;
+  /* top/left/width/max-height from TS; node is ported to document.body */
+  position: fixed;
+  z-index: 410;
   margin: 0;
   padding: 6px;
-  max-height: min(20rem, 50vh);
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
   list-style: none;
   border-radius: var(--radius);
   border: 1px solid color-mix(in srgb, var(--fuel) 28%, transparent);
-  background: var(--fill-surface);
+  /* opaque — never let rows show through */
+  background: var(--surface);
+  color: var(--text);
   box-shadow:
-    0 16px 40px color-mix(in srgb, var(--bg) 80%, transparent),
+    0 16px 40px color-mix(in srgb, #000 28%, transparent),
     0 0 0 1px color-mix(in srgb, var(--well) 80%, transparent);
   scrollbar-color: var(--muted) var(--well);
 }
