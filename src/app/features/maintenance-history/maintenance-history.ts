@@ -49,11 +49,7 @@ export class MaintenanceHistoryPage {
   readonly toDate = signal('');
   readonly shareBusy = signal(false);
   readonly shareError = signal('');
-  readonly swipeId = signal<string | null>(null);
   readonly pendingDelete = signal<string | null>(null);
-
-  private swipeStartX = 0;
-  private swipeActiveId: string | null = null;
 
   readonly rangePresets: { id: HistoryRangePreset; labelKey: MsgKey }[] = [
     { id: 'thisMonth', labelKey: 'history.rangeThisMonth' },
@@ -167,12 +163,10 @@ export class MaintenanceHistoryPage {
   }
 
   editRow(id: string): void {
-    this.swipeId.set(null);
     void this.router.navigate(['/maintenance'], { queryParams: { id } });
   }
 
   askDelete(id: string): void {
-    this.swipeId.set(null);
     this.pendingDelete.set(id);
   }
 
@@ -183,31 +177,6 @@ export class MaintenanceHistoryPage {
       return;
     }
     await this.db.deleteMaintenance(id);
-  }
-
-  onPointerDown(id: string, event: PointerEvent): void {
-    if (event.pointerType === 'mouse') {
-      return;
-    }
-    this.swipeActiveId = id;
-    this.swipeStartX = event.clientX;
-    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-  }
-
-  onPointerUp(id: string, event: PointerEvent): void {
-    if (this.swipeActiveId !== id) {
-      return;
-    }
-    const dx = event.clientX - this.swipeStartX;
-    const rtl = this.i18n.dir() === 'rtl';
-    const open = rtl ? dx > 48 : dx < -48;
-    const close = rtl ? dx < -48 : dx > 48;
-    if (open) {
-      this.swipeId.set(id);
-    } else if (close) {
-      this.swipeId.set(null);
-    }
-    this.swipeActiveId = null;
   }
 
   async shareCsv(): Promise<void> {

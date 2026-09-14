@@ -417,7 +417,6 @@ export const en = {
   'around.connectorSlow': 'Slow',
   'around.connectorTotal': 'Total {count}',
   'around.attrOsm': '© OpenStreetMap contributors',
-  'around.attrOcm': 'Charge data © OpenChargeMap',
   'around.filters': 'Filters',
   'around.range': 'Search range (km)',
   'around.rangeError': 'Enter a range between 1 and 300 km',

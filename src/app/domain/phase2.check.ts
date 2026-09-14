@@ -1,17 +1,8 @@
 import { countryFromCurrency } from './country';
 import { suggestMaintenanceDues } from './interval';
-import { isValidVin, normalizeVin } from './vin';
 import { weatherKind } from './weather';
 import type { Maintenance } from './models';
-import {
-  lastFillUnitPrice,
-  parseCountryFuelPrices,
-  parseNearbyPoi,
-  parseOpenChargeMap,
-  parseRecallCount,
-  parseVinDecode,
-  parseWeather,
-} from '../data/remote';
+import { parseCountryFuelPrices, parseNearbyPoi, parseWeather } from '../data/remote';
 import { isOpenNow } from './opening-hours';
 
 function assert(cond: unknown, msg: string): void {
@@ -21,11 +12,6 @@ function assert(cond: unknown, msg: string): void {
 }
 
 export function runPhase2SelfCheck(): void {
-  assert(normalizeVin(' 1hgcm82633a004352 ') === '1HGCM82633A004352', 'normalizeVin');
-  assert(isValidVin('1HGCM82633A004352') === true, 'valid vin');
-  assert(isValidVin('1HGCM82634A004352') === false, 'bad check digit');
-  assert(isValidVin('SHORT') === false, 'short vin');
-
   assert(countryFromCurrency('EGP') === 'EG', 'EGP→EG');
   assert(countryFromCurrency('SAR') === 'SA', 'SAR→SA');
   assert(countryFromCurrency('AED') === 'AE', 'AED→AE');
@@ -35,26 +21,6 @@ export function runPhase2SelfCheck(): void {
   assert(weatherKind(61) === 'rain', 'wmo rain');
   assert(weatherKind(71) === 'snow', 'wmo snow');
   assert(weatherKind(45) === 'other', 'wmo other');
-
-  assert(lastFillUnitPrice(50, 1000) === 20, 'unit price');
-  assert(lastFillUnitPrice(0, 100) === null, 'unit price zero liters');
-
-  const decoded = parseVinDecode(
-    {
-      Results: [
-        {
-          ModelYear: '2015',
-          Make: 'TOYOTA',
-          Model: 'COROLLA',
-        },
-      ],
-    },
-    'JTDBR32E520012345',
-  );
-  assert(decoded?.make === 'TOYOTA' && decoded.year === '2015', 'vin parse');
-
-  assert(parseRecallCount({ count: 3, results: [{}, {}, {}] }) === 3, 'recall count');
-  assert(parseRecallCount({ results: [{}, {}] }) === 2, 'recall results length');
 
   const wx = parseWeather(
     { current: { temperature_2m: 32.5, weather_code: 0 } },
@@ -86,7 +52,6 @@ export function runPhase2SelfCheck(): void {
   assert(prices?.gasoline92 === 22.25 && prices.gasoline95 === 24, 'openvan 92/95');
   assert(prices?.gasoline === 22.25, 'openvan gasoline alias');
 
-  // Public API shape for EG: diesel + gasoline + premium (no solar / octane keys).
   const egApi = parseCountryFuelPrices(
     {
       data: {
@@ -152,47 +117,6 @@ export function runPhase2SelfCheck(): void {
 
   assert(isOpenNow('24/7') === true, 'opening 24/7');
   assert(isOpenNow('Mo-Fr 08:00-12:00,13:00-18:00') === null, 'opening complex');
-
-  const ocm = parseOpenChargeMap(
-    [
-      {
-        ID: 99,
-        AddressInfo: {
-          Title: 'Infinity Charge',
-          Latitude: 30.05,
-          Longitude: 31.24,
-          Town: 'Cairo',
-          StateOrProvince: 'Cairo Governorate',
-        },
-        OperatorInfo: { Title: 'Infinity' },
-        StatusType: { IsOperational: true },
-        Connections: [
-          {
-            ConnectionType: { Title: 'CCS2' },
-            PowerKW: 60,
-            Quantity: 2,
-          },
-        ],
-      },
-      {
-        ID: 100,
-        AddressInfo: {
-          Title: 'Offline Charge',
-          Latitude: 30.06,
-          Longitude: 31.25,
-        },
-        StatusType: { IsOperational: false },
-        Connections: [],
-      },
-    ],
-    { lat: 30.04, lon: 31.23 },
-  );
-  assert(ocm.length === 2 && ocm[0]!.kind === 'charge', 'ocm parse');
-  assert(ocm[0]!.connectors?.[0]?.type === 'CCS2', 'ocm connector');
-  assert(ocm[0]!.connectors?.[0]?.speed === 'fast', 'ocm fast');
-  assert(ocm[0]!.source === 'ocm', 'ocm source');
-  assert(ocm[0]!.openNow === true, 'ocm operational open');
-  assert(ocm.find((p) => p.id === 100)?.openNow === false, 'ocm offline closed');
 
   const maint: Maintenance[] = [
     {

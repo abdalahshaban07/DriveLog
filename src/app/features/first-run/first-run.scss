@@ -67,17 +67,6 @@
   opacity: 0.5;
 }
 
-.vin-meta {
-  display: grid;
-  gap: 4px;
-  margin: 0;
-  font-size: 0.95rem;
-}
-
-.vin-meta .hint {
-  color: var(--muted);
-  font-size: 0.85rem;
-}
 
 @media (prefers-reduced-motion: reduce) {
   .ghost-btn:active {

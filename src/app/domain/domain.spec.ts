@@ -370,9 +370,8 @@ describe('insights series', () => {
 });
 
 describe('remote parsers', () => {
-  it('parses Frankfurter FX and REST Countries', async () => {
-    const { parseFxRate, parseRestCountries } = await import('../data/remote');
-    expect(parseFxRate({ rates: { USD: 0.032 } }, 'EGP', 'USD')).toBe(0.032);
+  it('parses REST Countries currencies', async () => {
+    const { parseRestCountries } = await import('../data/remote');
     const currencies = parseRestCountries([
       { flag: '🇪🇬', currencies: { EGP: { name: 'Egyptian pound' } } },
     ]);
@@ -396,7 +395,7 @@ describe('maintenance fields', () => {
 });
 
 describe('phase2', () => {
-  it('vin, country, weather, openvan, overpass, intervals', async () => {
+  it('country, weather, openvan, overpass, intervals', async () => {
     const { runPhase2SelfCheck } = await import('./phase2.check');
     runPhase2SelfCheck();
   });

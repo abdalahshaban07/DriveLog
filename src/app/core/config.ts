@@ -30,5 +30,3 @@ export const SCHEMA_STORES = [
 
 export const MILESTONE_INTERVAL_KM = 10_000;
 
-/** OpenChargeMap key — optional; empty falls back to OSM charge nodes. Get a free key at openchargemap.org profile apps. */
-export const OCM_API_KEY = '';

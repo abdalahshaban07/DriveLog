@@ -72,56 +72,11 @@
 
 .history-ledger__row {
   position: relative;
-  overflow: hidden;
   border-radius: var(--radius);
-  touch-action: pan-y;
-}
-
-.history-ledger__reveal {
-  position: absolute;
-  inset-block: 0;
-  inset-inline-end: 0;
-  display: flex;
-  align-items: stretch;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--motion-fast) var(--ease-out);
-}
-
-.history-ledger__row--open .history-ledger__reveal {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.history-ledger__reveal-btn {
-  display: grid;
-  place-items: center;
-  min-width: var(--tap);
-  padding: 0;
-  border: 0;
-  background: color-mix(in srgb, var(--petrol) 18%, var(--surface));
-  color: var(--text);
-  cursor: pointer;
-}
-
-.history-ledger__reveal-btn svg {
-  width: 1.25rem;
-  height: 1.25rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.history-ledger__reveal-btn--danger {
-  background: color-mix(in srgb, var(--stop) 22%, var(--surface));
-  color: var(--stop);
 }
 
 .history-ledger__card {
   position: relative;
-  z-index: 1;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--space-2);
@@ -129,15 +84,6 @@
   border: 1px solid var(--hairline);
   border-radius: var(--radius);
   background: var(--fill-surface);
-  transition: transform var(--motion-fast) var(--ease-out);
-}
-
-.history-ledger__row--open .history-ledger__card {
-  transform: translateX(calc(-1 * var(--tap) * 2));
-}
-
-:host-context([dir='rtl']) .history-ledger__row--open .history-ledger__card {
-  transform: translateX(calc(var(--tap) * 2));
 }
 
 .history-ledger__link {
@@ -243,8 +189,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .history-ledger__card,
-  .history-ledger__reveal,
   .icon-action:active {
     transition: none;
     transform: none;
