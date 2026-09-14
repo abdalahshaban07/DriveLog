@@ -135,6 +135,8 @@
   gap: var(--space-1);
   min-width: 0;
   align-content: start;
+  justify-items: center;
+  text-align: center;
 }
 
 .glance-strip__label {
@@ -156,12 +158,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-/* Economy is the glance primary — denser utility, not a hero card */
-.glance-strip__cell--primary strong {
-  font-size: var(--type-metric);
-  letter-spacing: -0.02em;
 }
 
 .spark-grid,
