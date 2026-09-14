@@ -124,49 +124,7 @@
     @if (importOk()) {
       <p class="ok">{{ i18n.t('backup.done') }}</p>
     }
-
-    @if (db.hasCar()) {
-      <button type="button" class="line line--danger" (click)="askRemoveCar()">
-        <span class="line__text">
-          <strong>{{ i18n.t('settings.removeCar') }}</strong>
-        </span>
-      </button>
-    }
-
-    <button type="button" class="line line--danger" (click)="askStartFresh()">
-      <span class="line__text">
-        <strong>{{ i18n.t('settings.startFresh') }}</strong>
-      </span>
-    </button>
   </section>
-
-  @if (!install.installed()) {
-    <section class="card list">
-      @if (install.canPrompt()) {
-        <button type="button" class="line" (click)="doInstall()">
-          <span class="line__text">
-            <strong>{{ i18n.t('settings.install') }}</strong>
-          </span>
-        </button>
-      } @else if (install.isIos) {
-        <div class="line">
-          <span class="line__text">
-            <strong>{{ i18n.t('settings.install') }}</strong>
-            <span class="line__sub">{{
-              install.isSafari ? i18n.t('install.ios') : i18n.t('install.iosChrome')
-            }}</span>
-          </span>
-        </div>
-      } @else {
-        <div class="line">
-          <span class="line__text">
-            <strong>{{ i18n.t('settings.install') }}</strong>
-            <span class="line__sub">{{ i18n.t('install.androidFallback') }}</span>
-          </span>
-        </div>
-      }
-    </section>
-  }
 
   <section class="card list" [attr.aria-label]="i18n.t('settings.notifySection')">
     <p class="section-label">{{ i18n.t('settings.notifySection') }}</p>
@@ -204,6 +162,80 @@
         </div>
       }
     }
+  </section>
+
+  @if (!install.installed()) {
+    <section class="card list" [attr.aria-label]="i18n.t('settings.deviceSection')">
+      <p class="section-label">{{ i18n.t('settings.deviceSection') }}</p>
+      @if (install.canPrompt()) {
+        <button type="button" class="line" (click)="doInstall()">
+          <span class="line__text">
+            <strong>{{ i18n.t('settings.install') }}</strong>
+          </span>
+        </button>
+      } @else if (install.isIos) {
+        <div class="line">
+          <span class="line__text">
+            <strong>{{ i18n.t('settings.install') }}</strong>
+            <span class="line__sub">{{
+              install.isSafari ? i18n.t('install.ios') : i18n.t('install.iosChrome')
+            }}</span>
+          </span>
+        </div>
+      } @else {
+        <div class="line">
+          <span class="line__text">
+            <strong>{{ i18n.t('settings.install') }}</strong>
+            <span class="line__sub">{{ i18n.t('install.androidFallback') }}</span>
+          </span>
+        </div>
+      }
+    </section>
+  }
+
+  <section class="card list" [attr.aria-label]="i18n.t('settings.supportSection')">
+    <p class="section-label">{{ i18n.t('settings.supportSection') }}</p>
+    <a class="line" routerLink="/help">
+      <span class="line__text">
+        <strong>{{ i18n.t('more.help') }}</strong>
+      </span>
+      <svg class="line__go" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 6l6 6-6 6" />
+      </svg>
+    </a>
+    <a class="line" routerLink="/legal">
+      <span class="line__text">
+        <strong>{{ i18n.t('more.legal') }}</strong>
+      </span>
+      <svg class="line__go" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 6l6 6-6 6" />
+      </svg>
+    </a>
+    <a class="line" routerLink="/about">
+      <span class="line__text">
+        <strong>{{ i18n.t('more.about') }}</strong>
+      </span>
+      <svg class="line__go" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 6l6 6-6 6" />
+      </svg>
+    </a>
+  </section>
+
+  <section class="card list" [attr.aria-label]="i18n.t('settings.dangerSection')">
+    <p class="section-label">{{ i18n.t('settings.dangerSection') }}</p>
+    @if (db.hasCar()) {
+      <button type="button" class="line line--danger" (click)="askRemoveCar()">
+        <span class="line__text">
+          <strong>{{ i18n.t('settings.removeCar') }}</strong>
+        </span>
+      </button>
+    }
+
+    <button type="button" class="line line--danger" (click)="askStartFresh()">
+      <span class="line__text">
+        <strong>{{ i18n.t('settings.startFresh') }}</strong>
+      </span>
+    </button>
   </section>
 
   @if (pendingImport()) {

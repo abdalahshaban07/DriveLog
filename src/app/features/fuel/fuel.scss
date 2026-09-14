@@ -4,7 +4,8 @@
 
 .last-fill-strip {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* date (AR month names) needs more than 1/4; others stay compact */
+  grid-template-columns: minmax(0, 1.55fr) repeat(3, minmax(0, 1fr));
   gap: var(--space-2);
   padding: var(--space-4);
 }

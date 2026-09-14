@@ -242,6 +242,9 @@ export const en = {
   'settings.appearance': 'Appearance',
   'settings.vehicleSection': 'Vehicle',
   'settings.dataSection': 'Data & backup',
+  'settings.deviceSection': 'Device',
+  'settings.supportSection': 'Support',
+  'settings.dangerSection': 'Danger zone',
   'settings.activation': 'Activation (testing)',
   'settings.activation.setup': 'Setup completed',
   'settings.activation.firstFill': 'First fill-up',
@@ -427,6 +430,73 @@ export const en = {
   'more.fillUpHistory': 'Fill-up history',
   'more.maintHistory': 'Maintenance history',
   'more.maintenanceTypes': 'Maintenance types',
+  'more.group.app': 'App',
+  'more.group.logs': 'Logs',
+  'more.group.tools': 'Tools',
+  'more.group.support': 'Support',
+  'more.help': 'Help & FAQ',
+  'more.legal': 'Privacy & Terms',
+  'more.about': 'About',
+  'help.title': 'Help & FAQ',
+  'help.lead': 'Short answers for everyday DriveLog use.',
+  'help.q.data': 'Where is my data stored?',
+  'help.a.data':
+    'On this device only, in your browser’s local storage (IndexedDB). DriveLog does not create an account for your logs.',
+  'help.q.fillUp': 'How do I log a fill-up?',
+  'help.a.fillUp':
+    'Use Fuel or Home quick log. Enter odometer, liters, and unit price — total cost is liters × price.',
+  'help.q.tank': 'Why set tank size?',
+  'help.a.tank':
+    'Tank capacity in Settings powers a more accurate fuel gauge. You can add it anytime.',
+  'help.q.backup': 'How do backups work?',
+  'help.a.backup':
+    'Settings → Export backup downloads a JSON file. Import lets you replace or merge. Keep your own copies.',
+  'help.q.reminders': 'How do reminders work?',
+  'help.a.reminders':
+    'Turn on Reminders in Settings. License and registration dates, plus maintenance dues, can nudge you. Browser notifications need permission.',
+  'help.q.appearance': 'How do I change language or theme?',
+  'help.a.appearance':
+    'Open Settings → Appearance. Language, theme, Look, and currency all live there.',
+  'help.q.around': 'What is Around you?',
+  'help.a.around':
+    'Nearby fuel and charge points from public map data. Location is used only when you ask for nearby results.',
+  'help.q.reset': 'How do I start over?',
+  'help.a.reset':
+    'Settings → Start from scratch clears local data and returns you to setup. Export a backup first if you need it.',
+  'legal.title': 'Privacy & Terms',
+  'legal.privacyHeading': 'Privacy',
+  'legal.privacy.p1':
+    'Your vehicle logs stay on this device in IndexedDB. DriveLog does not require a user account for fill-ups, maintenance, or settings.',
+  'legal.privacy.p2':
+    'Location is requested only when you use Around or nearby stations. Optional public feeds (maps, fuel prices, weather, holidays) run when those features need them. The service worker may cache the app shell for offline use.',
+  'legal.privacy.p3':
+    'Export and import are started by you. DriveLog does not sell your logs. Clearing site data or using Start from scratch removes local records from this browser.',
+  'legal.termsHeading': 'Terms',
+  'legal.terms.p1':
+    'DriveLog is a personal fuel and maintenance utility provided as-is. It is not mechanical, legal, or financial advice.',
+  'legal.terms.p2':
+    'You are responsible for backup copies and for the accuracy of what you enter. Public map and price data come from third parties and may be incomplete or wrong.',
+  'legal.terms.p3':
+    'Use is at your own risk. Features may change as the app updates on this device.',
+  'about.title': 'About',
+  'about.lead': 'Phone-first fuel and maintenance log. Data stays on this device.',
+  'about.version': 'Version {version}',
+  'about.localFirst':
+    'Local-first: fill-ups, maintenance, and settings live in this browser’s storage.',
+  'about.featuresLink': 'See what DriveLog can do',
+  'about.helpLink': 'Help & FAQ',
+  'help.count': '{n} questions',
+  'help.hint': 'Tap a question to read the answer.',
+  'help.status.open': 'Showing: {q}',
+  'help.status.closed': 'All answers collapsed.',
+  'legal.lead': 'How DriveLog treats your logs on this device.',
+  'legal.jump': 'On this page',
+  'legal.endHint': 'Scroll to the end when you are done reading.',
+  'legal.endRead': 'You’ve reached the end.',
+  'support.tabs': 'Support pages',
+  'support.tab.help': 'Help',
+  'support.tab.legal': 'Privacy',
+  'support.tab.about': 'About',
   'home.tabs': 'Home sections',
   'home.tab.dashboard': 'Dashboard',
   'home.tab.reports': 'Smart reports',

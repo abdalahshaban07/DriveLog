@@ -10,6 +10,16 @@
   box-shadow: var(--shadow-soft);
 }
 
+.section-label {
+  margin: 0;
+  padding: var(--space-4) var(--space-4) var(--space-2);
+  font-size: var(--type-label);
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
 .list {
   display: grid;
 }
@@ -37,6 +47,10 @@
   transition:
     background var(--motion) var(--ease),
     transform var(--motion) var(--ease);
+}
+
+button.line {
+  cursor: pointer;
 }
 
 a.line:hover,

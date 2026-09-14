@@ -15,7 +15,7 @@ Phone-first **Operate** PWA for personal fuel + maintenance. Local-first Indexed
 | Fill-up | Numeric fields + fuel grade chips; cost = liters × unit price |
 | Home | Glance strip + quick log, spend outlook, recommendations |
 | Maintenance | Service log + due reminders |
-| More | Settings, data, appearance, reminders (no VIN decode) |
+| More | Grouped lists (app, logs, tools, support). Settings for appearance, vehicle, backup, reminders. Help, privacy, about. |
 
 ## Intelligence
 

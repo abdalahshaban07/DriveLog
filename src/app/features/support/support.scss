@@ -1,0 +1,237 @@
+.support {
+  gap: var(--space-3);
+  max-inline-size: 28rem;
+  margin-inline: auto;
+  width: 100%;
+}
+
+.support__ledger {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.support__meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--type-label);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.support__hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+:host .disclosure > summary {
+  min-height: var(--tap);
+  gap: var(--space-3);
+  padding-block: var(--space-2);
+}
+
+:host .disclosure[open] {
+  border-color: color-mix(in srgb, var(--fuel) 32%, var(--hairline));
+  box-shadow:
+    var(--shadow-soft),
+    inset 3px 0 0 color-mix(in srgb, var(--fuel) 70%, transparent);
+}
+
+:host-context([dir='rtl']) .disclosure[open] {
+  box-shadow:
+    var(--shadow-soft),
+    inset -3px 0 0 color-mix(in srgb, var(--fuel) 70%, transparent);
+}
+
+.faq__a {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  max-inline-size: 42ch;
+}
+
+.jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.jump__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding-inline: var(--space-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--fill-surface);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background var(--motion) var(--ease),
+    border-color var(--motion) var(--ease);
+}
+
+.jump__link:hover {
+  background: color-mix(in srgb, var(--well) 55%, transparent);
+}
+
+.jump__link:focus-visible {
+  outline: 2px solid var(--fuel);
+  outline-offset: 2px;
+}
+
+.paper-doc {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-4);
+}
+
+.paper-doc__section {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.paper-doc__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--paper-text);
+}
+
+.paper-doc__body {
+  margin: 0;
+  color: var(--paper-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  max-inline-size: 42ch;
+}
+
+.paper-doc__rule {
+  margin: 0;
+  border: 0;
+  border-block-start: 1px dashed color-mix(in srgb, var(--paper-muted) 35%, transparent);
+}
+
+.paper-doc__end {
+  margin: 0;
+  padding-block-start: var(--space-2);
+  border-block-start: 1px solid color-mix(in srgb, var(--paper-muted) 22%, transparent);
+  color: var(--paper-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: color var(--motion) var(--ease);
+}
+
+.paper-doc__end--seen {
+  color: var(--ok);
+}
+
+.about-card {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+
+.about-card__eyebrow {
+  margin: 0;
+  color: var(--paper-muted);
+  font-size: var(--type-label);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.about-card__version {
+  margin: 0;
+  color: var(--paper-text);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.about-card__body {
+  margin: 0;
+  color: var(--paper-muted);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  max-inline-size: 42ch;
+}
+
+.about-links {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--fill-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.about-links > * + * {
+  border-block-start: 1px solid var(--hairline);
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--tap);
+  padding-inline: var(--space-4);
+  color: inherit;
+  text-decoration: none;
+  transition: background var(--motion) var(--ease);
+}
+
+.line:hover {
+  background: color-mix(in srgb, var(--well) 55%, transparent);
+}
+
+.line:focus-visible {
+  outline: 2px solid var(--fuel);
+  outline-offset: -2px;
+}
+
+.line__go {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+:host-context([dir='rtl']) .line__go {
+  transform: scaleX(-1);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .support__ledger.list-reveal > *,
+  .paper-doc.list-reveal > * {
+    animation: none;
+  }
+
+  .jump__link,
+  .line,
+  .paper-doc__end {
+    transition: none;
+  }
+}
