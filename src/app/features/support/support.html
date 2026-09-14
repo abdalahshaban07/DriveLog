@@ -1,0 +1,98 @@
+<div class="stack page-narrow support">
+  <app-page-header
+    [title]="i18n.t(titleKey())"
+    [subtitle]="subtitleText()"
+    [showBack]="true"
+    (back)="router.navigateByUrl('/more')"
+  />
+
+  <app-section-tabs [tabs]="tabs" [ariaLabel]="i18n.t('support.tabs')" />
+
+  @switch (doc) {
+    @case ('help') {
+      <p class="support__meta">{{ i18n.t('help.count', { n: faq.length }) }}</p>
+      <p class="support__hint">{{ i18n.t('help.hint') }}</p>
+      <p class="sr-only" role="status" aria-live="polite">{{ faqStatus() }}</p>
+
+      <div class="support__ledger list-reveal">
+        @for (item of faq; track item.q) {
+          <details
+            class="disclosure"
+            [open]="openFaq() === item.q"
+            (toggle)="onFaqToggle(item.q, $event)"
+          >
+            <summary>{{ i18n.t(item.q) }}</summary>
+            <div class="disclosure__body">
+              <p class="faq__a">{{ i18n.t(item.a) }}</p>
+            </div>
+          </details>
+        }
+      </div>
+    }
+    @case ('legal') {
+      <nav class="jump" [attr.aria-label]="i18n.t('legal.jump')">
+        @for (section of legal; track section.id) {
+          <a
+            class="jump__link"
+            [href]="'#' + section.id"
+            (click)="onJump($event, section.id)"
+          >
+            {{ i18n.t(section.headingKey) }}
+          </a>
+        }
+      </nav>
+
+      <article class="paper-doc card--paper list-reveal" [attr.aria-label]="i18n.t('legal.title')">
+        @for (section of legal; track section.id; let last = $last) {
+          <section class="paper-doc__section" [attr.aria-labelledby]="section.id">
+            <h2 class="paper-doc__title" [id]="section.id">
+              {{ i18n.t(section.headingKey) }}
+            </h2>
+            @for (key of section.bodyKeys; track key) {
+              <p class="paper-doc__body">{{ i18n.t(key) }}</p>
+            }
+          </section>
+          @if (!last) {
+            <hr class="paper-doc__rule" />
+          }
+        }
+        <p
+          #legalEnd
+          class="paper-doc__end"
+          [class.paper-doc__end--seen]="reachedEnd()"
+          role="status"
+          aria-live="polite"
+        >
+          {{ reachedEnd() ? i18n.t('legal.endRead') : i18n.t('legal.endHint') }}
+        </p>
+      </article>
+    }
+    @case ('about') {
+      <div class="support__ledger list-reveal">
+        <section class="about-card card--paper" [attr.aria-label]="i18n.t('about.title')">
+          <p class="about-card__eyebrow">{{ i18n.t('app.name') }}</p>
+          <p class="about-card__version">{{ i18n.t('about.version', { version }) }}</p>
+          <p class="about-card__body">{{ i18n.t('about.localFirst') }}</p>
+        </section>
+        <nav class="about-links" [attr.aria-label]="i18n.t('more.group.support')">
+          <a class="line" routerLink="/settings/features">
+            <span class="line__text">
+              <strong>{{ i18n.t('about.featuresLink') }}</strong>
+            </span>
+            <svg class="line__go" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 6l6 6-6 6" />
+            </svg>
+          </a>
+          <a class="line" routerLink="/help">
+            <span class="line__text">
+              <strong>{{ i18n.t('about.helpLink') }}</strong>
+            </span>
+            <svg class="line__go" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 6l6 6-6 6" />
+            </svg>
+          </a>
+        </nav>
+      </div>
+    }
+  }
+</div>

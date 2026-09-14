@@ -108,5 +108,23 @@ export const routes: Routes = [
       import('./features/settings/settings').then((m) => m.SettingsPage),
     canActivate: [setupGuard],
   },
+  {
+    path: 'help',
+    loadComponent: () =>
+      import('./features/support/support').then((m) => m.SupportPage),
+    data: { doc: 'help' },
+  },
+  {
+    path: 'legal',
+    loadComponent: () =>
+      import('./features/support/support').then((m) => m.SupportPage),
+    data: { doc: 'legal' },
+  },
+  {
+    path: 'about',
+    loadComponent: () =>
+      import('./features/support/support').then((m) => m.SupportPage),
+    data: { doc: 'about' },
+  },
   { path: '**', redirectTo: '' },
 ];
