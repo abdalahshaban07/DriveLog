@@ -512,7 +512,8 @@ export const en = {
   'fuel.tipOnline': 'Personalized tip from free coach.',
   'fuel.tipRefresh': 'New tip',
   'fuel.aiBadge': 'AI',
-  'fuel.tip.prompt': 'Give one practical fuel-saving tip for my car based on my recent logs.',
+  'fuel.tip.prompt':
+    'One short fuel-saving tip only (1–2 sentences). No list. Do not repeat odometer or spend totals.',
   'fuel.tip.fullTank': 'Log full-tank fill-ups to unlock accurate L/100 km tracking.',
   'fuel.tip.tirePressure': 'Check tire pressure monthly — under-inflation raises fuel use.',
   'fuel.tip.noIdle': 'Avoid long idling; restart uses less fuel than minutes of waiting.',

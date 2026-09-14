@@ -48,6 +48,7 @@ describe('HomePage', () => {
           useValue: {
             t: (k: string) => k,
             formatNumber: (n: number) => String(n),
+            formatMoney: (n: number) => String(n),
             formatUnit: (n: number) => String(n),
             formatDate: (d: string) => d,
             language: () => 'en' as const,
@@ -74,7 +75,8 @@ describe('HomePage', () => {
     expect(panel).toBeTruthy();
   });
 
-  it('does not show AI tip when assistant is disabled', () => {
+  it('does not show AI tip when offline', () => {
+    Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false });
     const fixture = TestBed.createComponent(HomePage);
     fixture.detectChanges();
     expect(fixture.componentInstance.assistantOnline()).toBe(false);

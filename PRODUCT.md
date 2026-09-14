@@ -19,7 +19,7 @@ Phone-first **Operate** PWA for personal fuel + maintenance. Local-first Indexed
 
 ## Intelligence
 
-Visible Home nudges + analytics. **BYOK LLM** allowed (user-supplied API key; optional assistant). Free public APIs degrade offline. No earnings/parking features.
+Visible Home nudges + analytics. **Coach LLM** via app-held Groq key behind a Cloudflare Worker (`workers/coach-proxy`); users never paste a key. Local Egyptian templates when offline / rate-limited. Free public APIs degrade offline. No earnings/parking features.
 
 ## Stack
 

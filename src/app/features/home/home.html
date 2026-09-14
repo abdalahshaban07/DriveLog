@@ -153,7 +153,7 @@
                 @if (aiTipBusy()) {
                   <div class="skeleton skeleton--row" aria-hidden="true"></div>
                 } @else if (aiTip()) {
-                  <p class="rec-card__body">{{ aiTip() }}</p>
+                  <p class="rec-card__body rec-card__body--tip">{{ aiTip() }}</p>
                 } @else {
                   <p class="rec-card__body">{{ i18n.t('rec.ai.loading') }}</p>
                 }
