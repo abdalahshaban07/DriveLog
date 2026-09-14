@@ -1,3 +1,4 @@
+import { COACH_MODEL, resolveCoachProxyUrl } from '../core/config';
 import { buildAssistantContext } from './assistant-context';
 import { fuelDashboardMetrics } from './fuel-dashboard';
 import { periodTotals, activePeriod } from './expense-period';
@@ -20,9 +21,6 @@ export type CoachReply = {
 
 const COACH_TIMEOUT_MS = 12_000;
 const COACH_RETRIES = 2;
-/** ponytail: shared free Worker AI; daily neuron cap — local templates always backstop. */
-const DEVTOOLBOX_GENERATE_URL =
-  'https://devtoolbox-api.devtoolbox-api.workers.dev/ai/generate';
 
 export function pickFuelTipKey(seed = Date.now()): MsgKey {
   const i = Math.abs(seed) % FUEL_TIP_KEYS.length;
@@ -73,16 +71,24 @@ function coachPrompt(db: Db, question: string, lang: 'en' | 'ar'): string {
   const langLine =
     lang === 'ar'
       ? [
-          'جاوب بالمصري العامية (لهجة مصر)، مش فصحى تقيلة.',
-          'كلمات طبيعية زي: بنزين، تنك، كاوتش، عربية، عشان، دلوقتي، أوفر.',
-          'الأرقام بالهندي الشرقي (٠١٢٣٤٥٦٧٨٩) لما تذكر أرقام.',
-          'جملة أو جملتين قصّار. بلاش إنجليزي وبلاش ماركدوان.',
+          'جاوب بالمصري العامية بس.',
+          'لو السؤال طلب نصيحة واحدة: جملة أو جملتين، من غير قايمة.',
+          'لو السؤال عن تحسين/إزاي: لحد ٤ نقط مرقّمة قصيرة، لازم تكمّل كل النقط (متسيبش رقم فاضي في الآخر).',
+          'متكررش أرقام العربية أو المصروف إلا لو السؤال طلبها.',
+          'بلاش إنجليزي وبلاش ماركدوان وبلاش تحية طويلة.',
+          'الأرقام بالهندي الشرقي (٠١٢٣٤٥٦٧٨٩) لو ذكرت رقم.',
         ].join(' ')
-      : 'Reply in clear English. One or two short sentences. No markdown.';
+      : [
+          'Reply in clear English.',
+          'If one tip: one or two short sentences, no list.',
+          'If how-to/improve: up to 4 short numbered points; finish every point (never end on a bare number).',
+          'No markdown, no long greeting.',
+          'Do not dump odometer or spend totals unless the question asks.',
+        ].join(' ');
   return [
     'You are a concise car expense coach for a personal fuel + maintenance app used in Egypt.',
     langLine,
-    `Context: ${JSON.stringify(ctx)}`,
+    `Context (use silently; do not recite): ${JSON.stringify(ctx)}`,
     `Question: ${question}`,
   ].join('\n');
 }
@@ -91,11 +97,62 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** Normalize DevToolBox / Workers AI JSON into plain tip text. */
-export function parseCoachApiText(payload: unknown): string | null {
+/** Clean model text: strip markdown, break lists, drop truncated tail, soft-cap. */
+export function formatCoachText(raw: string, maxLen = 280): string | null {
+  let s = raw
+    .replace(/\r\n/g, '\n')
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/[*_`#]+/g, '')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+  // "1. foo 2. bar" → one tip per line
+  s = s.replace(/(?:^|\s)(\d+)[.)]\s+/g, (_m, n: string, offset: number) =>
+    offset === 0 ? `${n}. ` : `\n${n}. `,
+  );
+  const lines = s
+    .split('\n')
+    .map((line) => line.replace(/[ \t]+/g, ' ').trim())
+    .filter(Boolean)
+    // drop dangling "4." / "4" with no body (token cutoff)
+    .filter((line) => !/^\d+[.)]?$/.test(line));
+  s = lines.join('\n');
+  if (s.length < 8) {
+    return null;
+  }
+  if (s.length <= maxLen) {
+    return s;
+  }
+  // Prefer cutting after a full numbered line when over cap
+  let kept = '';
+  for (const line of lines) {
+    const next = kept ? `${kept}\n${line}` : line;
+    if (next.length > maxLen) {
+      break;
+    }
+    kept = next;
+  }
+  if (kept.length >= 8) {
+    return kept;
+  }
+  const cut = s.slice(0, maxLen);
+  const stop = Math.max(
+    cut.lastIndexOf('。'),
+    cut.lastIndexOf('؟'),
+    cut.lastIndexOf('?'),
+    cut.lastIndexOf('!'),
+  );
+  if (stop >= 40) {
+    return cut.slice(0, stop + 1).trim();
+  }
+  const sp = cut.lastIndexOf(' ');
+  return (sp > 40 ? cut.slice(0, sp) : cut).trim();
+}
+
+/** Normalize OpenAI/Groq (or legacy) JSON into plain tip text. */
+export function parseCoachApiText(payload: unknown, maxLen = 280): string | null {
   if (typeof payload === 'string') {
-    const s = payload.trim().replace(/\s+/g, ' ');
-    return s.length >= 8 ? s.slice(0, 480) : null;
+    return formatCoachText(payload, maxLen);
   }
   if (!payload || typeof payload !== 'object') {
     return null;
@@ -116,28 +173,46 @@ export function parseCoachApiText(payload: unknown): string | null {
   ];
   for (const c of candidates) {
     if (typeof c === 'string') {
-      const s = c.trim().replace(/\s+/g, ' ');
-      if (s.length >= 8) {
-        return s.slice(0, 480);
+      const text = formatCoachText(c, maxLen);
+      if (text) {
+        return text;
       }
     }
   }
   return null;
 }
 
-/** ponytail: DevToolBox Workers AI (no key); falls back to local templates. */
-export async function fetchFreeCoachText(prompt: string): Promise<string | null> {
+type CoachFetchOpts = {
+  maxTokens?: number;
+  maxLen?: number;
+};
+
+/** ponytail: Groq via CF Worker; no key in client — local templates always backstop. */
+export async function fetchFreeCoachText(
+  prompt: string,
+  opts: CoachFetchOpts = {},
+): Promise<string | null> {
+  const proxyUrl = resolveCoachProxyUrl();
+  if (!proxyUrl) {
+    return null;
+  }
+  const maxTokens = opts.maxTokens ?? 120;
+  const maxLen = opts.maxLen ?? 280;
   for (let attempt = 0; attempt <= COACH_RETRIES; attempt++) {
     const ctrl = new AbortController();
     const timer = window.setTimeout(() => ctrl.abort(), COACH_TIMEOUT_MS);
     try {
-      const res = await fetch(DEVTOOLBOX_GENERATE_URL, {
+      const res = await fetch(proxyUrl, {
         method: 'POST',
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt, max_tokens: 180 }),
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: maxTokens,
+          ...(COACH_MODEL ? { model: COACH_MODEL } : {}),
+        }),
         signal: ctrl.signal,
       });
       if (!res.ok) {
@@ -150,7 +225,7 @@ export async function fetchFreeCoachText(prompt: string): Promise<string | null>
       } catch {
         /* plain text body */
       }
-      const text = parseCoachApiText(raw);
+      const text = parseCoachApiText(raw, maxLen);
       if (text) {
         return text;
       }
@@ -178,7 +253,7 @@ export async function fetchFuelTipText(
     return { text: fallback, source: 'local' };
   }
   const prompt = coachPrompt(db, t('fuel.tip.prompt'), lang);
-  const remote = await fetchFreeCoachText(prompt);
+  const remote = await fetchFreeCoachText(prompt, { maxTokens: 100, maxLen: 220 });
   if (remote) {
     return { text: remote, source: 'ai' };
   }
@@ -193,7 +268,7 @@ export async function fetchCoachReply(
   intentHint?: CoachIntent,
 ): Promise<CoachReply> {
   const prompt = coachPrompt(db, question, lang);
-  const remote = await fetchFreeCoachText(prompt);
+  const remote = await fetchFreeCoachText(prompt, { maxTokens: 360, maxLen: 900 });
   if (remote) {
     return { text: remote, source: 'ai' };
   }

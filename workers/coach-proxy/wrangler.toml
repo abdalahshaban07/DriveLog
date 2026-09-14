@@ -1,0 +1,11 @@
+name = "drivelog-coach"
+main = "src/index.ts"
+compatibility_date = "2025-03-01"
+workers_dev = true
+
+# Set the Groq key (never commit it):
+#   cd workers/coach-proxy && npx wrangler secret put GROQ_API_KEY
+
+[vars]
+GROQ_MODEL = "allam-2-7b"
+ALLOWED_ORIGINS = "http://localhost:4200,http://127.0.0.1:4200,https://abdalahshaban07.github.io"

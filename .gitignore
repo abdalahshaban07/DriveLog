@@ -56,3 +56,8 @@ Thumbs.db
 /CLAUDE.md
 /agent
 bash.exe.stackdump
+
+# Cloudflare Worker secrets / cache
+workers/**/.dev.vars
+workers/**/.wrangler/
+workers/**/node_modules/

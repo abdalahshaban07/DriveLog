@@ -9,6 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { resolveCoachProxyUrl } from '../../core/config';
 import { Db } from '../../data/db';
 import {
   currentWeather,
@@ -295,7 +296,7 @@ export class HomePage {
   );
   readonly assistantOnline = computed(
     () =>
-      this.db.settings().assistantEnabled === true &&
+      Boolean(resolveCoachProxyUrl()) &&
       typeof navigator !== 'undefined' &&
       navigator.onLine,
   );

@@ -599,6 +599,10 @@
   line-height: 1.45;
 }
 
+.rec-card__body--tip {
+  white-space: pre-line;
+}
+
 .period-card {
   margin-block-end: var(--space-4);
 }

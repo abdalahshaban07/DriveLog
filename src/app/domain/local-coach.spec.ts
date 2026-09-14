@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   FUEL_TIP_KEYS,
   detectCoachIntent,
+  formatCoachText,
   nextFuelTipKey,
   normalizeCoachQuery,
   parseCoachApiText,
@@ -46,11 +47,39 @@ describe('nextFuelTipKey', () => {
   });
 });
 
+describe('formatCoachText', () => {
+  it('breaks inline numbered lists onto new lines and soft-caps length', () => {
+    const messy =
+      'بص يا صاحبي العربية تمام. 1. سوا معتدل 2. صيانة منتظمة 3. متعبيش زيادة';
+    const out = formatCoachText(messy, 280);
+    expect(out).toContain('\n2.');
+    expect(out).toContain('\n3.');
+    expect(out!.length).toBeLessThanOrEqual(280);
+  });
+
+  it('strips markdown noise', () => {
+    expect(formatCoachText('**Tip:** check *tires* monthly for economy.')).toMatch(/Tip: check tires/i);
+  });
+
+  it('drops a dangling bare list number from token cutoff', () => {
+    const cut =
+      'بص يا صاحبي:\n1. سوا بهدوء\n2. ضغط كاوتش مظبوط\n3. خفّف الحمولة\n4.';
+    const out = formatCoachText(cut, 900);
+    expect(out).toContain('3.');
+    expect(out).not.toMatch(/\n4\.?\s*$/);
+  });
+});
+
 describe('parseCoachApiText', () => {
-  it('reads common DevToolBox-shaped JSON fields', () => {
+  it('reads OpenAI/Groq choices and legacy JSON fields', () => {
     expect(parseCoachApiText({ result: 'Check tire pressure monthly for better economy.' })).toMatch(
       /tire pressure/i,
     );
+    expect(
+      parseCoachApiText({
+        choices: [{ message: { content: 'Log a full tank so economy stays accurate.' } }],
+      }),
+    ).toMatch(/full tank/i);
     expect(parseCoachApiText({ text: 'سجّل تنك مليان عشان الاستهلاك يبقى أدق.' })).toMatch(/تنك/);
     expect(parseCoachApiText({ short: 'x' })).toBeNull();
   });
