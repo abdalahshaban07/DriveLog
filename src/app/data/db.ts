@@ -347,11 +347,9 @@ export class Db {
     extras?: Partial<
       Pick<
         Car,
-        | 'vin'
         | 'year'
         | 'make'
         | 'model'
-        | 'recallCount'
         | 'plate'
         | 'licenseExpiry'
         | 'registrationExpiry'
@@ -438,11 +436,9 @@ export class Db {
       Pick<
         Car,
         | 'nickname'
-        | 'vin'
         | 'year'
         | 'make'
         | 'model'
-        | 'recallCount'
         | 'plate'
         | 'licenseExpiry'
         | 'registrationExpiry'
@@ -458,11 +454,9 @@ export class Db {
     const merged = { ...car, ...patch };
     const updated: Car = {
       ...merged,
-      ...('vin' in patch ||
-      'year' in patch ||
+      ...('year' in patch ||
       'make' in patch ||
       'model' in patch ||
-      'recallCount' in patch ||
       'plate' in patch ||
       'licenseExpiry' in patch ||
       'registrationExpiry' in patch ||
@@ -958,18 +952,13 @@ export class Db {
   }
 }
 
-function carVinFields(
-  o?: Partial<Pick<Car, 'vin' | 'year' | 'make' | 'model' | 'recallCount'>> | null,
-): Pick<Car, 'vin' | 'year' | 'make' | 'model' | 'recallCount'> {
+function carMetaFields(
+  o?: Partial<Pick<Car, 'year' | 'make' | 'model'>> | null,
+): Pick<Car, 'year' | 'make' | 'model'> {
   return {
-    vin: o?.vin ? String(o.vin) : undefined,
     year: o?.year ? String(o.year) : undefined,
     make: o?.make ? String(o.make) : undefined,
     model: o?.model ? String(o.model) : undefined,
-    recallCount:
-      o?.recallCount == null || !Number.isFinite(Number(o.recallCount))
-        ? undefined
-        : Number(o.recallCount),
   };
 }
 
@@ -977,11 +966,9 @@ function carDocFields(
   o?: Partial<
     Pick<
       Car,
-      | 'vin'
       | 'year'
       | 'make'
       | 'model'
-      | 'recallCount'
       | 'plate'
       | 'licenseExpiry'
       | 'registrationExpiry'
@@ -990,18 +977,16 @@ function carDocFields(
   > | null,
 ): Pick<
   Car,
-  | 'vin'
   | 'year'
   | 'make'
   | 'model'
-  | 'recallCount'
   | 'plate'
   | 'licenseExpiry'
   | 'registrationExpiry'
   | 'tankCapacityLiters'
 > {
   return {
-    ...carVinFields(o),
+    ...carMetaFields(o),
     plate: o?.plate ? String(o.plate).trim() : undefined,
     licenseExpiry: o?.licenseExpiry ? String(o.licenseExpiry) : undefined,
     registrationExpiry: o?.registrationExpiry ? String(o.registrationExpiry) : undefined,

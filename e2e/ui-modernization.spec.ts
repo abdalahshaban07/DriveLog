@@ -82,13 +82,13 @@ test.describe('UI modernization smoke', () => {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
 
-  test('more route and update sheet still work', async ({ page }) => {
+  test('more route shows grouped sections', async ({ page }) => {
     await ensureSampleCar(page);
     await page.goto('/more');
     await dismissWhatsNewIfOpen(page);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await page.getByRole('button', { name: /what.?s new|ما الجديد/i }).click();
-    await expect(page.locator('dialog.update-sheet')).toBeVisible();
+    await expect(page.getByRole('link', { name: /settings|الإعدادات/i }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: /help|مساعدة/i }).first()).toBeVisible();
   });
 
   test('first-run sample car action is available on setup', async ({ page }) => {

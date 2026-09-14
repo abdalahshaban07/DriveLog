@@ -419,7 +419,6 @@ export const ar: Record<MsgKey, string> = {
   'around.connectorSlow': 'بطيئة',
   'around.connectorTotal': 'المجموع {count}',
   'around.attrOsm': '© مساهمو OpenStreetMap',
-  'around.attrOcm': 'بيانات الشحن © OpenChargeMap',
   'around.filters': 'الفلاتر',
   'around.range': 'نطاق البحث (كم)',
   'around.rangeError': 'دخل نطاق من ١ لـ ٣٠٠ كم',

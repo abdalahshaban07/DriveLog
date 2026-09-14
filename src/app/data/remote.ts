@@ -1,5 +1,3 @@
-import { OCM_API_KEY } from '../core/config';
-import { connectorSpeed } from '../domain/connector-speed';
 import { parsePublicHolidays, type PublicHoliday } from '../domain/holidays';
 import { isOpenNow } from '../domain/opening-hours';
 
@@ -8,13 +6,6 @@ const PRICE_CACHE_KEY = 'drivelog.fuelPrices.v2';
 const PRICE_TTL_MS = 6 * 60 * 60 * 1000;
 
 export type Coords = { lat: number; lon: number };
-
-export type VinDecode = {
-  vin: string;
-  year?: string;
-  make?: string;
-  model?: string;
-};
 
 export type WeatherNow = {
   lat: number;
@@ -65,7 +56,6 @@ export type NearbyPoi = {
   openNow?: boolean | null;
   openingHours?: string;
   connectors?: NearbyConnector[];
-  source?: 'osm' | 'ocm';
 };
 
 async function fetchJson(
@@ -101,64 +91,6 @@ export function getCoords(): Promise<Coords | null> {
       { enableHighAccuracy: true, timeout: 15_000, maximumAge: 10_000 },
     );
   });
-}
-
-function pickField(
-  row: Record<string, unknown>,
-  key: string,
-): string | undefined {
-  const v = row[key];
-  if (v == null || v === '' || v === 'Not Applicable') {
-    return undefined;
-  }
-  return String(v);
-}
-
-export function parseVinDecode(raw: unknown, vin: string): VinDecode | null {
-  if (!raw || typeof raw !== 'object') {
-    return null;
-  }
-  const results = (raw as { Results?: unknown }).Results;
-  if (!Array.isArray(results) || !results[0] || typeof results[0] !== 'object') {
-    return null;
-  }
-  const row = results[0] as Record<string, unknown>;
-  return {
-    vin,
-    year: pickField(row, 'ModelYear'),
-    make: pickField(row, 'Make'),
-    model: pickField(row, 'Model'),
-  };
-}
-
-export async function decodeVin(vin: string): Promise<VinDecode | null> {
-  const url = `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${encodeURIComponent(vin)}?format=json`;
-  return parseVinDecode(await fetchJson(url), vin);
-}
-
-export function parseRecallCount(raw: unknown): number | null {
-  if (!raw || typeof raw !== 'object') {
-    return null;
-  }
-  const count = (raw as { count?: unknown }).count;
-  if (typeof count === 'number' && Number.isFinite(count)) {
-    return count;
-  }
-  const results = (raw as { results?: unknown }).results;
-  if (Array.isArray(results)) {
-    return results.length;
-  }
-  return null;
-}
-
-export async function recallsFor(
-  make: string,
-  model: string,
-  year: string,
-): Promise<number | null> {
-  const q = new URLSearchParams({ make, model, modelYear: year });
-  const url = `https://api.nhtsa.gov/recalls/recallsByVehicle?${q}`;
-  return parseRecallCount(await fetchJson(url));
 }
 
 export function parseWeather(raw: unknown, lat: number, lon: number): WeatherNow | null {
@@ -424,103 +356,6 @@ export function parseNearbyPoi(
       openingHours,
       openNow: isOpenNow(openingHours, now),
       connectors,
-      source: 'osm',
-    });
-  }
-  return list.sort((a, b) => a.distanceKm - b.distanceKm).slice(0, 20);
-}
-
-function ocmConnectionType(raw: unknown): string {
-  if (!raw || typeof raw !== 'object') {
-    return 'EV';
-  }
-  const c = raw as Record<string, unknown>;
-  const title = c['Title'] ?? c['FormalName'];
-  return typeof title === 'string' && title.trim() ? title.trim() : 'EV';
-}
-
-export function parseOpenChargeMap(
-  raw: unknown,
-  origin: Coords,
-): NearbyPoi[] {
-  if (!Array.isArray(raw)) {
-    return [];
-  }
-  const list: NearbyPoi[] = [];
-  for (const row of raw) {
-    if (!row || typeof row !== 'object') {
-      continue;
-    }
-    const r = row as Record<string, unknown>;
-    const addr = r['AddressInfo'];
-    if (!addr || typeof addr !== 'object') {
-      continue;
-    }
-    const a = addr as Record<string, unknown>;
-    const lat = Number(a['Latitude']);
-    const lon = Number(a['Longitude']);
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-      continue;
-    }
-    const id = Number(r['ID']);
-    if (!Number.isFinite(id)) {
-      continue;
-    }
-    const name =
-      (typeof a['Title'] === 'string' && a['Title']) ||
-      (typeof (r['OperatorInfo'] as { Title?: string } | undefined)?.Title ===
-        'string' &&
-        (r['OperatorInfo'] as { Title: string }).Title) ||
-      'Charger';
-    const addressParts = [
-      a['AddressLine1'],
-      a['Town'],
-      a['StateOrProvince'],
-    ]
-      .filter((p) => typeof p === 'string' && p.trim())
-      .map((p) => String(p).trim());
-    const connections = Array.isArray(r['Connections']) ? r['Connections'] : [];
-    const connectors: NearbyConnector[] = [];
-    for (const conn of connections) {
-      if (!conn || typeof conn !== 'object') {
-        continue;
-      }
-      const c = conn as Record<string, unknown>;
-      const powerKw = numOrNull(c['PowerKW']) ?? undefined;
-      const count = numOrNull(c['Quantity']) ?? undefined;
-      connectors.push({
-        type: ocmConnectionType(c['ConnectionType']),
-        powerKw: powerKw ?? undefined,
-        count: count ?? undefined,
-        speed: connectorSpeed(powerKw ?? undefined),
-      });
-    }
-    const op =
-      r['OperatorInfo'] && typeof r['OperatorInfo'] === 'object'
-        ? (r['OperatorInfo'] as { Title?: string }).Title
-        : undefined;
-    // ponytail: OCM has no opening_hours; StatusType.IsOperational is the usable open signal
-    const status = r['StatusType'];
-    let openNow: boolean | null = null;
-    if (status && typeof status === 'object') {
-      const operational = (status as { IsOperational?: unknown }).IsOperational;
-      if (typeof operational === 'boolean') {
-        openNow = operational;
-      }
-    }
-    list.push({
-      id,
-      kind: 'charge',
-      name: String(name),
-      lat,
-      lon,
-      distanceKm: haversineKm(origin, { lat, lon }),
-      brand: typeof op === 'string' ? op : undefined,
-      detail: connectors[0]?.type,
-      addressLine: addressParts.length ? addressParts.join(' · ') : undefined,
-      openNow,
-      connectors: connectors.length ? connectors : undefined,
-      source: 'ocm',
     });
   }
   return list.sort((a, b) => a.distanceKm - b.distanceKm).slice(0, 20);
@@ -574,51 +409,7 @@ async function fetchAroundAt(
   origin: Coords,
   radiusKm: number,
 ): Promise<NearbyPoi[] | null> {
-  const radiusM = radiusKm * 1000;
-  if (!OCM_API_KEY) {
-    return fetchNearbyAt(origin, radiusM);
-  }
-  const [osm, ocm] = await Promise.all([
-    fetchNearbyAt(origin, radiusM),
-    fetchOpenChargeMap(origin, radiusKm),
-  ]);
-  if (osm == null && !ocm.length) {
-    return null;
-  }
-  const fuel = (osm ?? []).filter((p) => p.kind === 'fuel');
-  const charge = ocm.length
-    ? ocm
-    : (osm ?? []).filter((p) => p.kind === 'charge');
-  return [...fuel, ...charge].sort((a, b) => a.distanceKm - b.distanceKm);
-}
-
-async function fetchOpenChargeMap(
-  origin: Coords,
-  radiusKm = 50,
-): Promise<NearbyPoi[]> {
-  // ponytail: OCM requires a free key; without it skip and use OSM charge nodes
-  if (!OCM_API_KEY) {
-    return [];
-  }
-  const q = new URLSearchParams({
-    latitude: String(origin.lat),
-    longitude: String(origin.lon),
-    distance: String(radiusKm),
-    distanceunit: 'KM',
-    maxresults: '20',
-    // ponytail: avoid compact — need ConnectionType.Title for connector rows
-    verbose: 'false',
-    key: OCM_API_KEY,
-  });
-  const raw = await fetchJson(
-    `https://api.openchargemap.io/v3/poi/?${q}`,
-    { headers: { Accept: 'application/json' } },
-    15_000,
-  );
-  if (raw == null) {
-    return [];
-  }
-  return parseOpenChargeMap(raw, origin);
+  return fetchNearbyAt(origin, radiusKm * 1000);
 }
 
 async function fetchOverpass(query: string): Promise<unknown | null> {
@@ -666,16 +457,6 @@ export function mapsSearchUrl(lat: number, lon: number, lang: 'en' | 'ar'): stri
   return `https://www.google.com/maps/search/?api=1&query=${lat},${lon}&hl=${lang}`;
 }
 
-export function lastFillUnitPrice(
-  liters: number,
-  cost: number,
-): number | null {
-  if (!(liters > 0) || !Number.isFinite(cost)) {
-    return null;
-  }
-  return cost / liters;
-}
-
 /** ponytail: ipapi.co free tier, no key; fails offline */
 export async function detectCountryCurrency(): Promise<string | null> {
   const raw = (await fetchJson('https://ipapi.co/json/')) as {
@@ -687,78 +468,10 @@ export async function detectCountryCurrency(): Promise<string | null> {
   return null;
 }
 
-export async function reverseGeocodeLabel(
-  lat: number,
-  lon: number,
-  lang: 'en' | 'ar',
-): Promise<string | null> {
-  const raw = (await fetchJson(
-    `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=${lang}`,
-    { headers: { 'Accept-Language': lang } },
-  )) as { display_name?: string } | null;
-  return raw?.display_name ? String(raw.display_name).split(',')[0]?.trim() ?? null : null;
-}
-
-const FX_CACHE_KEY = 'drivelog.fx.v1';
-const FX_TTL_MS = 60 * 60 * 1000;
 const HOLIDAY_CACHE_KEY = 'drivelog.holidays.v1';
 const HOLIDAY_TTL_MS = 24 * 60 * 60 * 1000;
-const SUN_CACHE_KEY = 'drivelog.sun.v1';
-const SUN_TTL_MS = 60 * 60 * 1000;
 const REST_COUNTRIES_CACHE_KEY = 'drivelog.restcountries.v1';
 const REST_COUNTRIES_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-
-export function parseFxRate(raw: unknown, from: string, to: string): number | null {
-  if (!raw || typeof raw !== 'object') {
-    return null;
-  }
-  const rates = (raw as { rates?: Record<string, unknown> }).rates;
-  const rate = rates?.[to.toUpperCase()];
-  const n = Number(rate);
-  return Number.isFinite(n) && n > 0 ? n : null;
-}
-
-/** Frankfurter ECB rates — ponytail: latest only, no historical. */
-export async function fxRate(from: string, to: string): Promise<number | null> {
-  const base = from.toUpperCase();
-  const quote = to.toUpperCase();
-  if (base === quote) {
-    return 1;
-  }
-  const cacheKey = `${base}_${quote}`;
-  try {
-    const cached = sessionStorage.getItem(FX_CACHE_KEY);
-    if (cached) {
-      const parsed = JSON.parse(cached) as {
-        at: number;
-        by: Record<string, number>;
-      };
-      if (Date.now() - parsed.at < FX_TTL_MS && parsed.by[cacheKey]) {
-        return parsed.by[cacheKey]!;
-      }
-    }
-  } catch {
-    /* ignore */
-  }
-  const raw = await fetchJson(
-    `https://api.frankfurter.dev/v1/latest?from=${encodeURIComponent(base)}&to=${encodeURIComponent(quote)}`,
-  );
-  const rate = parseFxRate(raw, base, quote);
-  if (rate != null) {
-    try {
-      const prev = sessionStorage.getItem(FX_CACHE_KEY);
-      const parsed = prev
-        ? (JSON.parse(prev) as { at: number; by: Record<string, number> })
-        : { at: Date.now(), by: {} };
-      parsed.at = Date.now();
-      parsed.by[cacheKey] = rate;
-      sessionStorage.setItem(FX_CACHE_KEY, JSON.stringify(parsed));
-    } catch {
-      /* ignore */
-    }
-  }
-  return rate;
-}
 
 export async function publicHolidays(
   countryCode: string,
@@ -799,68 +512,6 @@ export async function publicHolidays(
     /* ignore */
   }
   return list;
-}
-
-export type SunTimes = { sunset: string; sunrise: string };
-
-export function parseSunTimes(raw: unknown): SunTimes | null {
-  if (!raw || typeof raw !== 'object') {
-    return null;
-  }
-  const daily = (raw as { daily?: Record<string, unknown> }).daily;
-  if (!daily) {
-    return null;
-  }
-  const sunsetArr = daily['sunset'];
-  const sunriseArr = daily['sunrise'];
-  if (!Array.isArray(sunsetArr) || !Array.isArray(sunriseArr)) {
-    return null;
-  }
-  const sunset = sunsetArr[0];
-  const sunrise = sunriseArr[0];
-  if (typeof sunset !== 'string' || typeof sunrise !== 'string') {
-    return null;
-  }
-  return { sunset, sunrise };
-}
-
-export async function sunTimes(lat: number, lon: number): Promise<SunTimes | null> {
-  const key = `${lat.toFixed(2)}_${lon.toFixed(2)}`;
-  try {
-    const cached = sessionStorage.getItem(SUN_CACHE_KEY);
-    if (cached) {
-      const parsed = JSON.parse(cached) as {
-        at: number;
-        by: Record<string, SunTimes>;
-      };
-      if (Date.now() - parsed.at < SUN_TTL_MS && parsed.by[key]) {
-        return parsed.by[key]!;
-      }
-    }
-  } catch {
-    /* ignore */
-  }
-  const q = new URLSearchParams({
-    latitude: String(lat),
-    longitude: String(lon),
-    daily: 'sunrise,sunset',
-    timezone: 'auto',
-  });
-  const times = parseSunTimes(await fetchJson(`https://api.open-meteo.com/v1/forecast?${q}`));
-  if (times) {
-    try {
-      const prev = sessionStorage.getItem(SUN_CACHE_KEY);
-      const parsed = prev
-        ? (JSON.parse(prev) as { at: number; by: Record<string, SunTimes> })
-        : { at: Date.now(), by: {} };
-      parsed.at = Date.now();
-      parsed.by[key] = times;
-      sessionStorage.setItem(SUN_CACHE_KEY, JSON.stringify(parsed));
-    } catch {
-      /* ignore */
-    }
-  }
-  return times;
 }
 
 export type RestCountryCurrency = { code: string; name: string; flag: string };

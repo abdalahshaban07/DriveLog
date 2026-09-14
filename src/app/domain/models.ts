@@ -42,12 +42,9 @@ export interface Car {
   plate?: string;
   licenseExpiry?: DateOnly;
   registrationExpiry?: DateOnly;
-  vin?: string;
   year?: string;
   make?: string;
   model?: string;
-  /** US-market NHTSA count; null/undefined = not fetched. */
-  recallCount?: number;
   /** Nominal tank size in liters (gauge + validation). */
   tankCapacityLiters?: number;
   createdAt: string;

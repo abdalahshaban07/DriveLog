@@ -32,9 +32,6 @@ export class AroundResults {
 
   readonly list = computed(() => filterAroundPois(this.items(), this.kind()));
 
-  readonly showOcmAttr = computed(() =>
-    this.items().some((p) => p.source === 'ocm'),
-  );
 
   mapsUrl(poi: NearbyPoi): string {
     return mapsSearchUrl(poi.lat, poi.lon, this.i18n.language());
