@@ -14,13 +14,14 @@ import type { FuelGrade } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { PageHeader } from '../../ui/page-header';
+import { SelectField, type SelectOption } from '../../ui/select-field';
 
 type GradeFilter = FuelGrade | 'all';
 
 @Component({
   selector: 'app-fuel',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, RouterLink],
+  imports: [PageHeader, RouterLink, SelectField],
   templateUrl: './fuel.html',
   styleUrl: './fuel.scss',
 })
@@ -35,13 +36,20 @@ export class FuelPage {
   readonly tipSource = signal<'ai' | 'local'>('local');
   readonly tipFlash = signal(false);
 
-  readonly gradeOptions: { id: GradeFilter; labelKey: MsgKey }[] = [
+  private readonly gradeOptions: { id: GradeFilter; labelKey: MsgKey }[] = [
     { id: 'all', labelKey: 'fuel.gradeAll' },
     { id: 'gasoline92', labelKey: 'fillUp.grade.gasoline92' },
     { id: 'gasoline95', labelKey: 'fillUp.grade.gasoline95' },
     { id: 'diesel', labelKey: 'fillUp.grade.diesel' },
     { id: 'solar', labelKey: 'fillUp.grade.solar' },
   ];
+
+  readonly gradeSelectOptions = computed<SelectOption[]>(() =>
+    this.gradeOptions.map((opt) => ({
+      value: opt.id,
+      label: this.i18n.t(opt.labelKey),
+    })),
+  );
 
   readonly metrics = computed(() =>
     fuelDashboardMetrics(this.db.fillUps(), this.grade()),
@@ -53,6 +61,10 @@ export class FuelPage {
     );
     return sorted[0] ?? null;
   });
+
+  onGrade(value: string): void {
+    this.grade.set(value as GradeFilter);
+  }
 
   gradeLabel(grade: FuelGrade): string {
     const keys: Record<FuelGrade, MsgKey> = {

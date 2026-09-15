@@ -1,0 +1,80 @@
+.budget {
+  padding-block-end: calc(var(--space-5) + env(safe-area-inset-bottom));
+}
+
+.budget__edit,
+.budget__health,
+.budget__forecast {
+  gap: var(--space-3);
+}
+
+.budget__health-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.budget__health-head h2,
+.budget__forecast h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.budget__badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: calc(var(--tap) * 0.6);
+  padding-inline: var(--space-3);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--muted) 16%, var(--surface));
+  color: var(--text);
+}
+
+.budget__badge[data-health='EXCELLENT'],
+.budget__badge[data-health='HEALTHY'] {
+  background: color-mix(in srgb, var(--ok) 18%, var(--surface));
+  color: var(--ok);
+}
+
+.budget__badge[data-health='WATCH'] {
+  background: color-mix(in srgb, var(--warn) 18%, var(--surface));
+  color: var(--warn);
+}
+
+.budget__badge[data-health='HIGH'],
+.budget__badge[data-health='CRITICAL'] {
+  background: color-mix(in srgb, var(--stop) 18%, var(--surface));
+  color: var(--stop);
+}
+
+.budget__metric {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-block: var(--space-2);
+  border-block-end: 1px solid var(--hairline);
+}
+
+.budget__metric:last-child {
+  border-block-end: none;
+}
+
+.budget__metric-label {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.budget__metric-value {
+  font-weight: 700;
+  text-align: end;
+}
+
+.budget__forecast-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}

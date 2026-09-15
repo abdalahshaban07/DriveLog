@@ -1,0 +1,69 @@
+.health {
+  padding-block-end: calc(var(--space-5) + env(safe-area-inset-bottom));
+}
+
+.health__privacy {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.health__summary {
+  margin: 0;
+  font-weight: 600;
+}
+
+.health__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.health__cta,
+.health__secondary {
+  min-height: var(--tap);
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.health__cta {
+  padding-inline: var(--space-4);
+  border-radius: var(--radius);
+  background: var(--cta);
+  color: var(--cta-text);
+}
+
+.health__secondary {
+  color: var(--fuel);
+}
+
+.health__block {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.health__section-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0;
+  font-size: 1rem;
+}
+
+.health__section-count {
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.health__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}

@@ -34,26 +34,22 @@
   >
     <div class="cal">
       <div class="cal__nav">
-        <select
-          class="cal__select"
-          [id]="monthSelectId"
-          [attr.aria-label]="i18n.t('date.month')"
-          (change)="onMonthChange($event)"
-        >
-          @for (m of monthOptions(); track m.value) {
-            <option [value]="m.value" [selected]="m.value === viewM()">{{ m.label }}</option>
-          }
-        </select>
-        <select
-          class="cal__select"
-          [id]="yearSelectId"
-          [attr.aria-label]="i18n.t('date.year')"
-          (change)="onYearChange($event)"
-        >
-          @for (y of yearOptions(); track y) {
-            <option [value]="y" [selected]="y === viewY()">{{ y }}</option>
-          }
-        </select>
+        <app-select-field
+          class="cal__select-field"
+          [compact]="true"
+          [label]="i18n.t('date.month')"
+          [options]="monthSelectOptions()"
+          [value]="'' + viewM()"
+          (valueChange)="onMonthValue($event)"
+        />
+        <app-select-field
+          class="cal__select-field"
+          [compact]="true"
+          [label]="i18n.t('date.year')"
+          [options]="yearSelectOptions()"
+          [value]="'' + viewY()"
+          (valueChange)="onYearValue($event)"
+        />
       </div>
       <div class="cal__week">
         @for (w of weekdays(); track $index) {

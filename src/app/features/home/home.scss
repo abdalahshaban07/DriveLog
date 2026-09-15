@@ -9,7 +9,8 @@
 
 .report-card {
   padding: var(--space-5);
-  border-inline-start: 3px solid var(--cta);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
   background: color-mix(in srgb, var(--cta) 6%, var(--surface));
 }
 
@@ -198,22 +199,18 @@
 }
 
 .report-card--fuel {
-  border-inline-start-color: var(--fuel);
   background: color-mix(in srgb, var(--fuel) 6%, var(--surface));
 }
 
 .report-card--maintenance {
-  border-inline-start-color: var(--cta);
   background: color-mix(in srgb, var(--cta) 6%, var(--surface));
 }
 
 .report-card--breakdown {
-  border-inline-start-color: var(--stop);
   background: color-mix(in srgb, var(--stop) 5%, var(--surface));
 }
 
 .report-card--other {
-  border-inline-start-color: var(--petrol-muted);
   background: color-mix(in srgb, var(--petrol-muted) 6%, var(--surface));
 }
 
@@ -551,32 +548,26 @@
   background: var(--fill-surface);
   text-decoration: none;
   color: inherit;
-  border-inline-start: 3px solid var(--cta);
 }
 
 .rec-card--overdue {
-  border-inline-start-color: var(--stop);
   background: color-mix(in srgb, var(--stop) 5%, var(--surface));
 }
 
 .rec-card--soon {
-  border-inline-start-color: var(--warn);
   background: color-mix(in srgb, var(--warn) 6%, var(--surface));
 }
 
 .rec-card--fuel {
-  border-inline-start-color: var(--fuel);
   background: color-mix(in srgb, var(--fuel) 6%, var(--surface));
 }
 
 .rec-card--spending {
-  border-inline-start-color: var(--cta);
   background: color-mix(in srgb, var(--cta) 6%, var(--surface));
 }
 
 .rec-card--tip,
 .rec-card--ai {
-  border-inline-start-color: var(--petrol-muted);
   background: color-mix(in srgb, var(--petrol-muted) 6%, var(--surface));
 }
 
@@ -593,6 +584,12 @@
   margin: 0;
   font-size: 0.95rem;
   line-height: 1.45;
+}
+
+.rec-card__hint {
+  margin: var(--space-2) 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
 }
 
 .period-card {
@@ -617,4 +614,47 @@
   padding: 0;
   display: grid;
   gap: var(--space-2);
+}
+
+.vehicle-status__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.vehicle-status__head h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.vehicle-status__count {
+  margin: var(--space-2) 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.vehicle-status__list {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.vehicle-status__insight {
+  margin: var(--space-3) 0 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.vehicle-status__insight a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.vehicle-status__insight a:hover,
+.vehicle-status__insight a:focus-visible {
+  color: var(--fuel);
+  text-decoration: underline;
 }

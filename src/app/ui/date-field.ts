@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { todayDateOnly } from '../domain/dues';
 import { I18n } from '../i18n/i18n';
+import { SelectField, type SelectOption } from './select-field';
 
 /** Local YYYY-MM-DD — never Date.toISOString() (UTC can shift the day). */
 export function toDateOnly(year: number, monthIndex: number, day: number): string {
@@ -87,6 +88,7 @@ export function monthCells(
 
 @Component({
   selector: 'app-date-field',
+  imports: [SelectField],
   templateUrl: './date-field.html',
   styleUrl: './date-field.scss',
   host: {
@@ -109,8 +111,6 @@ export class DateField {
   private readonly uid = crypto.randomUUID().slice(0, 8);
   readonly inputId = `date-${this.uid}`;
   readonly calId = `date-cal-${this.uid}`;
-  readonly monthSelectId = `date-month-${this.uid}`;
-  readonly yearSelectId = `date-year-${this.uid}`;
   readonly errorId = `date-err-${this.uid}`;
   readonly hintId = `date-hint-${this.uid}`;
 
@@ -134,6 +134,12 @@ export class DateField {
     ),
   );
   readonly monthOptions = computed(() => monthLabels(this.locale()));
+  readonly monthSelectOptions = computed<SelectOption[]>(() =>
+    this.monthOptions().map((m) => ({ value: String(m.value), label: m.label })),
+  );
+  readonly yearSelectOptions = computed<SelectOption[]>(() =>
+    this.yearOptions().map((y) => ({ value: String(y), label: String(y) })),
+  );
   readonly dayLabels = computed(() => {
     const fmt = new Intl.DateTimeFormat(this.locale(), { day: 'numeric' });
     const y = this.viewY();
@@ -217,12 +223,12 @@ export class DateField {
     this.open();
   }
 
-  onMonthChange(event: Event): void {
-    this.viewM.set(Number((event.target as HTMLSelectElement).value));
+  onMonthValue(value: string): void {
+    this.viewM.set(Number(value));
   }
 
-  onYearChange(event: Event): void {
-    this.viewY.set(Number((event.target as HTMLSelectElement).value));
+  onYearValue(value: string): void {
+    this.viewY.set(Number(value));
   }
 
   pick(day: number): void {

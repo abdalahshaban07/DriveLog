@@ -1,0 +1,68 @@
+.health-detail {
+  padding-block-end: calc(var(--space-5) + env(safe-area-inset-bottom));
+}
+
+.health-detail__status {
+  gap: var(--space-2);
+}
+
+.health-detail__badge {
+  margin: 0;
+  font-weight: 700;
+}
+
+.health-detail__badge[data-status='good'] {
+  color: var(--ok);
+}
+
+.health-detail__badge[data-status='soon'],
+.health-detail__badge[data-status='inspect'] {
+  color: var(--warn);
+}
+
+.health-detail__badge[data-status='due'],
+.health-detail__badge[data-status='overdue'],
+.health-detail__badge[data-status='critical'] {
+  color: var(--stop);
+}
+
+.health-detail__reasons,
+.health-detail__checklist {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.health-detail__h {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.health-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.health-detail__cta {
+  min-height: var(--tap);
+  display: inline-flex;
+  align-items: center;
+  padding-inline: var(--space-4);
+  border-radius: var(--radius);
+  background: var(--cta);
+  color: var(--cta-text);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.health-detail__archive {
+  min-height: var(--tap);
+  background: none;
+  border: none;
+  color: var(--muted);
+  text-decoration: underline;
+  cursor: pointer;
+}

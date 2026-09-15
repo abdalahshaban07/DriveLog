@@ -1,0 +1,72 @@
+<div class="stack page-narrow budget">
+  <app-page-header [title]="i18n.t('budget.title')" />
+
+  @if (car(); as c) {
+    <section class="card stack budget__edit" [attr.aria-label]="i18n.t('budget.save')">
+      <app-numeric-field [label]="i18n.t('budget.monthly')" [(value)]="budgetMonthly" />
+      <app-numeric-field [label]="i18n.t('budget.reserveTarget')" [(value)]="reserveTarget" />
+      <app-numeric-field [label]="i18n.t('budget.reserveBalance')" [(value)]="reserveBalance" />
+      <app-primary-button [label]="i18n.t('budget.save')" (pressed)="save()" />
+    </section>
+
+    <section class="card stack budget__health" [attr.aria-label]="i18n.t('budget.health')">
+      <div class="budget__health-head">
+        <h2>{{ i18n.t('budget.health') }}</h2>
+        <span class="budget__badge" [attr.data-health]="summary().budgetHealth">
+          {{ healthLabel() }}
+        </span>
+      </div>
+
+      <div class="budget__metric">
+        <span class="budget__metric-label">{{ i18n.t('budget.remaining') }}</span>
+        <strong class="budget__metric-value">
+          @if (summary().remaining != null) {
+            {{ money(summary().remaining!) }}
+          } @else {
+            {{ i18n.t('budget.notEnoughData') }}
+          }
+        </strong>
+      </div>
+      <div class="budget__metric">
+        <span class="budget__metric-label">{{ i18n.t('budget.upcoming90') }}</span>
+        <strong class="budget__metric-value">{{ money(summary().eligible90) }}</strong>
+      </div>
+      @if (summary().tiers.minimum != null) {
+        <div class="budget__metric">
+          <span class="budget__metric-label">{{ i18n.t('budget.reserveMin') }}</span>
+          <strong class="budget__metric-value">{{ money(summary().tiers.minimum!) }}</strong>
+        </div>
+      }
+      @if (summary().tiers.recommended != null) {
+        <div class="budget__metric">
+          <span class="budget__metric-label">{{ i18n.t('budget.reserveRec') }}</span>
+          <strong class="budget__metric-value">{{ money(summary().tiers.recommended!) }}</strong>
+        </div>
+      }
+      @if (summary().tiers.comfortable != null) {
+        <div class="budget__metric">
+          <span class="budget__metric-label">{{ i18n.t('budget.reserveComfy') }}</span>
+          <strong class="budget__metric-value">{{ money(summary().tiers.comfortable!) }}</strong>
+        </div>
+      }
+    </section>
+
+    <section class="card stack budget__forecast" [attr.aria-label]="i18n.t('budget.forecast')">
+      <h2>{{ i18n.t('budget.forecast') }}</h2>
+      @if (summary().forecasts.length === 0) {
+        <p class="empty-state">{{ i18n.t('budget.notEnoughData') }}</p>
+      } @else {
+        <ul class="budget__forecast-list">
+          @for (f of summary().forecasts; track f.months) {
+            <li class="budget__metric">
+              <span class="budget__metric-label">{{ f.months }}{{ i18n.t('budget.forecastMonths') }}</span>
+              <strong class="budget__metric-value">{{ money(f.known + f.estimated) }}</strong>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  } @else {
+    <p class="empty-state">{{ i18n.t('budget.notEnoughData') }}</p>
+  }
+</div>

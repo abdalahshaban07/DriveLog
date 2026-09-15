@@ -27,10 +27,12 @@ describe('MorePage', () => {
     expect(el.textContent).toContain('more.help');
     expect(el.textContent).toContain('more.legal');
     expect(el.textContent).toContain('more.about');
+    expect(el.textContent).toContain('more.contact');
     expect(el.textContent).not.toContain('more.whatsNew');
     expect(el.querySelector('a[href="/help"]')).toBeTruthy();
     expect(el.querySelector('a[href="/legal"]')).toBeTruthy();
     expect(el.querySelector('a[href="/about"]')).toBeTruthy();
+    expect(el.querySelector('a[href="/contact"]')).toBeTruthy();
     expect(MORE_SECTIONS.map((s) => s.headingKey)).toEqual([
       'more.group.app',
       'more.group.logs',

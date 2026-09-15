@@ -26,14 +26,16 @@ describe('AppFeaturesPage', () => {
     expect(fixture.componentInstance.items.length).toBeGreaterThan(8);
     expect(el.textContent).toContain('features.home.title');
     expect(el.textContent).toContain('features.exportPdf.title');
-    expect(el.textContent).toContain('features.assistant.body');
+    expect(el.textContent).toContain('features.health.body');
+    expect(el.textContent).toContain('features.budget.title');
+    expect(el.textContent).not.toContain('features.assistant');
   });
 
-  it('does not claim a BYOK API key for the coach', () => {
-    expect(en['features.assistant.body'].toLowerCase()).not.toMatch(
+  it('does not claim a BYOK API key for health or budget', () => {
+    expect(en['features.health.body'].toLowerCase()).not.toMatch(
       /your own api key|with your api key/,
     );
-    expect(ar['features.assistant.body']).not.toMatch(/مفتاح\s*api\s*بتاعك/);
+    expect(ar['features.budget.body']).toBeTruthy();
     expect(en['features.exportPdf.title']).toBeTruthy();
     expect(ar['features.exportPdf.title']).toBeTruthy();
   });

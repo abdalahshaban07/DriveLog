@@ -1,7 +1,7 @@
 .chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -11,8 +11,8 @@
   min-height: 36px;
   display: inline-flex;
   align-items: center;
-  padding-inline: 14px;
-  border-radius: 999px;
+  padding-inline: var(--space-3);
+  border-radius: var(--radius);
   background: var(--fill-well);
   border: 1px solid var(--hairline);
   font-weight: 600;
@@ -20,7 +20,7 @@
 
 .list {
   display: grid;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .due-card {

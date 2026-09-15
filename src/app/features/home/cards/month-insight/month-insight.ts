@@ -35,8 +35,18 @@ import { I18n } from '../../../../i18n/i18n';
       background: var(--metric-tint);
       border: 1px solid var(--hairline);
     }
-    .month-insight--down { border-inline-start: 3px solid var(--ok); }
-    .month-insight--up { border-inline-start: 3px solid var(--stop); }
+    .month-insight--down {
+      box-shadow: inset 2px 0 0 var(--ok);
+    }
+    .month-insight--up {
+      box-shadow: inset 2px 0 0 var(--stop);
+    }
+    :host-context([dir='rtl']) .month-insight--down {
+      box-shadow: inset -2px 0 0 var(--ok);
+    }
+    :host-context([dir='rtl']) .month-insight--up {
+      box-shadow: inset -2px 0 0 var(--stop);
+    }
     .month-insight__title {
       margin: 0 0 var(--space-1);
       font-size: 0.8rem;
