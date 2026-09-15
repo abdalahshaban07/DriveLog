@@ -48,7 +48,7 @@
           />
         }
 
-        <section class="health-card" [attr.aria-label]="i18n.t('health.title')">
+        <section class="card health-card" [attr.aria-label]="i18n.t('health.title')">
           <div class="health-card__head">
             <h2>{{ i18n.t('health.title') }}</h2>
             <a routerLink="/health">{{ i18n.t('health.viewAll') }}</a>
@@ -63,9 +63,9 @@
           </ul>
         </section>
 
-        <section class="advisor-card" [attr.aria-label]="i18n.t('advisor.cardTitle')">
+        <section class="card advisor-card" [attr.aria-label]="i18n.t('advisor.cardTitle')">
           <h2>{{ i18n.t('advisor.cardTitle') }}</h2>
-          <p class="privacy">{{ i18n.t('advisor.onDevice') }}</p>
+          <p class="muted">{{ i18n.t('advisor.onDevice') }}</p>
           @if (topAdvisorInsight(); as tip) {
             <p>{{ insightTitle(tip) }} — {{ insightBody(tip) }}</p>
           }
