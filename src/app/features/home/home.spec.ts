@@ -95,10 +95,12 @@ describe('HomePage', () => {
     expect(panel).toBeTruthy();
   });
 
-  it('shows local Smart Advisor card without remote AI gate', () => {
+  it('shows vehicle status block with health link', () => {
     const fixture = TestBed.createComponent(HomePage);
     fixture.detectChanges();
-    const advisor = fixture.nativeElement.querySelector('.advisor-card');
-    expect(advisor).toBeTruthy();
+    const status = fixture.nativeElement.querySelector('.vehicle-status');
+    expect(status).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('a[href="/health"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.advisor-card')).toBeFalsy();
   });
 });

@@ -205,17 +205,11 @@
 .cal__nav {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-  gap: 8px;
+  gap: var(--space-2);
 }
 
-.cal__select {
-  min-height: 44px;
-  padding-inline: 12px 52px;
-  border: 1px solid color-mix(in srgb, var(--well) 80%, transparent);
-  border-radius: 12px;
-  background: var(--fill-well);
-  color: var(--text);
-  font-weight: 700;
+.cal__select-field {
+  min-inline-size: 0;
 }
 
 .cal__week,

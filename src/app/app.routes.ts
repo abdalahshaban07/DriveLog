@@ -91,12 +91,6 @@ export const routes: Routes = [
     canActivate: [setupGuard],
   },
   {
-    path: 'assistant',
-    loadComponent: () =>
-      import('./features/assistant/assistant').then((m) => m.AssistantPage),
-    canActivate: [setupGuard],
-  },
-  {
     path: 'breakdowns',
     loadComponent: () =>
       import('./features/breakdowns/breakdowns').then((m) => m.BreakdownsPage),
@@ -149,6 +143,12 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/support/support').then((m) => m.SupportPage),
     data: { doc: 'about' },
+  },
+  {
+    path: 'contact',
+    loadComponent: () =>
+      import('./features/support/support').then((m) => m.SupportPage),
+    data: { doc: 'contact' },
   },
   { path: '**', redirectTo: '' },
 ];

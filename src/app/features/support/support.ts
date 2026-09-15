@@ -14,9 +14,14 @@ import { APP_VERSION } from '../../core/config';
 import type { MsgKey } from '../../i18n/en';
 import { I18n } from '../../i18n/i18n';
 import { PageHeader } from '../../ui/page-header';
+import { PrimaryButton } from '../../ui/primary-button';
+import { SelectField, type SelectOption } from '../../ui/select-field';
 import { SectionTabs, type SectionTab } from '../../ui/section-tabs/section-tabs';
 
-export type SupportDoc = 'help' | 'legal' | 'about';
+export type SupportDoc = 'help' | 'legal' | 'about' | 'contact';
+export type ContactTopic = 'feature' | 'issue' | 'other';
+
+export const CONTACT_EMAIL = 'abdalahshaban129@gmail.com';
 
 export const HELP_FAQ: readonly { q: MsgKey; a: MsgKey }[] = [
   { q: 'help.q.data', a: 'help.a.data' },
@@ -50,10 +55,11 @@ export const SUPPORT_TABS: SectionTab[] = [
   { labelKey: 'support.tab.help', link: '/help' },
   { labelKey: 'support.tab.legal', link: '/legal' },
   { labelKey: 'support.tab.about', link: '/about' },
+  { labelKey: 'support.tab.contact', link: '/contact' },
 ];
 
 export function parseSupportDoc(raw: unknown): SupportDoc {
-  if (raw === 'help' || raw === 'legal' || raw === 'about') {
+  if (raw === 'help' || raw === 'legal' || raw === 'about' || raw === 'contact') {
     return raw;
   }
   return 'about';
@@ -62,7 +68,7 @@ export function parseSupportDoc(raw: unknown): SupportDoc {
 @Component({
   selector: 'app-support',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, RouterLink, SectionTabs],
+  imports: [PageHeader, RouterLink, SectionTabs, SelectField, PrimaryButton],
   templateUrl: './support.html',
   styleUrl: './support.scss',
 })
@@ -70,6 +76,7 @@ export class SupportPage {
   readonly i18n = inject(I18n);
   readonly router = inject(Router);
   readonly version = APP_VERSION;
+  readonly contactEmail = CONTACT_EMAIL;
   readonly faq = HELP_FAQ;
   readonly legal = LEGAL_SECTIONS;
   readonly tabs = SUPPORT_TABS;
@@ -77,7 +84,14 @@ export class SupportPage {
 
   readonly openFaq = signal<MsgKey | null>(null);
   readonly reachedEnd = signal(false);
+  readonly contactTopic = signal<ContactTopic>('feature');
   private readonly legalEnd = viewChild<ElementRef<HTMLElement>>('legalEnd');
+
+  readonly contactTopicOptions = computed<SelectOption[]>(() => [
+    { value: 'feature', label: this.i18n.t('contact.topic.feature') },
+    { value: 'issue', label: this.i18n.t('contact.topic.issue') },
+    { value: 'other', label: this.i18n.t('contact.topic.other') },
+  ]);
 
   readonly faqStatus = computed(() => {
     const q = this.openFaq();
@@ -118,6 +132,8 @@ export class SupportPage {
         return 'legal.title';
       case 'about':
         return 'about.title';
+      case 'contact':
+        return 'contact.title';
       default: {
         const _never: never = this.doc;
         return _never;
@@ -138,11 +154,45 @@ export class SupportPage {
         return 'legal.lead';
       case 'about':
         return 'about.lead';
+      case 'contact':
+        return 'contact.lead';
       default: {
         const _never: never = this.doc;
         return _never;
       }
     }
+  }
+
+  onContactTopic(value: string): void {
+    if (value === 'feature' || value === 'issue' || value === 'other') {
+      this.contactTopic.set(value);
+    }
+  }
+
+  contactMailto(): string {
+    const topic = this.contactTopic();
+    let subjectKey: MsgKey;
+    switch (topic) {
+      case 'feature':
+        subjectKey = 'contact.subject.feature';
+        break;
+      case 'issue':
+        subjectKey = 'contact.subject.issue';
+        break;
+      case 'other':
+        subjectKey = 'contact.subject.other';
+        break;
+      default: {
+        const _never: never = topic;
+        return _never;
+      }
+    }
+    const subject = encodeURIComponent(this.i18n.t(subjectKey));
+    return `mailto:${CONTACT_EMAIL}?subject=${subject}`;
+  }
+
+  openMailto(): void {
+    window.location.href = this.contactMailto();
   }
 
   onFaqToggle(q: MsgKey, event: Event): void {

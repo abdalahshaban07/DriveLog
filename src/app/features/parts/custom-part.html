@@ -1,0 +1,36 @@
+<div class="stack page-narrow custom-part">
+  <app-page-header
+    [title]="i18n.t('parts.customTitle')"
+    [showBack]="true"
+    (back)="router.navigateByUrl('/health')"
+  />
+
+  <section class="card stack custom-part__form" [attr.aria-label]="i18n.t('parts.customTitle')">
+    <app-text-field [label]="i18n.t('parts.name')" [(value)]="name" />
+
+    <app-select-field
+      [label]="i18n.t('parts.category')"
+      [options]="categoryOptions()"
+      [value]="category()"
+      (valueChange)="onCat($event)"
+    />
+
+    <app-select-field
+      [label]="i18n.t('parts.tracking')"
+      [options]="trackingOptions()"
+      [value]="tracking()"
+      (valueChange)="onTrack($event)"
+    />
+
+    @if (tracking() === 'interval') {
+      <app-numeric-field [label]="i18n.t('parts.intervalKm')" [(value)]="intervalKm" />
+    }
+
+    @if (dup()) {
+      <p class="custom-part__alert" role="alert">{{ i18n.t('parts.duplicate') }}</p>
+      <app-primary-button [label]="i18n.t('parts.createAnyway')" (pressed)="forceSave()" />
+    }
+
+    <app-primary-button [label]="i18n.t('parts.save')" (pressed)="save()" />
+  </section>
+</div>

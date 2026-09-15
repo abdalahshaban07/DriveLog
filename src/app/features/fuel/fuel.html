@@ -54,38 +54,26 @@
   >
     <div class="tip-strip__head">
       <p class="tip-strip__label">{{ i18n.t('fuel.tipLabel') }}</p>
-      @if (tipSource() === 'ai') {
-        <span class="ai-badge">{{ i18n.t('fuel.aiBadge') }}</span>
-      }
     </div>
     @if (tipBusy()) {
       <p class="tip-strip__text">{{ i18n.t('common.loading') }}</p>
     } @else {
       <p class="tip-strip__text">{{ tip() }}</p>
     }
-    @if (tipSource() === 'local') {
-      <p class="tip-strip__hint">{{ i18n.t('fuel.tipOffline') }}</p>
-    } @else {
-      <p class="tip-strip__hint">{{ i18n.t('fuel.tipOnline') }}</p>
-    }
+    <p class="tip-strip__hint">{{ i18n.t('fuel.tip.source') }}</p>
     <button type="button" class="tip-strip__refresh" (click)="loadTip()">
       {{ i18n.t('fuel.tipRefresh') }}
     </button>
   </section>
 
-  <div class="grade-row">
-    <label class="grade-row__lbl" for="fuel-grade">{{ i18n.t('fuel.gradeFilter') }}</label>
-    <select
-      id="fuel-grade"
-      class="grade-row__select"
-      [value]="grade()"
-      (change)="grade.set($any($event.target).value)"
-    >
-      @for (opt of gradeOptions; track opt.id) {
-        <option [value]="opt.id">{{ i18n.t(opt.labelKey) }}</option>
-      }
-    </select>
-  </div>
+  <app-select-field
+    class="grade-row"
+    [compact]="true"
+    [label]="i18n.t('fuel.gradeFilter')"
+    [options]="gradeSelectOptions()"
+    [value]="grade()"
+    (valueChange)="onGrade($event)"
+  />
 
   @let m = metrics();
   <div class="metric-grid" [attr.aria-label]="i18n.t('fuel.metrics')">

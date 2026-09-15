@@ -37,7 +37,6 @@ export const MORE_SECTIONS: readonly MoreSection[] = [
     items: [
       { route: '/health', labelKey: 'more.health' },
       { route: '/budget', labelKey: 'more.budget' },
-      { route: '/assistant', labelKey: 'more.assistant' },
     ],
   },
   {
@@ -46,6 +45,7 @@ export const MORE_SECTIONS: readonly MoreSection[] = [
       { route: '/help', labelKey: 'more.help' },
       { route: '/legal', labelKey: 'more.legal' },
       { route: '/about', labelKey: 'more.about' },
+      { route: '/contact', labelKey: 'more.contact' },
     ],
   },
 ];

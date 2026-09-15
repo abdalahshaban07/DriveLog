@@ -48,32 +48,30 @@
           />
         }
 
-        <section class="card health-card" [attr.aria-label]="i18n.t('health.title')">
-          <div class="health-card__head">
-            <h2>{{ i18n.t('health.title') }}</h2>
+        <section class="card vehicle-status" [attr.aria-label]="i18n.t('home.vehicleStatus')">
+          <div class="vehicle-status__head">
+            <h2>{{ i18n.t('home.vehicleStatus') }}</h2>
             <a routerLink="/health">{{ i18n.t('health.viewAll') }}</a>
           </div>
-          <p>{{ i18n.t('health.attentionCount', { count: healthAttention() }) }}</p>
-          <ul class="health-card__list">
-            @for (item of healthTop(); track item.partDefinitionId) {
-              <li>
-                <app-health-row [item]="item" />
-              </li>
-            }
-          </ul>
-        </section>
-
-        <section class="card advisor-card" [attr.aria-label]="i18n.t('advisor.cardTitle')">
-          <h2>{{ i18n.t('advisor.cardTitle') }}</h2>
-          <p class="muted">{{ i18n.t('advisor.onDevice') }}</p>
-          @if (topAdvisorInsight(); as tip) {
-            <p>{{ insightTitle(tip) }} — {{ insightBody(tip) }}</p>
-          }
-          <p>
-            <a routerLink="/assistant">{{ i18n.t('advisor.ask') }}</a>
-            ·
-            <a routerLink="/budget">{{ i18n.t('more.budget') }}</a>
+          <p class="vehicle-status__count">
+            {{ i18n.t('health.attentionCount', { count: healthAttention() }) }}
           </p>
+          @if (healthTop().length) {
+            <ul class="vehicle-status__list">
+              @for (item of healthTop(); track item.partDefinitionId) {
+                <li>
+                  <app-health-row [item]="item" />
+                </li>
+              }
+            </ul>
+          }
+          @if (topAdvisorInsight(); as tip) {
+            <p class="vehicle-status__insight muted">
+              <a [routerLink]="insightLink(tip)">
+                {{ insightTitle(tip) }} · {{ insightBody(tip) }}
+              </a>
+            </p>
+          }
         </section>
 
         <div
@@ -174,9 +172,6 @@
               <article class="rec-card rec-card--ai" role="status" aria-live="polite">
                 <div class="rec-card__head">
                   <h3 class="rec-card__title">{{ i18n.t('rec.ai.title') }}</h3>
-                  @if (aiTipSource() === 'ai') {
-                    <span class="ai-badge">{{ i18n.t('fuel.aiBadge') }}</span>
-                  }
                 </div>
                 @if (aiTipBusy()) {
                   <div class="skeleton skeleton--row" aria-hidden="true"></div>
@@ -185,6 +180,7 @@
                 } @else {
                   <p class="rec-card__body">{{ i18n.t('rec.ai.loading') }}</p>
                 }
+                <p class="rec-card__hint muted">{{ i18n.t('fuel.tip.source') }}</p>
               </article>
             }
           </div>

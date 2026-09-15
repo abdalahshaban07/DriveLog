@@ -50,13 +50,22 @@ import type { MsgKey } from '../../../../i18n/en';
       border-radius: var(--radius);
       background: var(--metric-tint);
       border: 1px solid var(--hairline);
-      border-inline-start: 3px solid var(--petrol-muted);
+      box-shadow: inset 2px 0 0 var(--petrol-muted);
+    }
+    :host-context([dir='rtl']) .weather-tip {
+      box-shadow: inset -2px 0 0 var(--petrol-muted);
     }
     .weather-tip--rain {
-      border-inline-start-color: var(--warn);
+      box-shadow: inset 2px 0 0 var(--warn);
+    }
+    :host-context([dir='rtl']) .weather-tip--rain {
+      box-shadow: inset -2px 0 0 var(--warn);
     }
     .weather-tip--heat {
-      border-inline-start-color: var(--cta);
+      box-shadow: inset 2px 0 0 var(--cta);
+    }
+    :host-context([dir='rtl']) .weather-tip--heat {
+      box-shadow: inset -2px 0 0 var(--cta);
     }
     .weather-tip__head {
       display: flex;

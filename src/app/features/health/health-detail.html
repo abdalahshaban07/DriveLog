@@ -1,0 +1,63 @@
+<div class="stack page-narrow health-detail">
+  @if (item(); as it) {
+    <app-page-header [title]="label()" [showBack]="true" (back)="router.navigateByUrl('/health')" />
+
+    <section class="card stack health-detail__status" [attr.aria-label]="statusLabel()">
+      <p class="health-detail__badge" [attr.data-status]="it.status">{{ statusLabel() }}</p>
+      <p class="muted">
+        {{ i18n.t('health.detail.source') }} · {{ reasonLabel(it.primarySource) }}
+      </p>
+      @if (it.lastServiceDate) {
+        <p>
+          {{ i18n.t('health.detail.lastService') }} ·
+          {{ i18n.formatDate(it.lastServiceDate, { day: 'numeric', month: 'short', year: 'numeric' }) }}
+        </p>
+      }
+      @if (it.remainingKm != null) {
+        <p>
+          {{ i18n.t('health.detail.remaining') }} ·
+          {{ i18n.formatNumber(it.remainingKm, { maximumFractionDigits: 0 }) }}
+          {{ i18n.t('common.km') }}
+        </p>
+      }
+    </section>
+
+    @if (it.reasons.length) {
+      <ul class="health-detail__reasons card">
+        @for (r of it.reasons; track r) {
+          <li>{{ reasonLabel(r) }}</li>
+        }
+      </ul>
+    }
+
+    @if (it.partDefinitionId === routineId) {
+      <section class="card stack" [attr.aria-label]="i18n.t('health.detail.checklist')">
+        <h2 class="health-detail__h">{{ i18n.t('health.detail.checklist') }}</h2>
+        <ul class="health-detail__checklist">
+          <li>{{ i18n.t('health.detail.checklist.oil') }}</li>
+          <li>{{ i18n.t('health.detail.checklist.filter') }}</li>
+          <li>{{ i18n.t('health.detail.checklist.tires') }}</li>
+          <li>{{ i18n.t('health.detail.checklist.brakes') }}</li>
+        </ul>
+      </section>
+    }
+
+    <div class="health-detail__actions">
+      <a
+        routerLink="/maintenance"
+        [queryParams]="{ partId: it.partDefinitionId }"
+        class="health-detail__cta"
+      >
+        {{ i18n.t('health.detail.logService') }}
+      </a>
+      @if (it.partDefinitionId !== routineId) {
+        <button type="button" class="health-detail__archive" (click)="archive()">
+          {{ i18n.t('health.detail.archive') }}
+        </button>
+      }
+    </div>
+  } @else {
+    <app-page-header [title]="i18n.t('health.title')" [showBack]="true" (back)="router.navigateByUrl('/health')" />
+    <p class="empty-state">{{ i18n.t('health.empty') }}</p>
+  }
+</div>

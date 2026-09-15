@@ -47,6 +47,7 @@ import {
 } from '../../domain/setup-checklist';
 import { buildSmartReports } from '../../domain/smart-reports';
 import { homeHealthSummary } from '../../domain/vehicle-facts';
+import type { InsightKind } from '../../domain/insight-generator';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { HealthRow } from '../../ui/health-row/health-row';
@@ -481,6 +482,27 @@ export class HomePage {
 
   insightBody(tip: { bodyKey: string }): string {
     return this.i18n.t(tip.bodyKey as MsgKey);
+  }
+
+  insightLink(tip: { kind: InsightKind }): string {
+    switch (tip.kind) {
+      case 'BUDGET_HEALTH':
+      case 'BUDGET_WARNING':
+      case 'UPCOMING_EXPENSE':
+      case 'SAVING_RECOMMENDATION':
+      case 'MAINTENANCE_FORECAST':
+        return '/budget';
+      case 'FUEL_SPENDING':
+        return '/fuel';
+      case 'MAINTENANCE_PRIORITY':
+      case 'COST_ANOMALY':
+      case 'MISSING_DATA':
+        return '/health';
+      default: {
+        const _exhaustive: never = tip.kind;
+        return _exhaustive;
+      }
+    }
   }
 
   gradeLabel(grade?: string): string {

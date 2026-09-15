@@ -33,6 +33,7 @@ async function render(doc: SupportDoc): Promise<{ el: HTMLElement; cmp: SupportP
         { path: 'help', component: SupportPage },
         { path: 'legal', component: SupportPage },
         { path: 'about', component: SupportPage },
+        { path: 'contact', component: SupportPage },
       ]),
       { provide: ActivatedRoute, useValue: { snapshot: { data: { doc } } } },
       { provide: I18n, useValue: i18nStub() },
@@ -75,6 +76,15 @@ describe('SupportPage', () => {
     expect(el.querySelector('a[href="/settings/features"]')).toBeTruthy();
   });
 
+  it('shows contact topic and mailto on contact', async () => {
+    const { el, cmp } = await render('contact');
+    expect(el.textContent).toContain('contact.title');
+    expect(el.textContent).toContain('contact.lead');
+    expect(el.textContent).toContain(cmp.contactEmail);
+    expect(el.querySelector('a[href="/contact"]')).toBeTruthy();
+    expect(cmp.contactMailto()).toContain('mailto:abdalahshaban129@gmail.com');
+  });
+
   it('does not claim a BYOK API key', () => {
     const blob = [
       en['legal.privacy.p1'],
@@ -90,6 +100,7 @@ describe('SupportPage', () => {
 
   it('parses unknown docs as about', () => {
     expect(parseSupportDoc('help')).toBe('help');
+    expect(parseSupportDoc('contact')).toBe('contact');
     expect(parseSupportDoc('nope')).toBe('about');
   });
 });

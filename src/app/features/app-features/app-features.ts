@@ -37,7 +37,8 @@ export const FEATURE_CATALOG: readonly FeatureGroup[] = [
   {
     headingKey: 'features.group.tools',
     items: [
-      { titleKey: 'features.assistant.title', bodyKey: 'features.assistant.body' },
+      { titleKey: 'features.health.title', bodyKey: 'features.health.body' },
+      { titleKey: 'features.budget.title', bodyKey: 'features.budget.body' },
       { titleKey: 'features.breakdowns.title', bodyKey: 'features.breakdowns.body' },
       { titleKey: 'features.expenses.title', bodyKey: 'features.expenses.body' },
     ],

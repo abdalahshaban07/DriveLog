@@ -91,8 +91,32 @@
               <path d="M9 6l6 6-6 6" />
             </svg>
           </a>
+          <a class="line" routerLink="/contact">
+            <span class="line__text">
+              <strong>{{ i18n.t('more.contact') }}</strong>
+            </span>
+            <svg class="line__go" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 6l6 6-6 6" />
+            </svg>
+          </a>
         </nav>
       </div>
+    }
+    @case ('contact') {
+      <section class="card stack contact-card" [attr.aria-label]="i18n.t('contact.title')">
+        <p class="contact-card__lead">{{ i18n.t('contact.lead') }}</p>
+        <app-select-field
+          [label]="i18n.t('contact.topic')"
+          [options]="contactTopicOptions()"
+          [value]="contactTopic()"
+          (valueChange)="onContactTopic($event)"
+        />
+        <p class="contact-card__email">
+          <span class="contact-card__email-label">{{ i18n.t('contact.email') }}</span>
+          <a [href]="'mailto:' + contactEmail">{{ contactEmail }}</a>
+        </p>
+        <app-primary-button [label]="i18n.t('contact.send')" (pressed)="openMailto()" />
+      </section>
     }
   }
 </div>

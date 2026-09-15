@@ -1,0 +1,36 @@
+<div class="stack page-narrow health">
+  <app-page-header [title]="i18n.t('health.title')" />
+
+  <p class="health__privacy" role="status">{{ i18n.t('privacy.onDevice') }}</p>
+
+  <p class="health__summary" role="status">
+    {{ i18n.t('health.attentionCount', { count: attentionCount() }) }}
+  </p>
+
+  <div class="health__actions">
+    <a routerLink="/maintenance" class="health__cta">{{ i18n.t('health.detail.logService') }}</a>
+    <a routerLink="/parts/custom" class="health__secondary">{{ i18n.t('parts.addCustomCta') }}</a>
+  </div>
+
+  @if (isEmpty()) {
+    <p class="empty-state">{{ i18n.t('health.empty') }}</p>
+  }
+
+  @for (sec of sections; track sec.key) {
+    @if (grouped()[sec.key].length) {
+      <section class="health__block card" [attr.aria-label]="i18n.t(sec.title)">
+        <h2 class="health__section-title">
+          {{ i18n.t(sec.title) }}
+          <span class="health__section-count">{{ grouped()[sec.key].length }}</span>
+        </h2>
+        <ul class="health__list list-reveal">
+          @for (item of grouped()[sec.key]; track item.partDefinitionId) {
+            <li>
+              <app-health-row [item]="item" />
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+</div>
