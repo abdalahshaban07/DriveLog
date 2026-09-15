@@ -105,17 +105,31 @@
     @case ('contact') {
       <section class="card stack contact-card" [attr.aria-label]="i18n.t('contact.title')">
         <p class="contact-card__lead">{{ i18n.t('contact.lead') }}</p>
-        <app-select-field
-          [label]="i18n.t('contact.topic')"
-          [options]="contactTopicOptions()"
-          [value]="contactTopic()"
-          (valueChange)="onContactTopic($event)"
-        />
-        <p class="contact-card__email">
-          <span class="contact-card__email-label">{{ i18n.t('contact.email') }}</span>
-          <a [href]="'mailto:' + contactEmail">{{ contactEmail }}</a>
-        </p>
+        <div class="contact-topics">
+          <p class="contact-topics__label" id="contact-topic-label">
+            {{ i18n.t('contact.topic') }}
+          </p>
+          <div
+            class="contact-chips"
+            role="radiogroup"
+            aria-labelledby="contact-topic-label"
+          >
+            @for (opt of contactTopics; track opt.value) {
+              <button
+                type="button"
+                class="contact-chip"
+                role="radio"
+                [attr.aria-checked]="contactTopic() === opt.value"
+                [class.contact-chip--on]="contactTopic() === opt.value"
+                (click)="onContactTopic(opt.value)"
+              >
+                {{ i18n.t(opt.labelKey) }}
+              </button>
+            }
+          </div>
+        </div>
         <app-primary-button [label]="i18n.t('contact.send')" (pressed)="openMailto()" />
+        <p class="contact-card__privacy">{{ i18n.t('contact.privacy') }}</p>
       </section>
     }
   }

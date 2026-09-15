@@ -203,11 +203,38 @@
           <span class="switch__track" aria-hidden="true"></span>
         </span>
       </label>
-      <app-numeric-field
-        [label]="i18n.t('settings.soonThreshold')"
-        [(value)]="soonThreshold"
-        (valueChange)="onSoonThreshold()"
-      />
+      <div class="soon-block">
+        <p class="soon-block__label" id="soon-threshold-label">
+          {{ i18n.t('settings.soonThreshold') }}
+        </p>
+        <div
+          class="soon-chips"
+          role="radiogroup"
+          aria-labelledby="soon-threshold-label"
+          [attr.aria-describedby]="'soon-threshold-hint'"
+        >
+          @for (opt of soonPresets; track opt.ratio) {
+            <button
+              type="button"
+              class="soon-chip"
+              role="radio"
+              [attr.aria-checked]="soonRatio() === opt.ratio"
+              [class.soon-chip--on]="soonRatio() === opt.ratio"
+              (click)="setSoonPreset(opt.ratio)"
+            >
+              {{ i18n.t(opt.labelKey) }}
+            </button>
+          }
+        </div>
+        <p class="line line--hint soon-block__hint" id="soon-threshold-hint">
+          {{
+            i18n.t('settings.soonThreshold.hint', {
+              pct: soonPercent(),
+              km: soonExampleKm(),
+            })
+          }}
+        </p>
+      </div>
     }
   </section>
 

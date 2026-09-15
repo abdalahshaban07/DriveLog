@@ -1,47 +1,37 @@
 {
-  "id": "notes-health-ui-polish-1.4",
+  "id": "notes-soon-contact-1.5",
   "en": [
     {
       "icon": "wrench",
-      "title": "Health & Budget Home",
-      "body": "Vehicle status on Home, clearer Health sections, and Budget health badges."
+      "title": "Clearer Soon window",
+      "body": "Pick Late, Default, or Early so parts mark Soon when 10%, 20%, or 30% of the interval remains."
     },
     {
       "icon": "mail",
-      "title": "Contact Us",
-      "body": "Request features or report issues by email from More → Contact."
-    },
-    {
-      "icon": "sparkle",
-      "title": "On-device insights",
-      "body": "Ask DriveLog chat is gone — ranked local insights still deep-link to Health and Budget."
+      "title": "Private Contact",
+      "body": "Send feedback from your email app without showing an address on screen."
     },
     {
       "icon": "palette",
-      "title": "Operate polish",
-      "body": "Even page spacing, SelectField everywhere, and fuel tips marked as on-device."
+      "title": "Support rhythm",
+      "body": "Help, Privacy, About, and Contact share even spacing under the tabs."
     }
   ],
   "ar": [
     {
       "icon": "wrench",
-      "title": "الصحة والميزانية في الرئيسية",
-      "body": "حالة العربية في الرئيسية، أقسام أوضح للصحة، وشارات حالة الميزانية."
+      "title": "نافذة «قريب» أوضح",
+      "body": "اختار متأخر أو افتراضي أو بدري عشان القطع تظهر قريب عند ١٠٪ أو ٢٠٪ أو ٣٠٪ من الفترة."
     },
     {
       "icon": "mail",
-      "title": "تواصل معنا",
-      "body": "اطلب ميزة أو بلّغ عن مشكلة بالإيميل من المزيد → تواصل."
-    },
-    {
-      "icon": "sparkle",
-      "title": "رؤى على الجهاز",
-      "body": "شات اسأل DriveLog اتشال — الرؤى المحلية لسه بتربط للصحة والميزانية."
+      "title": "تواصل بخصوصية",
+      "body": "ابعت ملاحظاتك من تطبيق الإيميل من غير ما يظهر العنوان على الشاشة."
     },
     {
       "icon": "palette",
-      "title": "لمسة تشغيل",
-      "body": "مسافات أوضح، قوائم SelectField في كل مكان، ونصايح الوقود محلية على الجهاز."
+      "title": "إيقاع الدعم",
+      "body": "المساعدة والخصوصية وعن التطبيق والتواصل بنفس المسافات تحت التبويبات."
     }
   ]
 }
