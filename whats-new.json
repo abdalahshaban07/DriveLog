@@ -1,37 +1,37 @@
 {
-  "id": "notes-18d08af4",
+  "id": "notes-78d92cbd",
   "en": [
     {
       "icon": "wrench",
-      "title": "Clearer Soon window",
-      "body": "Pick Late, Default, or Early so parts mark Soon when 10%, 20%, or 30% of the interval remains."
+      "title": "Vehicle Health, clearer",
+      "body": "Glance counts, richer part rows, and localized sources — see what needs attention faster."
     },
     {
-      "icon": "mail",
+      "icon": "chart",
+      "title": "Soon window presets",
+      "body": "Pick 10%, 20%, or 30%. The hint shows when a part flips to Soon."
+    },
+    {
+      "icon": "sparkle",
       "title": "Private Contact",
-      "body": "Send feedback from your email app without showing an address on screen."
-    },
-    {
-      "icon": "palette",
-      "title": "Support rhythm",
-      "body": "Help, Privacy, About, and Contact share even spacing under the tabs."
+      "body": "Feedback opens in your email app — address stays off-screen. Clearer Other topic in Arabic."
     }
   ],
   "ar": [
     {
       "icon": "wrench",
-      "title": "نافذة «قريب» أوضح",
-      "body": "اختار متأخر أو افتراضي أو بدري عشان القطع تظهر قريب عند ١٠٪ أو ٢٠٪ أو ٣٠٪ من الفترة."
+      "title": "صحة المركبة أوضح",
+      "body": "عدادات سريعة وصفوف أغنى ومصادر مترجمة — تشوف اللي محتاج اهتمام أسرع."
     },
     {
-      "icon": "mail",
+      "icon": "chart",
+      "title": "إعدادات نافذة «قريب»",
+      "body": "اختار ١٠٪ أو ٢٠٪ أو ٣٠٪. التلميح بيوضح امتى القطعة تتحول لقريب."
+    },
+    {
+      "icon": "sparkle",
       "title": "تواصل بخصوصية",
-      "body": "ابعت ملاحظاتك من تطبيق الإيميل من غير ما يظهر العنوان على الشاشة."
-    },
-    {
-      "icon": "palette",
-      "title": "إيقاع الدعم",
-      "body": "المساعدة والخصوصية وعن التطبيق والتواصل بنفس المسافات تحت التبويبات."
+      "body": "الملاحظات بتفتح من تطبيق الإيميل من غير ما يظهر العنوان. موضوع «حاجه تانيه» أوضح بالعربي."
     }
   ]
 }
