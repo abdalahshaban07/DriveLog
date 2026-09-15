@@ -1,47 +1,47 @@
 {
-  "id": "notes-52fd12fa",
+  "id": "notes-5796a3ca",
   "en": [
     {
-      "icon": "fuel",
-      "title": "Around you",
-      "body": "Fuel and charge points near you, sorted by distance."
+      "icon": "wrench",
+      "title": "Vehicle Health",
+      "body": "See part status, routine checks, and attention items from your local logs."
     },
     {
       "icon": "sparkle",
-      "title": "Open now + EV detail",
-      "body": "Open stations and charger connector rows sit on the list."
+      "title": "Smart Advisor",
+      "body": "Ask DriveLog on-device about maintenance, budget, and fuel — no remote AI."
+    },
+    {
+      "icon": "chart",
+      "title": "Maintenance budget",
+      "body": "Track monthly budget, reserve tiers, and 3/6/12-month forecasts from your data."
     },
     {
       "icon": "palette",
-      "title": "Calmer ledger",
-      "body": "Hairline rows and a single amber accent — denser, quieter Around."
-    },
-    {
-      "icon": "wrench",
-      "title": "Fill-up nearby",
-      "body": "Pick a nearby station chip when logging a fill-up."
+      "title": "Works with every Look",
+      "body": "Health and advisor screens use shared tokens across themes and Looks."
     }
   ],
   "ar": [
     {
-      "icon": "fuel",
-      "title": "من حولك",
-      "body": "محطات وقود وشحن قريبة مرتبة حسب المسافة."
+      "icon": "wrench",
+      "title": "صحة العربية",
+      "body": "شوف حالة القطع والفحص الدوري من سجلاتك المحلية."
     },
     {
       "icon": "sparkle",
-      "title": "مفتوح الآن وتفاصيل الشحن",
-      "body": "المحطات المفتوحة وصفوف الموصلات ظاهرة في القائمة."
+      "title": "المستشار الذكي",
+      "body": "اسأل DriveLog على جهازك عن الصيانة والميزانية والوقود — من غير ذكاء اصطناعي خارجي."
+    },
+    {
+      "icon": "chart",
+      "title": "ميزانية الصيانة",
+      "body": "تابع الميزانية الشهرية والاحتياطي وتوقعات 3/6/12 شهر من بياناتك."
     },
     {
       "icon": "palette",
-      "title": "دفتر أوضح",
-      "body": "صفوف رفيعة ولكنة كهرمانية واحدة — قائمة من حولك أوضح وأهدأ."
-    },
-    {
-      "icon": "wrench",
-      "title": "محطات قريبة عند التعبئة",
-      "body": "اختر محطة من الشرائح القريبة عند تسجيل التعبئة."
+      "title": "مع كل المظاهر",
+      "body": "شاشات الصحة والمستشار بتستخدم نفس التوكنز مع كل الثيمات والمظاهر."
     }
   ]
 }
