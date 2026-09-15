@@ -1,47 +1,47 @@
 {
-  "id": "notes-5796a3ca",
+  "id": "notes-e31ad9c0",
   "en": [
     {
       "icon": "wrench",
-      "title": "Vehicle Health",
-      "body": "See part status, routine checks, and attention items from your local logs."
+      "title": "Health & Budget Home",
+      "body": "Vehicle status on Home, clearer Health sections, and Budget health badges."
+    },
+    {
+      "icon": "mail",
+      "title": "Contact Us",
+      "body": "Request features or report issues by email from More → Contact."
     },
     {
       "icon": "sparkle",
-      "title": "Smart Advisor",
-      "body": "Ask DriveLog on-device about maintenance, budget, and fuel — no remote AI."
-    },
-    {
-      "icon": "chart",
-      "title": "Maintenance budget",
-      "body": "Track monthly budget, reserve tiers, and 3/6/12-month forecasts from your data."
+      "title": "On-device insights",
+      "body": "Ask DriveLog chat is gone — ranked local insights still deep-link to Health and Budget."
     },
     {
       "icon": "palette",
-      "title": "Works with every Look",
-      "body": "Health and advisor screens use shared tokens across themes and Looks."
+      "title": "Operate polish",
+      "body": "Even page spacing, SelectField everywhere, and fuel tips marked as on-device."
     }
   ],
   "ar": [
     {
       "icon": "wrench",
-      "title": "صحة العربية",
-      "body": "شوف حالة القطع والفحص الدوري من سجلاتك المحلية."
+      "title": "الصحة والميزانية في الرئيسية",
+      "body": "حالة العربية في الرئيسية، أقسام أوضح للصحة، وشارات حالة الميزانية."
+    },
+    {
+      "icon": "mail",
+      "title": "تواصل معنا",
+      "body": "اطلب ميزة أو بلّغ عن مشكلة بالإيميل من المزيد → تواصل."
     },
     {
       "icon": "sparkle",
-      "title": "المستشار الذكي",
-      "body": "اسأل DriveLog على جهازك عن الصيانة والميزانية والوقود — من غير ذكاء اصطناعي خارجي."
-    },
-    {
-      "icon": "chart",
-      "title": "ميزانية الصيانة",
-      "body": "تابع الميزانية الشهرية والاحتياطي وتوقعات 3/6/12 شهر من بياناتك."
+      "title": "رؤى على الجهاز",
+      "body": "شات اسأل DriveLog اتشال — الرؤى المحلية لسه بتربط للصحة والميزانية."
     },
     {
       "icon": "palette",
-      "title": "مع كل المظاهر",
-      "body": "شاشات الصحة والمستشار بتستخدم نفس التوكنز مع كل الثيمات والمظاهر."
+      "title": "لمسة تشغيل",
+      "body": "مسافات أوضح، قوائم SelectField في كل مكان، ونصايح الوقود محلية على الجهاز."
     }
   ]
 }
