@@ -48,6 +48,12 @@ export class SettingsPage {
   readonly theme = computed(() => this.db.settings().theme);
   readonly look = computed(() => this.db.settings().look);
   readonly remindersEnabled = computed(() => this.db.settings().remindersEnabled === true);
+  readonly notifyMaintenance = computed(() => this.db.settings().notifyMaintenance !== false);
+  readonly notifyBudget = computed(() => this.db.settings().notifyBudget !== false);
+  readonly notifyForecast = computed(() => this.db.settings().notifyForecast !== false);
+  readonly soonThreshold = signal(
+    String(this.db.settings().soonThresholdRatio ?? 0.2),
+  );
   readonly notifyPerm = signal(this.notify.permission());
   readonly themeOptions = computed(() =>
     THEMES.map((value) => ({
@@ -139,6 +145,20 @@ export class SettingsPage {
   async onReminders(event: Event): Promise<void> {
     const on = (event.target as HTMLInputElement).checked;
     await this.db.updateSettings({ remindersEnabled: on });
+  }
+
+  async onNotifyFlag(
+    key: 'notifyMaintenance' | 'notifyBudget' | 'notifyForecast',
+    event: Event,
+  ): Promise<void> {
+    const on = (event.target as HTMLInputElement).checked;
+    await this.db.updateSettings({ [key]: on });
+  }
+
+  async onSoonThreshold(): Promise<void> {
+    const n = Number(this.soonThreshold());
+    if (!Number.isFinite(n) || n <= 0 || n >= 1) return;
+    await this.db.updateSettings({ soonThresholdRatio: n });
   }
 
   async onCurrency(code: string): Promise<void> {

@@ -26,7 +26,7 @@ function spendForPrefix(
     if (f.date.startsWith(prefix)) total += f.cost;
   }
   for (const m of maintenance) {
-    if (m.date.startsWith(prefix)) total += m.cost;
+    if (m.date.startsWith(prefix) && m.cost != null) total += m.cost;
   }
   for (const b of breakdowns) {
     if (b.date.startsWith(prefix)) total += b.repairCost;

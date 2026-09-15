@@ -57,6 +57,30 @@ export const routes: Routes = [
     canActivate: [setupGuard],
   },
   {
+    path: 'health',
+    loadComponent: () =>
+      import('./features/health/health').then((m) => m.HealthPage),
+    canActivate: [setupGuard],
+  },
+  {
+    path: 'health/:partId',
+    loadComponent: () =>
+      import('./features/health/health-detail').then((m) => m.HealthDetailPage),
+    canActivate: [setupGuard],
+  },
+  {
+    path: 'budget',
+    loadComponent: () =>
+      import('./features/budget/budget').then((m) => m.BudgetPage),
+    canActivate: [setupGuard],
+  },
+  {
+    path: 'parts/custom',
+    loadComponent: () =>
+      import('./features/parts/custom-part').then((m) => m.CustomPartPage),
+    canActivate: [setupGuard],
+  },
+  {
     path: 'insights',
     canActivate: [insightsChartsRedirect],
     loadComponent: () => import('./features/home/home').then((m) => m.HomePage),

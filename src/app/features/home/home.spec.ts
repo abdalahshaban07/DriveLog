@@ -16,8 +16,24 @@ describe('HomePage', () => {
         {
           provide: Db,
           useValue: {
-            cars: () => [{ id: 'c1', nickname: 'Car', currentOdometer: 1000 }],
-            car: () => ({ id: 'c1', nickname: 'Car', currentOdometer: 1000 }),
+            cars: () => [
+              {
+                id: 'c1',
+                nickname: 'Car',
+                currentOdometer: 1000,
+                initialOdometer: 0,
+                createdAt: '2026-01-01T00:00:00.000Z',
+                updatedAt: '2026-01-01T00:00:00.000Z',
+              },
+            ],
+            car: () => ({
+              id: 'c1',
+              nickname: 'Car',
+              currentOdometer: 1000,
+              initialOdometer: 0,
+              createdAt: '2026-01-01T00:00:00.000Z',
+              updatedAt: '2026-01-01T00:00:00.000Z',
+            }),
             settings: () => ({
               language: 'en',
               theme: 'dark',
@@ -26,13 +42,17 @@ describe('HomePage', () => {
               unitSystem: 'metric',
               installBannerDismissed: true,
               remindersEnabled: true,
-              assistantEnabled: false,
             }),
             fillUps: () => [],
             maintenance: () => [],
             breakdowns: () => [],
             otherExpenses: () => [],
             expensePeriods: () => [],
+            catalog: () => [],
+            parts: () => [],
+            partOverrides: () => [],
+            healthNotificationState: () => [],
+            snapshotCurrency: () => 'EGP',
           },
         },
         {
@@ -50,6 +70,7 @@ describe('HomePage', () => {
             formatNumber: (n: number) => String(n),
             formatUnit: (n: number) => String(n),
             formatDate: (d: string) => d,
+            formatMoney: (n: number) => String(n),
             language: () => 'en' as const,
             dir: () => 'ltr' as const,
           },
@@ -74,11 +95,10 @@ describe('HomePage', () => {
     expect(panel).toBeTruthy();
   });
 
-  it('does not show AI tip when assistant is disabled', () => {
+  it('shows local Smart Advisor card without remote AI gate', () => {
     const fixture = TestBed.createComponent(HomePage);
     fixture.detectChanges();
-    expect(fixture.componentInstance.assistantOnline()).toBe(false);
-    const aiCard = fixture.nativeElement.querySelector('.rec-card--ai');
-    expect(aiCard).toBeFalsy();
+    const advisor = fixture.nativeElement.querySelector('.advisor-card');
+    expect(advisor).toBeTruthy();
   });
 });

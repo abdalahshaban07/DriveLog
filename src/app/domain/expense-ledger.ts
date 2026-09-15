@@ -122,6 +122,10 @@ export function buildExpenseLedger(input: {
       if (!inRange(m.date, start, end)) {
         continue;
       }
+      // ponytail: unknown cost excluded from ledger totals (51C) — history UI still lists it
+      if (m.cost == null || !Number.isFinite(m.cost)) {
+        continue;
+      }
       rows.push({
         id: `maint-${m.id}`,
         category: 'maintenance',

@@ -5,6 +5,7 @@ import {
   DB_VERSION,
   DEFAULT_CURRENCY,
   DEFAULT_LANGUAGE,
+  DEFAULT_SOON_THRESHOLD,
   DEFAULT_THEME,
   DEFAULT_UNIT_SYSTEM,
   SCHEMA_STORES,
@@ -22,24 +23,37 @@ import {
   normalizeCustomTypes,
   type AddCustomTypeResult,
 } from '../domain/maintenance-fields';
-import { seedMilestone } from '../domain/milestones';
+import { migrateHealthV5 } from '../domain/health-migration';
+import {
+  mergePartCatalog,
+  ROUTINE_CHECK_PART_ID,
+  systemPartById,
+} from '../domain/part-catalog';
 import {
   BREAKDOWN_CATEGORIES,
   DEFAULT_LOOK,
   LOOKS,
+  MAINTENANCE_RECORD_TYPES,
   MAINTENANCE_TYPES,
+  PART_CATEGORIES,
+  PART_CONDITIONS,
   THEMES,
   type BackupFile,
   type Breakdown,
   type Car,
   type ExpensePeriod,
   type FillUp,
+  type HealthNotificationState,
   type Look,
   type Maintenance,
   type MaintenanceMilestone,
+  type MaintenanceRecordType,
   type MaintenanceTask,
   type MilestoneTaskKind,
   type OtherExpense,
+  type PartDefinition,
+  type PartOverride,
+  type PartTrackingMode,
   type Settings,
   type Theme,
 } from '../domain/models';
@@ -58,6 +72,10 @@ function defaultSettings(): Settings {
     installBannerDismissed: false,
     remindersEnabled: false,
     customMaintenanceTypes: [],
+    soonThresholdRatio: DEFAULT_SOON_THRESHOLD,
+    notifyMaintenance: true,
+    notifyBudget: true,
+    notifyForecast: true,
   };
 }
 
@@ -71,6 +89,9 @@ type DbSnapshot = {
   breakdowns: Breakdown[];
   otherExpenses: OtherExpense[];
   milestones: MaintenanceMilestone[];
+  parts: PartDefinition[];
+  partOverrides: PartOverride[];
+  healthNotificationState: HealthNotificationState[];
 };
 
 @Injectable({ providedIn: 'root' })
@@ -85,6 +106,9 @@ export class Db {
   private readonly _breakdownsAll = signal<Breakdown[]>([]);
   private readonly _otherExpensesAll = signal<OtherExpense[]>([]);
   private readonly _milestonesAll = signal<MaintenanceMilestone[]>([]);
+  private readonly _partsAll = signal<PartDefinition[]>([]);
+  private readonly _partOverridesAll = signal<PartOverride[]>([]);
+  private readonly _healthNotificationStateAll = signal<HealthNotificationState[]>([]);
   private readonly _error = signal<string | null>(null);
   private readonly _savedFlash = signal(false);
 
@@ -110,6 +134,17 @@ export class Db {
   readonly milestones = computed(() =>
     this.filterForActiveCar(this._milestonesAll(), this._car()?.id),
   );
+  readonly parts = computed(() => {
+    const carId = this._car()?.id;
+    return this._partsAll().filter((p) => !p.carId || p.carId === carId);
+  });
+  readonly partOverrides = computed(() =>
+    this.filterForActiveCar(this._partOverridesAll(), this._car()?.id),
+  );
+  readonly healthNotificationState = computed(() =>
+    this.filterForActiveCar(this._healthNotificationStateAll(), this._car()?.id),
+  );
+  readonly catalog = computed(() => mergePartCatalog(this._partsAll()));
   readonly error = this._error.asReadonly();
   readonly savedFlash = this._savedFlash.asReadonly();
 
@@ -129,6 +164,9 @@ export class Db {
         breakdowns,
         otherExpenses,
         milestones,
+        partsRaw,
+        overridesRaw,
+        notifyRaw,
       ] = await Promise.all([
         this.getAll<Car>(db, 'car'),
         this.getAll<Settings & { id?: string }>(db, 'settings').then(
@@ -140,6 +178,9 @@ export class Db {
         this.getAll<Breakdown>(db, 'breakdowns'),
         this.getAll<OtherExpense>(db, 'otherExpenses'),
         this.getAll<MaintenanceMilestone>(db, 'milestones'),
+        this.getAll<PartDefinition>(db, 'parts'),
+        this.getAll<PartOverride>(db, 'partOverrides'),
+        this.getAll<HealthNotificationState>(db, 'healthNotificationState'),
       ]);
 
       let settings = normalizeSettings(settingsRaw);
@@ -171,7 +212,7 @@ export class Db {
       }
 
       let periods = expensePeriods.map(normalizeExpensePeriod);
-      let milestoneRows = milestones.map(normalizeMilestone);
+      const milestoneRows = milestones.map(normalizeMilestone);
       const seedPuts: Promise<void>[] = [];
 
       for (const c of cars) {
@@ -180,14 +221,71 @@ export class Db {
           periods = [...periods, period];
           seedPuts.push(this.put('expensePeriods', period));
         }
-        if (!milestoneRows.some((m) => m.carId === c.id)) {
-          const milestone = seedMilestone(c.id, c.currentOdometer);
-          milestoneRows = [...milestoneRows, milestone];
-          seedPuts.push(this.put('milestones', milestone));
-        }
       }
       if (seedPuts.length) {
         await Promise.all(seedPuts);
+      }
+
+      const currency = settings.currency || DEFAULT_CURRENCY;
+      let fillRows = fillUps.map((f) =>
+        normalizeFillUp({ ...f, currency: f.currency ?? currency }),
+      );
+      let maintRows = maintenance.map(normalizeMaintenance);
+      let breakdownRows = breakdowns.map((b) =>
+        normalizeBreakdown({ ...b, currency: b.currency ?? currency }),
+      );
+      let otherRows = otherExpenses.map((o) =>
+        normalizeOtherExpense({ ...o, currency: o.currency ?? currency }),
+      );
+
+      const needsHealthMigration = maintRows.some((m) => !m.partDefinitionId);
+      let partRows = partsRaw.map(normalizePartDefinition);
+      let overrideRows = overridesRaw.map(normalizePartOverride);
+      const notifyRows = notifyRaw.map(normalizeHealthNotificationState);
+
+      if (needsHealthMigration) {
+        const migrated = migrateHealthV5(
+          maintRows,
+          milestoneRows,
+          currency,
+          partRows,
+          overrideRows,
+        );
+        maintRows = migrated.maintenance;
+        partRows = migrated.parts;
+        overrideRows = migrated.partOverrides;
+        await Promise.all([
+          ...maintRows.map((m) => this.put('maintenance', m)),
+          ...partRows.map((p) => this.put('parts', p)),
+          ...overrideRows.map((o) => this.put('partOverrides', o)),
+          ...fillRows.map((f) => this.put('fillUps', f)),
+          ...breakdownRows.map((b) => this.put('breakdowns', b)),
+          ...otherRows.map((o) => this.put('otherExpenses', o)),
+        ]);
+      } else {
+        // Still stamp currency on legacy cost rows once if missing.
+        const currencyPuts: Promise<void>[] = [];
+        for (const f of fillRows) {
+          if (!f.currency) {
+            f.currency = currency;
+            currencyPuts.push(this.put('fillUps', f));
+          }
+        }
+        for (const b of breakdownRows) {
+          if (!b.currency) {
+            b.currency = currency;
+            currencyPuts.push(this.put('breakdowns', b));
+          }
+        }
+        for (const o of otherRows) {
+          if (!o.currency) {
+            o.currency = currency;
+            currencyPuts.push(this.put('otherExpenses', o));
+          }
+        }
+        if (currencyPuts.length) {
+          await Promise.all(currencyPuts);
+        }
       }
 
       const active =
@@ -195,12 +293,15 @@ export class Db {
       this._cars.set(cars);
       this._car.set(active);
       this._settings.set(settings);
-      this._fillUpsAll.set(fillUps);
-      this._maintenanceAll.set(maintenance.map(normalizeMaintenance));
+      this._fillUpsAll.set(fillRows);
+      this._maintenanceAll.set(maintRows);
       this._expensePeriodsAll.set(periods);
-      this._breakdownsAll.set(breakdowns.map(normalizeBreakdown));
-      this._otherExpensesAll.set(otherExpenses.map(normalizeOtherExpense));
+      this._breakdownsAll.set(breakdownRows);
+      this._otherExpensesAll.set(otherRows);
       this._milestonesAll.set(milestoneRows);
+      this._partsAll.set(partRows);
+      this._partOverridesAll.set(overrideRows);
+      this._healthNotificationStateAll.set(notifyRows);
       if (active) {
         this.recalcOdometer();
       }
@@ -304,6 +405,15 @@ export class Db {
       for (const m of data.milestones) {
         tx.objectStore('milestones').put(m);
       }
+      for (const p of data.parts) {
+        tx.objectStore('parts').put(p);
+      }
+      for (const o of data.partOverrides) {
+        tx.objectStore('partOverrides').put(o);
+      }
+      for (const n of data.healthNotificationState) {
+        tx.objectStore('healthNotificationState').put(n);
+      }
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
@@ -320,9 +430,53 @@ export class Db {
     this._breakdownsAll.set(data.breakdowns);
     this._otherExpensesAll.set(data.otherExpenses);
     this._milestonesAll.set(data.milestones);
+    this._partsAll.set(data.parts);
+    this._partOverridesAll.set(data.partOverrides);
+    this._healthNotificationStateAll.set(data.healthNotificationState);
     if (data.car) {
       this.recalcOdometer();
     }
+  }
+
+  /** Active car maintenance currency, else settings (70B). */
+  snapshotCurrency(): string {
+    return (
+      this._car()?.maintenanceCurrency ||
+      this._settings().currency ||
+      DEFAULT_CURRENCY
+    );
+  }
+
+  /** Effective part = system/custom + override for active car. */
+  resolveEffectivePart(partDefinitionId: string): PartDefinition | null {
+    const base =
+      this._partsAll().find((p) => p.id === partDefinitionId) ??
+      systemPartById(partDefinitionId);
+    if (!base) {
+      return null;
+    }
+    const carId = this._car()?.id;
+    if (!carId) {
+      return base;
+    }
+    const ov = this._partOverridesAll().find(
+      (o) => o.carId === carId && o.partDefinitionId === partDefinitionId,
+    );
+    if (!ov) {
+      return base;
+    }
+    return {
+      ...base,
+      manufacturerIntervalKm: ov.manufacturerIntervalKm ?? base.manufacturerIntervalKm,
+      manufacturerIntervalMonths:
+        ov.manufacturerIntervalMonths ?? base.manufacturerIntervalMonths,
+      userIntervalKm: ov.userIntervalKm ?? base.userIntervalKm,
+      userIntervalMonths: ov.userIntervalMonths ?? base.userIntervalMonths,
+      measurementRules: ov.measurementRules ?? base.measurementRules,
+      expectedCost: ov.expectedCost ?? base.expectedCost,
+      expectedCostCurrency: ov.expectedCostCurrency ?? base.expectedCostCurrency,
+      active: ov.active === false ? false : base.active,
+    };
   }
 
   recalcOdometer(): void {
@@ -363,24 +517,19 @@ export class Db {
       nickname: nickname.trim(),
       initialOdometer: roundOdometerKm(initialOdometer),
       currentOdometer: roundOdometerKm(initialOdometer),
+      maintenanceCurrency: this._settings().currency || DEFAULT_CURRENCY,
       ...carDocFields(extras),
       createdAt: ts,
       updatedAt: ts,
     };
     const period = newOpenPeriod(car.id);
-    const milestone = seedMilestone(car.id, car.currentOdometer);
-    await Promise.all([
-      this.put('car', car),
-      this.put('expensePeriods', period),
-      this.put('milestones', milestone),
-    ]);
+    await Promise.all([this.put('car', car), this.put('expensePeriods', period)]);
     const settings: Settings = { ...this._settings(), activeCarId: car.id };
     await this.put('settings', { id: 'settings', ...settings });
     this._cars.set([...this._cars(), car]);
     this._car.set(car);
     this._settings.set(settings);
     this._expensePeriodsAll.set([...this._expensePeriodsAll(), period]);
-    this._milestonesAll.set([...this._milestonesAll(), milestone]);
   }
 
   async switchCar(id: string): Promise<void> {
@@ -400,12 +549,15 @@ export class Db {
     car: Car;
     fillUps: FillUp[];
     maintenance: Maintenance[];
+    partOverrides?: PartOverride[];
   }): Promise<void> {
     const period = newOpenPeriod(dataset.car.id);
+    const overrides = dataset.partOverrides ?? [];
     await Promise.all([
       this.put('car', dataset.car),
       ...dataset.fillUps.map((f) => this.put('fillUps', f)),
       ...dataset.maintenance.map((m) => this.put('maintenance', m)),
+      ...overrides.map((o) => this.put('partOverrides', o)),
       this.put('expensePeriods', period),
     ]);
     const settings: Settings = {
@@ -419,6 +571,7 @@ export class Db {
     this._settings.set(settings);
     this._fillUpsAll.set([...this._fillUpsAll(), ...dataset.fillUps]);
     this._maintenanceAll.set([...this._maintenanceAll(), ...dataset.maintenance]);
+    this._partOverridesAll.set([...this._partOverridesAll(), ...overrides]);
     this._expensePeriodsAll.set([...this._expensePeriodsAll(), period]);
     this.recalcOdometer();
   }
@@ -444,6 +597,10 @@ export class Db {
         | 'registrationExpiry'
         | 'tankCapacityLiters'
         | 'currentOdometer'
+        | 'maintenanceBudgetMonthly'
+        | 'reserveTargetMonthly'
+        | 'maintenanceReserveBalance'
+        | 'maintenanceCurrency'
       >
     >,
   ): Promise<void> {
@@ -468,6 +625,12 @@ export class Db {
         patch.currentOdometer != null
           ? roundOdometerKm(Number(patch.currentOdometer))
           : roundOdometerKm(car.currentOdometer),
+      maintenanceBudgetMonthly: optFinite(merged.maintenanceBudgetMonthly),
+      reserveTargetMonthly: optFinite(merged.reserveTargetMonthly),
+      maintenanceReserveBalance: optFinite(merged.maintenanceReserveBalance),
+      maintenanceCurrency: merged.maintenanceCurrency
+        ? String(merged.maintenanceCurrency)
+        : undefined,
       updatedAt: nowIso(),
     };
     await this.put('car', updated);
@@ -537,6 +700,7 @@ export class Db {
       lon: input.lon,
       tempC: input.tempC,
       weatherCode: input.weatherCode,
+      currency: input.currency ?? existing?.currency ?? this.snapshotCurrency(),
       createdAt: existing?.createdAt ?? ts,
       updatedAt: ts,
     };
@@ -561,16 +725,31 @@ export class Db {
     const existing = input.id
       ? this._maintenanceAll().find((m) => m.id === input.id)
       : undefined;
+    const costRaw = input.cost;
+    const cost =
+      costRaw == null || costRaw === ('' as unknown) || !Number.isFinite(Number(costRaw))
+        ? undefined
+        : Number(costRaw);
     const row: Maintenance = {
       id: existing?.id ?? crypto.randomUUID(),
       carId: existing?.carId ?? input.carId ?? car?.id,
       type: input.type,
       odometer: roundOdometerKm(input.odometer),
-      cost: input.cost,
+      cost,
       date: input.date,
       note: input.note?.trim() || undefined,
       dueKm: input.dueKm,
       dueDate: input.dueDate,
+      partDefinitionId: input.partDefinitionId ?? existing?.partDefinitionId,
+      recordType: input.recordType ?? existing?.recordType,
+      measurements: input.measurements ?? existing?.measurements,
+      condition: input.condition ?? existing?.condition,
+      partModel: input.partModel?.trim() || existing?.partModel,
+      partNumber: input.partNumber?.trim() || existing?.partNumber,
+      currency: input.currency ?? existing?.currency ?? this.snapshotCurrency(),
+      observations: input.observations ?? existing?.observations,
+      odometerRollbackAcknowledged:
+        input.odometerRollbackAcknowledged ?? existing?.odometerRollbackAcknowledged,
       ...maintenanceDetailFields(input),
       createdAt: existing?.createdAt ?? ts,
       updatedAt: ts,
@@ -578,8 +757,130 @@ export class Db {
     await this.put('maintenance', row);
     const list = this._maintenanceAll().filter((m) => m.id !== row.id).concat(row);
     this._maintenanceAll.set(list);
+
+    // Activate system/custom part when logged (95A).
+    if (row.partDefinitionId && row.carId) {
+      const sys = systemPartById(row.partDefinitionId);
+      if (sys) {
+        await this.savePartOverride({
+          carId: row.carId,
+          partDefinitionId: row.partDefinitionId,
+          active: true,
+        });
+      } else {
+        const custom = this._partsAll().find((p) => p.id === row.partDefinitionId);
+        if (custom && !custom.active) {
+          await this.savePart({ ...custom, active: true });
+        }
+      }
+      // Update routine baseline when service/replacement on routine check.
+      if (
+        row.partDefinitionId === ROUTINE_CHECK_PART_ID &&
+        (row.recordType === 'service' || row.recordType === 'replacement')
+      ) {
+        await this.savePartOverride({
+          carId: row.carId,
+          partDefinitionId: row.partDefinitionId,
+          lastRoutineCheckKm: row.odometer,
+        });
+      }
+    }
+
     this.recalcOdometer();
     this.flashSaved();
+  }
+
+  async savePart(
+    input: Omit<PartDefinition, 'id' | 'createdAt' | 'updatedAt'> & {
+      id?: string;
+      createdAt?: string;
+    },
+  ): Promise<PartDefinition> {
+    const ts = nowIso();
+    const existing = input.id
+      ? this._partsAll().find((p) => p.id === input.id)
+      : undefined;
+    const row: PartDefinition = {
+      ...input,
+      id: existing?.id ?? input.id ?? crypto.randomUUID(),
+      source: input.source ?? 'custom',
+      trackingMode: (input.trackingMode ?? 'history') as PartTrackingMode,
+      active: input.active !== false,
+      createdAt: existing?.createdAt ?? input.createdAt ?? ts,
+      updatedAt: ts,
+    };
+    await this.put('parts', row);
+    this._partsAll.set(this._partsAll().filter((p) => p.id !== row.id).concat(row));
+    this.flashSaved();
+    return row;
+  }
+
+  async savePartOverride(
+    input: Omit<PartOverride, 'id' | 'updatedAt'> & { id?: string },
+  ): Promise<PartOverride> {
+    const ts = nowIso();
+    const id = input.id ?? `${input.carId}:${input.partDefinitionId}`;
+    const existing = this._partOverridesAll().find((o) => o.id === id);
+    const row: PartOverride = {
+      ...existing,
+      ...input,
+      id,
+      updatedAt: ts,
+    };
+    await this.put('partOverrides', row);
+    this._partOverridesAll.set(
+      this._partOverridesAll().filter((o) => o.id !== row.id).concat(row),
+    );
+    this.flashSaved();
+    return row;
+  }
+
+  async archivePart(partDefinitionId: string): Promise<void> {
+    const carId = this._car()?.id;
+    if (!carId) return;
+    const custom = this._partsAll().find((p) => p.id === partDefinitionId);
+    if (custom?.source === 'custom') {
+      await this.savePart({ ...custom, active: false });
+      return;
+    }
+    await this.savePartOverride({
+      carId,
+      partDefinitionId,
+      active: false,
+    });
+  }
+
+  async restorePart(partDefinitionId: string): Promise<void> {
+    const carId = this._car()?.id;
+    if (!carId) return;
+    const custom = this._partsAll().find((p) => p.id === partDefinitionId);
+    if (custom?.source === 'custom') {
+      await this.savePart({ ...custom, active: true });
+      return;
+    }
+    await this.savePartOverride({
+      carId,
+      partDefinitionId,
+      active: true,
+    });
+  }
+
+  async saveHealthNotificationState(
+    input: Omit<HealthNotificationState, 'id' | 'updatedAt'> & { id?: string },
+  ): Promise<void> {
+    const ts = nowIso();
+    const id = input.id ?? `${input.carId}:${input.partDefinitionId}`;
+    const existing = this._healthNotificationStateAll().find((n) => n.id === id);
+    const row: HealthNotificationState = {
+      ...existing,
+      ...input,
+      id,
+      updatedAt: ts,
+    };
+    await this.put('healthNotificationState', row);
+    this._healthNotificationStateAll.set(
+      this._healthNotificationStateAll().filter((n) => n.id !== row.id).concat(row),
+    );
   }
 
   async deleteMaintenance(id: string): Promise<void> {
@@ -609,6 +910,7 @@ export class Db {
       shopName: input.shopName?.trim() || undefined,
       category: input.category,
       note: input.note?.trim() || undefined,
+      currency: input.currency ?? existing?.currency ?? this.snapshotCurrency(),
       createdAt: existing?.createdAt ?? ts,
       updatedAt: ts,
     };
@@ -641,6 +943,7 @@ export class Db {
       amount: input.amount,
       date: input.date,
       note: input.note?.trim() || undefined,
+      currency: input.currency ?? existing?.currency ?? this.snapshotCurrency(),
       createdAt: existing?.createdAt ?? ts,
       updatedAt: ts,
     };
@@ -707,7 +1010,13 @@ export class Db {
   }
 
   exportBackup(): BackupFile {
-    const { assistantApiKey: _removed, ...settings } = this._settings();
+    const {
+      assistantApiKey: _k,
+      assistantBaseUrl: _b,
+      assistantModel: _m,
+      assistantEnabled: _e,
+      ...settings
+    } = this._settings();
     return {
       version: BACKUP_VERSION,
       exportedAt: nowIso(),
@@ -720,6 +1029,9 @@ export class Db {
       breakdowns: this._breakdownsAll(),
       otherExpenses: this._otherExpensesAll(),
       milestones: this._milestonesAll(),
+      parts: this._partsAll(),
+      partOverrides: this._partOverridesAll(),
+      healthNotificationState: this._healthNotificationStateAll(),
     };
   }
 
@@ -733,6 +1045,7 @@ export class Db {
       version !== 1 &&
       version !== 2 &&
       version !== 3 &&
+      version !== 4 &&
       version !== BACKUP_VERSION
     ) {
       throw new Error('backup.unsupportedVersion');
@@ -769,6 +1082,17 @@ export class Db {
     const milestones = Array.isArray(obj['milestones'])
       ? (obj['milestones'] as MaintenanceMilestone[]).map(normalizeMilestone)
       : [];
+    const parts = Array.isArray(obj['parts'])
+      ? (obj['parts'] as PartDefinition[]).map(normalizePartDefinition)
+      : [];
+    const partOverrides = Array.isArray(obj['partOverrides'])
+      ? (obj['partOverrides'] as PartOverride[]).map(normalizePartOverride)
+      : [];
+    const healthNotificationState = Array.isArray(obj['healthNotificationState'])
+      ? (obj['healthNotificationState'] as HealthNotificationState[]).map(
+          normalizeHealthNotificationState,
+        )
+      : [];
     return {
       version: BACKUP_VERSION,
       exportedAt: String(obj['exportedAt'] ?? nowIso()),
@@ -781,6 +1105,11 @@ export class Db {
       breakdowns: breakdowns.length ? breakdowns : undefined,
       otherExpenses: otherExpenses.length ? otherExpenses : undefined,
       milestones: milestones.length ? milestones : undefined,
+      parts: parts.length ? parts : undefined,
+      partOverrides: partOverrides.length ? partOverrides : undefined,
+      healthNotificationState: healthNotificationState.length
+        ? healthNotificationState
+        : undefined,
     };
   }
 
@@ -808,38 +1137,69 @@ export class Db {
       breakdowns: backup.breakdowns ?? [],
       otherExpenses: backup.otherExpenses ?? [],
       milestones: backup.milestones ?? [],
+      parts: backup.parts ?? [],
+      partOverrides: backup.partOverrides ?? [],
+      healthNotificationState: backup.healthNotificationState ?? [],
     });
   }
 
   async importMerge(backup: BackupFile): Promise<void> {
-    const fillMap = new Map(this._fillUpsAll().map((f) => [f.id, f]));
-    for (const f of backup.fillUps) {
-      fillMap.set(f.id, f);
-    }
-    const maintMap = new Map(this._maintenanceAll().map((m) => [m.id, m]));
-    for (const m of backup.maintenance) {
-      maintMap.set(m.id, m);
-    }
+    const fillMap = mergeByUpdatedAt(
+      this._fillUpsAll(),
+      backup.fillUps,
+      (x) => x.id,
+      (x) => x.updatedAt,
+    );
+    const maintMap = mergeByUpdatedAt(
+      this._maintenanceAll(),
+      backup.maintenance,
+      (x) => x.id,
+      (x) => x.updatedAt,
+    );
     const periodMap = new Map(this._expensePeriodsAll().map((p) => [p.id, p]));
     for (const p of backup.expensePeriods ?? []) {
       periodMap.set(p.id, p);
     }
-    const breakdownMap = new Map(this._breakdownsAll().map((b) => [b.id, b]));
-    for (const b of backup.breakdowns ?? []) {
-      breakdownMap.set(b.id, b);
-    }
-    const otherMap = new Map(this._otherExpensesAll().map((o) => [o.id, o]));
-    for (const o of backup.otherExpenses ?? []) {
-      otherMap.set(o.id, o);
-    }
+    const breakdownMap = mergeByUpdatedAt(
+      this._breakdownsAll(),
+      backup.breakdowns ?? [],
+      (x) => x.id,
+      (x) => x.updatedAt,
+    );
+    const otherMap = mergeByUpdatedAt(
+      this._otherExpensesAll(),
+      backup.otherExpenses ?? [],
+      (x) => x.id,
+      (x) => x.updatedAt,
+    );
     const milestoneMap = new Map(this._milestonesAll().map((m) => [m.id, m]));
     for (const m of backup.milestones ?? []) {
       milestoneMap.set(m.id, m);
     }
-    const carMap = new Map(this._cars().map((c) => [c.id, c]));
-    for (const c of this.carsFromBackup(backup)) {
-      carMap.set(c.id, c);
-    }
+    const partMap = mergeByUpdatedAt(
+      this._partsAll(),
+      backup.parts ?? [],
+      (x) => x.id,
+      (x) => x.updatedAt,
+    );
+    const overrideMap = mergeByUpdatedAt(
+      this._partOverridesAll(),
+      backup.partOverrides ?? [],
+      (x) => x.id,
+      (x) => x.updatedAt,
+    );
+    const notifyMap = mergeByUpdatedAt(
+      this._healthNotificationStateAll(),
+      backup.healthNotificationState ?? [],
+      (x) => x.id,
+      (x) => x.updatedAt,
+    );
+    const carMap = mergeByUpdatedAt(
+      this._cars(),
+      this.carsFromBackup(backup),
+      (x) => x.id,
+      (x) => x.updatedAt,
+    );
     const cars = [...carMap.values()];
     const car =
       cars.find((c) => c.id === backup.settings.activeCarId) ??
@@ -849,9 +1209,16 @@ export class Db {
       null;
     const prevTypes = this._settings().customMaintenanceTypes ?? [];
     const incomingTypes = backup.settings.customMaintenanceTypes ?? [];
+    const {
+      assistantApiKey: _k,
+      assistantBaseUrl: _b,
+      assistantModel: _m,
+      assistantEnabled: _e,
+      ...incomingSettings
+    } = backup.settings;
     const settings = {
       ...this._settings(),
-      ...backup.settings,
+      ...incomingSettings,
       unitSystem: DEFAULT_UNIT_SYSTEM,
       activeCarId: car?.id ?? this._settings().activeCarId,
       customMaintenanceTypes: normalizeCustomTypes([...prevTypes, ...incomingTypes]),
@@ -866,6 +1233,9 @@ export class Db {
       breakdowns: [...breakdownMap.values()],
       otherExpenses: [...otherMap.values()],
       milestones: [...milestoneMap.values()],
+      parts: [...partMap.values()],
+      partOverrides: [...overrideMap.values()],
+      healthNotificationState: [...notifyMap.values()],
     });
   }
 
@@ -881,6 +1251,9 @@ export class Db {
       breakdowns: [],
       otherExpenses: [],
       milestones: [],
+      parts: [],
+      partOverrides: [],
+      healthNotificationState: [],
     });
   }
 
@@ -910,6 +1283,9 @@ export class Db {
     const droppedBreakdowns = this._breakdownsAll().filter((b) => b.carId === id);
     const droppedOther = this._otherExpensesAll().filter((o) => o.carId === id);
     const droppedMilestones = this._milestonesAll().filter((m) => m.carId === id);
+    const droppedParts = this._partsAll().filter((p) => p.carId === id);
+    const droppedOverrides = this._partOverridesAll().filter((o) => o.carId === id);
+    const droppedNotify = this._healthNotificationStateAll().filter((n) => n.carId === id);
 
     const fillUps = this._fillUpsAll().filter((f) => !drop(f));
     const maintenance = this._maintenanceAll().filter((m) => !drop(m));
@@ -917,6 +1293,11 @@ export class Db {
     const breakdowns = this._breakdownsAll().filter((b) => b.carId !== id);
     const otherExpenses = this._otherExpensesAll().filter((o) => o.carId !== id);
     const milestones = this._milestonesAll().filter((m) => m.carId !== id);
+    const parts = this._partsAll().filter((p) => p.carId !== id);
+    const partOverrides = this._partOverridesAll().filter((o) => o.carId !== id);
+    const healthNotificationState = this._healthNotificationStateAll().filter(
+      (n) => n.carId !== id,
+    );
     const next = remaining.find((c) => c.id === this._settings().activeCarId) ?? remaining[0];
     const settings: Settings = {
       ...this._settings(),
@@ -931,6 +1312,9 @@ export class Db {
       ...droppedBreakdowns.map((b) => this.deleteKey('breakdowns', b.id)),
       ...droppedOther.map((o) => this.deleteKey('otherExpenses', o.id)),
       ...droppedMilestones.map((m) => this.deleteKey('milestones', m.id)),
+      ...droppedParts.map((p) => this.deleteKey('parts', p.id)),
+      ...droppedOverrides.map((o) => this.deleteKey('partOverrides', o.id)),
+      ...droppedNotify.map((n) => this.deleteKey('healthNotificationState', n.id)),
     ]);
     await this.put('settings', { id: 'settings', ...settings });
 
@@ -943,6 +1327,9 @@ export class Db {
     this._breakdownsAll.set(breakdowns);
     this._otherExpensesAll.set(otherExpenses);
     this._milestonesAll.set(milestones);
+    this._partsAll.set(parts);
+    this._partOverridesAll.set(partOverrides);
+    this._healthNotificationStateAll.set(healthNotificationState);
     this.recalcOdometer();
   }
 
@@ -950,6 +1337,36 @@ export class Db {
     this._savedFlash.set(true);
     setTimeout(() => this._savedFlash.set(false), 2200);
   }
+}
+
+function optFinite(v: unknown): number | undefined {
+  if (v == null || v === '') return undefined;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+/** Newer updatedAt wins; equal → imported wins (82A). */
+function mergeByUpdatedAt<T>(
+  existing: readonly T[],
+  incoming: readonly T[],
+  idOf: (x: T) => string,
+  updatedOf: (x: T) => string | undefined,
+): Map<string, T> {
+  const map = new Map(existing.map((x) => [idOf(x), x]));
+  for (const row of incoming) {
+    const id = idOf(row);
+    const prev = map.get(id);
+    if (!prev) {
+      map.set(id, row);
+      continue;
+    }
+    const a = updatedOf(prev) ?? '';
+    const b = updatedOf(row) ?? '';
+    if (b >= a) {
+      map.set(id, row);
+    }
+  }
+  return map;
 }
 
 function carMetaFields(
@@ -1008,6 +1425,12 @@ function normalizeCar(raw: unknown): Car {
     initialOdometer: Number(o.initialOdometer),
     currentOdometer: Number(o.currentOdometer),
     ...carDocFields(o),
+    maintenanceBudgetMonthly: optFinite(o.maintenanceBudgetMonthly),
+    reserveTargetMonthly: optFinite(o.reserveTargetMonthly),
+    maintenanceReserveBalance: optFinite(o.maintenanceReserveBalance),
+    maintenanceCurrency: o.maintenanceCurrency
+      ? String(o.maintenanceCurrency)
+      : undefined,
     createdAt: String(o.createdAt),
     updatedAt: String(o.updatedAt),
   };
@@ -1038,6 +1461,7 @@ function normalizeFillUp(raw: unknown): FillUp {
     fuelGrade: o.fuelGrade ? (o.fuelGrade as FillUp['fuelGrade']) : undefined,
     unitPrice: o.unitPrice == null ? undefined : Number(o.unitPrice),
     placeLabel: o.placeLabel ? String(o.placeLabel) : undefined,
+    currency: o.currency ? String(o.currency) : undefined,
     createdAt: String(o.createdAt),
     updatedAt: String(o.updatedAt),
   };
@@ -1048,16 +1472,34 @@ function normalizeMaintenance(raw: unknown): Maintenance {
   if (!o?.id || !MAINTENANCE_TYPES.includes(o.type)) {
     throw new Error('backup.invalid');
   }
+  const cost =
+    o.cost == null || o.cost === ('' as unknown) || !Number.isFinite(Number(o.cost))
+      ? undefined
+      : Number(o.cost);
+  const recordType =
+    o.recordType && MAINTENANCE_RECORD_TYPES.includes(o.recordType)
+      ? o.recordType
+      : undefined;
   return {
     id: String(o.id),
     carId: o.carId ? String(o.carId) : undefined,
     type: o.type,
     odometer: Number(o.odometer),
-    cost: Number(o.cost),
+    cost,
     date: String(o.date),
     note: o.note ? String(o.note) : undefined,
     dueKm: o.dueKm == null ? undefined : Number(o.dueKm),
     dueDate: o.dueDate ? String(o.dueDate) : undefined,
+    partDefinitionId: o.partDefinitionId ? String(o.partDefinitionId) : undefined,
+    recordType,
+    measurements: Array.isArray(o.measurements) ? o.measurements : undefined,
+    condition:
+      o.condition && PART_CONDITIONS.includes(o.condition) ? o.condition : undefined,
+    partModel: o.partModel ? String(o.partModel) : undefined,
+    partNumber: o.partNumber ? String(o.partNumber) : undefined,
+    currency: o.currency ? String(o.currency) : undefined,
+    observations: Array.isArray(o.observations) ? o.observations : undefined,
+    odometerRollbackAcknowledged: o.odometerRollbackAcknowledged === true ? true : undefined,
     ...maintenanceDetailFields(o),
     createdAt: String(o.createdAt),
     updatedAt: String(o.updatedAt),
@@ -1097,6 +1539,7 @@ function normalizeBreakdown(raw: unknown): Breakdown {
     shopName: o.shopName ? String(o.shopName) : undefined,
     category: o.category,
     note: o.note ? String(o.note) : undefined,
+    currency: o.currency ? String(o.currency) : undefined,
     createdAt: String(o.createdAt),
     updatedAt: String(o.updatedAt),
   };
@@ -1114,6 +1557,7 @@ function normalizeOtherExpense(raw: unknown): OtherExpense {
     amount: Number(o.amount),
     date: String(o.date),
     note: o.note ? String(o.note) : undefined,
+    currency: o.currency ? String(o.currency) : undefined,
     createdAt: String(o.createdAt),
     updatedAt: String(o.updatedAt),
   };
@@ -1167,6 +1611,8 @@ function isLook(v: unknown): v is Look {
 
 function normalizeSettings(raw: unknown): Settings {
   const o = raw as Settings;
+  const soon =
+    o.soonThresholdRatio == null ? DEFAULT_SOON_THRESHOLD : Number(o.soonThresholdRatio);
   return {
     language: o.language === 'en' ? 'en' : 'ar',
     theme: isTheme(o.theme) ? o.theme : DEFAULT_THEME,
@@ -1187,15 +1633,101 @@ function normalizeSettings(raw: unknown): Settings {
     firstRealFillAt: o.firstRealFillAt ? String(o.firstRealFillAt) : undefined,
     firstDueAt: o.firstDueAt ? String(o.firstDueAt) : undefined,
     customMaintenanceTypes: normalizeCustomTypes(o.customMaintenanceTypes),
-    assistantEnabled: o.assistantEnabled === true ? true : undefined,
-    assistantApiKey: o.assistantApiKey ? String(o.assistantApiKey) : undefined,
-    assistantBaseUrl: o.assistantBaseUrl ? String(o.assistantBaseUrl) : undefined,
-    assistantModel: o.assistantModel ? String(o.assistantModel) : undefined,
+    // Discard remote assistant keys (8A) — accept then drop.
+    soonThresholdRatio: Number.isFinite(soon) ? soon : DEFAULT_SOON_THRESHOLD,
+    notifyMaintenance: o.notifyMaintenance === false ? false : true,
+    notifyBudget: o.notifyBudget === false ? false : true,
+    notifyForecast: o.notifyForecast === false ? false : true,
     fuelTipText: o.fuelTipText ? String(o.fuelTipText) : undefined,
     fuelTipDay: o.fuelTipDay ? String(o.fuelTipDay) : undefined,
     licenseExpiry: o.licenseExpiry ? String(o.licenseExpiry) : undefined,
     registrationExpiry: o.registrationExpiry
       ? String(o.registrationExpiry)
       : undefined,
+  };
+}
+
+const TRACKING_MODES: readonly PartTrackingMode[] = [
+  'interval',
+  'measurement',
+  'condition',
+  'history',
+  'none',
+];
+
+function normalizePartDefinition(raw: unknown): PartDefinition {
+  const o = raw as PartDefinition;
+  if (!o?.id || !PART_CATEGORIES.includes(o.category)) {
+    throw new Error('backup.invalid');
+  }
+  const trackingMode = TRACKING_MODES.includes(o.trackingMode as PartTrackingMode)
+    ? (o.trackingMode as PartTrackingMode)
+    : 'history';
+  return {
+    id: String(o.id),
+    carId: o.carId ? String(o.carId) : undefined,
+    name: o.name ? String(o.name) : undefined,
+    labelKey: o.labelKey ? String(o.labelKey) : undefined,
+    category: o.category,
+    source: o.source === 'system' ? 'system' : 'custom',
+    trackingMode,
+    intervalKm: optFinite(o.intervalKm),
+    intervalMonths: optFinite(o.intervalMonths),
+    manufacturerIntervalKm: optFinite(o.manufacturerIntervalKm),
+    manufacturerIntervalMonths: optFinite(o.manufacturerIntervalMonths),
+    userIntervalKm: optFinite(o.userIntervalKm),
+    userIntervalMonths: optFinite(o.userIntervalMonths),
+    measurementRules: Array.isArray(o.measurementRules) ? o.measurementRules : undefined,
+    expectedCost: optFinite(o.expectedCost),
+    expectedCostCurrency: o.expectedCostCurrency
+      ? String(o.expectedCostCurrency)
+      : undefined,
+    unit: o.unit ? String(o.unit) : undefined,
+    active: o.active !== false,
+    notes: o.notes ? String(o.notes) : undefined,
+    createdAt: String(o.createdAt ?? nowIso()),
+    updatedAt: String(o.updatedAt ?? nowIso()),
+  };
+}
+
+function normalizePartOverride(raw: unknown): PartOverride {
+  const o = raw as PartOverride;
+  if (!o?.id || !o.carId || !o.partDefinitionId) {
+    throw new Error('backup.invalid');
+  }
+  return {
+    id: String(o.id),
+    carId: String(o.carId),
+    partDefinitionId: String(o.partDefinitionId),
+    manufacturerIntervalKm: optFinite(o.manufacturerIntervalKm),
+    manufacturerIntervalMonths: optFinite(o.manufacturerIntervalMonths),
+    userIntervalKm: optFinite(o.userIntervalKm),
+    userIntervalMonths: optFinite(o.userIntervalMonths),
+    measurementRules: Array.isArray(o.measurementRules) ? o.measurementRules : undefined,
+    expectedCost: optFinite(o.expectedCost),
+    expectedCostCurrency: o.expectedCostCurrency
+      ? String(o.expectedCostCurrency)
+      : undefined,
+    lastRoutineCheckKm: optFinite(o.lastRoutineCheckKm),
+    active: o.active,
+    updatedAt: String(o.updatedAt ?? nowIso()),
+  };
+}
+
+function normalizeHealthNotificationState(raw: unknown): HealthNotificationState {
+  const o = raw as HealthNotificationState;
+  if (!o?.id || !o.carId || !o.partDefinitionId) {
+    throw new Error('backup.invalid');
+  }
+  return {
+    id: String(o.id),
+    carId: String(o.carId),
+    partDefinitionId: String(o.partDefinitionId),
+    lastStatus: o.lastStatus,
+    lastNotifiedStatus: o.lastNotifiedStatus,
+    lastBudgetHealth: o.lastBudgetHealth ? String(o.lastBudgetHealth) : undefined,
+    lastForecastFlag: o.lastForecastFlag ? String(o.lastForecastFlag) : undefined,
+    baselinedAt: o.baselinedAt ? String(o.baselinedAt) : undefined,
+    updatedAt: String(o.updatedAt ?? nowIso()),
   };
 }

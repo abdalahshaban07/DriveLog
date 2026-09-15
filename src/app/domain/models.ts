@@ -47,6 +47,12 @@ export interface Car {
   model?: string;
   /** Nominal tank size in liters (gauge + validation). */
   tankCapacityLiters?: number;
+  /** Per-car maintenance budget envelope (9A). */
+  maintenanceBudgetMonthly?: number;
+  reserveTargetMonthly?: number;
+  maintenanceReserveBalance?: number;
+  /** Snapshot currency for maintenance costs (70B / 90A). */
+  maintenanceCurrency?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -63,6 +69,8 @@ export interface FillUp {
   fuelGrade?: FuelGrade;
   /** Snapshot ¢/L at log time */
   unitPrice?: number;
+  /** Currency snapshot (45). */
+  currency?: string;
   note?: string;
   placeLabel?: string;
   date: DateOnly;
@@ -74,12 +82,37 @@ export interface FillUp {
   updatedAt: string;
 }
 
+export type MaintenanceRecordType =
+  | 'replacement'
+  | 'service'
+  | 'inspection'
+  | 'repair'
+  | 'measurement';
+
+export type PartCondition = 'good' | 'fair' | 'poor' | 'critical';
+
+export type ClosedMeasurementType = 'tireTreadMm' | 'brakePadMm' | 'batteryVoltageV';
+
+export interface Measurement {
+  type: ClosedMeasurementType | string;
+  value: number;
+  unit: string;
+}
+
+export interface Observation {
+  type: string;
+  value: string | number | boolean;
+  unit?: string;
+}
+
 export interface Maintenance {
   id: string;
   carId?: string;
+  /** @deprecated Prefer partDefinitionId; kept for backup/export (5B). */
   type: MaintenanceType;
   odometer: number;
-  cost: number;
+  /** Optional — unknown cost excluded from totals (51C). */
+  cost?: number;
   date: DateOnly;
   note?: string;
   dueKm?: number;
@@ -91,6 +124,15 @@ export interface Maintenance {
   laborCost?: number;
   /** Set when type is `other` and the user named it. */
   otherLabel?: string;
+  partDefinitionId?: string;
+  recordType?: MaintenanceRecordType;
+  measurements?: Measurement[];
+  condition?: PartCondition;
+  partModel?: string;
+  partNumber?: string;
+  currency?: string;
+  observations?: Observation[];
+  odometerRollbackAcknowledged?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -113,6 +155,7 @@ export interface Breakdown {
   shopName?: string;
   category: BreakdownCategory;
   note?: string;
+  currency?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -124,7 +167,116 @@ export interface OtherExpense {
   amount: number;
   date: DateOnly;
   note?: string;
+  currency?: string;
   createdAt: string;
+  updatedAt: string;
+}
+
+export type PartCategory =
+  | 'ENGINE'
+  | 'TRANSMISSION'
+  | 'BRAKES'
+  | 'TIRES'
+  | 'ELECTRICAL'
+  | 'COOLING'
+  | 'DRIVETRAIN'
+  | 'STEERING_SUSPENSION'
+  | 'EXHAUST'
+  | 'VISIBILITY'
+  | 'OTHER';
+
+export type PartSource = 'system' | 'custom';
+
+export type PartTrackingMode =
+  | 'interval'
+  | 'measurement'
+  | 'condition'
+  | 'history'
+  | 'none';
+
+export type MeasurementDirection = 'lower-is-worse' | 'higher-is-worse';
+
+export interface MeasurementRule {
+  type: ClosedMeasurementType | string;
+  unit: string;
+  direction: MeasurementDirection;
+  attentionValue?: number;
+  criticalValue?: number;
+}
+
+export interface PartDefinition {
+  id: string;
+  /** Omitted for global system parts; set for per-car custom parts (6A). */
+  carId?: string;
+  /** Custom display name (user data). System parts use labelKey. */
+  name?: string;
+  /** i18n key for system parts. */
+  labelKey?: string;
+  category: PartCategory;
+  source: PartSource;
+  trackingMode: PartTrackingMode;
+  intervalKm?: number;
+  intervalMonths?: number;
+  manufacturerIntervalKm?: number;
+  manufacturerIntervalMonths?: number;
+  userIntervalKm?: number;
+  userIntervalMonths?: number;
+  measurementRules?: MeasurementRule[];
+  expectedCost?: number;
+  expectedCostCurrency?: string;
+  unit?: string;
+  active: boolean;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PartOverride {
+  id: string;
+  carId: string;
+  partDefinitionId: string;
+  manufacturerIntervalKm?: number;
+  manufacturerIntervalMonths?: number;
+  userIntervalKm?: number;
+  userIntervalMonths?: number;
+  measurementRules?: MeasurementRule[];
+  expectedCost?: number;
+  expectedCostCurrency?: string;
+  /** Migration/baseline seed for routine check (102B). */
+  lastRoutineCheckKm?: number;
+  active?: boolean;
+  updatedAt: string;
+}
+
+export type HealthStatus =
+  | 'good'
+  | 'soon'
+  | 'due'
+  | 'overdue'
+  | 'inspect'
+  | 'unknown'
+  | 'critical';
+
+export type Confidence = 'low' | 'medium' | 'high';
+
+export type HealthSource =
+  | 'SYSTEM_RULE'
+  | 'MANUFACTURER_RULE'
+  | 'USER_RULE'
+  | 'MEASUREMENT'
+  | 'USER_HISTORY'
+  | 'INSPECTION'
+  | 'UNKNOWN';
+
+export interface HealthNotificationState {
+  id: string;
+  carId: string;
+  partDefinitionId: string;
+  lastStatus?: HealthStatus;
+  lastNotifiedStatus?: HealthStatus;
+  lastBudgetHealth?: string;
+  lastForecastFlag?: string;
+  baselinedAt?: string;
   updatedAt: string;
 }
 
@@ -173,10 +325,18 @@ export interface Settings {
   /** ISO timestamp of first maintenance with dueDate or dueKm. */
   firstDueAt?: string;
   customMaintenanceTypes?: string[];
+  /** @deprecated Removed — Ask DriveLog is always local (8A). Accepted on import then discarded. */
   assistantEnabled?: boolean;
+  /** @deprecated Removed (8A). */
   assistantApiKey?: string;
+  /** @deprecated Removed (8A). */
   assistantBaseUrl?: string;
+  /** @deprecated Removed (8A). */
   assistantModel?: string;
+  soonThresholdRatio?: number;
+  notifyMaintenance?: boolean;
+  notifyBudget?: boolean;
+  notifyForecast?: boolean;
   /** Cached fuel tip text + day key. */
   fuelTipText?: string;
   fuelTipDay?: DateOnly;
@@ -223,6 +383,9 @@ export interface BackupFile {
   breakdowns?: Breakdown[];
   otherExpenses?: OtherExpense[];
   milestones?: MaintenanceMilestone[];
+  parts?: PartDefinition[];
+  partOverrides?: PartOverride[];
+  healthNotificationState?: HealthNotificationState[];
 }
 
 export const MAINTENANCE_TYPES: readonly MaintenanceType[] = [
@@ -239,5 +402,41 @@ export const BREAKDOWN_CATEGORIES: readonly BreakdownCategory[] = [
   'other',
 ] as const;
 
-export const DEFAULT_ASSISTANT_BASE_URL = 'https://api.openai.com/v1';
-export const DEFAULT_ASSISTANT_MODEL = 'gpt-4o-mini';
+export const PART_CATEGORIES: readonly PartCategory[] = [
+  'ENGINE',
+  'TRANSMISSION',
+  'BRAKES',
+  'TIRES',
+  'ELECTRICAL',
+  'COOLING',
+  'DRIVETRAIN',
+  'STEERING_SUSPENSION',
+  'EXHAUST',
+  'VISIBILITY',
+  'OTHER',
+] as const;
+
+export const MAINTENANCE_RECORD_TYPES: readonly MaintenanceRecordType[] = [
+  'replacement',
+  'service',
+  'inspection',
+  'repair',
+  'measurement',
+] as const;
+
+export const PART_CONDITIONS: readonly PartCondition[] = [
+  'good',
+  'fair',
+  'poor',
+  'critical',
+] as const;
+
+export const HEALTH_STATUSES: readonly HealthStatus[] = [
+  'critical',
+  'overdue',
+  'due',
+  'inspect',
+  'soon',
+  'good',
+  'unknown',
+] as const;

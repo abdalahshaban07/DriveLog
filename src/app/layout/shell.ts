@@ -20,6 +20,7 @@ import { filter, map, skip, startWith } from 'rxjs';
 import { Db } from '../data/db';
 import { I18n } from '../i18n/i18n';
 import { HolidayReminder } from '../pwa/holiday-reminder';
+import { HealthReminder } from '../pwa/health-reminder';
 import { InstallPwa } from '../pwa/install-pwa';
 import { WhatsNew } from '../pwa/whats-new';
 import { UpdateModal } from '../ui/update-modal';
@@ -39,6 +40,7 @@ export class Shell {
   private readonly router = inject(Router);
   private readonly install = inject(InstallPwa);
   private readonly holidayReminder = inject(HolidayReminder);
+  private readonly healthReminder = inject(HealthReminder);
   private readonly main = viewChild<ElementRef<HTMLElement>>('main');
 
   readonly updateDismissed = signal(false);
@@ -80,6 +82,7 @@ export class Shell {
       });
     afterNextRender(() => {
       void this.holidayReminder.check();
+      void this.healthReminder.check();
     });
   }
 

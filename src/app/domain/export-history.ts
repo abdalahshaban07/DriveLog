@@ -208,7 +208,7 @@ function maintenanceRows(rows: readonly Maintenance[]): (string | number)[][] {
     m.type,
     m.otherLabel ?? '',
     m.odometer,
-    m.cost,
+    m.cost ?? "",
     m.dueKm ?? '',
     m.dueDate ?? '',
     m.note ?? '',
@@ -409,7 +409,7 @@ export async function maintenanceToPdf(
   opts?: { rtl?: boolean },
 ): Promise<Blob> {
   const rtl = opts?.rtl === true;
-  const totalCost = rows.reduce((s, m) => s + m.cost, 0);
+  const totalCost = rows.reduce((s, m) => s + (m.cost != null ? m.cost : 0), 0);
   const summary = [
     copy.rangeLabel
       ? `${copy.entries}: ${rows.length} · ${copy.rangeLabel}`

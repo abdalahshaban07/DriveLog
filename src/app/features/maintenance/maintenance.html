@@ -61,64 +61,97 @@
     @if (editId()) {
       <p class="label">{{ i18n.t('maint.editing') }}</p>
     }
-    <app-select-field
-      [label]="i18n.t('maint.type')"
-      [options]="typeOptions()"
-      [value]="type()"
-      (valueChange)="type.set($event)"
-    />
-    @if (addingType()) {
-      <div class="maint-new-type stack">
-        <app-text-field
-          [label]="i18n.t('maint.newTypeName')"
-          [(value)]="newTypeName"
-          [error]="newTypeError()"
+    <p class="maint-steps" role="status">{{ step() }} / 3</p>
+
+    @if (step() === 1) {
+      <app-select-field
+        [label]="i18n.t('maint.step.part')"
+        [options]="partOptions()"
+        [(value)]="partId"
+      />
+      <app-select-field
+        [label]="i18n.t('maint.step.type')"
+        [options]="recordTypeOptions()"
+        [(value)]="recordType"
+      />
+      <p>
+        <a routerLink="/parts/custom">{{ i18n.t('parts.addCustomCta') }}</a>
+      </p>
+      <app-primary-button
+        [label]="i18n.t('common.next')"
+        [disabled]="!partId() || !recordType()"
+        [stretch]="true"
+        (pressed)="nextStep()"
+      />
+    }
+
+    @if (step() === 2) {
+      <div class="maint-form__pair">
+        <app-numeric-field
+          [label]="i18n.t('maint.step.odo')"
+          [(value)]="odometer"
+          [error]="odoError()"
         />
-        <div class="maint-new-type__actions">
-          <app-primary-button
-            [label]="i18n.t('types.add')"
-            [stretch]="true"
-            (pressed)="saveNewType()"
-          />
-        </div>
-        <a class="maint-new-type__link" routerLink="/settings/types">{{ i18n.t('maint.manageTypes') }}</a>
+        <app-date-field [label]="i18n.t('maint.step.date')" [(value)]="date" />
+      </div>
+      <div class="maint-form__actions">
+        <button type="button" class="ghost" (click)="prevStep()">
+          {{ i18n.t('common.back') }}
+        </button>
+        <app-primary-button
+          [label]="i18n.t('maint.save')"
+          [disabled]="saving()"
+          [stretch]="true"
+          (pressed)="save()"
+        />
+        <button type="button" class="ghost" (click)="nextStep()">
+          {{ i18n.t('common.more') }}
+        </button>
       </div>
     }
-    <div class="maint-form__pair">
+
+    @if (step() === 3) {
       <app-numeric-field
-        [label]="i18n.t('maint.odometer')"
-        [(value)]="odometer"
-        [error]="odoError()"
+        [label]="i18n.t('maint.step.cost')"
+        [(value)]="cost"
+        [error]="costError()"
       />
-      <app-date-field [label]="i18n.t('maint.date')" [(value)]="date" />
-    </div>
-    <app-numeric-field
-      [label]="i18n.t('maint.cost')"
-      [(value)]="cost"
-      [error]="costError()"
-    />
-    <div class="maint-form__pair">
-      <app-numeric-field [label]="i18n.t('maint.dueKm')" [(value)]="dueKm" />
-      <app-date-field
-        [label]="i18n.t('maint.dueDate')"
-        [(value)]="dueDate"
-        mode="due"
+      <app-text-field [label]="i18n.t('maint.step.brand')" [(value)]="partModel" />
+      <app-select-field
+        [label]="i18n.t('maint.step.condition')"
+        [options]="conditionOptions()"
+        [(value)]="condition"
       />
-    </div>
-    <app-text-field [label]="i18n.t('maint.note')" [(value)]="note" [multiline]="true" />
-    <div class="maint-form__actions">
-      @if (editId()) {
-        <button type="button" class="ghost" (click)="resetForm()">
-          {{ i18n.t('common.cancel') }}
+      <div class="maint-form__pair">
+        <app-numeric-field [label]="i18n.t('maint.dueKm')" [(value)]="dueKm" />
+        <app-date-field
+          [label]="i18n.t('maint.dueDate')"
+          [(value)]="dueDate"
+          mode="due"
+        />
+      </div>
+      <app-text-field
+        [label]="i18n.t('maint.step.notes')"
+        [(value)]="note"
+        [multiline]="true"
+      />
+      <div class="maint-form__actions">
+        <button type="button" class="ghost" (click)="prevStep()">
+          {{ i18n.t('common.back') }}
         </button>
-      }
-      <app-primary-button
-        [label]="i18n.t('maint.save')"
-        [disabled]="saving() || addingType()"
-        [stretch]="true"
-        (pressed)="save()"
-      />
-    </div>
+        @if (editId()) {
+          <button type="button" class="ghost" (click)="resetForm()">
+            {{ i18n.t('common.cancel') }}
+          </button>
+        }
+        <app-primary-button
+          [label]="i18n.t('maint.save')"
+          [disabled]="saving()"
+          [stretch]="true"
+          (pressed)="save()"
+        />
+      </div>
+    }
   </section>
 
   <div class="maint-list-head">

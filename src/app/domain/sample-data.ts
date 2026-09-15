@@ -1,5 +1,11 @@
 import type { PublicHoliday } from './holidays';
-import type { Car, FillUp, Maintenance } from './models';
+import type { Car, FillUp, Maintenance, PartOverride } from './models';
+import {
+  ROUTINE_CHECK_PART_ID,
+  SYSTEM_BRAKE_PADS_ID,
+  SYSTEM_ENGINE_OIL_ID,
+  SYSTEM_TIRES_ID,
+} from './part-catalog';
 
 export const SAMPLE_CAR_ID = 'sample-car';
 
@@ -19,6 +25,7 @@ export function buildSampleDataset(now = new Date()): {
   car: Car;
   fillUps: FillUp[];
   maintenance: Maintenance[];
+  partOverrides: PartOverride[];
 } {
   const year = now.getFullYear();
   const month = now.getMonth();
@@ -40,6 +47,10 @@ export function buildSampleDataset(now = new Date()): {
     currentOdometer: 45540,
     tankCapacityLiters: 45,
     licenseExpiry: licenseSoonDate,
+    maintenanceBudgetMonthly: 2500,
+    reserveTargetMonthly: 3000,
+    maintenanceReserveBalance: 1800,
+    maintenanceCurrency: 'EGP',
     createdAt: `${day(year, month - 5, 1)}T08:00:00.000Z`,
     updatedAt: `${day(year, month, 1)}T08:00:00.000Z`,
   };
@@ -65,6 +76,7 @@ export function buildSampleDataset(now = new Date()): {
     ...f,
     id: `sample-fill-${i + 1}`,
     carId: SAMPLE_CAR_ID,
+    currency: 'EGP',
     createdAt: `${f.date}T10:00:00.000Z`,
     updatedAt: `${f.date}T10:00:00.000Z`,
   }));
@@ -74,19 +86,38 @@ export function buildSampleDataset(now = new Date()): {
       id: 'sample-maint-1',
       carId: SAMPLE_CAR_ID,
       type: 'oil',
+      partDefinitionId: SYSTEM_ENGINE_OIL_ID,
+      recordType: 'service',
       odometer: 42500,
       cost: 850,
+      currency: 'EGP',
       date: day(year, month - 4, 20),
       dueKm: 45500,
       createdAt: `${day(year, month - 4, 20)}T12:00:00.000Z`,
       updatedAt: `${day(year, month - 4, 20)}T12:00:00.000Z`,
     },
     {
+      id: 'sample-maint-oil-2',
+      carId: SAMPLE_CAR_ID,
+      type: 'oil',
+      partDefinitionId: SYSTEM_ENGINE_OIL_ID,
+      recordType: 'service',
+      odometer: 44500,
+      cost: 900,
+      currency: 'EGP',
+      date: day(year, month - 1, 5),
+      createdAt: `${day(year, month - 1, 5)}T12:00:00.000Z`,
+      updatedAt: `${day(year, month - 1, 5)}T12:00:00.000Z`,
+    },
+    {
       id: 'sample-maint-2',
       carId: SAMPLE_CAR_ID,
       type: 'tires',
+      partDefinitionId: SYSTEM_TIRES_ID,
+      recordType: 'replacement',
       odometer: 43800,
       cost: 2200,
+      currency: 'EGP',
       date: day(year, month - 2, 5),
       createdAt: `${day(year, month - 2, 5)}T12:00:00.000Z`,
       updatedAt: `${day(year, month - 2, 5)}T12:00:00.000Z`,
@@ -95,14 +126,66 @@ export function buildSampleDataset(now = new Date()): {
       id: 'sample-maint-3',
       carId: SAMPLE_CAR_ID,
       type: 'brakes',
+      partDefinitionId: SYSTEM_BRAKE_PADS_ID,
+      recordType: 'service',
       odometer: 44900,
       cost: 1400,
+      currency: 'EGP',
       date: day(year, month - 1, 10),
       dueDate: dueSoonDate,
+      condition: 'fair',
       createdAt: `${day(year, month - 1, 10)}T12:00:00.000Z`,
       updatedAt: `${day(year, month - 1, 10)}T12:00:00.000Z`,
     },
+    {
+      id: 'sample-maint-routine',
+      carId: SAMPLE_CAR_ID,
+      type: 'other',
+      otherLabel: 'parts.routineCheck',
+      partDefinitionId: ROUTINE_CHECK_PART_ID,
+      recordType: 'service',
+      odometer: 42000,
+      cost: 600,
+      currency: 'EGP',
+      date: day(year, month - 5, 2),
+      createdAt: `${day(year, month - 5, 2)}T12:00:00.000Z`,
+      updatedAt: `${day(year, month - 5, 2)}T12:00:00.000Z`,
+    },
   ];
 
-  return { car, fillUps, maintenance };
+  const partOverrides: PartOverride[] = [
+    {
+      id: `${SAMPLE_CAR_ID}:${SYSTEM_ENGINE_OIL_ID}`,
+      carId: SAMPLE_CAR_ID,
+      partDefinitionId: SYSTEM_ENGINE_OIL_ID,
+      active: true,
+      userIntervalKm: 5000,
+      expectedCost: 900,
+      expectedCostCurrency: 'EGP',
+      updatedAt: `${day(year, month, 1)}T08:00:00.000Z`,
+    },
+    {
+      id: `${SAMPLE_CAR_ID}:${SYSTEM_TIRES_ID}`,
+      carId: SAMPLE_CAR_ID,
+      partDefinitionId: SYSTEM_TIRES_ID,
+      active: true,
+      updatedAt: `${day(year, month, 1)}T08:00:00.000Z`,
+    },
+    {
+      id: `${SAMPLE_CAR_ID}:${SYSTEM_BRAKE_PADS_ID}`,
+      carId: SAMPLE_CAR_ID,
+      partDefinitionId: SYSTEM_BRAKE_PADS_ID,
+      active: true,
+      updatedAt: `${day(year, month, 1)}T08:00:00.000Z`,
+    },
+    {
+      id: `${SAMPLE_CAR_ID}:${ROUTINE_CHECK_PART_ID}`,
+      carId: SAMPLE_CAR_ID,
+      partDefinitionId: ROUTINE_CHECK_PART_ID,
+      lastRoutineCheckKm: 42000,
+      updatedAt: `${day(year, month, 1)}T08:00:00.000Z`,
+    },
+  ];
+
+  return { car, fillUps, maintenance, partOverrides };
 }

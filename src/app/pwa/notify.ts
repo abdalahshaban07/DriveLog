@@ -25,6 +25,11 @@ export class Notify {
     this.show(title, body, item.id);
   }
 
+  /** Generic tagged notification (health/budget/forecast). */
+  showGeneric(title: string, body: string, tag: string): void {
+    this.show(title, body, tag);
+  }
+
   /** Deploy / new-version ping (tag = update so it replaces prior update toasts). */
   notifyUpdate(title: string, body: string): void {
     this.show(title, body, 'drivelog-update');

@@ -34,7 +34,11 @@ export const MORE_SECTIONS: readonly MoreSection[] = [
   },
   {
     headingKey: 'more.group.tools',
-    items: [{ route: '/assistant', labelKey: 'more.assistant' }],
+    items: [
+      { route: '/health', labelKey: 'more.health' },
+      { route: '/budget', labelKey: 'more.budget' },
+      { route: '/assistant', labelKey: 'more.assistant' },
+    ],
   },
   {
     headingKey: 'more.group.support',

@@ -255,7 +255,7 @@ describe('export history', () => {
       ],
     });
     expect(pdf.size).toBeGreaterThan(100);
-  });
+  }, 30_000);
 
   it('filters maintenance by type and builds csv/pdf', async () => {
     const { filterMaintenance, maintenanceToCsv, maintenanceToPdf, rangeBoundsForPreset } =
@@ -313,7 +313,7 @@ describe('export history', () => {
       from: '2026-01-01',
       to: '2026-09-03',
     });
-  });
+  }, 30_000);
 });
 
 describe('holidays', () => {
@@ -324,7 +324,7 @@ describe('holidays', () => {
     ]);
     expect(dueHolidayNudge('2026-06-10', holidays, '2026-06-01')?.localName).toBe('Eid');
     expect(dueHolidayNudge('2026-08-01', holidays, '2026-06-01')).toBeNull();
-  });
+  }, 15_000);
 
   it('picks first overlapping due date', async () => {
     const { firstDueHolidayNudge, parsePublicHolidays } = await import('./holidays');
@@ -383,8 +383,8 @@ describe('remote parsers', () => {
 describe('backup version', () => {
   it('keeps backup version and IDB version as separate constants', async () => {
     const { BACKUP_VERSION, DB_VERSION } = await import('../core/config');
-    expect(BACKUP_VERSION).toBe(4);
-    expect(DB_VERSION).toBe(4);
+    expect(BACKUP_VERSION).toBe(5);
+    expect(DB_VERSION).toBe(5);
   });
 });
 

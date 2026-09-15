@@ -72,7 +72,7 @@ export function periodTotals(
     .reduce((s, f) => s + f.cost, 0);
   const maint = maintenance
     .filter((m) => inActivePeriod(m.date, period))
-    .reduce((s, m) => s + m.cost, 0);
+    .reduce((s, m) => s + (m.cost != null ? m.cost : 0), 0);
   const br = breakdowns
     .filter((b) => inActivePeriod(b.date, period))
     .reduce((s, b) => s + b.repairCost, 0);

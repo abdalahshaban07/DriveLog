@@ -108,7 +108,7 @@ function monthSpendTotal(
   }
   for (const m of maintenance) {
     if (m.date.startsWith(prefix)) {
-      total += m.cost;
+      if (m.cost != null) total += m.cost;
     }
   }
   for (const b of breakdowns) {
