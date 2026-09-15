@@ -10,6 +10,7 @@ import {
 } from '../../domain/fill-up-distance';
 import { odometerInputValue, roundOdometerKm } from '../../domain/odometer';
 import { THEMES, LOOKS, type BackupFile, type Look, type Theme } from '../../domain/models';
+import type { MsgKey } from '../../i18n/en';
 import { I18n } from '../../i18n/i18n';
 import { InstallPwa } from '../../pwa/install-pwa';
 import { Notify } from '../../pwa/notify';
@@ -21,6 +22,26 @@ import { SelectField } from '../../ui/select-field';
 import { TextField } from '../../ui/text-field';
 
 type DestructiveAction = 'removeCar' | 'startFresh';
+
+const SOON_PRESETS = [
+  { ratio: 0.1, labelKey: 'settings.soonThreshold.late' as MsgKey },
+  { ratio: 0.2, labelKey: 'settings.soonThreshold.default' as MsgKey },
+  { ratio: 0.3, labelKey: 'settings.soonThreshold.early' as MsgKey },
+] as const;
+
+function snapSoonRatio(raw: number | undefined): number {
+  const n = Number.isFinite(raw) ? Number(raw) : 0.2;
+  let best: number = SOON_PRESETS[1]!.ratio;
+  let bestDist = Infinity;
+  for (const p of SOON_PRESETS) {
+    const d = Math.abs(p.ratio - n);
+    if (d < bestDist) {
+      bestDist = d;
+      best = p.ratio;
+    }
+  }
+  return best;
+}
 
 @Component({
   selector: 'app-settings',
@@ -51,9 +72,10 @@ export class SettingsPage {
   readonly notifyMaintenance = computed(() => this.db.settings().notifyMaintenance !== false);
   readonly notifyBudget = computed(() => this.db.settings().notifyBudget !== false);
   readonly notifyForecast = computed(() => this.db.settings().notifyForecast !== false);
-  readonly soonThreshold = signal(
-    String(this.db.settings().soonThresholdRatio ?? 0.2),
-  );
+  readonly soonPresets = SOON_PRESETS;
+  readonly soonRatio = signal(snapSoonRatio(this.db.settings().soonThresholdRatio));
+  readonly soonPercent = computed(() => Math.round(this.soonRatio() * 100));
+  readonly soonExampleKm = computed(() => Math.round(10_000 * this.soonRatio()));
   readonly notifyPerm = signal(this.notify.permission());
   readonly themeOptions = computed(() =>
     THEMES.map((value) => ({
@@ -155,9 +177,9 @@ export class SettingsPage {
     await this.db.updateSettings({ [key]: on });
   }
 
-  async onSoonThreshold(): Promise<void> {
-    const n = Number(this.soonThreshold());
-    if (!Number.isFinite(n) || n <= 0 || n >= 1) return;
+  async setSoonPreset(ratio: number): Promise<void> {
+    const n = snapSoonRatio(ratio);
+    this.soonRatio.set(n);
     await this.db.updateSettings({ soonThresholdRatio: n });
   }
 

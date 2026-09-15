@@ -76,11 +76,15 @@ describe('SupportPage', () => {
     expect(el.querySelector('a[href="/settings/features"]')).toBeTruthy();
   });
 
-  it('shows contact topic and mailto on contact', async () => {
+  it('shows contact topic chips and mailto without exposing email', async () => {
     const { el, cmp } = await render('contact');
     expect(el.textContent).toContain('contact.title');
     expect(el.textContent).toContain('contact.lead');
-    expect(el.textContent).toContain(cmp.contactEmail);
+    expect(el.textContent).toContain('contact.privacy');
+    expect(el.textContent).toContain('contact.topic.feature');
+    expect(el.textContent).not.toContain('abdalahshaban129@gmail.com');
+    expect(el.querySelector('.contact-card__email')).toBeFalsy();
+    expect(el.querySelectorAll('.contact-chip').length).toBe(3);
     expect(el.querySelector('a[href="/contact"]')).toBeTruthy();
     expect(cmp.contactMailto()).toContain('mailto:abdalahshaban129@gmail.com');
   });

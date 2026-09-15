@@ -15,13 +15,21 @@ import type { MsgKey } from '../../i18n/en';
 import { I18n } from '../../i18n/i18n';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
-import { SelectField, type SelectOption } from '../../ui/select-field';
 import { SectionTabs, type SectionTab } from '../../ui/section-tabs/section-tabs';
 
 export type SupportDoc = 'help' | 'legal' | 'about' | 'contact';
 export type ContactTopic = 'feature' | 'issue' | 'other';
 
 export const CONTACT_EMAIL = 'abdalahshaban129@gmail.com';
+
+export const CONTACT_TOPICS: readonly {
+  value: ContactTopic;
+  labelKey: MsgKey;
+}[] = [
+  { value: 'feature', labelKey: 'contact.topic.feature' },
+  { value: 'issue', labelKey: 'contact.topic.issue' },
+  { value: 'other', labelKey: 'contact.topic.other' },
+];
 
 export const HELP_FAQ: readonly { q: MsgKey; a: MsgKey }[] = [
   { q: 'help.q.data', a: 'help.a.data' },
@@ -68,7 +76,7 @@ export function parseSupportDoc(raw: unknown): SupportDoc {
 @Component({
   selector: 'app-support',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, RouterLink, SectionTabs, SelectField, PrimaryButton],
+  imports: [PageHeader, RouterLink, SectionTabs, PrimaryButton],
   templateUrl: './support.html',
   styleUrl: './support.scss',
 })
@@ -76,22 +84,16 @@ export class SupportPage {
   readonly i18n = inject(I18n);
   readonly router = inject(Router);
   readonly version = APP_VERSION;
-  readonly contactEmail = CONTACT_EMAIL;
   readonly faq = HELP_FAQ;
   readonly legal = LEGAL_SECTIONS;
   readonly tabs = SUPPORT_TABS;
+  readonly contactTopics = CONTACT_TOPICS;
   readonly doc = parseSupportDoc(inject(ActivatedRoute).snapshot.data['doc']);
 
   readonly openFaq = signal<MsgKey | null>(null);
   readonly reachedEnd = signal(false);
   readonly contactTopic = signal<ContactTopic>('feature');
   private readonly legalEnd = viewChild<ElementRef<HTMLElement>>('legalEnd');
-
-  readonly contactTopicOptions = computed<SelectOption[]>(() => [
-    { value: 'feature', label: this.i18n.t('contact.topic.feature') },
-    { value: 'issue', label: this.i18n.t('contact.topic.issue') },
-    { value: 'other', label: this.i18n.t('contact.topic.other') },
-  ]);
 
   readonly faqStatus = computed(() => {
     const q = this.openFaq();
@@ -163,10 +165,8 @@ export class SupportPage {
     }
   }
 
-  onContactTopic(value: string): void {
-    if (value === 'feature' || value === 'issue' || value === 'other') {
-      this.contactTopic.set(value);
-    }
+  onContactTopic(value: ContactTopic): void {
+    this.contactTopic.set(value);
   }
 
   contactMailto(): string {

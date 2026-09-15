@@ -150,6 +150,57 @@ button.line:active {
   font-weight: 400;
 }
 
+.soon-block {
+  display: grid;
+  gap: var(--space-2);
+  padding-block: var(--space-3);
+  padding-inline: var(--space-4);
+  border-block-start: 1px solid var(--hairline);
+}
+
+.soon-block__label {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.soon-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.soon-chip {
+  min-height: var(--tap);
+  padding-inline: var(--space-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--fill-well);
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--motion) var(--ease),
+    border-color var(--motion) var(--ease);
+}
+
+.soon-chip--on {
+  border-color: color-mix(in srgb, var(--fuel) 55%, var(--hairline));
+  background: color-mix(in srgb, var(--fuel) 14%, var(--fill-well));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fuel) 40%, transparent);
+}
+
+.soon-chip:focus-visible {
+  outline: 2px solid var(--fuel);
+  outline-offset: 2px;
+}
+
+.soon-block__hint {
+  padding-inline: 0;
+  padding-block: 0;
+  line-height: 1.45;
+}
+
 .line--danger .line__text strong {
   color: var(--stop);
 }
