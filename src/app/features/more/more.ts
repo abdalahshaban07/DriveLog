@@ -20,7 +20,6 @@ export const MORE_SECTIONS: readonly MoreSection[] = [
     items: [
       { route: '/settings', labelKey: 'more.settings' },
       { route: '/settings/features', labelKey: 'settings.features' },
-      { route: '/settings/types', labelKey: 'more.maintenanceTypes' },
     ],
   },
   {

@@ -69,7 +69,7 @@ const GRADE_KEYS: Record<FuelGrade, MsgKey> = {
 export class FillUpPage {
   readonly i18n = inject(I18n);
   readonly db = inject(Db);
-  private readonly router = inject(Router);
+  readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
   readonly sectionTabs: SectionTab[] = [

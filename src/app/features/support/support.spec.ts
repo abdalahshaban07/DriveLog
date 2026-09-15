@@ -80,7 +80,7 @@ describe('SupportPage', () => {
     const { el, cmp } = await render('contact');
     expect(el.textContent).toContain('contact.title');
     expect(el.textContent).toContain('contact.lead');
-    expect(el.textContent).toContain('contact.privacy');
+    expect(el.textContent).not.toContain('contact.privacy');
     expect(el.textContent).toContain('contact.topic.feature');
     expect(el.textContent).not.toContain('abdalahshaban129@gmail.com');
     expect(el.querySelector('.contact-card__email')).toBeFalsy();

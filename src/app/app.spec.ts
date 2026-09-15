@@ -69,6 +69,6 @@ describe('App', () => {
   it('should create the app', () => {
     const fixture = TestBed.createComponent(App);
     expect(fixture.componentInstance).toBeTruthy();
-    expect(fixture.componentInstance.version).toBe('1.5');
+    expect(fixture.componentInstance.version).toBe('1.6');
   });
 });

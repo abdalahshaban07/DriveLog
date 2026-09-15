@@ -1,5 +1,9 @@
 <div class="stack fill-up page-narrow">
-  <app-page-header [title]="editId() ? i18n.t('fillUp.edit') : i18n.t('fillUp.title')" />
+  <app-page-header
+    [title]="editId() ? i18n.t('fillUp.edit') : i18n.t('fillUp.title')"
+    [showBack]="true"
+    (back)="router.navigateByUrl('/fuel')"
+  />
   <app-section-tabs
     [tabs]="sectionTabs"
     [ariaLabel]="i18n.t('fillUp.title')"

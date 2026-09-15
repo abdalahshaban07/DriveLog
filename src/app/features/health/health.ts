@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
 import { homeHealthSummary } from '../../domain/vehicle-facts';
 import { sectionForStatus } from '../../domain/vehicle-health';
+import type { MsgKey } from '../../i18n/en';
 import { I18n } from '../../i18n/i18n';
 import { PageHeader } from '../../ui/page-header';
 import { HealthRow } from '../../ui/health-row/health-row';
@@ -17,12 +18,33 @@ import { HealthRow } from '../../ui/health-row/health-row';
 export class HealthPage {
   readonly i18n = inject(I18n);
   readonly db = inject(Db);
+  readonly router = inject(Router);
 
-  readonly sections = [
-    { key: 'attention' as const, title: 'health.section.attention' as const },
-    { key: 'upcoming' as const, title: 'health.section.upcoming' as const },
-    { key: 'healthy' as const, title: 'health.section.healthy' as const },
-    { key: 'tracking' as const, title: 'health.section.tracking' as const },
+  readonly sections: {
+    key: 'attention' | 'upcoming' | 'healthy' | 'tracking';
+    title: MsgKey;
+    glance: MsgKey;
+  }[] = [
+    {
+      key: 'attention',
+      title: 'health.section.attention',
+      glance: 'health.glance.attention',
+    },
+    {
+      key: 'upcoming',
+      title: 'health.section.upcoming',
+      glance: 'health.glance.upcoming',
+    },
+    {
+      key: 'healthy',
+      title: 'health.section.healthy',
+      glance: 'health.glance.healthy',
+    },
+    {
+      key: 'tracking',
+      title: 'health.section.tracking',
+      glance: 'health.glance.tracking',
+    },
   ];
 
   readonly grouped = computed(() => {

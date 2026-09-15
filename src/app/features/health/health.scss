@@ -2,15 +2,55 @@
   padding-block-end: calc(var(--space-5) + env(safe-area-inset-bottom));
 }
 
+.health__glance {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.health__lead {
+  margin: 0;
+  font-weight: 600;
+}
+
+.health__counts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.health__count {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding-block: var(--space-2);
+  border-radius: var(--radius);
+  background: var(--well);
+  text-align: center;
+}
+
+.health__count-num {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.health__count[data-section='attention'] .health__count-num {
+  color: var(--stop);
+}
+
+.health__count-label {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
 .health__privacy {
   margin: 0;
   color: var(--muted);
   font-size: 0.875rem;
-}
-
-.health__summary {
-  margin: 0;
-  font-weight: 600;
 }
 
 .health__actions {
@@ -51,13 +91,24 @@
   justify-content: space-between;
   gap: var(--space-3);
   margin: 0;
+  padding-block-end: var(--space-2);
+  border-block-end: 1px solid var(--hairline, transparent);
   font-size: 1rem;
+}
+
+.health__section-title[data-section='attention'] {
+  font-weight: 700;
 }
 
 .health__section-count {
   color: var(--muted);
   font-weight: 500;
   font-size: 0.875rem;
+}
+
+.health__section-count[data-section='attention'] {
+  color: var(--stop);
+  font-weight: 700;
 }
 
 .health__list {

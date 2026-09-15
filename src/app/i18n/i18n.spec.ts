@@ -108,6 +108,19 @@ describe('I18n.formatUnit', () => {
     );
   });
 
+  it('fills every placeholder in soonThreshold.hint', async () => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: Db, useValue: dbStub }, I18n],
+    });
+    const i18n = TestBed.inject(I18n);
+    await i18n.setLanguage('en');
+    const hint = i18n.t('settings.soonThreshold.hint', { pct: 20, km: 2000 });
+    expect(hint).not.toContain('{pct}');
+    expect(hint).not.toContain('{km}');
+    expect(hint).toContain('20');
+    expect(hint).toMatch(/2,?000/);
+  });
+
   it('formats numeric and ISO date params with Eastern digits in Arabic', async () => {
     TestBed.configureTestingModule({
       providers: [{ provide: Db, useValue: dbStub }, I18n],

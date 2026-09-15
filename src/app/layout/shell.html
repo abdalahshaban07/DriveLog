@@ -75,14 +75,18 @@
       <app-update-modal
         [title]="modalTitle()"
         [releaseId]="releaseId()"
+        [cards]="whatsNew.cards()"
         [isUpdate]="true"
         (later)="dismissUpdate()"
         (updateNow)="reload()"
       />
     } @else if (showNotes()) {
-      <app-whats-new-toast
-        [version]="releaseId()"
-        (dismissed)="dismissNotes()"
+      <app-update-modal
+        [title]="notesTitle()"
+        [releaseId]="releaseId()"
+        [cards]="whatsNew.cards()"
+        [isUpdate]="false"
+        (later)="dismissNotes()"
       />
     }
   </div>

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { Db } from '../../data/db';
 import {
   estimateExpectedCost,
@@ -25,6 +26,7 @@ import { NumericField } from '../../ui/numeric-field';
 export class BudgetPage {
   readonly i18n = inject(I18n);
   readonly db = inject(Db);
+  readonly router = inject(Router);
 
   readonly car = this.db.car;
   readonly budgetMonthly = signal('');

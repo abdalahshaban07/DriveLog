@@ -63,7 +63,7 @@ export class SettingsPage {
   readonly install = inject(InstallPwa);
   readonly notify = inject(Notify);
   readonly db = inject(Db);
-  private readonly router = inject(Router);
+  readonly router = inject(Router);
 
   readonly remindersLbl = 'settings-reminders';
   readonly theme = computed(() => this.db.settings().theme);

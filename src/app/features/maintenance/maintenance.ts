@@ -14,13 +14,14 @@ import { firstDueHolidayNudge, type PublicHoliday } from '../../domain/holidays'
 import { legacyTypeForPart } from '../../domain/health-migration';
 import { sampleDiscoveryHoliday } from '../../domain/sample-data';
 import { odometerInputValue, roundOdometerKm } from '../../domain/odometer';
-import type {
-  DueItem,
-  DueStatus,
-  Maintenance,
-  MaintenanceRecordType,
-  PartCondition,
-  PartDefinition,
+import {
+  PART_CONDITIONS,
+  type DueItem,
+  type DueStatus,
+  type Maintenance,
+  type MaintenanceRecordType,
+  type PartCondition,
+  type PartDefinition,
 } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
@@ -33,14 +34,6 @@ import { PrimaryButton } from '../../ui/primary-button';
 import { SectionTabs, type SectionTab } from '../../ui/section-tabs/section-tabs';
 import { SelectField } from '../../ui/select-field';
 import { TextField } from '../../ui/text-field';
-
-const RECORD_TYPES: MaintenanceRecordType[] = [
-  'replacement',
-  'service',
-  'inspection',
-  'repair',
-  'measurement',
-];
 
 @Component({
   selector: 'app-maintenance',
@@ -70,10 +63,9 @@ export class MaintenancePage {
     { labelKey: 'section.history', link: '/history/maintenance' },
   ];
 
-  /** 1 = part+type, 2 = odo+date (+save), 3 = optional extras */
-  readonly step = signal(1);
   readonly partId = signal('');
-  readonly recordType = signal('service');
+  /** Persisted for budget/routine; no UI — default service, preserve on edit. */
+  readonly recordType = signal<MaintenanceRecordType>('service');
   readonly cost = signal('');
   readonly odometer = signal(odometerInputValue(this.db.car()?.currentOdometer));
   readonly date = signal(todayDateOnly());
@@ -88,7 +80,7 @@ export class MaintenancePage {
   readonly odoError = signal('');
   readonly costError = signal('');
   readonly holidays = signal<PublicHoliday[]>([]);
-  readonly saveAnyway = signal(false);
+  readonly advancedOpen = signal(false);
 
   readonly partOptions = computed(() => {
     const opts = this.db.catalog().map((p) => ({
@@ -98,23 +90,14 @@ export class MaintenancePage {
     return opts;
   });
 
-  readonly recordTypeOptions = computed(() =>
-    RECORD_TYPES.map((value) => ({
-      value,
-      label: this.i18n.t(`maint.record.${value}` as MsgKey),
-    })),
-  );
-
   readonly conditionOptions = computed(() =>
-    (['good', 'fair', 'poor', 'critical'] as const).map((value) => ({
+    PART_CONDITIONS.map((value) => ({
       value,
-      label: value,
+      label: this.i18n.t(`maint.condition.${value}` as MsgKey),
     })),
   );
 
-  readonly canSave = computed(() => {
-    return !!this.partId() && !!this.recordType() && this.step() >= 2;
-  });
+  readonly canSave = computed(() => !!this.partId());
 
   readonly history = computed(() =>
     [...this.db.maintenance()].sort(
@@ -167,10 +150,7 @@ export class MaintenancePage {
   constructor() {
     const id = this.route.snapshot.queryParamMap.get('id');
     const partQ = this.route.snapshot.queryParamMap.get('partId');
-    if (partQ) {
-      this.partId.set(partQ);
-      this.step.set(2);
-    }
+    if (partQ) this.partId.set(partQ);
     if (id) {
       const row = this.db.maintenance().find((m) => m.id === id);
       if (row) this.startEdit(row);
@@ -218,21 +198,13 @@ export class MaintenancePage {
     return items.find((i) => i.maintenanceId === m.id)?.status ?? null;
   }
 
-  nextStep(): void {
-    if (this.step() === 1 && this.partId() && this.recordType()) {
-      this.step.set(2);
-      return;
-    }
-    if (this.step() === 2) this.step.set(3);
-  }
-
-  prevStep(): void {
-    this.step.update((s) => Math.max(1, s - 1));
+  onAdvancedToggle(event: Event): void {
+    const el = event.target as HTMLDetailsElement;
+    this.advancedOpen.set(el.open);
   }
 
   resetForm(): void {
     this.editId.set(null);
-    this.step.set(1);
     this.partId.set('');
     this.recordType.set('service');
     this.cost.set('');
@@ -245,12 +217,11 @@ export class MaintenancePage {
     this.condition.set('');
     this.odoError.set('');
     this.costError.set('');
-    this.saveAnyway.set(false);
+    this.advancedOpen.set(false);
   }
 
   startEdit(row: Maintenance): void {
     this.editId.set(row.id);
-    this.step.set(2);
     this.partId.set(row.partDefinitionId ?? '');
     this.recordType.set(row.recordType ?? 'service');
     this.cost.set(row.cost != null ? String(row.cost) : '');
@@ -261,6 +232,20 @@ export class MaintenancePage {
     this.dueDate.set(row.dueDate ?? '');
     this.partModel.set(row.partModel ?? '');
     this.condition.set(row.condition ?? '');
+    this.advancedOpen.set(this.rowHasAdvanced(row));
+  }
+
+  /** ponytail: open Costs & due when the row already has optional fields. */
+  private rowHasAdvanced(row: Maintenance): boolean {
+    return (
+      row.cost != null ||
+      !!row.partModel ||
+      !!row.condition ||
+      row.dueKm != null ||
+      !!row.dueDate ||
+      !!row.note ||
+      !!(row.measurements && row.measurements.length)
+    );
   }
 
   async save(): Promise<void> {
@@ -297,7 +282,7 @@ export class MaintenancePage {
         type: legacy.type,
         otherLabel: legacy.otherLabel,
         partDefinitionId: part.id,
-        recordType: this.recordType() as MaintenanceRecordType,
+        recordType: this.recordType(),
         cost,
         odometer,
         date: this.date(),

@@ -59,33 +59,28 @@
 
   <section class="card stack maint-form" [attr.aria-label]="i18n.t('maint.add')">
     @if (editId()) {
-      <p class="label">{{ i18n.t('maint.editing') }}</p>
+      <div class="maint-form__edit" role="status">
+        <p class="maint-form__edit-label">{{ i18n.t('maint.editing') }}</p>
+        <button type="button" class="ghost" (click)="resetForm()">
+          {{ i18n.t('maint.cancelEdit') }}
+        </button>
+      </div>
     }
-    <p class="maint-steps" role="status">{{ step() }} / 3</p>
 
-    @if (step() === 1) {
+    <div class="maint-form__essentials">
+      <h2 class="section-title">{{ i18n.t('maint.essentials') }}</h2>
+
       <app-select-field
         [label]="i18n.t('maint.step.part')"
         [options]="partOptions()"
         [(value)]="partId"
       />
-      <app-select-field
-        [label]="i18n.t('maint.step.type')"
-        [options]="recordTypeOptions()"
-        [(value)]="recordType"
-      />
-      <p>
-        <a routerLink="/parts/custom">{{ i18n.t('parts.addCustomCta') }}</a>
+      <p class="maint-form__link-row">
+        <a routerLink="/parts/custom" class="maint-form__link">{{
+          i18n.t('parts.addCustomCta')
+        }}</a>
       </p>
-      <app-primary-button
-        [label]="i18n.t('common.next')"
-        [disabled]="!partId() || !recordType()"
-        [stretch]="true"
-        (pressed)="nextStep()"
-      />
-    }
 
-    @if (step() === 2) {
       <div class="maint-form__pair">
         <app-numeric-field
           [label]="i18n.t('maint.step.odo')"
@@ -94,64 +89,50 @@
         />
         <app-date-field [label]="i18n.t('maint.step.date')" [(value)]="date" />
       </div>
-      <div class="maint-form__actions">
-        <button type="button" class="ghost" (click)="prevStep()">
-          {{ i18n.t('common.back') }}
-        </button>
-        <app-primary-button
-          [label]="i18n.t('maint.save')"
-          [disabled]="saving()"
-          [stretch]="true"
-          (pressed)="save()"
-        />
-        <button type="button" class="ghost" (click)="nextStep()">
-          {{ i18n.t('common.more') }}
-        </button>
-      </div>
-    }
+    </div>
 
-    @if (step() === 3) {
-      <app-numeric-field
-        [label]="i18n.t('maint.step.cost')"
-        [(value)]="cost"
-        [error]="costError()"
-      />
-      <app-text-field [label]="i18n.t('maint.step.brand')" [(value)]="partModel" />
-      <app-select-field
-        [label]="i18n.t('maint.step.condition')"
-        [options]="conditionOptions()"
-        [(value)]="condition"
-      />
-      <div class="maint-form__pair">
-        <app-numeric-field [label]="i18n.t('maint.dueKm')" [(value)]="dueKm" />
-        <app-date-field
-          [label]="i18n.t('maint.dueDate')"
-          [(value)]="dueDate"
-          mode="due"
+    <details
+      class="disclosure maint-form__advanced"
+      [open]="advancedOpen()"
+      (toggle)="onAdvancedToggle($event)"
+    >
+      <summary>{{ i18n.t('maint.advanced') }}</summary>
+      <div class="disclosure__body">
+        <app-numeric-field
+          [label]="i18n.t('maint.step.cost')"
+          [(value)]="cost"
+          [error]="costError()"
+        />
+        <app-text-field [label]="i18n.t('maint.step.brand')" [(value)]="partModel" />
+        <app-select-field
+          [label]="i18n.t('maint.step.condition')"
+          [options]="conditionOptions()"
+          [(value)]="condition"
+        />
+        <div class="maint-form__pair">
+          <app-numeric-field [label]="i18n.t('maint.dueKm')" [(value)]="dueKm" />
+          <app-date-field
+            [label]="i18n.t('maint.dueDate')"
+            [(value)]="dueDate"
+            mode="due"
+          />
+        </div>
+        <app-text-field
+          [label]="i18n.t('maint.step.notes')"
+          [(value)]="note"
+          [multiline]="true"
         />
       </div>
-      <app-text-field
-        [label]="i18n.t('maint.step.notes')"
-        [(value)]="note"
-        [multiline]="true"
+    </details>
+
+    <div class="maint-form__save">
+      <app-primary-button
+        [label]="i18n.t('maint.save')"
+        [disabled]="!canSave() || saving()"
+        [stretch]="true"
+        (pressed)="save()"
       />
-      <div class="maint-form__actions">
-        <button type="button" class="ghost" (click)="prevStep()">
-          {{ i18n.t('common.back') }}
-        </button>
-        @if (editId()) {
-          <button type="button" class="ghost" (click)="resetForm()">
-            {{ i18n.t('common.cancel') }}
-          </button>
-        }
-        <app-primary-button
-          [label]="i18n.t('maint.save')"
-          [disabled]="saving()"
-          [stretch]="true"
-          (pressed)="save()"
-        />
-      </div>
-    }
+    </div>
   </section>
 
   <div class="maint-list-head">
@@ -166,23 +147,32 @@
     <ul class="maint-list list-reveal">
       @for (m of recentHistory(); track m.id) {
         @let status = dueStatus(m);
-        <li class="due-card">
+        <li class="due-card due-card--history">
           <div class="due-card__body">
-            <strong>
-              @if (status) {
-                <span
-                  class="due-dot"
-                  [class.due-dot--overdue]="status === 'overdue'"
-                  [class.due-dot--soon]="status === 'dueSoon'"
-                  aria-hidden="true"
-                ></span>
+            <div class="due-card__head">
+              <strong class="due-card__title">
+                @if (status) {
+                  <span
+                    class="due-dot"
+                    [class.due-dot--overdue]="status === 'overdue'"
+                    [class.due-dot--soon]="status === 'dueSoon'"
+                    aria-hidden="true"
+                  ></span>
+                }
+                {{ rowLabel(m) }}
+              </strong>
+              @if (m.cost != null) {
+                <strong class="due-card__cost">{{ formatMoney(m.cost) }}</strong>
+              } @else {
+                <span class="due-card__status">{{ i18n.t('budget.notEnoughData') }}</span>
               }
-              {{ rowLabel(m) }}
-            </strong>
+            </div>
             <p class="meta">
               <span class="pill">{{ i18n.formatDate(m.date, { day: 'numeric', month: 'short' }) }}</span>
-              {{ i18n.formatNumber(m.odometer, { maximumFractionDigits: 0 }) }}
-              {{ i18n.t('common.km') }} · {{ formatMoney(m.cost) }}
+              <span>
+                {{ i18n.formatNumber(m.odometer, { maximumFractionDigits: 0 }) }}
+                {{ i18n.t('common.km') }}
+              </span>
             </p>
           </div>
           <div class="due-card__actions">

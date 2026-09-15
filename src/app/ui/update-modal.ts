@@ -2,19 +2,15 @@ import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   ElementRef,
   inject,
   input,
   output,
-  signal,
   viewChild,
 } from '@angular/core';
 import { I18n } from '../i18n/i18n';
 import type { WhatsNewCard, WhatsNewIcon } from '../pwa/whats-new';
 import { PrimaryButton } from './primary-button';
-import { MotionPolicy } from './motion/motion-policy';
-import { createAnimeScope } from './motion/anime-scope';
 
 /** Inline 24×24 paths — same stroke style as shell label-row icons */
 const ICON_PATHS: Record<WhatsNewIcon, string> = {
@@ -35,8 +31,6 @@ const ICON_PATHS: Record<WhatsNewIcon, string> = {
 })
 export class UpdateModal {
   readonly i18n = inject(I18n);
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly policy = inject(MotionPolicy);
 
   readonly title = input('');
   readonly lines = input<string[]>([]);
@@ -47,9 +41,7 @@ export class UpdateModal {
   readonly updateNow = output<void>();
 
   readonly titleId = `update-modal-${Math.random().toString(36).slice(2, 8)}`;
-  readonly activeDot = signal(0);
   private readonly dialog = viewChild<ElementRef<HTMLDialogElement>>('dialog');
-  private readonly cardsEl = viewChild<ElementRef<HTMLElement>>('cardsEl');
 
   constructor() {
     afterNextRender(() => {
@@ -57,9 +49,10 @@ export class UpdateModal {
       if (el && !el.open) {
         el.showModal();
       }
-      el?.querySelector('button')?.focus();
-      void this.staggerCards();
-      this.bindRailScroll();
+      const focusTarget =
+        el?.querySelector<HTMLElement>('.update-sheet__actions button') ??
+        el?.querySelector<HTMLElement>('button');
+      focusTarget?.focus();
     });
   }
 
@@ -76,61 +69,5 @@ export class UpdateModal {
   onCancel(event: Event): void {
     event.preventDefault();
     this.later.emit();
-  }
-
-  onRailScroll(): void {
-    const root = this.cardsEl()?.nativeElement;
-    if (!root || root.children.length === 0) {
-      return;
-    }
-    const first = root.children[0] as HTMLElement;
-    const step = first.offsetWidth + 12;
-    if (step <= 0) {
-      return;
-    }
-    this.activeDot.set(Math.round(Math.abs(root.scrollLeft) / step));
-  }
-
-  goToCard(index: number): void {
-    const root = this.cardsEl()?.nativeElement;
-    const child = root?.children[index] as HTMLElement | undefined;
-    child?.scrollIntoView({ inline: 'start', block: 'nearest', behavior: 'smooth' });
-    this.activeDot.set(index);
-  }
-
-  private bindRailScroll(): void {
-    const root = this.cardsEl()?.nativeElement;
-    if (!root) {
-      return;
-    }
-    const onScroll = () => this.onRailScroll();
-    root.addEventListener('scroll', onScroll, { passive: true });
-    this.destroyRef.onDestroy(() => root.removeEventListener('scroll', onScroll));
-  }
-
-  private async staggerCards(): Promise<void> {
-    const root = this.cardsEl()?.nativeElement;
-    if (!root) {
-      return;
-    }
-    const scope = await createAnimeScope(root, this.destroyRef, this.policy, 'updateModal');
-    if (!scope) {
-      return;
-    }
-    try {
-      const { animate, stagger } = await import('animejs');
-      scope.add('stagger', () => {
-        animate(root.querySelectorAll('.update-card'), {
-          opacity: [0, 1],
-          translateY: [10, 0],
-          delay: stagger(70),
-          duration: 420,
-          ease: 'out(3)',
-        });
-      });
-      scope.methods['stagger']();
-    } catch {
-      /* CSS fallback */
-    }
   }
 }

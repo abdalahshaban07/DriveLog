@@ -5,7 +5,7 @@
     <section class="card stack health-detail__status" [attr.aria-label]="statusLabel()">
       <p class="health-detail__badge" [attr.data-status]="it.status">{{ statusLabel() }}</p>
       <p class="muted">
-        {{ i18n.t('health.detail.source') }} · {{ reasonLabel(it.primarySource) }}
+        {{ i18n.t('health.detail.source') }} · {{ sourceLabel(it.primarySource) }}
       </p>
       @if (it.lastServiceDate) {
         <p>
@@ -20,14 +20,23 @@
           {{ i18n.t('common.km') }}
         </p>
       }
+      @if (it.remainingMonths != null) {
+        <p>
+          {{ i18n.t('health.detail.remaining') }} ·
+          {{ i18n.t('health.row.monthsLeft', { n: it.remainingMonths }) }}
+        </p>
+      }
     </section>
 
     @if (it.reasons.length) {
-      <ul class="health-detail__reasons card">
-        @for (r of it.reasons; track r) {
-          <li>{{ reasonLabel(r) }}</li>
-        }
-      </ul>
+      <section class="health-detail__why" [attr.aria-label]="i18n.t('health.detail.why')">
+        <h2 class="health-detail__h">{{ i18n.t('health.detail.why') }}</h2>
+        <ul class="health-detail__reasons">
+          @for (r of it.reasons; track r) {
+            <li class="health-detail__reason">{{ reasonLabel(r) }}</li>
+          }
+        </ul>
+      </section>
     }
 
     @if (it.partDefinitionId === routineId) {

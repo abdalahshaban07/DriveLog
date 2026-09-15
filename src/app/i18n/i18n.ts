@@ -81,7 +81,7 @@ export class I18n {
     const resolved = params ? this.formatParams(params) : undefined;
     if (resolved) {
       for (const [k, v] of Object.entries(resolved)) {
-        text = text.replace(`{${k}}`, String(v));
+        text = text.replaceAll(`{${k}}`, String(v));
       }
     }
     return text;

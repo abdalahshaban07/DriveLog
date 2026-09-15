@@ -30,7 +30,6 @@ import {
   type LedgerPeriodFilter,
   type LedgerRow,
 } from '../../domain/expense-ledger';
-import { fetchFuelTip } from '../../data/assistant';
 import { fuelDashboardMetrics } from '../../domain/fuel-dashboard';
 import { costPerKmTrend, economyTrend, fuelGradeCostShare, spendByMonth, spendByMonthEntries } from '../../domain/insights';
 import type { ExpenseCategory } from '../../domain/models';
@@ -116,9 +115,6 @@ export class HomePage {
   readonly showPeriodForm = signal(false);
   readonly periodCloseDate = signal(todayDateOnly());
   readonly periodStartDate = signal(todayDateOnly());
-  readonly aiTip = signal('');
-  readonly aiTipBusy = signal(false);
-  readonly aiTipSource = signal<'ai' | 'local'>('local');
   readonly glanceFlash = signal(false);
   readonly weather = signal<WeatherNow | null>(null);
   readonly weatherBusy = signal(false);
@@ -195,6 +191,16 @@ export class HomePage {
   readonly fuelMetrics = computed(() => fuelDashboardMetrics(this.db.fillUps()));
   readonly sampleMode = computed(() => this.db.settings().sampleMode === true);
   readonly hasRealFills = computed(() => this.db.fillUps().some(isRealFillUp));
+  /** ponytail: empty when no logs at all — domain always returns 4 placeholder cards */
+  readonly reportsHasSignal = computed(
+    () =>
+      this.totals().total > 0 ||
+      this.fuelMetrics().lastL100 != null ||
+      this.db.maintenance().length > 0 ||
+      this.db.breakdowns().length > 0 ||
+      this.db.otherExpenses().length > 0 ||
+      this.hasRealFills(),
+  );
   readonly showQuickLog = computed(
     () => !!this.db.car() && !this.sampleMode() && this.hasRealFills(),
   );
@@ -304,10 +310,6 @@ export class HomePage {
     () => this.healthSummary().facts?.insights[0] ?? null,
   );
 
-  readonly assistantOnline = computed(
-    () => typeof navigator !== 'undefined' && navigator.onLine,
-  );
-
   constructor() {
     this.route.queryParamMap.subscribe((params) => {
       const v = params.get('view');
@@ -319,7 +321,6 @@ export class HomePage {
       if (this.view() === 'charts') {
         void this.animateCharts();
       }
-      void this.loadAiTip();
       void this.loadWeather();
       void this.loadHolidays();
     });
@@ -394,18 +395,6 @@ export class HomePage {
     return this.i18n.t(rec.bodyKey as MsgKey, params);
   }
 
-  async loadAiTip(): Promise<void> {
-    this.aiTipBusy.set(true);
-    try {
-      const lang = this.i18n.language();
-      const reply = await fetchFuelTip(this.db, lang, (k) => this.i18n.t(k as MsgKey));
-      this.aiTip.set(reply.text);
-      this.aiTipSource.set('local');
-    } finally {
-      this.aiTipBusy.set(false);
-    }
-  }
-
   dueLabel(): string {
     const due = this.nextDue();
     if (!due) {
@@ -433,7 +422,7 @@ export class HomePage {
       }
       const list = this.ledgerList()?.nativeElement;
       if (list) {
-        const rows = list.querySelectorAll('.ledger-row, .ledger-card');
+        const rows = list.querySelectorAll('.ledger-row');
         animate(rows, {
           opacity: [0, 1],
           translateY: [8, 0],
@@ -535,7 +524,11 @@ export class HomePage {
   }
 
   reportBody(key: string, params?: Record<string, string | number>): string {
-    return this.i18n.t(key as MsgKey, params);
+    const next = { ...(params ?? {}) };
+    if (typeof next['l100'] === 'number') {
+      next['l100'] = this.i18n.formatUnit(next['l100'], 'common.lPer100', 1);
+    }
+    return this.i18n.t(key as MsgKey, next);
   }
 
   barPct(part: number, total: number): number {

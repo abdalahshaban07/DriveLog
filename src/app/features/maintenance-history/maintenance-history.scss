@@ -79,8 +79,8 @@
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--space-2);
-  align-items: stretch;
+  gap: var(--space-1);
+  align-items: center;
   border: 1px solid var(--hairline);
   border-radius: var(--radius);
   background: var(--fill-surface);
@@ -88,45 +88,74 @@
 
 .history-ledger__link {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--space-3);
-  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
   min-height: var(--tap);
-  padding: var(--space-3);
+  padding: var(--space-2) var(--space-3);
   color: inherit;
   text-decoration: none;
 }
 
-.history-ledger__main {
-  display: grid;
-  gap: var(--space-1);
+.history-ledger__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
   min-width: 0;
+}
+
+.history-ledger__title {
+  min-width: 0;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.history-ledger__cost {
+  flex-shrink: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  text-align: end;
+}
+
+.history-ledger__status {
+  flex: 0 1 auto;
+  max-width: 8.5rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.25;
+  text-align: end;
 }
 
 .history-ledger__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-1);
+  gap: var(--space-2);
   align-items: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.35;
 }
 
 .history-ledger__place {
   color: var(--muted);
   font-size: 0.85rem;
-}
-
-.history-ledger__side {
-  text-align: end;
-}
-
-.history-ledger__cost {
-  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
 }
 
 .history-ledger__icon-actions {
   display: flex;
   align-items: center;
   padding-inline-end: var(--space-1);
+  opacity: 0.72;
+  transition: opacity var(--motion) var(--ease);
+}
+
+.history-ledger__card:hover .history-ledger__icon-actions,
+.history-ledger__card:focus-within .history-ledger__icon-actions {
+  opacity: 1;
 }
 
 .icon-action {
@@ -178,19 +207,12 @@
   text-decoration: none;
 }
 
-@media (min-width: 768px) {
-  .history-ledger__link {
-    grid-template-columns: minmax(0, 1.4fr) auto;
-  }
-
-  .history-ledger__meta {
-    gap: var(--space-2);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .icon-action:active {
+  .history-ledger__icon-actions {
     transition: none;
+  }
+
+  .icon-action:active {
     transform: none;
   }
 }

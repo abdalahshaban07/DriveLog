@@ -24,12 +24,11 @@ import { HealthReminder } from '../pwa/health-reminder';
 import { InstallPwa } from '../pwa/install-pwa';
 import { WhatsNew } from '../pwa/whats-new';
 import { UpdateModal } from '../ui/update-modal';
-import { WhatsNewToast } from '../ui/whats-new-toast';
 
 @Component({
   selector: 'app-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, UpdateModal, WhatsNewToast],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, UpdateModal],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
 })
@@ -65,6 +64,7 @@ export class Shell {
       (this.whatsNew.visible() || this.whatsNew.manualOpen()),
   );
   readonly modalTitle = computed(() => this.i18n.t('update.available'));
+  readonly notesTitle = computed(() => this.i18n.t('update.whatsNew'));
   readonly releaseId = computed(() => this.whatsNew.displayVersion);
 
   constructor() {

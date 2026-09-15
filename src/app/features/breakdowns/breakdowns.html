@@ -1,5 +1,9 @@
 <div class="stack breakdowns page-narrow">
-  <app-page-header [title]="i18n.t('breakdowns.title')" />
+  <app-page-header
+    [title]="i18n.t('breakdowns.title')"
+    [showBack]="true"
+    (back)="router.navigateByUrl('/more')"
+  />
 
   <section class="card stack" [attr.aria-label]="i18n.t('breakdowns.form')">
     @if (editId()) {
