@@ -1,5 +1,9 @@
 <div class="stack history-page">
-  <app-page-header [title]="i18n.t('history.maintTitle')" />
+  <app-page-header
+    [title]="i18n.t('history.maintTitle')"
+    [showBack]="true"
+    (back)="router.navigateByUrl('/more')"
+  />
   <app-section-tabs
     [tabs]="sectionTabs"
     [ariaLabel]="i18n.t('history.maintTitle')"
@@ -76,22 +80,26 @@
                     [queryParams]="{ id: m.id }"
                     class="history-ledger__link"
                   >
-                    <div class="history-ledger__main">
-                      <strong>{{ rowLabel(m) }}</strong>
-                      <div class="history-ledger__meta">
-                        <span class="pill">{{ datePill(m.date) }}</span>
-                        <span>
-                          {{ i18n.formatNumber(m.odometer, { maximumFractionDigits: 0 }) }}
-                          {{ i18n.t('common.km') }}
-                        </span>
-                      </div>
-                      @if (m.note) {
-                        <span class="history-ledger__place">{{ m.note }}</span>
+                    <div class="history-ledger__head">
+                      <strong class="history-ledger__title">{{ rowLabel(m) }}</strong>
+                      @if (m.cost != null) {
+                        <strong class="history-ledger__cost">{{ formatMoney(m.cost) }}</strong>
+                      } @else {
+                        <span class="history-ledger__status">{{
+                          i18n.t('budget.notEnoughData')
+                        }}</span>
                       }
                     </div>
-                    <div class="history-ledger__side">
-                      <strong class="history-ledger__cost">{{ formatMoney(m.cost) }}</strong>
+                    <div class="history-ledger__meta">
+                      <span class="pill">{{ datePill(m.date) }}</span>
+                      <span>
+                        {{ i18n.formatNumber(m.odometer, { maximumFractionDigits: 0 }) }}
+                        {{ i18n.t('common.km') }}
+                      </span>
                     </div>
+                    @if (m.note) {
+                      <span class="history-ledger__place">{{ m.note }}</span>
+                    }
                   </a>
                   <div class="history-ledger__icon-actions">
                     <button

@@ -16,7 +16,7 @@ describe('UpdateModal', () => {
     }).compileComponents();
   });
 
-  it('renders release pill and feature cards', () => {
+  it('renders release pill and feature rows', () => {
     const fixture = TestBed.createComponent(UpdateModal);
     fixture.componentRef.setInput('title', 'You are on v1');
     fixture.componentRef.setInput('cards', [
@@ -30,9 +30,9 @@ describe('UpdateModal', () => {
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('.update-sheet__title')?.textContent).toContain('You are on v1');
     expect(el.querySelector('.update-sheet__release')?.textContent).toContain('2026-08-31');
-    expect(el.querySelectorAll('.update-card').length).toBe(2);
-    expect(el.querySelectorAll('.update-card__icon').length).toBe(2);
-    expect(el.querySelectorAll('.update-sheet__dot').length).toBe(2);
+    expect(el.querySelector('.update-sheet__lead')?.textContent).toContain('update.notesLead');
+    expect(el.querySelectorAll('.update-row').length).toBe(2);
+    expect(el.querySelectorAll('.update-row__icon').length).toBe(2);
     expect(el.querySelector('app-primary-button')).toBeTruthy();
   });
 

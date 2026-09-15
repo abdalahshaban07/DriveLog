@@ -1,5 +1,9 @@
 <div class="stack page-narrow budget">
-  <app-page-header [title]="i18n.t('budget.title')" />
+  <app-page-header
+    [title]="i18n.t('budget.title')"
+    [showBack]="true"
+    (back)="router.navigateByUrl('/more')"
+  />
 
   @if (car(); as c) {
     <section class="card stack budget__edit" [attr.aria-label]="i18n.t('budget.save')">

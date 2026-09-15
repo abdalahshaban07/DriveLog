@@ -105,14 +105,6 @@ export const routes: Routes = [
     canActivate: [setupGuard],
   },
   {
-    path: 'settings/types',
-    loadComponent: () =>
-      import('./features/maintenance-types/maintenance-types').then(
-        (m) => m.MaintenanceTypesPage,
-      ),
-    canActivate: [setupGuard],
-  },
-  {
     path: 'settings/features',
     loadComponent: () =>
       import('./features/app-features/app-features').then(

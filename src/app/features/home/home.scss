@@ -2,32 +2,173 @@
   margin-block-end: var(--space-3);
 }
 
-.reports-panel {
+.reports-panel,
+.charts-panel {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
-.report-card {
-  padding: var(--space-5);
-  border: 1px solid var(--hairline);
+.reports-glance,
+.charts-glance {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.reports-glance__lead,
+.charts-glance__lead {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.reports-glance__counts,
+.charts-glance__counts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.reports-glance__counts {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.charts-glance__counts {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.reports-glance__count,
+.charts-glance__count {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding-block: var(--space-2);
   border-radius: var(--radius);
-  background: color-mix(in srgb, var(--cta) 6%, var(--surface));
+  background: var(--well);
+  text-align: center;
+  min-width: 0;
 }
 
-.report-card__title {
-  margin: 0 0 var(--space-3);
-  font-size: 0.8rem;
+.reports-glance__num,
+.charts-glance__num {
   font-weight: 700;
-  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--type-body);
+  letter-spacing: -0.01em;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.reports-glance__label,
+.charts-glance__label {
+  color: var(--muted);
+  font-size: var(--type-label);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.reports-block,
+.charts-block {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.reports-block__title,
+.charts-block__title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0;
+  padding-block-end: var(--space-2);
+  border-block-end: 1px solid var(--hairline, transparent);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.reports-block__count,
+.charts-block__count {
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.reports-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+}
+
+/* Flat insight rows — Health-aligned, not pastel hero cards */
+.report-row {
+  display: grid;
+  gap: var(--space-1);
+  padding-block: var(--space-3);
+  border-block-end: 1px solid var(--hairline);
+  background: transparent;
+}
+
+.reports-list > .report-row:last-child {
+  border-block-end: 0;
+}
+
+.report-row__title {
+  margin: 0;
+  font-size: var(--type-label);
+  font-weight: 700;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--muted);
 }
 
-.report-card__body {
+.report-row[data-tone='fuel'] .report-row__title {
+  color: var(--fuel);
+}
+
+.report-row[data-tone='maintenance'] .report-row__title {
+  color: var(--cta);
+}
+
+.report-row[data-tone='breakdown'] .report-row__title {
+  color: var(--stop);
+}
+
+.report-row__body {
   margin: 0;
   color: var(--text);
-  font-size: 1.05rem;
-  line-height: 1.5;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.charts-filters {
+  display: grid;
+  gap: var(--space-3);
+}
+
+@media (min-width: 768px) {
+  .charts-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .empty-cta {
+    transition: none;
+  }
+
+  .empty-cta:active {
+    transform: none;
+  }
 }
 
 .period-form {
@@ -170,8 +311,12 @@
 
 .chart-card {
   padding: var(--space-3);
-  border-radius: calc(var(--radius) - 4px);
-  background: var(--fill-well);
+  border-radius: var(--radius);
+  background: var(--fill-surface, var(--surface));
+  border: 1px solid var(--hairline, transparent);
+  box-shadow: var(--raise-1, none);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
 }
 
 .chart-card__label {
@@ -196,22 +341,14 @@
   color: var(--cta-text);
   font-weight: 700;
   text-decoration: none;
+  transition:
+    transform var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-fast) var(--ease-out);
 }
 
-.report-card--fuel {
-  background: color-mix(in srgb, var(--fuel) 6%, var(--surface));
-}
-
-.report-card--maintenance {
-  background: color-mix(in srgb, var(--cta) 6%, var(--surface));
-}
-
-.report-card--breakdown {
-  background: color-mix(in srgb, var(--stop) 5%, var(--surface));
-}
-
-.report-card--other {
-  background: color-mix(in srgb, var(--petrol-muted) 6%, var(--surface));
+.empty-cta:active {
+  transform: translateY(var(--btn-press-y, 1px));
+  box-shadow: var(--btn-press-shadow);
 }
 
 .carousel {
@@ -376,20 +513,8 @@
   margin-block-end: var(--space-3);
 }
 
-.rec-card__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  margin-block-end: var(--space-2);
-}
-
-.ledger {
-  display: grid;
-  gap: var(--space-2);
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.charts-filters .filter-select {
+  margin-block-end: 0;
 }
 
 .stack-bar__track {
@@ -401,10 +526,10 @@
 }
 
 .stack-bar__seg--fuel {
-  background: var(--cta);
+  background: var(--fuel);
 }
 .stack-bar__seg--maint {
-  background: var(--cta);
+  background: color-mix(in srgb, var(--fuel) 42%, var(--muted));
 }
 .stack-bar__seg--break {
   background: var(--warn);
@@ -414,7 +539,7 @@
 }
 
 .stack-legend {
-  margin: var(--space-3) 0 var(--space-4);
+  margin: var(--space-3) 0 0;
   padding: 0;
   list-style: none;
   display: grid;
@@ -423,46 +548,91 @@
   color: var(--muted);
 }
 
-.ledger-title {
-  margin: 0 0 var(--space-3);
-  font-size: 1rem;
+/* Flat gapped ledger — Health list rhythm; no soft-elevate cards */
+.ledger {
+  display: grid;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .ledger-row {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--fill-surface);
+}
+
+.ledger-row__head {
   display: flex;
+  align-items: baseline;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: var(--space-3) 0;
-  border-block-end: 1px solid var(--hairline);
 }
 
-.ledger-row__cat {
-  display: block;
-  font-size: 0.75rem;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+.ledger-row__cost {
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
-.ledger-row__title {
-  display: block;
-}
-
+.ledger-row__date,
+.ledger-row__cat,
+.ledger-row__facts,
+.ledger-row__place,
 .ledger-row__meta {
-  display: block;
-  font-size: 0.85rem;
   color: var(--muted);
+  font-size: 0.85rem;
 }
 
-.ledger-row__side {
-  text-align: end;
+.ledger-row__date {
+  flex-shrink: 0;
   white-space: nowrap;
 }
 
-.ledger-row__side time {
+.ledger-row__facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.ledger-row__place {
   display: block;
-  font-size: 0.8rem;
-  color: var(--muted);
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.ledger-row__body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.ledger-row__cat {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ledger-row__title {
+  color: var(--text);
+  font-weight: 600;
+  min-width: 0;
+}
+
+.ledger-row__sep {
+  opacity: 0.7;
 }
 
 .ghost-cta {
@@ -566,8 +736,7 @@
   background: color-mix(in srgb, var(--cta) 6%, var(--surface));
 }
 
-.rec-card--tip,
-.rec-card--ai {
+.rec-card--tip {
   background: color-mix(in srgb, var(--petrol-muted) 6%, var(--surface));
 }
 
@@ -584,12 +753,6 @@
   margin: 0;
   font-size: 0.95rem;
   line-height: 1.45;
-}
-
-.rec-card__hint {
-  margin: var(--space-2) 0 0;
-  font-size: 0.85rem;
-  color: var(--muted);
 }
 
 .period-card {
@@ -614,6 +777,11 @@
   padding: 0;
   display: grid;
   gap: var(--space-2);
+}
+
+/* Flat hairline plate — .card --plate-shadow bleeds onto glance-strip */
+.vehicle-status {
+  box-shadow: none;
 }
 
 .vehicle-status__head {

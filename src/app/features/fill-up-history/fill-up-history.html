@@ -1,5 +1,9 @@
 <div class="stack history-page">
-  <app-page-header [title]="i18n.t('history.title')" />
+  <app-page-header
+    [title]="i18n.t('history.title')"
+    [showBack]="true"
+    (back)="router.navigateByUrl('/more')"
+  />
   <app-section-tabs
     [tabs]="sectionTabs"
     [ariaLabel]="i18n.t('history.title')"

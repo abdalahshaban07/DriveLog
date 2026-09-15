@@ -1,5 +1,9 @@
 <div class="stack settings">
-  <app-page-header [title]="i18n.t('settings.title')" />
+  <app-page-header
+    [title]="i18n.t('settings.title')"
+    [showBack]="true"
+    (back)="router.navigateByUrl('/more')"
+  />
 
   <section class="card list" [attr.aria-label]="i18n.t('settings.appearance')">
     <p class="section-label">{{ i18n.t('settings.appearance') }}</p>
@@ -82,15 +86,6 @@
 
   <section class="card list" [attr.aria-label]="i18n.t('settings.dataSection')">
     <p class="section-label">{{ i18n.t('settings.dataSection') }}</p>
-    <a class="line" routerLink="/settings/types">
-      <span class="line__text">
-        <strong>{{ i18n.t('settings.types') }}</strong>
-      </span>
-      <svg class="line__go" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M9 6l6 6-6 6" />
-      </svg>
-    </a>
-
     <button type="button" class="line" (click)="exportBackup()">
       <span class="line__text">
         <strong>{{ i18n.t('settings.export') }}</strong>

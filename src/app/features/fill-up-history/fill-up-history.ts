@@ -38,7 +38,7 @@ type GradeFilter = FuelGrade | 'all';
 export class FillUpHistoryPage {
   readonly i18n = inject(I18n);
   readonly db = inject(Db);
-  private readonly router = inject(Router);
+  readonly router = inject(Router);
 
   readonly sectionTabs: SectionTab[] = [
     { labelKey: 'fillUp.title', link: '/fill-up' },

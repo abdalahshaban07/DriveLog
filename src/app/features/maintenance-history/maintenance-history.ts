@@ -36,7 +36,7 @@ import { SelectField } from '../../ui/select-field';
 export class MaintenanceHistoryPage {
   readonly i18n = inject(I18n);
   readonly db = inject(Db);
-  private readonly router = inject(Router);
+  readonly router = inject(Router);
 
   readonly sectionTabs: SectionTab[] = [
     { labelKey: 'maint.title', link: '/maintenance' },

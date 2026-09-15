@@ -5,6 +5,7 @@ import { map } from 'rxjs/operators';
 import { Db } from '../../data/db';
 import { ROUTINE_CHECK_PART_ID } from '../../domain/part-catalog';
 import { homeHealthSummary } from '../../domain/vehicle-facts';
+import type { HealthSource } from '../../domain/models';
 import type { MsgKey } from '../../i18n/en';
 import { I18n } from '../../i18n/i18n';
 import { PageHeader } from '../../ui/page-header';
@@ -46,6 +47,10 @@ export class HealthDetailPage {
     const s = this.item()?.status;
     if (!s) return '';
     return this.i18n.t(`health.status.${s}` as MsgKey);
+  }
+
+  sourceLabel(source: HealthSource): string {
+    return this.i18n.t(`health.source.${source}` as MsgKey);
   }
 
   reasonLabel(key: string): string {

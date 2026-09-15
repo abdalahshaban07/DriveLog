@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { Db } from '../../data/db';
 import { todayDateOnly } from '../../domain/dues';
 import type { OtherExpense } from '../../domain/models';
@@ -20,6 +21,7 @@ import { TextField } from '../../ui/text-field';
 export class OtherExpensesPage {
   readonly i18n = inject(I18n);
   readonly db = inject(Db);
+  readonly router = inject(Router);
 
   readonly editId = signal<string | null>(null);
   readonly pendingDelete = signal<string | null>(null);
