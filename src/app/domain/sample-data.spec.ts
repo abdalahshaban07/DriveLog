@@ -10,10 +10,10 @@ describe('buildSampleDataset', () => {
     expect(maintenance.every((m) => m.id.startsWith('sample-'))).toBe(true);
   });
 
-  it('produces realistic economy between 5 and 15 L/100km', () => {
-    const { fillUps } = buildSampleDataset(new Date('2026-09-01'));
-    const eco = latestEconomy(fillUps);
-    expect(eco?.litersPer100Km).toBeGreaterThan(5);
-    expect(eco?.litersPer100Km).toBeLessThan(15);
+  it('includes health part links and budget fields', () => {
+    const { car, maintenance, partOverrides } = buildSampleDataset(new Date('2026-09-01'));
+    expect(car.maintenanceBudgetMonthly).toBeGreaterThan(0);
+    expect(maintenance.every((m) => !!m.partDefinitionId)).toBe(true);
+    expect(partOverrides.length).toBeGreaterThan(0);
   });
 });

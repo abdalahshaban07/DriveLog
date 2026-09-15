@@ -161,6 +161,53 @@
           <span class="line__meta">{{ notifyStatus() }}</span>
         </div>
       }
+      <label class="line">
+        <span class="line__text">{{ i18n.t('settings.notifyMaintenance') }}</span>
+        <span class="switch">
+          <input
+            type="checkbox"
+            class="switch__input"
+            role="switch"
+            [checked]="notifyMaintenance()"
+            [attr.aria-checked]="notifyMaintenance()"
+            (change)="onNotifyFlag('notifyMaintenance', $event)"
+          />
+          <span class="switch__track" aria-hidden="true"></span>
+        </span>
+      </label>
+      <label class="line">
+        <span class="line__text">{{ i18n.t('settings.notifyBudget') }}</span>
+        <span class="switch">
+          <input
+            type="checkbox"
+            class="switch__input"
+            role="switch"
+            [checked]="notifyBudget()"
+            [attr.aria-checked]="notifyBudget()"
+            (change)="onNotifyFlag('notifyBudget', $event)"
+          />
+          <span class="switch__track" aria-hidden="true"></span>
+        </span>
+      </label>
+      <label class="line">
+        <span class="line__text">{{ i18n.t('settings.notifyForecast') }}</span>
+        <span class="switch">
+          <input
+            type="checkbox"
+            class="switch__input"
+            role="switch"
+            [checked]="notifyForecast()"
+            [attr.aria-checked]="notifyForecast()"
+            (change)="onNotifyFlag('notifyForecast', $event)"
+          />
+          <span class="switch__track" aria-hidden="true"></span>
+        </span>
+      </label>
+      <app-numeric-field
+        [label]="i18n.t('settings.soonThreshold')"
+        [(value)]="soonThreshold"
+        (valueChange)="onSoonThreshold()"
+      />
     }
   </section>
 

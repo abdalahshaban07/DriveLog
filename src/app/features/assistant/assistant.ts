@@ -66,7 +66,7 @@ export class AssistantPage {
       );
       this.messages.set([...nextHistory, { role: 'assistant', content: reply.text }]);
     } catch {
-      this.error.set(this.i18n.t('assistant.network'));
+      this.error.set(this.i18n.t('assistant.local.generic'));
     } finally {
       this.busy.set(false);
     }

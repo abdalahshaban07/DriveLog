@@ -598,3 +598,43 @@
 .period-card {
   margin-block-end: var(--space-4);
 }
+
+.health-card,
+.advisor-card {
+  padding: var(--space-4);
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--hairline, transparent);
+}
+
+.health-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.health-card__head h2,
+.advisor-card h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.health-card__head a,
+.advisor-card a {
+  color: var(--fuel);
+}
+
+.health-card__list {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.advisor-card .privacy {
+  color: var(--muted);
+  font-size: 0.875rem;
+}

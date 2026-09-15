@@ -46,8 +46,10 @@ import {
   shouldShowSetupChecklist,
 } from '../../domain/setup-checklist';
 import { buildSmartReports } from '../../domain/smart-reports';
+import { homeHealthSummary } from '../../domain/vehicle-facts';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
+import { HealthRow } from '../../ui/health-row/health-row';
 import { InstallPwa } from '../../pwa/install-pwa';
 import { Sparkline } from '../../ui/charts/sparkline';
 import { BarChart } from '../../ui/charts/bar-chart';
@@ -90,6 +92,7 @@ type ChartCategory = ExpenseCategory | 'all';
     QuickLog,
     MonthInsight,
     WeatherTipCard,
+    HealthRow,
   ],
   templateUrl: './home.html',
   styleUrl: './home.scss',
@@ -293,11 +296,15 @@ export class HomePage {
       holidays: this.holidays(),
     }),
   );
+  readonly healthSummary = computed(() => homeHealthSummary(this.db));
+  readonly healthAttention = computed(() => this.healthSummary().attention);
+  readonly healthTop = computed(() => this.healthSummary().top);
+  readonly topAdvisorInsight = computed(
+    () => this.healthSummary().facts?.insights[0] ?? null,
+  );
+
   readonly assistantOnline = computed(
-    () =>
-      this.db.settings().assistantEnabled === true &&
-      typeof navigator !== 'undefined' &&
-      navigator.onLine,
+    () => typeof navigator !== 'undefined' && navigator.onLine,
   );
 
   constructor() {
@@ -387,15 +394,12 @@ export class HomePage {
   }
 
   async loadAiTip(): Promise<void> {
-    if (!this.assistantOnline()) {
-      return;
-    }
     this.aiTipBusy.set(true);
     try {
       const lang = this.i18n.language();
       const reply = await fetchFuelTip(this.db, lang, (k) => this.i18n.t(k as MsgKey));
       this.aiTip.set(reply.text);
-      this.aiTipSource.set(reply.source);
+      this.aiTipSource.set('local');
     } finally {
       this.aiTipBusy.set(false);
     }
@@ -469,6 +473,14 @@ export class HomePage {
 
   formatMoney(value: number): string {
     return this.i18n.formatMoney(value, this.db.settings().currency, 0);
+  }
+
+  insightTitle(tip: { titleKey: string }): string {
+    return this.i18n.t(tip.titleKey as MsgKey);
+  }
+
+  insightBody(tip: { bodyKey: string }): string {
+    return this.i18n.t(tip.bodyKey as MsgKey);
   }
 
   gradeLabel(grade?: string): string {

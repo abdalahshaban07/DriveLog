@@ -48,6 +48,34 @@
           />
         }
 
+        <section class="health-card" [attr.aria-label]="i18n.t('health.title')">
+          <div class="health-card__head">
+            <h2>{{ i18n.t('health.title') }}</h2>
+            <a routerLink="/health">{{ i18n.t('health.viewAll') }}</a>
+          </div>
+          <p>{{ i18n.t('health.attentionCount', { count: healthAttention() }) }}</p>
+          <ul class="health-card__list">
+            @for (item of healthTop(); track item.partDefinitionId) {
+              <li>
+                <app-health-row [item]="item" />
+              </li>
+            }
+          </ul>
+        </section>
+
+        <section class="advisor-card" [attr.aria-label]="i18n.t('advisor.cardTitle')">
+          <h2>{{ i18n.t('advisor.cardTitle') }}</h2>
+          <p class="privacy">{{ i18n.t('advisor.onDevice') }}</p>
+          @if (topAdvisorInsight(); as tip) {
+            <p>{{ insightTitle(tip) }} — {{ insightBody(tip) }}</p>
+          }
+          <p>
+            <a routerLink="/assistant">{{ i18n.t('advisor.ask') }}</a>
+            ·
+            <a routerLink="/budget">{{ i18n.t('more.budget') }}</a>
+          </p>
+        </section>
+
         <div
           #glanceStrip
           class="glance-strip"

@@ -116,7 +116,7 @@ export class MaintenanceHistoryPage {
     return [...groups.entries()].map(([month, items]) => ({
       month,
       items,
-      total: items.reduce((sum, m) => sum + m.cost, 0),
+      total: items.reduce((sum, m) => sum + (m.cost != null ? m.cost : 0), 0),
     }));
   });
 
@@ -143,7 +143,10 @@ export class MaintenanceHistoryPage {
     return this.i18n.t(`maintenance.type.${m.type}` as MsgKey);
   }
 
-  formatMoney(value: number): string {
+  formatMoney(value: number | undefined): string {
+    if (value == null || !Number.isFinite(value)) {
+      return this.i18n.t('budget.notEnoughData');
+    }
     return this.i18n.formatMoney(value, this.db.settings().currency, 2);
   }
 
