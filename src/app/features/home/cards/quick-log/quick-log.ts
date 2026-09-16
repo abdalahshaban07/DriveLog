@@ -15,7 +15,8 @@ import {
   computeFillUpCost,
   lastFillUnitPriceFromHistory,
   lastFuelGrade,
-  pickUnitPrice,
+  needsManualUnitPrice,
+  resolveUnitPrice,
 } from '../../../../domain/fill-up-cost';
 import {
   TANK_FALLBACK,
@@ -61,14 +62,28 @@ export class QuickLog {
   readonly saving = signal(false);
   readonly error = signal('');
   readonly fuelPrices = signal<Awaited<ReturnType<typeof countryFuelPrices>>>(null);
+  readonly pricesReady = signal(false);
+  readonly manualUnitPrice = signal('');
 
   readonly stationListId = `quick-station-${crypto.randomUUID().slice(0, 8)}`;
   readonly stationSuggestions = computed(() => distinctPlaceLabels(this.db.fillUps()));
   readonly lastUnit = computed(() => lastFillUnitPriceFromHistory(this.db.fillUps()));
   readonly gradeOptions = computed(() => buildGradeOptions(this.fuelPrices(), GRADE_KEYS));
-  readonly unitPrice = computed(() =>
-    pickUnitPrice(this.fuelGrade(), this.fuelPrices(), this.lastUnit()),
+  readonly needsManualPrice = computed(() =>
+    needsManualUnitPrice(this.fuelGrade(), this.fuelPrices()),
   );
+  readonly pricesUnavailable = computed(
+    () => this.pricesReady() && this.fuelPrices() == null,
+  );
+  readonly unitPrice = computed(() => {
+    const manual = Number(this.manualUnitPrice());
+    return resolveUnitPrice(
+      this.fuelGrade(),
+      this.fuelPrices(),
+      this.lastUnit(),
+      Number.isFinite(manual) && manual > 0 ? manual : null,
+    );
+  });
   readonly litersNum = computed(() => Number(this.liters()) || 0);
   readonly distanceNum = computed(() => Number(this.distanceKm()) || 0);
   readonly cost = computed(() => {
@@ -93,10 +108,20 @@ export class QuickLog {
   }
 
   async loadPrices(): Promise<void> {
-    const cc = countryFromCurrency(this.db.settings().currency);
-    this.fuelPrices.set(await countryFuelPrices(cc));
-    if (!this.fuelGrade() && this.gradeOptions().length) {
-      this.fuelGrade.set(this.gradeOptions()[0]!.grade);
+    try {
+      const cc = countryFromCurrency(this.db.settings().currency);
+      this.fuelPrices.set(await countryFuelPrices(cc));
+      if (!this.fuelGrade() && this.gradeOptions().length) {
+        this.fuelGrade.set(this.gradeOptions()[0]!.grade);
+      }
+      if (!this.manualUnitPrice()) {
+        const last = this.lastUnit();
+        if (last != null && last > 0) {
+          this.manualUnitPrice.set(String(last));
+        }
+      }
+    } finally {
+      this.pricesReady.set(true);
     }
   }
 

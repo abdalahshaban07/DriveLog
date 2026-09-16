@@ -100,6 +100,8 @@ export const en = {
   'fillUp.receipt': 'Receipt preview',
   'fillUp.receiptHint': 'Enter liters and pick a fuel type',
   'fillUp.costOverrideHint': 'Using your last paid price — national board price unavailable for this grade.',
+  'fillUp.unitPrice': 'Price per liter',
+  'fillUp.pricesUnavailable': 'Offline — enter price manually',
   'fillUp.total': 'Total',
   'fillUp.grade.gasoline92': '92',
   'fillUp.grade.gasoline95': '95',

@@ -51,6 +51,37 @@ export function pickUnitPrice(
   return null;
 }
 
+/** True when the selected grade has no national board price (offline / API miss / custom). */
+export function needsManualUnitPrice(
+  grade: FuelGrade | null,
+  countryPrices: CountryFuelPrices | null,
+): boolean {
+  if (!grade || grade === 'custom') {
+    return true;
+  }
+  const board = priceForGrade(countryPrices, grade);
+  return board == null || board <= 0;
+}
+
+/** Board → typed manual → last paid. */
+export function resolveUnitPrice(
+  grade: FuelGrade | null,
+  countryPrices: CountryFuelPrices | null,
+  lastUnitPrice: number | null,
+  manualUnitPrice: number | null,
+): number | null {
+  if (grade && grade !== 'custom') {
+    const board = priceForGrade(countryPrices, grade);
+    if (board != null && board > 0) {
+      return board;
+    }
+  }
+  if (manualUnitPrice != null && Number.isFinite(manualUnitPrice) && manualUnitPrice > 0) {
+    return manualUnitPrice;
+  }
+  return pickUnitPrice(grade, countryPrices, lastUnitPrice);
+}
+
 export function lastFillUnitPriceFromHistory(fills: readonly FillUp[]): number | null {
   const sorted = [...fills].sort(
     (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),

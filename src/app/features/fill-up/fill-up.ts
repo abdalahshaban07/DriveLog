@@ -11,8 +11,9 @@ import {
   computeFillUpCost,
   lastFillUnitPriceFromHistory,
   lastFuelGrade,
-  pickUnitPrice,
+  needsManualUnitPrice,
   priceForGrade,
+  resolveUnitPrice,
 } from '../../domain/fill-up-cost';
 import { countryFromCurrency } from '../../domain/country';
 import { todayDateOnly } from '../../domain/dues';
@@ -100,6 +101,7 @@ export class FillUpPage {
   readonly legacyDistanceEdit = signal(false);
   readonly distanceTouched = signal(false);
   readonly fuelPrices = signal<Awaited<ReturnType<typeof countryFuelPrices>>>(null);
+  readonly manualUnitPrice = signal('');
   readonly nextDueBanner = signal(false);
 
   readonly lastUnit = computed(() => lastFillUnitPriceFromHistory(this.db.fillUps()));
@@ -135,9 +137,23 @@ export class FillUpPage {
     buildGradeOptions(this.fuelPrices(), GRADE_KEYS),
   );
 
-  readonly unitPrice = computed(() =>
-    pickUnitPrice(this.fuelGrade(), this.fuelPrices(), this.lastUnit()),
+  readonly needsManualPrice = computed(() =>
+    needsManualUnitPrice(this.fuelGrade(), this.fuelPrices()),
   );
+
+  readonly pricesUnavailable = computed(
+    () => this.pricesReady() && this.fuelPrices() == null,
+  );
+
+  readonly unitPrice = computed(() => {
+    const manual = Number(this.manualUnitPrice());
+    return resolveUnitPrice(
+      this.fuelGrade(),
+      this.fuelPrices(),
+      this.lastUnit(),
+      Number.isFinite(manual) && manual > 0 ? manual : null,
+    );
+  });
 
   readonly litersNum = computed(() => Number(this.liters()) || 0);
   readonly distanceNum = computed(() => Number(this.distanceKm()) || 0);
@@ -162,11 +178,18 @@ export class FillUpPage {
 
   readonly usingLastPaid = computed(() => {
     const grade = this.fuelGrade();
-    if (!grade || grade === 'custom') {
-      return grade === 'custom';
+    if (!grade) {
+      return false;
     }
-    const board = priceForGrade(this.fuelPrices(), grade);
-    return board == null && this.lastUnit() != null;
+    const board = grade === 'custom' ? null : priceForGrade(this.fuelPrices(), grade);
+    if (board != null && board > 0) {
+      return false;
+    }
+    const manual = Number(this.manualUnitPrice());
+    if (Number.isFinite(manual) && manual > 0) {
+      return false;
+    }
+    return this.lastUnit() != null;
   });
 
   readonly canSave = computed(() => {
@@ -208,9 +231,21 @@ export class FillUpPage {
       } else if (!this.fuelGrade() && this.lastUnit()) {
         this.fuelGrade.set('custom');
       }
+      this.seedManualPrice();
     } finally {
       this.pricesBusy.set(false);
       this.pricesReady.set(true);
+    }
+  }
+
+  /** Prefill typed price from last fill when board prices are missing. */
+  private seedManualPrice(): void {
+    if (this.manualUnitPrice()) {
+      return;
+    }
+    const last = this.lastUnit();
+    if (last != null && last > 0) {
+      this.manualUnitPrice.set(String(last));
     }
   }
 
@@ -235,6 +270,9 @@ export class FillUpPage {
     }
     this.liters.set(String(existing.liters));
     this.fuelGrade.set(existing.fuelGrade ?? 'custom');
+    if (existing.unitPrice != null && existing.unitPrice > 0) {
+      this.manualUnitPrice.set(String(existing.unitPrice));
+    }
     this.date.set(existing.date);
     this.placeLabel.set(existing.placeLabel ?? '');
     this.note.set(existing.note ?? '');
@@ -459,5 +497,7 @@ export class FillUpPage {
     } else {
       this.fuelGrade.set(null);
     }
+    const last = this.lastUnit();
+    this.manualUnitPrice.set(last != null && last > 0 ? String(last) : '');
   }
 }
