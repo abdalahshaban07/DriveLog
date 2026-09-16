@@ -102,6 +102,8 @@ export const ar: Record<MsgKey, string> = {
   'fillUp.receipt': 'معاينة الإيصال',
   'fillUp.receiptHint': 'دخل اللترات واختار نوع البنزين',
   'fillUp.costOverrideHint': 'بنستخدم آخر سعر دفعته — سعر اللوحة مش متاح للنوع ده.',
+  'fillUp.unitPrice': 'سعر اللتر',
+  'fillUp.pricesUnavailable': 'أوفلاين — اكتب السعر يدوي',
   'fillUp.total': 'الإجمالي',
   'fillUp.grade.gasoline92': '٩٢',
   'fillUp.grade.gasoline95': '٩٥',

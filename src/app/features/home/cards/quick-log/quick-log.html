@@ -15,10 +15,21 @@
     />
   </div>
 
+  @if (pricesUnavailable()) {
+    <p class="hint" role="status" aria-live="polite">
+      {{ i18n.t('fillUp.pricesUnavailable') }}
+    </p>
+  }
   <app-fuel-grade-selector
     [options]="gradeOptions()"
     [(value)]="fuelGrade"
   />
+  @if (needsManualPrice()) {
+    <app-numeric-field
+      [label]="i18n.t('fillUp.unitPrice')"
+      [(value)]="manualUnitPrice"
+    />
+  }
 
   <div class="field">
     <label class="label" [attr.for]="stationListId">{{ i18n.t('fillUp.station') }}</label>

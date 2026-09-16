@@ -109,17 +109,15 @@ export class FuelGradeSelector {
   }
 }
 
+/** Always list grades so fill-up works offline; price may be null. */
 export function buildGradeOptions(
   prices: CountryFuelPrices | null,
   i18nKeys: Record<FuelGrade, MsgKey>,
 ): GradeOption[] {
   const grades: FuelGrade[] = ['gasoline92', 'gasoline95', 'diesel', 'solar'];
-  const out: GradeOption[] = [];
-  for (const grade of grades) {
-    const price = priceForGrade(prices, grade);
-    if (price != null) {
-      out.push({ grade, labelKey: i18nKeys[grade], price });
-    }
-  }
-  return out;
+  return grades.map((grade) => ({
+    grade,
+    labelKey: i18nKeys[grade],
+    price: priceForGrade(prices, grade),
+  }));
 }
