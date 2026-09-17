@@ -114,7 +114,8 @@ export function buildGradeOptions(
   prices: CountryFuelPrices | null,
   i18nKeys: Record<FuelGrade, MsgKey>,
 ): GradeOption[] {
-  const grades: FuelGrade[] = ['gasoline92', 'gasoline95', 'diesel', 'solar'];
+  // ponytail: diesel kept on FuelGrade for legacy fills; solar is the selectable diesel-grade
+  const grades: FuelGrade[] = ['gasoline92', 'gasoline95', 'solar'];
   return grades.map((grade) => ({
     grade,
     labelKey: i18nKeys[grade],

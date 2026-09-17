@@ -324,6 +324,8 @@ export const ar: Record<MsgKey, string> = {
   'common.edit': 'تعديل',
   'common.save': 'حفظ',
   'persist.initFailed': 'مقدرناش نفتح التخزين المحلي',
+  'shell.offline': 'أوفلاين. السجلات شغالة على الجهاز',
+  'shell.offlineShort': 'أوفلاين',
   'persist.noCar': 'اضبط العربية الأول',
   'backup.invalid': 'ملف النسخة الاحتياطية مش صالح',
   'backup.unsupportedVersion': 'إصدار النسخة مش مدعوم',

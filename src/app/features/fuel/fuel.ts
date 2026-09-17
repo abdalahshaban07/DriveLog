@@ -40,7 +40,6 @@ export class FuelPage {
     { id: 'all', labelKey: 'fuel.gradeAll' },
     { id: 'gasoline92', labelKey: 'fillUp.grade.gasoline92' },
     { id: 'gasoline95', labelKey: 'fillUp.grade.gasoline95' },
-    { id: 'diesel', labelKey: 'fillUp.grade.diesel' },
     { id: 'solar', labelKey: 'fillUp.grade.solar' },
   ];
 

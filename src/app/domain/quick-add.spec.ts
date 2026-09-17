@@ -44,7 +44,8 @@ describe('quick-add cost helpers', () => {
 
   it('buildGradeOptions lists grades even without prices', () => {
     const opts = buildGradeOptions(null, GRADE_KEYS);
-    expect(opts).toHaveLength(4);
+    expect(opts).toHaveLength(3);
+    expect(opts.map((o) => o.grade)).toEqual(['gasoline92', 'gasoline95', 'solar']);
     expect(opts.every((o) => o.price == null)).toBe(true);
   });
 

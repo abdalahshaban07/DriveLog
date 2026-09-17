@@ -110,7 +110,9 @@ export function lastFuelGrade(fills: readonly FillUp[]): FuelGrade | null {
   const sorted = [...fills].sort(
     (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
   );
-  return sorted.find((f) => f.fuelGrade)?.fuelGrade ?? null;
+  const grade = sorted.find((f) => f.fuelGrade)?.fuelGrade ?? null;
+  // ponytail: diesel removed from picker; treat legacy as solar for new fills
+  return grade === 'diesel' ? 'solar' : grade;
 }
 
 /** ponytail: naive km-until-empty from last full tank segment only */

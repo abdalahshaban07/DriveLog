@@ -5,6 +5,17 @@
         {{ i18n.t('persist.initFailed') }}
       </div>
     }
+    @if (!online()) {
+      <p
+        class="offline-badge"
+        role="status"
+        aria-live="polite"
+        [attr.aria-label]="i18n.t('shell.offline')"
+      >
+        <span class="offline-badge__dot" aria-hidden="true"></span>
+        {{ i18n.t('shell.offlineShort') }}
+      </p>
+    }
     <main #main class="main" [class.main--setup]="!showNav()">
       <router-outlet />
     </main>

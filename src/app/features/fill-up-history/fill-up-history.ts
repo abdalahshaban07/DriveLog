@@ -64,7 +64,6 @@ export class FillUpHistoryPage {
     { id: 'all', labelKey: 'history.filterAll' },
     { id: 'gasoline92', labelKey: 'fillUp.grade.gasoline92' },
     { id: 'gasoline95', labelKey: 'fillUp.grade.gasoline95' },
-    { id: 'diesel', labelKey: 'fillUp.grade.diesel' },
     { id: 'solar', labelKey: 'fillUp.grade.solar' },
     { id: 'custom', labelKey: 'fillUp.grade.custom' },
   ];

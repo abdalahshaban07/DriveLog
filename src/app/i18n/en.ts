@@ -322,6 +322,8 @@ export const en = {
   'common.edit': 'Edit',
   'common.save': 'Save',
   'persist.initFailed': 'Could not open local storage',
+  'shell.offline': 'You are offline. Logs still work on this device',
+  'shell.offlineShort': 'Offline',
   'persist.noCar': 'Set up your car first',
   'backup.invalid': 'Invalid backup file',
   'backup.unsupportedVersion': 'Unsupported backup version',
