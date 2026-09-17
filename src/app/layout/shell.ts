@@ -16,7 +16,7 @@ import {
   RouterOutlet,
 } from '@angular/router';
 import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { filter, map, skip, startWith } from 'rxjs';
+import { filter, fromEvent, map, merge, skip, startWith } from 'rxjs';
 import { Db } from '../data/db';
 import { I18n } from '../i18n/i18n';
 import { HolidayReminder } from '../pwa/holiday-reminder';
@@ -43,6 +43,10 @@ export class Shell {
   private readonly main = viewChild<ElementRef<HTMLElement>>('main');
 
   readonly updateDismissed = signal(false);
+  /** ponytail: browser online flag only — no probe ping */
+  readonly online = signal(
+    typeof navigator === 'undefined' ? true : navigator.onLine,
+  );
 
   private readonly url = toSignal(
     this.router.events.pipe(
@@ -68,6 +72,11 @@ export class Shell {
   readonly releaseId = computed(() => this.whatsNew.displayVersion);
 
   constructor() {
+    if (typeof window !== 'undefined') {
+      merge(fromEvent(window, 'online'), fromEvent(window, 'offline'))
+        .pipe(takeUntilDestroyed())
+        .subscribe(() => this.online.set(navigator.onLine));
+    }
     this.router.events
       .pipe(
         filter((e): e is NavigationEnd => e instanceof NavigationEnd),
