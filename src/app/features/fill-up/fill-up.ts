@@ -404,6 +404,21 @@ export class FillUpPage {
     }));
   }
 
+  ocrLitersStr(): string {
+    const n = this.ocrPick().liters;
+    return n != null ? String(n) : '';
+  }
+
+  ocrPriceStr(): string {
+    const n = this.ocrPick().unitPrice;
+    return n != null ? String(n) : '';
+  }
+
+  ocrTotalStr(): string {
+    const n = this.ocrPick().total;
+    return n != null ? String(n) : '';
+  }
+
   setOcrPrice(v: string): void {
     const n = Number(v);
     this.ocrPick.update((p) => ({
@@ -761,10 +776,6 @@ export class FillUpPage {
         note: this.note().trim() || undefined,
       });
       await this.router.navigateByUrl('/history/fill-ups');
-    } finally {
-      this.saving.set(false);
-    }
-  }
     } finally {
       this.saving.set(false);
     }

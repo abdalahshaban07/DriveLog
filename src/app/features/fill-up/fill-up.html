@@ -138,17 +138,17 @@
       <h2 class="ocr-review__title">{{ i18n.t('fillUp.ocrReview') }}</h2>
       <app-numeric-field
         [label]="i18n.t('fillUp.liters')"
-        [value]="ocrPick().liters != null ? String(ocrPick().liters) : ''"
+        [value]="ocrLitersStr()"
         (valueChange)="setOcrLiters($event)"
       />
       <app-numeric-field
         [label]="i18n.t('fillUp.unitPrice')"
-        [value]="ocrPick().unitPrice != null ? String(ocrPick().unitPrice) : ''"
+        [value]="ocrPriceStr()"
         (valueChange)="setOcrPrice($event)"
       />
       <app-numeric-field
         [label]="i18n.t('fillUp.total')"
-        [value]="ocrPick().total != null ? String(ocrPick().total) : ''"
+        [value]="ocrTotalStr()"
         (valueChange)="setOcrTotal($event)"
       />
       @if (ocrMath() === true) {
@@ -198,23 +198,29 @@
         </p>
       }
 
-      <app-numeric-field
-        [label]="i18n.t('fillUp.liters')"
-        [(value)]="liters"
-        [error]="litersError()"
-        (valueChange)="onLitersChange()"
-      />
+      <div class="console__pair">
+        <app-numeric-field
+          [label]="i18n.t('fillUp.liters')"
+          [(value)]="liters"
+          [error]="litersError()"
+          (valueChange)="onLitersChange()"
+        />
+        <div class="cost-block">
+          <app-receipt-preview
+            [liters]="litersNum()"
+            [unitPrice]="unitPrice()"
+            [currency]="db.settings().currency"
+          />
+          @if (usingLastPaid()) {
+            <p class="cost-hint hint" role="status">
+              {{ i18n.t('fillUp.costOverrideHint') }}
+            </p>
+          }
+        </div>
+      </div>
       @if (capacityWarn()) {
         <p class="hint" role="status">{{ capacityWarn() }}</p>
       }
-
-      <app-receipt-preview
-        [liters]="litersNum()"
-        [unitPrice]="unitPrice()"
-        [total]="computedCost()"
-        [currency]="db.settings().currency"
-        [usingLastPaid]="usingLastPaid()"
-      />
 
       <div class="fuel-block">
         @if (pricesBusy()) {

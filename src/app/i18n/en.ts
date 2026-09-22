@@ -589,7 +589,6 @@ export const en = {
   'charge.err.odometer': 'Enter a valid odometer',
   'charge.economyLive': '{value} kWh/100 km',
   'charge.place': 'Charger / place',
-  'history.filterType': 'Type',
   'history.filterAllTypes': 'All',
   'history.type.fuel': 'Fuel',
   'history.type.charge': 'Charge',
