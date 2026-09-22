@@ -24,6 +24,8 @@ export const FEATURE_CATALOG: readonly FeatureGroup[] = [
       { titleKey: 'features.around.title', bodyKey: 'features.around.body' },
       { titleKey: 'features.maintenance.title', bodyKey: 'features.maintenance.body' },
       { titleKey: 'features.fillUp.title', bodyKey: 'features.fillUp.body' },
+      { titleKey: 'features.charge.title', bodyKey: 'features.charge.body' },
+      { titleKey: 'features.ocr.title', bodyKey: 'features.ocr.body' },
     ],
   },
   {
@@ -32,6 +34,7 @@ export const FEATURE_CATALOG: readonly FeatureGroup[] = [
       { titleKey: 'features.fillHistory.title', bodyKey: 'features.fillHistory.body' },
       { titleKey: 'features.maintHistory.title', bodyKey: 'features.maintHistory.body' },
       { titleKey: 'features.exportPdf.title', bodyKey: 'features.exportPdf.body' },
+      { titleKey: 'features.passport.title', bodyKey: 'features.passport.body' },
     ],
   },
   {
@@ -41,6 +44,9 @@ export const FEATURE_CATALOG: readonly FeatureGroup[] = [
       { titleKey: 'features.budget.title', bodyKey: 'features.budget.body' },
       { titleKey: 'features.breakdowns.title', bodyKey: 'features.breakdowns.body' },
       { titleKey: 'features.expenses.title', bodyKey: 'features.expenses.body' },
+      { titleKey: 'features.vault.title', bodyKey: 'features.vault.body' },
+      { titleKey: 'features.preTrip.title', bodyKey: 'features.preTrip.body' },
+      { titleKey: 'features.tires.title', bodyKey: 'features.tires.body' },
     ],
   },
   {
@@ -48,6 +54,9 @@ export const FEATURE_CATALOG: readonly FeatureGroup[] = [
     items: [
       { titleKey: 'features.whatsNew.title', bodyKey: 'features.whatsNew.body' },
       { titleKey: 'features.reminders.title', bodyKey: 'features.reminders.body' },
+      { titleKey: 'features.shareTarget.title', bodyKey: 'features.shareTarget.body' },
+      { titleKey: 'features.costGlance.title', bodyKey: 'features.costGlance.body' },
+      { titleKey: 'features.efficiency.title', bodyKey: 'features.efficiency.body' },
     ],
   },
 ];

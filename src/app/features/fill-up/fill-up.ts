@@ -30,6 +30,14 @@ import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { countryFuelPrices, getCoords, nearbyPoi, type NearbyPoi } from '../../data/remote';
 import { takeSharedFillImage } from '../../pwa/share-target';
+import {
+  bestReceiptPick,
+  parseReceiptText,
+  receiptMathOk,
+  type ReceiptCandidates,
+  type ReceiptPick,
+} from '../../domain/receipt-ocr';
+import { ocrReceiptImage } from '../../domain/receipt-ocr-worker';
 import { ConfirmBar } from '../../ui/confirm-bar';
 import { DateField } from '../../ui/date-field';
 import {
@@ -119,6 +127,13 @@ export class FillUpPage {
   readonly chargeKWhError = signal('');
   readonly chargeCostError = signal('');
   readonly editChargeId = signal<string | null>(null);
+  readonly ocrBusy = signal(false);
+  readonly ocrError = signal('');
+  readonly ocrCandidates = signal<ReceiptCandidates | null>(null);
+  readonly ocrPick = signal<ReceiptPick>({});
+  readonly ocrStage = signal<'idle' | 'review'>('idle');
+  readonly softStation = signal<NearbyPoi | null>(null);
+  readonly softStationDismissed = signal(false);
 
   readonly lastUnit = computed(() => lastFillUnitPriceFromHistory(this.db.fillUps()));
 
@@ -232,6 +247,8 @@ export class FillUpPage {
     return kWhPer100Km({ kWh, distanceKm: d > 0 ? d : undefined });
   });
 
+  readonly ocrMath = computed(() => receiptMathOk(this.ocrPick()));
+
   private canSaveCharge(): boolean {
     const odo = Number(this.chargeOdo());
     const kWh = Number(this.chargeKWh());
@@ -270,6 +287,49 @@ export class FillUpPage {
     if (this.route.snapshot.queryParamMap.get('shared') === '1') {
       void this.loadSharedImage();
     }
+    void this.maybeSoftStation();
+  }
+
+  /** F4: only if geolocation permission already granted — never prompt on open. */
+  private async maybeSoftStation(): Promise<void> {
+    if (this.editId() || this.editChargeId() || this.logMode() === 'charge') {
+      return;
+    }
+    try {
+      const perms = navigator.permissions;
+      if (!perms?.query) {
+        return;
+      }
+      const status = await perms.query({ name: 'geolocation' as PermissionName });
+      if (status.state !== 'granted') {
+        return;
+      }
+      const coords = await getCoords();
+      if (!coords) {
+        return;
+      }
+      const list = await nearbyPoi(coords, 'fuel');
+      const nearest = list.filter((p) => p.kind === 'fuel')[0];
+      if (nearest) {
+        this.softStation.set(nearest);
+        this.nearbyStations.set(list.filter((p) => p.kind === 'fuel').slice(0, 5));
+      }
+    } catch {
+      /* ignore permission / API errors */
+    }
+  }
+
+  useSoftStation(): void {
+    const poi = this.softStation();
+    if (!poi) {
+      return;
+    }
+    this.selectStation(poi);
+    this.softStationDismissed.set(true);
+  }
+
+  dismissSoftStation(): void {
+    this.softStationDismissed.set(true);
   }
 
   setLogMode(mode: LogMode): void {
@@ -293,6 +353,94 @@ export class FillUpPage {
     }
     this.sharedPreviewUrl.set(null);
     this.sharedBlob.set(null);
+  }
+
+  async onScanFile(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) {
+      return;
+    }
+    await this.runOcr(file);
+  }
+
+  async scanSharedOrPick(): Promise<void> {
+    const blob = this.sharedBlob();
+    if (blob) {
+      await this.runOcr(blob);
+      return;
+    }
+    document.getElementById('receipt-scan-input')?.click();
+  }
+
+  private async runOcr(image: Blob): Promise<void> {
+    this.ocrBusy.set(true);
+    this.ocrError.set('');
+    this.ocrStage.set('idle');
+    try {
+      const text = await ocrReceiptImage(image);
+      const candidates = parseReceiptText(text);
+      const pick = bestReceiptPick(candidates);
+      this.ocrCandidates.set(candidates);
+      this.ocrPick.set(pick);
+      this.ocrStage.set('review');
+      if (!this.sharedPreviewUrl()) {
+        this.sharedBlob.set(image);
+        this.sharedPreviewUrl.set(URL.createObjectURL(image));
+      }
+    } catch {
+      this.ocrError.set(this.i18n.t('fillUp.scanFailed'));
+    } finally {
+      this.ocrBusy.set(false);
+    }
+  }
+
+  setOcrLiters(v: string): void {
+    const n = Number(v);
+    this.ocrPick.update((p) => ({
+      ...p,
+      liters: Number.isFinite(n) && n > 0 ? n : undefined,
+    }));
+  }
+
+  setOcrPrice(v: string): void {
+    const n = Number(v);
+    this.ocrPick.update((p) => ({
+      ...p,
+      unitPrice: Number.isFinite(n) && n > 0 ? n : undefined,
+    }));
+  }
+
+  setOcrTotal(v: string): void {
+    const n = Number(v);
+    this.ocrPick.update((p) => ({
+      ...p,
+      total: Number.isFinite(n) && n > 0 ? n : undefined,
+    }));
+  }
+
+  /** Apply OCR pick into the form — never auto-saves. */
+  applyOcrPick(): void {
+    const pick = this.ocrPick();
+    if (pick.liters != null) {
+      this.liters.set(String(pick.liters));
+      this.onLitersChange();
+    }
+    if (pick.unitPrice != null) {
+      this.manualUnitPrice.set(String(pick.unitPrice));
+      if (!this.fuelGrade()) {
+        this.fuelGrade.set('custom');
+      }
+    }
+    this.ocrStage.set('idle');
+  }
+
+  discardOcr(): void {
+    this.ocrStage.set('idle');
+    this.ocrCandidates.set(null);
+    this.ocrPick.set({});
+    this.ocrError.set('');
   }
 
   loadCharge(id: string): void {

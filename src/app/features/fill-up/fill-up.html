@@ -85,6 +85,89 @@
     </section>
   }
 
+  @if (logMode() === 'fuel' && softStation() && !softStationDismissed()) {
+    <section class="card soft-station" role="status" aria-live="polite">
+      <p>
+        {{
+          i18n.t('fillUp.youreAt', {
+            name: softStation()!.name,
+            km: i18n.formatNumber(softStation()!.distanceKm, {
+              minimumFractionDigits: 1,
+              maximumFractionDigits: 1,
+            }),
+          })
+        }}
+      </p>
+      <div class="soft-station__actions">
+        <button type="button" class="soft-station__use" (click)="useSoftStation()">
+          {{ i18n.t('fillUp.youreAtUse') }}
+        </button>
+        <button type="button" class="ghost-btn" (click)="dismissSoftStation()">
+          {{ i18n.t('fillUp.youreAtDismiss') }}
+        </button>
+      </div>
+    </section>
+  }
+
+  @if (logMode() === 'fuel') {
+    <div class="ocr-bar">
+      <input
+        id="receipt-scan-input"
+        class="sr-only"
+        type="file"
+        accept="image/*"
+        capture="environment"
+        (change)="onScanFile($event)"
+      />
+      <button
+        type="button"
+        class="ghost-btn"
+        [disabled]="ocrBusy()"
+        (click)="scanSharedOrPick()"
+      >
+        {{ ocrBusy() ? i18n.t('fillUp.scanBusy') : i18n.t('fillUp.scan') }}
+      </button>
+      @if (ocrError()) {
+        <p class="error-state" role="alert">{{ ocrError() }}</p>
+      }
+    </div>
+  }
+
+  @if (ocrStage() === 'review' && ocrCandidates()) {
+    <section class="card ocr-review" [attr.aria-label]="i18n.t('fillUp.ocrReview')">
+      <h2 class="ocr-review__title">{{ i18n.t('fillUp.ocrReview') }}</h2>
+      <app-numeric-field
+        [label]="i18n.t('fillUp.liters')"
+        [value]="ocrPick().liters != null ? String(ocrPick().liters) : ''"
+        (valueChange)="setOcrLiters($event)"
+      />
+      <app-numeric-field
+        [label]="i18n.t('fillUp.unitPrice')"
+        [value]="ocrPick().unitPrice != null ? String(ocrPick().unitPrice) : ''"
+        (valueChange)="setOcrPrice($event)"
+      />
+      <app-numeric-field
+        [label]="i18n.t('fillUp.total')"
+        [value]="ocrPick().total != null ? String(ocrPick().total) : ''"
+        (valueChange)="setOcrTotal($event)"
+      />
+      @if (ocrMath() === true) {
+        <p class="hint" role="status">{{ i18n.t('fillUp.ocrMathOk') }}</p>
+      } @else if (ocrMath() === false) {
+        <p class="error-state" role="alert">{{ i18n.t('fillUp.ocrMathBad') }}</p>
+      }
+      <div class="ocr-review__actions">
+        <app-primary-button
+          [label]="i18n.t('fillUp.ocrApply')"
+          (pressed)="applyOcrPick()"
+        />
+        <button type="button" class="ghost-btn" (click)="discardOcr()">
+          {{ i18n.t('fillUp.ocrDiscard') }}
+        </button>
+      </div>
+    </section>
+  }
+
   @if (logMode() === 'fuel') {
     <section class="console card receipt-slip" [attr.aria-label]="i18n.t('fillUp.title')">
       <div class="console__pair">
