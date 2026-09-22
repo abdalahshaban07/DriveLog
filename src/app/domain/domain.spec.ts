@@ -491,8 +491,8 @@ describe('remote parsers', () => {
 describe('backup version', () => {
   it('keeps backup version and IDB version as separate constants', async () => {
     const { BACKUP_VERSION, DB_VERSION } = await import('../core/config');
-    expect(BACKUP_VERSION).toBe(5);
-    expect(DB_VERSION).toBe(5);
+    expect(BACKUP_VERSION).toBe(6);
+    expect(DB_VERSION).toBe(6);
   });
 });
 

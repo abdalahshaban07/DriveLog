@@ -105,6 +105,20 @@ export const routes: Routes = [
     canActivate: [setupGuard],
   },
   {
+    path: 'vault',
+    loadComponent: () =>
+      import('./features/document-vault/document-vault').then(
+        (m) => m.DocumentVaultPage,
+      ),
+    canActivate: [setupGuard],
+  },
+  {
+    path: 'pre-trip',
+    loadComponent: () =>
+      import('./features/pre-trip/pre-trip').then((m) => m.PreTripPage),
+    canActivate: [setupGuard],
+  },
+  {
     path: 'settings/features',
     loadComponent: () =>
       import('./features/app-features/app-features').then(

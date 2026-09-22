@@ -140,6 +140,13 @@
           </div>
         </div>
 
+        @if (nextVaultDoc(); as doc) {
+          <a routerLink="/vault" class="vault-nudge" role="status">
+            <span class="vault-nudge__label">{{ i18n.t('vault.homeNext') }}</span>
+            <strong>{{ i18n.formatDate(doc.expiryDate) }}</strong>
+          </a>
+        }
+
         @if (!hasRealFills() && !sampleMode()) {
           <a routerLink="/fill-up" class="ghost-cta">{{ i18n.t('home.ghost.cta') }}</a>
         }

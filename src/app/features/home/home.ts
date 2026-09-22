@@ -18,6 +18,7 @@ import {
 } from '../../data/remote';
 import { countryFromCurrency } from '../../domain/country';
 import { buildDueItems, nextDueItem, todayDateOnly } from '../../domain/dues';
+import { nextExpiringDoc, vaultExpiryForKind } from '../../domain/vehicle-docs';
 import { type PublicHoliday } from '../../domain/holidays';
 import {
   activePeriod,
@@ -253,15 +254,23 @@ export class HomePage {
     if (!car) {
       return null;
     }
+    const docs = this.db.vehicleDocuments();
+    const vaultCar = {
+      ...car,
+      licenseExpiry: vaultExpiryForKind(docs, 'license') ?? car.licenseExpiry,
+      registrationExpiry:
+        vaultExpiryForKind(docs, 'registration') ?? car.registrationExpiry,
+    };
     const items = buildDueItems(
       this.db.settings(),
       this.db.maintenance(),
       car.currentOdometer,
       todayDateOnly(),
-      car,
+      vaultCar,
     );
     return nextDueItem(items);
   });
+  readonly nextVaultDoc = computed(() => nextExpiringDoc(this.db.vehicleDocuments()));
   readonly economyTrend = computed(() => economyTrend(this.db.fillUps(), this.chartPeriod()));
   readonly costTrend = computed(() => costPerKmTrend(this.db.fillUps(), this.chartPeriod()));
   readonly spendTrendEntries = computed(() =>

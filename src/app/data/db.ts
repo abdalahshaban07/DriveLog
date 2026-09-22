@@ -24,6 +24,7 @@ import {
   type AddCustomTypeResult,
 } from '../domain/maintenance-fields';
 import { migrateHealthV5 } from '../domain/health-migration';
+import { migrateCarExpiryToVault } from '../domain/vehicle-docs';
 import {
   mergePartCatalog,
   ROUTINE_CHECK_PART_ID,
@@ -37,10 +38,12 @@ import {
   MAINTENANCE_TYPES,
   PART_CATEGORIES,
   PART_CONDITIONS,
+  PRE_TRIP_ITEM_IDS,
   THEMES,
   type BackupFile,
   type Breakdown,
   type Car,
+  type ChargeSession,
   type ExpensePeriod,
   type FillUp,
   type HealthNotificationState,
@@ -54,8 +57,12 @@ import {
   type PartDefinition,
   type PartOverride,
   type PartTrackingMode,
+  type PreTripCheck,
+  type PreTripItemId,
   type Settings,
   type Theme,
+  type VehicleDocKind,
+  type VehicleDocument,
 } from '../domain/models';
 
 function nowIso(): string {
@@ -92,6 +99,9 @@ type DbSnapshot = {
   parts: PartDefinition[];
   partOverrides: PartOverride[];
   healthNotificationState: HealthNotificationState[];
+  vehicleDocuments: VehicleDocument[];
+  preTripChecks: PreTripCheck[];
+  chargeSessions: ChargeSession[];
 };
 
 @Injectable({ providedIn: 'root' })
@@ -109,6 +119,9 @@ export class Db {
   private readonly _partsAll = signal<PartDefinition[]>([]);
   private readonly _partOverridesAll = signal<PartOverride[]>([]);
   private readonly _healthNotificationStateAll = signal<HealthNotificationState[]>([]);
+  private readonly _vehicleDocumentsAll = signal<VehicleDocument[]>([]);
+  private readonly _preTripChecksAll = signal<PreTripCheck[]>([]);
+  private readonly _chargeSessionsAll = signal<ChargeSession[]>([]);
   private readonly _error = signal<string | null>(null);
   private readonly _savedFlash = signal(false);
 
@@ -144,6 +157,15 @@ export class Db {
   readonly healthNotificationState = computed(() =>
     this.filterForActiveCar(this._healthNotificationStateAll(), this._car()?.id),
   );
+  readonly vehicleDocuments = computed(() =>
+    this.filterForActiveCar(this._vehicleDocumentsAll(), this._car()?.id),
+  );
+  readonly preTripChecks = computed(() =>
+    this.filterForActiveCar(this._preTripChecksAll(), this._car()?.id),
+  );
+  readonly chargeSessions = computed(() =>
+    this.filterForActiveCar(this._chargeSessionsAll(), this._car()?.id),
+  );
   readonly catalog = computed(() => mergePartCatalog(this._partsAll()));
   readonly error = this._error.asReadonly();
   readonly savedFlash = this._savedFlash.asReadonly();
@@ -167,6 +189,9 @@ export class Db {
         partsRaw,
         overridesRaw,
         notifyRaw,
+        vehicleDocsRaw,
+        preTripRaw,
+        chargeRaw,
       ] = await Promise.all([
         this.getAll<Car>(db, 'car'),
         this.getAll<Settings & { id?: string }>(db, 'settings').then(
@@ -181,6 +206,9 @@ export class Db {
         this.getAll<PartDefinition>(db, 'parts'),
         this.getAll<PartOverride>(db, 'partOverrides'),
         this.getAll<HealthNotificationState>(db, 'healthNotificationState'),
+        this.getAll<VehicleDocument>(db, 'vehicleDocuments'),
+        this.getAll<PreTripCheck>(db, 'preTripChecks'),
+        this.getAll<ChargeSession>(db, 'chargeSessions'),
       ]);
 
       let settings = normalizeSettings(settingsRaw);
@@ -242,6 +270,20 @@ export class Db {
       let partRows = partsRaw.map(normalizePartDefinition);
       let overrideRows = overridesRaw.map(normalizePartOverride);
       const notifyRows = notifyRaw.map(normalizeHealthNotificationState);
+      let docRows = vehicleDocsRaw.map(normalizeVehicleDocument);
+      const preTripRows = preTripRaw.map(normalizePreTripCheck);
+      const chargeRows = chargeRaw.map(normalizeChargeSession);
+
+      // Vault SSOT: seed from Car license/registration when vault empty for kind.
+      const vaultSeed: VehicleDocument[] = [];
+      const seedTs = nowIso();
+      for (const c of cars) {
+        vaultSeed.push(...migrateCarExpiryToVault(c, docRows, seedTs));
+      }
+      if (vaultSeed.length) {
+        docRows = [...docRows, ...vaultSeed];
+        await Promise.all(vaultSeed.map((d) => this.put('vehicleDocuments', d)));
+      }
 
       if (needsHealthMigration) {
         const migrated = migrateHealthV5(
@@ -302,6 +344,9 @@ export class Db {
       this._partsAll.set(partRows);
       this._partOverridesAll.set(overrideRows);
       this._healthNotificationStateAll.set(notifyRows);
+      this._vehicleDocumentsAll.set(docRows);
+      this._preTripChecksAll.set(preTripRows);
+      this._chargeSessionsAll.set(chargeRows);
       if (active) {
         this.recalcOdometer();
       }
@@ -414,6 +459,15 @@ export class Db {
       for (const n of data.healthNotificationState) {
         tx.objectStore('healthNotificationState').put(n);
       }
+      for (const d of data.vehicleDocuments) {
+        tx.objectStore('vehicleDocuments').put(d);
+      }
+      for (const p of data.preTripChecks) {
+        tx.objectStore('preTripChecks').put(p);
+      }
+      for (const c of data.chargeSessions) {
+        tx.objectStore('chargeSessions').put(c);
+      }
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
@@ -433,6 +487,9 @@ export class Db {
     this._partsAll.set(data.parts);
     this._partOverridesAll.set(data.partOverrides);
     this._healthNotificationStateAll.set(data.healthNotificationState);
+    this._vehicleDocumentsAll.set(data.vehicleDocuments);
+    this._preTripChecksAll.set(data.preTripChecks);
+    this._chargeSessionsAll.set(data.chargeSessions);
     if (data.car) {
       this.recalcOdometer();
     }
@@ -485,7 +542,10 @@ export class Db {
       return;
     }
     const next = roundOdometerKm(
-      knownOdometer(car.initialOdometer, this.fillUps(), this.maintenance()),
+      knownOdometer(car.initialOdometer, this.fillUps(), [
+        ...this.maintenance(),
+        ...this.chargeSessions(),
+      ]),
     );
     if (next !== car.currentOdometer) {
       const updated: Car = { ...car, currentOdometer: next, updatedAt: nowIso() };
@@ -601,6 +661,8 @@ export class Db {
         | 'reserveTargetMonthly'
         | 'maintenanceReserveBalance'
         | 'maintenanceCurrency'
+        | 'activeTireSet'
+        | 'tireSetSwappedAt'
       >
     >,
   ): Promise<void> {
@@ -958,6 +1020,127 @@ export class Db {
     this._otherExpensesAll.set(this._otherExpensesAll().filter((o) => o.id !== id));
   }
 
+  async saveVehicleDocument(
+    input: Omit<VehicleDocument, 'id' | 'carId' | 'createdAt' | 'updatedAt'> & {
+      id?: string;
+    },
+  ): Promise<void> {
+    const car = this._car();
+    if (!car) {
+      throw new Error('persist.noCar');
+    }
+    const ts = nowIso();
+    const existing = input.id
+      ? this._vehicleDocumentsAll().find((d) => d.id === input.id)
+      : undefined;
+    const row: VehicleDocument = {
+      id: existing?.id ?? crypto.randomUUID(),
+      carId: existing?.carId ?? car.id,
+      kind: input.kind,
+      label: input.kind === 'other' ? input.label?.trim() || undefined : undefined,
+      expiryDate: input.expiryDate,
+      note: input.note?.trim() || undefined,
+      createdAt: existing?.createdAt ?? ts,
+      updatedAt: ts,
+    };
+    await this.put('vehicleDocuments', row);
+    const list = this._vehicleDocumentsAll().filter((d) => d.id !== row.id).concat(row);
+    this._vehicleDocumentsAll.set(list);
+
+    // Keep Car license/registration mirrors in sync for legacy dues callers.
+    if (row.kind === 'license' || row.kind === 'registration') {
+      const patch: Partial<Car> =
+        row.kind === 'license'
+          ? { licenseExpiry: row.expiryDate }
+          : { registrationExpiry: row.expiryDate };
+      await this.updateCar(patch);
+    }
+    this.flashSaved();
+  }
+
+  async deleteVehicleDocument(id: string): Promise<void> {
+    await this.deleteKey('vehicleDocuments', id);
+    this._vehicleDocumentsAll.set(this._vehicleDocumentsAll().filter((d) => d.id !== id));
+  }
+
+  async savePreTripCheck(
+    input: Omit<PreTripCheck, 'id' | 'carId' | 'createdAt'> & { id?: string },
+  ): Promise<void> {
+    const car = this._car();
+    if (!car) {
+      throw new Error('persist.noCar');
+    }
+    const ts = nowIso();
+    const existing = input.id
+      ? this._preTripChecksAll().find((p) => p.id === input.id)
+      : undefined;
+    const row: PreTripCheck = {
+      id: existing?.id ?? crypto.randomUUID(),
+      carId: existing?.carId ?? car.id,
+      date: input.date,
+      items: { ...input.items },
+      ready: input.ready,
+      note: input.note?.trim() || undefined,
+      createdAt: existing?.createdAt ?? ts,
+    };
+    await this.put('preTripChecks', row);
+    const list = this._preTripChecksAll().filter((p) => p.id !== row.id).concat(row);
+    this._preTripChecksAll.set(list);
+    this.flashSaved();
+  }
+
+  async deletePreTripCheck(id: string): Promise<void> {
+    await this.deleteKey('preTripChecks', id);
+    this._preTripChecksAll.set(this._preTripChecksAll().filter((p) => p.id !== id));
+  }
+
+  async saveChargeSession(
+    input: Omit<ChargeSession, 'id' | 'carId' | 'createdAt' | 'updatedAt'> & {
+      id?: string;
+    },
+  ): Promise<void> {
+    const car = this._car();
+    if (!car) {
+      throw new Error('persist.noCar');
+    }
+    const ts = nowIso();
+    const existing = input.id
+      ? this._chargeSessionsAll().find((c) => c.id === input.id)
+      : undefined;
+    const row: ChargeSession = {
+      id: existing?.id ?? crypto.randomUUID(),
+      carId: existing?.carId ?? car.id,
+      odometer: roundOdometerKm(input.odometer),
+      kWh: input.kWh,
+      cost: input.cost,
+      date: input.date,
+      placeLabel: input.placeLabel?.trim() || undefined,
+      note: input.note?.trim() || undefined,
+      currency: input.currency ?? existing?.currency ?? this.snapshotCurrency(),
+      distanceKm: input.distanceKm,
+      createdAt: existing?.createdAt ?? ts,
+      updatedAt: ts,
+    };
+    await this.put('chargeSessions', row);
+    const list = this._chargeSessionsAll().filter((c) => c.id !== row.id).concat(row);
+    this._chargeSessionsAll.set(list);
+    this.recalcOdometer();
+    this.flashSaved();
+  }
+
+  async deleteChargeSession(id: string): Promise<void> {
+    await this.deleteKey('chargeSessions', id);
+    this._chargeSessionsAll.set(this._chargeSessionsAll().filter((c) => c.id !== id));
+    this.recalcOdometer();
+  }
+
+  async setActiveTireSet(set: 'A' | 'B', swappedAt?: string): Promise<void> {
+    await this.updateCar({
+      activeTireSet: set,
+      tireSetSwappedAt: swappedAt,
+    });
+  }
+
   async saveMilestone(input: MaintenanceMilestone & { id?: string }): Promise<void> {
     const car = this._car();
     if (!car) {
@@ -1032,6 +1215,9 @@ export class Db {
       parts: this._partsAll(),
       partOverrides: this._partOverridesAll(),
       healthNotificationState: this._healthNotificationStateAll(),
+      vehicleDocuments: this._vehicleDocumentsAll(),
+      preTripChecks: this._preTripChecksAll(),
+      chargeSessions: this._chargeSessionsAll(),
     };
   }
 
@@ -1046,6 +1232,7 @@ export class Db {
       version !== 2 &&
       version !== 3 &&
       version !== 4 &&
+      version !== 5 &&
       version !== BACKUP_VERSION
     ) {
       throw new Error('backup.unsupportedVersion');
@@ -1093,6 +1280,15 @@ export class Db {
           normalizeHealthNotificationState,
         )
       : [];
+    const vehicleDocuments = Array.isArray(obj['vehicleDocuments'])
+      ? (obj['vehicleDocuments'] as VehicleDocument[]).map(normalizeVehicleDocument)
+      : [];
+    const preTripChecks = Array.isArray(obj['preTripChecks'])
+      ? (obj['preTripChecks'] as PreTripCheck[]).map(normalizePreTripCheck)
+      : [];
+    const chargeSessions = Array.isArray(obj['chargeSessions'])
+      ? (obj['chargeSessions'] as ChargeSession[]).map(normalizeChargeSession)
+      : [];
     return {
       version: BACKUP_VERSION,
       exportedAt: String(obj['exportedAt'] ?? nowIso()),
@@ -1110,6 +1306,9 @@ export class Db {
       healthNotificationState: healthNotificationState.length
         ? healthNotificationState
         : undefined,
+      vehicleDocuments: vehicleDocuments.length ? vehicleDocuments : undefined,
+      preTripChecks: preTripChecks.length ? preTripChecks : undefined,
+      chargeSessions: chargeSessions.length ? chargeSessions : undefined,
     };
   }
 
@@ -1140,6 +1339,9 @@ export class Db {
       parts: backup.parts ?? [],
       partOverrides: backup.partOverrides ?? [],
       healthNotificationState: backup.healthNotificationState ?? [],
+      vehicleDocuments: backup.vehicleDocuments ?? [],
+      preTripChecks: backup.preTripChecks ?? [],
+      chargeSessions: backup.chargeSessions ?? [],
     });
   }
 
@@ -1194,6 +1396,24 @@ export class Db {
       (x) => x.id,
       (x) => x.updatedAt,
     );
+    const docMap = mergeByUpdatedAt(
+      this._vehicleDocumentsAll(),
+      backup.vehicleDocuments ?? [],
+      (x) => x.id,
+      (x) => x.updatedAt,
+    );
+    const preTripMap = mergeByUpdatedAt(
+      this._preTripChecksAll(),
+      backup.preTripChecks ?? [],
+      (x) => x.id,
+      (x) => x.createdAt,
+    );
+    const chargeMap = mergeByUpdatedAt(
+      this._chargeSessionsAll(),
+      backup.chargeSessions ?? [],
+      (x) => x.id,
+      (x) => x.updatedAt,
+    );
     const carMap = mergeByUpdatedAt(
       this._cars(),
       this.carsFromBackup(backup),
@@ -1236,6 +1456,9 @@ export class Db {
       parts: [...partMap.values()],
       partOverrides: [...overrideMap.values()],
       healthNotificationState: [...notifyMap.values()],
+      vehicleDocuments: [...docMap.values()],
+      preTripChecks: [...preTripMap.values()],
+      chargeSessions: [...chargeMap.values()],
     });
   }
 
@@ -1254,6 +1477,9 @@ export class Db {
       parts: [],
       partOverrides: [],
       healthNotificationState: [],
+      vehicleDocuments: [],
+      preTripChecks: [],
+      chargeSessions: [],
     });
   }
 
@@ -1286,6 +1512,9 @@ export class Db {
     const droppedParts = this._partsAll().filter((p) => p.carId === id);
     const droppedOverrides = this._partOverridesAll().filter((o) => o.carId === id);
     const droppedNotify = this._healthNotificationStateAll().filter((n) => n.carId === id);
+    const droppedDocs = this._vehicleDocumentsAll().filter((d) => d.carId === id);
+    const droppedPreTrip = this._preTripChecksAll().filter((p) => p.carId === id);
+    const droppedCharge = this._chargeSessionsAll().filter((c) => c.carId === id);
 
     const fillUps = this._fillUpsAll().filter((f) => !drop(f));
     const maintenance = this._maintenanceAll().filter((m) => !drop(m));
@@ -1298,6 +1527,9 @@ export class Db {
     const healthNotificationState = this._healthNotificationStateAll().filter(
       (n) => n.carId !== id,
     );
+    const vehicleDocuments = this._vehicleDocumentsAll().filter((d) => d.carId !== id);
+    const preTripChecks = this._preTripChecksAll().filter((p) => p.carId !== id);
+    const chargeSessions = this._chargeSessionsAll().filter((c) => c.carId !== id);
     const next = remaining.find((c) => c.id === this._settings().activeCarId) ?? remaining[0];
     const settings: Settings = {
       ...this._settings(),
@@ -1315,6 +1547,9 @@ export class Db {
       ...droppedParts.map((p) => this.deleteKey('parts', p.id)),
       ...droppedOverrides.map((o) => this.deleteKey('partOverrides', o.id)),
       ...droppedNotify.map((n) => this.deleteKey('healthNotificationState', n.id)),
+      ...droppedDocs.map((d) => this.deleteKey('vehicleDocuments', d.id)),
+      ...droppedPreTrip.map((p) => this.deleteKey('preTripChecks', p.id)),
+      ...droppedCharge.map((c) => this.deleteKey('chargeSessions', c.id)),
     ]);
     await this.put('settings', { id: 'settings', ...settings });
 
@@ -1330,6 +1565,9 @@ export class Db {
     this._partsAll.set(parts);
     this._partOverridesAll.set(partOverrides);
     this._healthNotificationStateAll.set(healthNotificationState);
+    this._vehicleDocumentsAll.set(vehicleDocuments);
+    this._preTripChecksAll.set(preTripChecks);
+    this._chargeSessionsAll.set(chargeSessions);
     this.recalcOdometer();
   }
 
@@ -1425,6 +1663,8 @@ function normalizeCar(raw: unknown): Car {
     initialOdometer: Number(o.initialOdometer),
     currentOdometer: Number(o.currentOdometer),
     ...carDocFields(o),
+    activeTireSet: o.activeTireSet === 'B' ? 'B' : o.activeTireSet === 'A' ? 'A' : undefined,
+    tireSetSwappedAt: o.tireSetSwappedAt ? String(o.tireSetSwappedAt) : undefined,
     maintenanceBudgetMonthly: optFinite(o.maintenanceBudgetMonthly),
     reserveTargetMonthly: optFinite(o.reserveTargetMonthly),
     maintenanceReserveBalance: optFinite(o.maintenanceReserveBalance),
@@ -1728,6 +1968,73 @@ function normalizeHealthNotificationState(raw: unknown): HealthNotificationState
     lastBudgetHealth: o.lastBudgetHealth ? String(o.lastBudgetHealth) : undefined,
     lastForecastFlag: o.lastForecastFlag ? String(o.lastForecastFlag) : undefined,
     baselinedAt: o.baselinedAt ? String(o.baselinedAt) : undefined,
+    updatedAt: String(o.updatedAt ?? nowIso()),
+  };
+}
+
+const VEHICLE_DOC_KINDS: readonly VehicleDocKind[] = [
+  'license',
+  'registration',
+  'insurance',
+  'inspection',
+  'other',
+];
+
+function normalizeVehicleDocument(raw: unknown): VehicleDocument {
+  const o = raw as VehicleDocument;
+  if (!o?.id || !o.carId || !o.expiryDate) {
+    throw new Error('backup.invalid');
+  }
+  const kind = VEHICLE_DOC_KINDS.includes(o.kind) ? o.kind : 'other';
+  return {
+    id: String(o.id),
+    carId: String(o.carId),
+    kind,
+    label: o.label ? String(o.label) : undefined,
+    expiryDate: String(o.expiryDate),
+    note: o.note ? String(o.note) : undefined,
+    createdAt: String(o.createdAt ?? nowIso()),
+    updatedAt: String(o.updatedAt ?? nowIso()),
+  };
+}
+
+function normalizePreTripCheck(raw: unknown): PreTripCheck {
+  const o = raw as PreTripCheck;
+  if (!o?.id || !o.carId || !o.date) {
+    throw new Error('backup.invalid');
+  }
+  const items = {} as Record<PreTripItemId, boolean>;
+  for (const id of PRE_TRIP_ITEM_IDS) {
+    items[id] = Boolean(o.items?.[id]);
+  }
+  return {
+    id: String(o.id),
+    carId: String(o.carId),
+    date: String(o.date),
+    items,
+    ready: Boolean(o.ready),
+    note: o.note ? String(o.note) : undefined,
+    createdAt: String(o.createdAt ?? nowIso()),
+  };
+}
+
+function normalizeChargeSession(raw: unknown): ChargeSession {
+  const o = raw as ChargeSession;
+  if (!o?.id || !o.carId || typeof o.odometer !== 'number') {
+    throw new Error('backup.invalid');
+  }
+  return {
+    id: String(o.id),
+    carId: String(o.carId),
+    odometer: Number(o.odometer),
+    kWh: Number(o.kWh),
+    cost: Number(o.cost),
+    date: String(o.date),
+    placeLabel: o.placeLabel ? String(o.placeLabel) : undefined,
+    note: o.note ? String(o.note) : undefined,
+    currency: o.currency ? String(o.currency) : undefined,
+    distanceKm: optFinite(o.distanceKm),
+    createdAt: String(o.createdAt ?? nowIso()),
     updatedAt: String(o.updatedAt ?? nowIso()),
   };
 }

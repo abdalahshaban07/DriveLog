@@ -6,8 +6,8 @@ export const APP_SUBTITLE_AR = 'الوقود والصيانة والتذكيرا
 export const APP_VERSION = '1.6';
 
 export const DB_NAME = 'drivelog';
-export const DB_VERSION = 5;
-export const BACKUP_VERSION = 5;
+export const DB_VERSION = 6;
+export const BACKUP_VERSION = 6;
 
 export const DUE_SOON_DAYS = 14;
 export const DUE_SOON_KM = 500;
@@ -34,6 +34,9 @@ export const SCHEMA_STORES = [
   'parts',
   'partOverrides',
   'healthNotificationState',
+  'vehicleDocuments',
+  'preTripChecks',
+  'chargeSessions',
 ] as const;
 
 export const MILESTONE_INTERVAL_KM = 10_000;

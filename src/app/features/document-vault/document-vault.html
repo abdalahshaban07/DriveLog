@@ -1,0 +1,88 @@
+<div class="stack vault page-narrow">
+  <app-page-header
+    [title]="i18n.t('vault.title')"
+    [showBack]="true"
+    (back)="router.navigateByUrl('/more')"
+  />
+
+  <section class="card stack" [attr.aria-label]="i18n.t('vault.form')">
+    @if (editId()) {
+      <p class="label">{{ i18n.t('vault.editing') }}</p>
+    }
+    <app-select-field
+      [label]="i18n.t('vault.kind')"
+      [options]="kindOptions()"
+      [(value)]="kind"
+    />
+    @if (kind() === 'other') {
+      <app-text-field [label]="i18n.t('vault.label')" [(value)]="label" />
+    }
+    <app-date-field
+      [label]="i18n.t('vault.expiry')"
+      [(value)]="expiryDate"
+      [error]="expiryError()"
+    />
+    <app-text-field
+      [label]="i18n.t('vault.note')"
+      [(value)]="note"
+      [multiline]="true"
+    />
+    <div class="form-actions">
+      @if (editId()) {
+        <button type="button" class="ghost" (click)="resetForm()">
+          {{ i18n.t('common.cancel') }}
+        </button>
+      }
+      <app-primary-button
+        [label]="i18n.t('vault.save')"
+        [disabled]="saving()"
+        (pressed)="save()"
+      />
+    </div>
+  </section>
+
+  <h2 class="section-title">{{ i18n.t('vault.list') }}</h2>
+  @if (list().length === 0) {
+    <p class="empty-state">{{ i18n.t('vault.empty') }}</p>
+  } @else {
+    <ul class="record-list list-reveal">
+      @for (row of list(); track row.id) {
+        <li class="record-row" [attr.data-urgency]="urgencyClass(row.expiryDate)">
+          <div class="record-row__main">
+            <strong>
+              {{ kindLabel(row.kind) }}
+              @if (row.label) {
+                — {{ row.label }}
+              }
+            </strong>
+            <span class="record-row__meta">
+              {{ i18n.formatDate(row.expiryDate) }} · {{ urgencyLabel(row.expiryDate) }}
+            </span>
+            @if (row.note) {
+              <span class="record-row__meta">{{ row.note }}</span>
+            }
+          </div>
+          <div class="record-row__side">
+            <div class="record-row__actions">
+              <button type="button" (click)="startEdit(row)">{{ i18n.t('common.edit') }}</button>
+              <button type="button" (click)="askDelete(row.id)">
+                {{ i18n.t('vault.delete') }}
+              </button>
+            </div>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+
+  @if (pendingDelete()) {
+    <app-confirm-bar
+      [message]="i18n.t('vault.deleteConfirm')"
+      [confirmLabel]="i18n.t('vault.delete')"
+      [cancelLabel]="i18n.t('common.cancel')"
+      [destructive]="true"
+      (confirmed)="confirmDelete()"
+      (cancelled)="pendingDelete.set(null)"
+    />
+  }
+</div>
