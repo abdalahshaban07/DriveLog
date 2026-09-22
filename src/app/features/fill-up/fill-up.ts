@@ -28,6 +28,7 @@ import { isRealFillUp } from '../../domain/setup-checklist';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { countryFuelPrices, getCoords, nearbyPoi, type NearbyPoi } from '../../data/remote';
+import { takeSharedFillImage } from '../../pwa/share-target';
 import { ConfirmBar } from '../../ui/confirm-bar';
 import { DateField } from '../../ui/date-field';
 import {
@@ -103,6 +104,9 @@ export class FillUpPage {
   readonly fuelPrices = signal<Awaited<ReturnType<typeof countryFuelPrices>>>(null);
   readonly manualUnitPrice = signal('');
   readonly nextDueBanner = signal(false);
+  /** Image from PWA share_target (?shared=1) — feeds OCR in F1. */
+  readonly sharedPreviewUrl = signal<string | null>(null);
+  readonly sharedBlob = signal<Blob | null>(null);
 
   readonly lastUnit = computed(() => lastFillUnitPriceFromHistory(this.db.fillUps()));
 
@@ -218,6 +222,28 @@ export class FillUpPage {
         this.fuelGrade.set(lastGrade);
       }
     }
+    if (this.route.snapshot.queryParamMap.get('shared') === '1') {
+      void this.loadSharedImage();
+    }
+  }
+
+  private async loadSharedImage(): Promise<void> {
+    const shared = await takeSharedFillImage();
+    if (!shared) {
+      return;
+    }
+    this.clearSharedImage();
+    this.sharedBlob.set(shared.blob);
+    this.sharedPreviewUrl.set(shared.objectUrl);
+  }
+
+  clearSharedImage(): void {
+    const url = this.sharedPreviewUrl();
+    if (url) {
+      URL.revokeObjectURL(url);
+    }
+    this.sharedPreviewUrl.set(null);
+    this.sharedBlob.set(null);
   }
 
   async loadPrices(): Promise<void> {

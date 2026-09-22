@@ -40,6 +40,16 @@
     {{ i18n.t('common.km') }}
   </p>
 
+  @if (sharedPreviewUrl(); as imgUrl) {
+    <section class="card shared-receipt" [attr.aria-label]="i18n.t('fillUp.sharedImage')">
+      <p class="hint" role="status">{{ i18n.t('fillUp.sharedImageReady') }}</p>
+      <img class="shared-receipt__img" [src]="imgUrl" alt="" />
+      <button type="button" class="ghost-btn" (click)="clearSharedImage()">
+        {{ i18n.t('fillUp.clearShared') }}
+      </button>
+    </section>
+  }
+
   <section class="console card receipt-slip" [attr.aria-label]="i18n.t('fillUp.title')">
     <div class="console__pair">
       <app-date-field

@@ -119,6 +119,12 @@ export const routes: Routes = [
     canActivate: [setupGuard],
   },
   {
+    path: 'passport',
+    loadComponent: () =>
+      import('./features/car-passport/car-passport').then((m) => m.CarPassportPage),
+    canActivate: [setupGuard],
+  },
+  {
     path: 'settings/features',
     loadComponent: () =>
       import('./features/app-features/app-features').then(

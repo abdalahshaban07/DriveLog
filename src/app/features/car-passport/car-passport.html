@@ -1,0 +1,63 @@
+<div class="stack passport page-narrow">
+  <app-page-header
+    [title]="i18n.t('passport.title')"
+    [showBack]="true"
+    (back)="router.navigateByUrl('/more')"
+  />
+
+  @if (!car()) {
+    <p class="empty-state">{{ i18n.t('passport.noCar') }}</p>
+  } @else if (preview(); as p) {
+    <section class="card passport-preview" [attr.aria-label]="i18n.t('passport.preview')">
+      <h2>{{ p.name }}</h2>
+      <dl class="passport-preview__grid">
+        <div>
+          <dt>{{ i18n.t('passport.odometer') }}</dt>
+          <dd>{{ i18n.formatNumber(p.odo, { maximumFractionDigits: 0 }) }} {{ i18n.t('common.km') }}</dd>
+        </div>
+        <div>
+          <dt>{{ i18n.t('passport.economy') }}</dt>
+          <dd>
+            @if (p.economy != null) {
+              {{ i18n.formatUnit(p.economy, 'common.lPer100', 1) }}
+            } @else {
+              {{ i18n.t('passport.none') }}
+            }
+          </dd>
+        </div>
+        <div>
+          <dt>{{ i18n.t('passport.monthSpend') }}</dt>
+          <dd>{{ i18n.formatMoney(p.monthSpend, db.settings().currency, 2) }}</dd>
+        </div>
+        <div>
+          <dt>{{ i18n.t('passport.nextDoc') }}</dt>
+          <dd>
+            @if (p.nextDoc) {
+              {{ i18n.formatDate(p.nextDoc.expiryDate) }}
+            } @else {
+              {{ i18n.t('passport.none') }}
+            }
+          </dd>
+        </div>
+      </dl>
+    </section>
+
+    <div class="passport-actions">
+      <app-primary-button
+        [label]="i18n.t('passport.download')"
+        [disabled]="busy()"
+        (pressed)="exportPdf(false)"
+      />
+      <button type="button" class="ghost" [disabled]="busy()" (click)="exportPdf(true)">
+        {{ i18n.t('passport.share') }}
+      </button>
+    </div>
+
+    @if (status()) {
+      <p class="passport-status" role="status">{{ status() }}</p>
+    }
+    @if (error()) {
+      <p class="error-state" role="alert">{{ error() }}</p>
+    }
+  }
+</div>

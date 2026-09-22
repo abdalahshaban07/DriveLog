@@ -17,7 +17,7 @@ export const appConfig: ApplicationConfig = {
     provideDriveLogErrorHandler(),
     provideRouter(routes, withViewTransitions()),
     provideAppInitializer(() => inject(Db).init()),
-    provideServiceWorker('ngsw-worker.js', {
+    provideServiceWorker('drivelog-sw.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000',
     }),
