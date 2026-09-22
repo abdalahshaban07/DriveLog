@@ -272,6 +272,19 @@
   background: transparent;
 }
 
+.glance-strip--cost {
+  margin-block-start: calc(var(--space-3) * -1);
+  margin-block-end: var(--space-5);
+  padding-block-start: var(--space-3);
+  border-block-start: none;
+}
+
+.glance-strip__delta {
+  font-size: var(--type-label);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
 .glance-strip__cell {
   display: grid;
   gap: var(--space-1);

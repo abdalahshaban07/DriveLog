@@ -15,6 +15,7 @@ import {
   downloadFile,
   type HistoryRangePreset,
 } from '../../domain/export-history';
+import { efficiencyBelowBaseline } from '../../domain/economy';
 import { previousFillForCar } from '../../domain/fill-up-distance';
 import { todayDateOnly } from '../../domain/dues';
 import type { FillUp, FuelGrade } from '../../domain/models';
@@ -129,6 +130,30 @@ export class FillUpHistoryPage {
       };
     });
   });
+
+  /** Latest segment worse than personal baseline (car-scoped fills). */
+  readonly efficiencyWarn = computed(() => {
+    const carId = this.db.car()?.id;
+    const fills = carId
+      ? this.db.fillUps().filter((f) => f.carId === carId || !f.carId)
+      : this.db.fillUps();
+    return efficiencyBelowBaseline(fills);
+  });
+
+  efficiencyHint(): string {
+    const w = this.efficiencyWarn();
+    if (!w) {
+      return '';
+    }
+    return this.i18n.t('history.efficiencyWarnHint', {
+      pct: this.i18n.formatNumber(w.pctWorse, { maximumFractionDigits: 0 }),
+      baseline: this.i18n.formatUnit(w.baselineL100, 'common.lPer100', 1),
+    });
+  }
+
+  isEfficiencyEnd(id: string): boolean {
+    return this.efficiencyWarn()?.endId === id;
+  }
 
   gradeLabel(grade?: string): string {
     if (!grade) {

@@ -44,6 +44,12 @@
     <p class="empty-state">{{ i18n.t('home.logFirst') }}</p>
     <a routerLink="/fill-up" class="cta">{{ i18n.t('empty.fillUps.cta') }}</a>
   } @else {
+    @if (efficiencyWarn()) {
+      <p class="efficiency-banner" role="status">
+        {{ i18n.t('history.efficiencyBanner') }}
+        <span class="efficiency-banner__hint">{{ efficiencyHint() }}</span>
+      </p>
+    }
     <div class="history-actions">
       <button type="button" class="ghost-btn" [disabled]="shareBusy()" (click)="shareCsv()">
         {{ shareBusy() ? i18n.t('common.loading') : i18n.t('history.share') }}
@@ -100,6 +106,14 @@
                         }
                         @if (kmDrivenLabel(f); as kmLabel) {
                           <span class="chip">{{ kmLabel }}</span>
+                        }
+                        @if (isEfficiencyEnd(f.id)) {
+                          <span
+                            class="chip chip--warn"
+                            [attr.title]="efficiencyHint()"
+                          >
+                            {{ i18n.t('history.efficiencyWarn') }}
+                          </span>
                         }
                       </div>
                       @if (f.placeLabel) {

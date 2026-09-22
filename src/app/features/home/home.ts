@@ -31,6 +31,7 @@ import {
   type LedgerRow,
 } from '../../domain/expense-ledger';
 import { fuelDashboardMetrics } from '../../domain/fuel-dashboard';
+import { buildFuelCostGlance } from '../../domain/economy';
 import { costPerKmTrend, economyTrend, fuelGradeCostShare, spendByMonth, spendByMonthEntries } from '../../domain/insights';
 import type { ExpenseCategory } from '../../domain/models';
 import {
@@ -189,6 +190,7 @@ export class HomePage {
   );
   readonly ledgerTotals = computed(() => ledgerCategoryTotals(this.ledgerRows()));
   readonly fuelMetrics = computed(() => fuelDashboardMetrics(this.db.fillUps()));
+  readonly fuelCostGlance = computed(() => buildFuelCostGlance(this.db.fillUps()));
   readonly sampleMode = computed(() => this.db.settings().sampleMode === true);
   readonly hasRealFills = computed(() => this.db.fillUps().some(isRealFillUp));
   /** ponytail: empty when no logs at all — domain always returns 4 placeholder cards */
@@ -463,6 +465,21 @@ export class HomePage {
 
   formatMoney(value: number): string {
     return this.i18n.formatMoney(value, this.db.settings().currency, 0);
+  }
+
+  monthFuelDeltaLabel(): string {
+    const pct = this.fuelCostGlance().deltaPct;
+    if (pct == null) {
+      return this.i18n.t('home.monthFuelDelta.none');
+    }
+    if (Math.abs(pct) < 3) {
+      return this.i18n.t('home.monthFuelDelta.same');
+    }
+    const abs = this.i18n.formatNumber(Math.abs(pct), { maximumFractionDigits: 0 });
+    if (pct > 0) {
+      return this.i18n.t('home.monthFuelDelta.up', { pct: abs });
+    }
+    return this.i18n.t('home.monthFuelDelta.down', { pct: `-${abs}` });
   }
 
   insightTitle(tip: { titleKey: string }): string {
