@@ -1,0 +1,1 @@
+function r(e){let n=e.distanceKm;return n==null||!(n>0)||!(e.kWh>0)?null:e.kWh/n*100}export{r as t};
