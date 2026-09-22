@@ -25,6 +25,33 @@
   justify-content: flex-end;
 }
 
+.efficiency-banner {
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--warn) 40%, var(--hairline));
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--warn) 10%, var(--surface));
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.efficiency-banner__hint {
+  display: block;
+  margin-block-start: var(--space-1);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.chip--warn {
+  border-color: color-mix(in srgb, var(--warn) 50%, var(--hairline));
+  background: color-mix(in srgb, var(--warn) 14%, var(--surface));
+  color: var(--warn);
+}
+
+.chip--charge {
+  border-color: color-mix(in srgb, var(--mint, var(--ok)) 45%, var(--hairline));
+}
+
 .history-months {
   display: grid;
   gap: var(--space-5);
@@ -93,8 +120,14 @@
   align-items: center;
   min-height: var(--tap);
   padding: var(--space-3);
+  border: 0;
+  background: transparent;
   color: inherit;
+  text-align: start;
   text-decoration: none;
+  cursor: pointer;
+  width: 100%;
+  font: inherit;
 }
 
 .history-ledger__main {

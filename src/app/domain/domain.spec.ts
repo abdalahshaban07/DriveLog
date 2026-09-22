@@ -36,6 +36,114 @@ describe('economy', () => {
     expect(latest?.litersPer100Km).toBe(9);
     expect(latest?.costPerKm).toBe(0.33);
   });
+
+  it('rollingCostPerKm aggregates per-fill segments in the window', async () => {
+    const { rollingCostPerKm, fuelMonthCompare, buildFuelCostGlance } = await import('./economy');
+    const now = new Date(2026, 2, 20); // Mar 20 2026
+    const fills = [
+      fill({
+        id: 'a',
+        odometer: 10000,
+        liters: 40,
+        cost: 100,
+        tankFull: true,
+        distanceKm: 200,
+        date: '2026-03-10',
+      }),
+      fill({
+        id: 'b',
+        odometer: 10200,
+        liters: 40,
+        cost: 200,
+        tankFull: true,
+        distanceKm: 200,
+        date: '2026-03-18',
+      }),
+      fill({
+        id: 'old',
+        odometer: 9800,
+        liters: 40,
+        cost: 999,
+        tankFull: true,
+        distanceKm: 100,
+        date: '2026-01-01',
+      }),
+    ];
+    // (100+200)/(200+200) = 0.75
+    expect(rollingCostPerKm(fills, now, 30)).toBeCloseTo(0.75, 5);
+    expect(rollingCostPerKm([], now)).toBeNull();
+
+    const cmp = fuelMonthCompare(fills, now);
+    expect(cmp?.current).toBe(300);
+    expect(cmp?.previous).toBe(0);
+    expect(cmp?.deltaPct).toBeNull();
+
+    const glance = buildFuelCostGlance(fills, now);
+    expect(glance.costPerKm).toBeCloseTo(0.75, 5);
+    expect(glance.currentMonth).toBe(300);
+  });
+
+  it('fuelMonthCompare returns null when both months empty', async () => {
+    const { fuelMonthCompare } = await import('./economy');
+    expect(fuelMonthCompare([], new Date(2026, 2, 1))).toBeNull();
+  });
+
+  it('efficiencyBelowBaseline fires when latest is ≥15% worse', async () => {
+    const { efficiencyBelowBaseline } = await import('./economy');
+    // Three per-fill segments: 8, 8, then 10 L/100 (= +25% vs baseline 8)
+    const fills = [
+      fill({
+        id: 'a',
+        odometer: 10000,
+        liters: 40,
+        cost: 50,
+        tankFull: true,
+        distanceKm: 500,
+        date: '2026-01-01',
+      }),
+      fill({
+        id: 'b',
+        odometer: 10500,
+        liters: 40,
+        cost: 50,
+        tankFull: true,
+        distanceKm: 500,
+        date: '2026-02-01',
+      }),
+      fill({
+        id: 'c',
+        odometer: 11000,
+        liters: 50,
+        cost: 60,
+        tankFull: true,
+        distanceKm: 500,
+        date: '2026-03-01',
+      }),
+    ];
+    const hit = efficiencyBelowBaseline(fills);
+    expect(hit).not.toBeNull();
+    expect(hit!.endId).toBe('c');
+    expect(hit!.baselineL100).toBeCloseTo(8, 5);
+    expect(hit!.lastL100).toBeCloseTo(10, 5);
+    expect(hit!.pctWorse).toBeCloseTo(25, 5);
+
+    expect(
+      efficiencyBelowBaseline([
+        fills[0]!,
+        fills[1]!,
+        fill({
+          id: 'ok',
+          odometer: 11000,
+          liters: 41,
+          cost: 50,
+          tankFull: true,
+          distanceKm: 500,
+          date: '2026-03-01',
+        }),
+      ]),
+    ).toBeNull();
+    expect(efficiencyBelowBaseline(fills.slice(0, 2))).toBeNull();
+  });
 });
 
 describe('odometer', () => {
@@ -383,8 +491,8 @@ describe('remote parsers', () => {
 describe('backup version', () => {
   it('keeps backup version and IDB version as separate constants', async () => {
     const { BACKUP_VERSION, DB_VERSION } = await import('../core/config');
-    expect(BACKUP_VERSION).toBe(5);
-    expect(DB_VERSION).toBe(5);
+    expect(BACKUP_VERSION).toBe(6);
+    expect(DB_VERSION).toBe(6);
   });
 });
 

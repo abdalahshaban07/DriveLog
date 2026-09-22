@@ -15,9 +15,16 @@ import {
   downloadFile,
   type HistoryRangePreset,
 } from '../../domain/export-history';
+import { efficiencyBelowBaseline } from '../../domain/economy';
+import { kWhPer100Km } from '../../domain/charge-economy';
+import {
+  mergeEnergyHistory,
+  type EnergyHistoryRow,
+  type EnergyKind,
+} from '../../domain/energy-history';
 import { previousFillForCar } from '../../domain/fill-up-distance';
 import { todayDateOnly } from '../../domain/dues';
-import type { FillUp, FuelGrade } from '../../domain/models';
+import type { ChargeSession, FillUp, FuelGrade } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { ConfirmBar } from '../../ui/confirm-bar';
@@ -27,6 +34,7 @@ import { SectionTabs, type SectionTab } from '../../ui/section-tabs/section-tabs
 import { SelectField } from '../../ui/select-field';
 
 type GradeFilter = FuelGrade | 'all';
+type TypeFilter = EnergyKind | 'all';
 
 @Component({
   selector: 'app-fill-up-history',
@@ -46,12 +54,13 @@ export class FillUpHistoryPage {
   ];
 
   readonly gradeFilter = signal<GradeFilter>('all');
+  readonly typeFilter = signal<TypeFilter>('all');
   readonly rangePreset = signal<HistoryRangePreset>('3months');
   readonly fromDate = signal('');
   readonly toDate = signal('');
   readonly shareBusy = signal(false);
   readonly shareError = signal('');
-  readonly pendingDelete = signal<string | null>(null);
+  readonly pendingDelete = signal<{ kind: EnergyKind; id: string } | null>(null);
 
   readonly rangePresets: { id: HistoryRangePreset; labelKey: MsgKey }[] = [
     { id: 'thisMonth', labelKey: 'history.rangeThisMonth' },
@@ -68,6 +77,12 @@ export class FillUpHistoryPage {
     { id: 'custom', labelKey: 'fillUp.grade.custom' },
   ];
 
+  readonly typeChips: { id: TypeFilter; labelKey: MsgKey }[] = [
+    { id: 'all', labelKey: 'history.filterAllTypes' },
+    { id: 'fuel', labelKey: 'history.type.fuel' },
+    { id: 'charge', labelKey: 'history.type.charge' },
+  ];
+
   readonly rangeOptions = computed(() =>
     this.rangePresets.map((p) => ({
       value: p.id,
@@ -77,6 +92,13 @@ export class FillUpHistoryPage {
 
   readonly gradeOptions = computed(() =>
     this.gradeChips.map((c) => ({
+      value: c.id,
+      label: this.i18n.t(c.labelKey),
+    })),
+  );
+
+  readonly typeOptions = computed(() =>
+    this.typeChips.map((c) => ({
       value: c.id,
       label: this.i18n.t(c.labelKey),
     })),
@@ -93,42 +115,92 @@ export class FillUpHistoryPage {
     return rangeBoundsForPreset(preset, todayDateOnly());
   });
 
-  readonly rows = computed(() =>
+  readonly fuelRows = computed(() =>
     filterFillUps(this.db.fillUps(), {
       grade: this.gradeFilter(),
       ...this.activeRange(),
-    }).sort(
-      (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
-    ),
+    }),
+  );
+
+  readonly chargeRows = computed(() => {
+    const { from, to } = this.activeRange();
+    return this.db.chargeSessions().filter((c) => {
+      if (from && c.date < from) {
+        return false;
+      }
+      if (to && c.date > to) {
+        return false;
+      }
+      return true;
+    });
+  });
+
+  readonly rows = computed(() =>
+    mergeEnergyHistory(this.fuelRows(), this.chargeRows(), this.typeFilter()),
   );
 
   readonly groupedRows = computed(() => {
-    const groups = new Map<string, FillUp[]>();
-    for (const row of this.rows()) {
-      const month = row.date.slice(0, 7);
+    const groups = new Map<string, EnergyHistoryRow[]>();
+    for (const item of this.rows()) {
+      const month = item.row.date.slice(0, 7);
       const bucket = groups.get(month) ?? [];
-      bucket.push(row);
+      bucket.push(item);
       groups.set(month, bucket);
     }
     return [...groups.entries()].map(([month, items]) => {
       let km = 0;
       let hasKm = false;
-      for (const f of items) {
-        const d = this.kmDriven(f);
-        if (d != null) {
-          km += d;
-          hasKm = true;
+      let liters = 0;
+      let kWh = 0;
+      for (const item of items) {
+        if (item.kind === 'fuel') {
+          liters += item.row.liters;
+          const d = this.kmDriven(item.row);
+          if (d != null) {
+            km += d;
+            hasKm = true;
+          }
+        } else {
+          kWh += item.row.kWh;
+          if (item.row.distanceKm != null && item.row.distanceKm > 0) {
+            km += item.row.distanceKm;
+            hasKm = true;
+          }
         }
       }
       return {
         month,
         items,
-        total: items.reduce((sum, f) => sum + f.cost, 0),
-        liters: items.reduce((sum, f) => sum + f.liters, 0),
+        total: items.reduce((sum, i) => sum + i.row.cost, 0),
+        liters,
+        kWh,
         km: hasKm ? km : null,
       };
     });
   });
+
+  readonly efficiencyWarn = computed(() => {
+    const carId = this.db.car()?.id;
+    const fills = carId
+      ? this.db.fillUps().filter((f) => f.carId === carId || !f.carId)
+      : this.db.fillUps();
+    return efficiencyBelowBaseline(fills);
+  });
+
+  efficiencyHint(): string {
+    const w = this.efficiencyWarn();
+    if (!w) {
+      return '';
+    }
+    return this.i18n.t('history.efficiencyWarnHint', {
+      pct: this.i18n.formatNumber(w.pctWorse, { maximumFractionDigits: 0 }),
+      baseline: this.i18n.formatUnit(w.baselineL100, 'common.lPer100', 1),
+    });
+  }
+
+  isEfficiencyEnd(id: string): boolean {
+    return this.efficiencyWarn()?.endId === id;
+  }
 
   gradeLabel(grade?: string): string {
     if (!grade) {
@@ -180,6 +252,16 @@ export class FillUpHistoryPage {
     });
   }
 
+  chargeEcoLabel(c: ChargeSession): string | null {
+    const eco = kWhPer100Km(c);
+    if (eco == null) {
+      return null;
+    }
+    return this.i18n.t('charge.economyLive', {
+      value: this.i18n.formatNumber(eco, { maximumFractionDigits: 1 }),
+    });
+  }
+
   formatMoney(value: number): string {
     return this.i18n.formatMoney(value, this.db.settings().currency, 2);
   }
@@ -192,26 +274,40 @@ export class FillUpHistoryPage {
     this.gradeFilter.set(id as GradeFilter);
   }
 
-  editRow(id: string): void {
-    void this.router.navigate(['/fill-up'], { queryParams: { id } });
+  setType(id: string): void {
+    this.typeFilter.set(id as TypeFilter);
   }
 
-  askDelete(id: string): void {
-    this.pendingDelete.set(id);
+  editRow(item: EnergyHistoryRow): void {
+    if (item.kind === 'fuel') {
+      void this.router.navigate(['/fill-up'], { queryParams: { id: item.row.id } });
+    } else {
+      void this.router.navigate(['/fill-up'], {
+        queryParams: { chargeId: item.row.id },
+      });
+    }
+  }
+
+  askDelete(item: EnergyHistoryRow): void {
+    this.pendingDelete.set({ kind: item.kind, id: item.row.id });
   }
 
   async doDelete(): Promise<void> {
-    const id = this.pendingDelete();
+    const pending = this.pendingDelete();
     this.pendingDelete.set(null);
-    if (!id) {
+    if (!pending) {
       return;
     }
-    await this.db.deleteFillUp(id);
+    if (pending.kind === 'fuel') {
+      await this.db.deleteFillUp(pending.id);
+    } else {
+      await this.db.deleteChargeSession(pending.id);
+    }
   }
 
   async shareCsv(): Promise<void> {
     this.shareError.set('');
-    const rows = this.rows();
+    const rows = this.fuelRows();
     if (!rows.length) {
       return;
     }
@@ -234,7 +330,7 @@ export class FillUpHistoryPage {
 
   async exportPdf(): Promise<void> {
     this.shareError.set('');
-    const rows = this.rows();
+    const rows = this.fuelRows();
     if (!rows.length) {
       return;
     }

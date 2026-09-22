@@ -1,6 +1,14 @@
 <div class="stack fill-up page-narrow">
   <app-page-header
-    [title]="editId() ? i18n.t('fillUp.edit') : i18n.t('fillUp.title')"
+    [title]="
+      logMode() === 'charge'
+        ? editChargeId()
+          ? i18n.t('charge.edit')
+          : i18n.t('charge.title')
+        : editId()
+          ? i18n.t('fillUp.edit')
+          : i18n.t('fillUp.title')
+    "
     [showBack]="true"
     (back)="router.navigateByUrl('/fuel')"
   />
@@ -8,6 +16,33 @@
     [tabs]="sectionTabs"
     [ariaLabel]="i18n.t('fillUp.title')"
   />
+
+  <div
+    class="log-mode"
+    role="radiogroup"
+    [attr.aria-label]="i18n.t('fillUp.modeLabel')"
+  >
+    <button
+      type="button"
+      role="radio"
+      class="log-mode__btn"
+      [class.log-mode__btn--on]="logMode() === 'fuel'"
+      [attr.aria-checked]="logMode() === 'fuel'"
+      (click)="setLogMode('fuel')"
+    >
+      {{ i18n.t('fillUp.mode.fuel') }}
+    </button>
+    <button
+      type="button"
+      role="radio"
+      class="log-mode__btn"
+      [class.log-mode__btn--on]="logMode() === 'charge'"
+      [attr.aria-checked]="logMode() === 'charge'"
+      (click)="setLogMode('charge')"
+    >
+      {{ i18n.t('fillUp.mode.charge') }}
+    </button>
+  </div>
 
   @if (nextDueBanner()) {
     <section
@@ -40,8 +75,251 @@
     {{ i18n.t('common.km') }}
   </p>
 
-  <section class="console card receipt-slip" [attr.aria-label]="i18n.t('fillUp.title')">
-    <div class="console__pair">
+  @if (sharedPreviewUrl(); as imgUrl) {
+    <section class="card shared-receipt" [attr.aria-label]="i18n.t('fillUp.sharedImage')">
+      <p class="hint" role="status">{{ i18n.t('fillUp.sharedImageReady') }}</p>
+      <img class="shared-receipt__img" [src]="imgUrl" alt="" />
+      <button type="button" class="ghost-btn" (click)="clearSharedImage()">
+        {{ i18n.t('fillUp.clearShared') }}
+      </button>
+    </section>
+  }
+
+  @if (logMode() === 'fuel' && softStation() && !softStationDismissed()) {
+    <section class="card soft-station" role="status" aria-live="polite">
+      <p>
+        {{
+          i18n.t('fillUp.youreAt', {
+            name: softStation()!.name,
+            km: i18n.formatNumber(softStation()!.distanceKm, {
+              minimumFractionDigits: 1,
+              maximumFractionDigits: 1,
+            }),
+          })
+        }}
+      </p>
+      <div class="soft-station__actions">
+        <button type="button" class="soft-station__use" (click)="useSoftStation()">
+          {{ i18n.t('fillUp.youreAtUse') }}
+        </button>
+        <button type="button" class="ghost-btn" (click)="dismissSoftStation()">
+          {{ i18n.t('fillUp.youreAtDismiss') }}
+        </button>
+      </div>
+    </section>
+  }
+
+  @if (logMode() === 'fuel') {
+    <div class="ocr-bar">
+      <input
+        id="receipt-scan-input"
+        class="sr-only"
+        type="file"
+        accept="image/*"
+        capture="environment"
+        (change)="onScanFile($event)"
+      />
+      <button
+        type="button"
+        class="ghost-btn"
+        [disabled]="ocrBusy()"
+        (click)="scanSharedOrPick()"
+      >
+        {{ ocrBusy() ? i18n.t('fillUp.scanBusy') : i18n.t('fillUp.scan') }}
+      </button>
+      @if (ocrError()) {
+        <p class="error-state" role="alert">{{ ocrError() }}</p>
+      }
+    </div>
+  }
+
+  @if (ocrStage() === 'review' && ocrCandidates()) {
+    <section class="card ocr-review" [attr.aria-label]="i18n.t('fillUp.ocrReview')">
+      <h2 class="ocr-review__title">{{ i18n.t('fillUp.ocrReview') }}</h2>
+      <app-numeric-field
+        [label]="i18n.t('fillUp.liters')"
+        [value]="ocrLitersStr()"
+        (valueChange)="setOcrLiters($event)"
+      />
+      <app-numeric-field
+        [label]="i18n.t('fillUp.unitPrice')"
+        [value]="ocrPriceStr()"
+        (valueChange)="setOcrPrice($event)"
+      />
+      <app-numeric-field
+        [label]="i18n.t('fillUp.total')"
+        [value]="ocrTotalStr()"
+        (valueChange)="setOcrTotal($event)"
+      />
+      @if (ocrMath() === true) {
+        <p class="hint" role="status">{{ i18n.t('fillUp.ocrMathOk') }}</p>
+      } @else if (ocrMath() === false) {
+        <p class="error-state" role="alert">{{ i18n.t('fillUp.ocrMathBad') }}</p>
+      }
+      <div class="ocr-review__actions">
+        <app-primary-button
+          [label]="i18n.t('fillUp.ocrApply')"
+          (pressed)="applyOcrPick()"
+        />
+        <button type="button" class="ghost-btn" (click)="discardOcr()">
+          {{ i18n.t('fillUp.ocrDiscard') }}
+        </button>
+      </div>
+    </section>
+  }
+
+  @if (logMode() === 'fuel') {
+    <section class="console card receipt-slip" [attr.aria-label]="i18n.t('fillUp.title')">
+      <div class="console__pair">
+        <app-date-field
+          [label]="i18n.t('fillUp.date')"
+          [(value)]="date"
+          [error]="dateError()"
+          mode="record"
+          (valueChange)="dateError.set('')"
+        />
+        <app-numeric-field
+          [label]="distanceLabel()"
+          [(value)]="distanceKm"
+          [error]="distanceError()"
+          (valueChange)="onDistanceChange()"
+        />
+      </div>
+      @if (distanceWarn()) {
+        <p class="hint" role="status">{{ distanceWarn() }}</p>
+      }
+      @if (liveEconomy(); as eco) {
+        <p class="hint" role="status">
+          {{
+            i18n.t('fillUp.economyLive', {
+              value: i18n.formatNumber(eco, { maximumFractionDigits: 1 }),
+            })
+          }}
+        </p>
+      }
+
+      <div class="console__pair">
+        <app-numeric-field
+          [label]="i18n.t('fillUp.liters')"
+          [(value)]="liters"
+          [error]="litersError()"
+          (valueChange)="onLitersChange()"
+        />
+        <div class="cost-block">
+          <app-receipt-preview
+            [liters]="litersNum()"
+            [unitPrice]="unitPrice()"
+            [currency]="db.settings().currency"
+          />
+          @if (usingLastPaid()) {
+            <p class="cost-hint hint" role="status">
+              {{ i18n.t('fillUp.costOverrideHint') }}
+            </p>
+          }
+        </div>
+      </div>
+      @if (capacityWarn()) {
+        <p class="hint" role="status">{{ capacityWarn() }}</p>
+      }
+
+      <div class="fuel-block">
+        @if (pricesBusy()) {
+          <p class="hint skeleton" role="status">{{ i18n.t('common.loading') }}</p>
+        } @else {
+          @if (pricesUnavailable()) {
+            <p class="hint" role="status" aria-live="polite">
+              {{ i18n.t('fillUp.pricesUnavailable') }}
+            </p>
+          }
+          <app-fuel-grade-selector
+            [prices]="fuelPrices()"
+            [fallbackPrice]="lastUnit()"
+            [options]="gradeOptions()"
+            [(value)]="fuelGrade"
+          />
+          @if (needsManualPrice()) {
+            <app-numeric-field
+              [label]="i18n.t('fillUp.unitPrice')"
+              [(value)]="manualUnitPrice"
+            />
+          }
+        }
+      </div>
+
+      @if (showTankHint()) {
+        <p class="hint tank-hint">{{ i18n.t('fillUp.tankSizeHint') }}</p>
+      }
+
+      <div class="station-field">
+        <label class="label" for="station-input">{{ i18n.t('fillUp.station') }}</label>
+        <div class="station-field__row">
+          <input
+            id="station-input"
+            class="input station-field__input"
+            type="text"
+            [value]="placeLabel()"
+            list="station-suggestions"
+            (input)="onPlaceLabelInput($event)"
+          />
+          <button
+            type="button"
+            class="station-loc-btn"
+            [attr.aria-label]="i18n.t('fillUp.useLocation')"
+            [disabled]="locationBusy()"
+            (click)="useLocation()"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"
+              />
+            </svg>
+          </button>
+        </div>
+        <datalist id="station-suggestions">
+          @for (s of stationSuggestions(); track s) {
+            <option [value]="s"></option>
+          }
+        </datalist>
+        <p class="hint station-field__hint">{{ i18n.t('fillUp.stationHint') }}</p>
+        @if (locationError()) {
+          <p class="station-err" role="alert">{{ locationError() }}</p>
+        }
+        @if (fuelNearby().length) {
+          <p class="hint">{{ i18n.t('fillUp.nearbyPick') }}</p>
+          <div
+            class="station-chips"
+            role="radiogroup"
+            [attr.aria-label]="i18n.t('fillUp.nearbyPick')"
+          >
+            @for (poi of fuelNearby(); track poi.id) {
+              <button
+                type="button"
+                role="radio"
+                class="station-chip"
+                [class.station-chip--on]="selectedStationId() === poi.id"
+                [attr.aria-checked]="selectedStationId() === poi.id"
+                (click)="selectStation(poi)"
+              >
+                <span class="station-chip__name">{{ poi.name }}</span>
+                <span class="station-chip__dist">
+                  {{
+                    i18n.formatNumber(poi.distanceKm, {
+                      minimumFractionDigits: 1,
+                      maximumFractionDigits: 1,
+                    })
+                  }}
+                  {{ i18n.t('common.km') }}
+                </span>
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <app-text-field [label]="i18n.t('fillUp.note')" [(value)]="note" />
+    </section>
+  } @else {
+    <section class="console card receipt-slip" [attr.aria-label]="i18n.t('charge.title')">
       <app-date-field
         [label]="i18n.t('fillUp.date')"
         [(value)]="date"
@@ -50,154 +328,47 @@
         (valueChange)="dateError.set('')"
       />
       <app-numeric-field
-        [label]="distanceLabel()"
-        [(value)]="distanceKm"
-        [error]="distanceError()"
-        (valueChange)="onDistanceChange()"
+        [label]="i18n.t('charge.odometer')"
+        [(value)]="chargeOdo"
+        [error]="chargeOdoError()"
       />
-    </div>
-
-    @if (distanceWarn()) {
-      <p class="warn-hint" role="status">{{ distanceWarn() }}</p>
-    }
-
-    <div class="console__pair">
       <app-numeric-field
-        [label]="i18n.t('fillUp.liters')"
-        [(value)]="liters"
-        [error]="litersError()"
-        (valueChange)="onLitersChange()"
+        [label]="i18n.t('charge.distanceKm')"
+        [(value)]="chargeDistance"
       />
-      <div class="cost-block">
-        <app-receipt-preview
-          [liters]="litersNum()"
-          [unitPrice]="unitPrice()"
-          [currency]="db.settings().currency"
-        />
-        @if (usingLastPaid()) {
-          <p class="cost-hint hint" role="status">
-            {{ i18n.t('fillUp.costOverrideHint') }}
-          </p>
-        }
-      </div>
-    </div>
-
-    @if (capacityWarn()) {
-      <p class="warn-hint" role="status">{{ capacityWarn() }}</p>
-    }
-
-    @if (liveEconomy(); as eco) {
-      <p class="economy-live" role="status">
-        {{ i18n.formatUnit(eco, 'common.lPer100', 1) }}
-      </p>
-    }
-
-    @if (pricesBusy()) {
-      <div class="skeleton skeleton--row price-skeleton" aria-hidden="true"></div>
-    } @else if (pricesReady()) {
-      <div class="grade-fade">
-        @if (pricesUnavailable()) {
-          <p class="hint" role="status" aria-live="polite">
-            {{ i18n.t('fillUp.pricesUnavailable') }}
-          </p>
-        }
-        <app-fuel-grade-selector
-          [prices]="fuelPrices()"
-          [fallbackPrice]="lastUnit()"
-          [options]="gradeOptions()"
-          [(value)]="fuelGrade"
-        />
-        @if (needsManualPrice()) {
-          <app-numeric-field
-            [label]="i18n.t('fillUp.unitPrice')"
-            [(value)]="manualUnitPrice"
-          />
-        }
-      </div>
-    }
-
-    @if (showTankHint()) {
-      <p class="hint tank-hint">{{ i18n.t('fillUp.tankSizeHint') }}</p>
-    }
-
-    <div class="station-field">
-      <label class="label" for="station-input">{{ i18n.t('fillUp.station') }}</label>
-      <div class="station-field__row">
-        <input
-          id="station-input"
-          class="input station-field__input"
-          type="text"
-          [value]="placeLabel()"
-          list="station-suggestions"
-          (input)="onPlaceLabelInput($event)"
-        />
-        <button
-          type="button"
-          class="station-loc-btn"
-          [attr.aria-label]="i18n.t('fillUp.useLocation')"
-          [disabled]="locationBusy()"
-          (click)="useLocation()"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"
-            />
-          </svg>
-        </button>
-      </div>
-      <datalist id="station-suggestions">
-        @for (s of stationSuggestions(); track s) {
-          <option [value]="s"></option>
-        }
-      </datalist>
-      <p class="hint station-field__hint">{{ i18n.t('fillUp.stationHint') }}</p>
-      @if (locationError()) {
-        <p class="station-err" role="alert">{{ locationError() }}</p>
+      <app-numeric-field
+        [label]="i18n.t('charge.kWh')"
+        [(value)]="chargeKWh"
+        [error]="chargeKWhError()"
+      />
+      <app-numeric-field
+        [label]="i18n.t('charge.cost')"
+        [(value)]="chargeCost"
+        [error]="chargeCostError()"
+      />
+      @if (chargeEconomy(); as eco) {
+        <p class="hint" role="status">
+          {{
+            i18n.t('charge.economyLive', {
+              value: i18n.formatNumber(eco, { maximumFractionDigits: 1 }),
+            })
+          }}
+        </p>
       }
-      @if (fuelNearby().length) {
-        <p class="hint">{{ i18n.t('fillUp.nearbyPick') }}</p>
-        <div
-          class="station-chips"
-          role="radiogroup"
-          [attr.aria-label]="i18n.t('fillUp.nearbyPick')"
-        >
-          @for (poi of fuelNearby(); track poi.id) {
-            <button
-              type="button"
-              role="radio"
-              class="station-chip"
-              [class.station-chip--on]="selectedStationId() === poi.id"
-              [attr.aria-checked]="selectedStationId() === poi.id"
-              (click)="selectStation(poi)"
-            >
-              <span class="station-chip__name">{{ poi.name }}</span>
-              <span class="station-chip__dist">
-                {{
-                  i18n.formatNumber(poi.distanceKm, {
-                    minimumFractionDigits: 1,
-                    maximumFractionDigits: 1,
-                  })
-                }}
-                {{ i18n.t('common.km') }}
-              </span>
-            </button>
-          }
-        </div>
-      }
-    </div>
+      <app-text-field [label]="i18n.t('charge.place')" [(value)]="placeLabel" />
+      <app-text-field [label]="i18n.t('fillUp.note')" [(value)]="note" />
+    </section>
+  }
 
-    <app-text-field [label]="i18n.t('fillUp.note')" [(value)]="note" />
-  </section>
-
-  @if (editId()) {
+  @if (editId() || editChargeId()) {
     <button type="button" class="danger" (click)="askDelete()">
-      {{ i18n.t('fillUp.delete') }}
+      {{ logMode() === 'charge' ? i18n.t('charge.delete') : i18n.t('fillUp.delete') }}
     </button>
   }
 
   <div class="save-wrap">
     <app-primary-button
-      [label]="i18n.t('fillUp.save')"
+      [label]="logMode() === 'charge' ? i18n.t('charge.save') : i18n.t('fillUp.save')"
       [disabled]="!canSave()"
       (pressed)="save()"
     />
@@ -205,12 +376,15 @@
 
   @if (confirmDelete()) {
     <app-confirm-bar
-      [message]="i18n.t('fillUp.deleteWarn')"
-      [confirmLabel]="i18n.t('fillUp.delete')"
+      [message]="
+        logMode() === 'charge' ? i18n.t('charge.deleteWarn') : i18n.t('fillUp.deleteWarn')
+      "
+      [confirmLabel]="
+        logMode() === 'charge' ? i18n.t('charge.delete') : i18n.t('fillUp.delete')
+      "
       [cancelLabel]="i18n.t('common.cancel')"
       (confirmed)="doDelete()"
       (cancelled)="confirmDelete.set(false)"
     />
   }
-
 </div>

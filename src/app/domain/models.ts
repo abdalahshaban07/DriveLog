@@ -47,6 +47,10 @@ export interface Car {
   model?: string;
   /** Nominal tank size in liters (gauge + validation). */
   tankCapacityLiters?: number;
+  /** Mounted tire set label (F9). */
+  activeTireSet?: 'A' | 'B';
+  /** Last tire-set swap date. */
+  tireSetSwappedAt?: DateOnly;
   /** Per-car maintenance budget envelope (9A). */
   maintenanceBudgetMonthly?: number;
   reserveTargetMonthly?: number;
@@ -370,6 +374,62 @@ export interface EconomySegment {
   totalCost: number;
 }
 
+export type VehicleDocKind =
+  | 'license'
+  | 'registration'
+  | 'insurance'
+  | 'inspection'
+  | 'other';
+
+/** Dates + notes only (no photo blobs). Vault SSOT for expiry. */
+export interface VehicleDocument {
+  id: string;
+  carId: string;
+  kind: VehicleDocKind;
+  /** Custom label when kind === 'other'. */
+  label?: string;
+  expiryDate: DateOnly;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const PRE_TRIP_ITEM_IDS = [
+  'tires',
+  'lights',
+  'fluids',
+  'brakes',
+  'docs',
+  'spare',
+] as const;
+export type PreTripItemId = (typeof PRE_TRIP_ITEM_IDS)[number];
+
+export interface PreTripCheck {
+  id: string;
+  carId: string;
+  date: DateOnly;
+  items: Record<PreTripItemId, boolean>;
+  ready: boolean;
+  note?: string;
+  createdAt: string;
+}
+
+export interface ChargeSession {
+  id: string;
+  carId: string;
+  odometer: number;
+  kWh: number;
+  cost: number;
+  date: DateOnly;
+  placeLabel?: string;
+  note?: string;
+  currency?: string;
+  /** Distance since previous charge when known. */
+  distanceKm?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface BackupFile {
   version: number;
   exportedAt: string;
@@ -386,6 +446,9 @@ export interface BackupFile {
   parts?: PartDefinition[];
   partOverrides?: PartOverride[];
   healthNotificationState?: HealthNotificationState[];
+  vehicleDocuments?: VehicleDocument[];
+  preTripChecks?: PreTripCheck[];
+  chargeSessions?: ChargeSession[];
 }
 
 export const MAINTENANCE_TYPES: readonly MaintenanceType[] = [

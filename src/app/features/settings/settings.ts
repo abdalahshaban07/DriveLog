@@ -10,6 +10,8 @@ import {
 } from '../../domain/fill-up-distance';
 import { odometerInputValue, roundOdometerKm } from '../../domain/odometer';
 import { THEMES, LOOKS, type BackupFile, type Look, type Theme } from '../../domain/models';
+import { latestTireTreadMm } from '../../domain/tire-set';
+import { todayDateOnly } from '../../domain/dues';
 import type { MsgKey } from '../../i18n/en';
 import { I18n } from '../../i18n/i18n';
 import { InstallPwa } from '../../pwa/install-pwa';
@@ -110,6 +112,12 @@ export class SettingsPage {
   );
   readonly correctOdometer = signal(odometerInputValue(this.db.car()?.currentOdometer));
   readonly tankCapacityError = signal('');
+  readonly tireTread = signal(
+    (() => {
+      const mm = latestTireTreadMm(this.db.maintenance());
+      return mm != null ? String(mm) : '';
+    })(),
+  );
   readonly odometerError = signal('');
   readonly pendingImport = signal<BackupFile | null>(null);
   readonly pendingDestructive = signal<DestructiveAction | null>(null);
@@ -204,6 +212,38 @@ export class SettingsPage {
     this.correctOdometer.set(odometerInputValue(car?.currentOdometer));
     this.tankCapacityError.set('');
     this.odometerError.set('');
+    const mm = latestTireTreadMm(this.db.maintenance());
+    this.tireTread.set(mm != null ? String(mm) : '');
+  }
+
+  readonly activeTireSet = computed(() => this.db.car()?.activeTireSet ?? 'A');
+  readonly tireSwappedAt = computed(() => this.db.car()?.tireSetSwappedAt ?? '');
+
+  async onTireSet(set: 'A' | 'B'): Promise<void> {
+    if (this.db.car()?.activeTireSet === set) {
+      return;
+    }
+    await this.db.setActiveTireSet(set, todayDateOnly());
+  }
+
+  async markTireSwap(): Promise<void> {
+    const set = this.activeTireSet();
+    await this.db.setActiveTireSet(set, todayDateOnly());
+  }
+
+  async saveTireTread(): Promise<void> {
+    const car = this.db.car();
+    const n = Number(this.tireTread());
+    if (!car || !Number.isFinite(n) || n <= 0) {
+      return;
+    }
+    await this.db.saveMaintenance({
+      type: 'tires',
+      odometer: car.currentOdometer,
+      date: todayDateOnly(),
+      measurements: [{ type: 'tireTreadMm', value: n, unit: 'mm' }],
+      note: 'Tire tread',
+    });
   }
 
   async onPlate(value: string): Promise<void> {

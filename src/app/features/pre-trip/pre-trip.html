@@ -1,0 +1,62 @@
+<div class="stack pre-trip page-narrow">
+  <app-page-header
+    [title]="i18n.t('preTrip.title')"
+    [showBack]="true"
+    (back)="router.navigateByUrl('/more')"
+  />
+
+  @if (docsExpired()) {
+    <p class="pre-trip__warn" role="status">{{ i18n.t('preTrip.docsExpired') }}</p>
+  }
+
+  <section class="card stack" [attr.aria-label]="i18n.t('preTrip.checklist')">
+    <ul class="pre-trip__list">
+      @for (row of checklist; track row.id) {
+        <li>
+          <label class="pre-trip__item" [attr.for]="'pre-' + row.id">
+            <input
+              type="checkbox"
+              [id]="'pre-' + row.id"
+              [checked]="items()[row.id]"
+              (change)="toggle(row.id)"
+            />
+            <span>{{ itemLabel(row.labelKey) }}</span>
+          </label>
+        </li>
+      }
+    </ul>
+
+    <div class="pre-trip__actions">
+      <button type="button" class="ghost" (click)="markReady()">
+        {{ i18n.t('preTrip.ready') }}
+      </button>
+      <app-primary-button
+        [label]="i18n.t('preTrip.save')"
+        [disabled]="saving()"
+        (pressed)="saveCheck()"
+      />
+    </div>
+
+    @if (savedFlash()) {
+      <p class="pre-trip__saved" role="status">{{ i18n.t('preTrip.saved') }}</p>
+    }
+  </section>
+
+  <h2 class="section-title">{{ i18n.t('preTrip.history') }}</h2>
+  @if (recent().length === 0) {
+    <p class="empty-state">{{ i18n.t('preTrip.empty') }}</p>
+  } @else {
+    <ul class="record-list list-reveal">
+      @for (row of recent(); track row.id) {
+        <li class="record-row">
+          <div class="record-row__main">
+            <strong>{{ i18n.formatDate(row.date) }}</strong>
+            <span class="record-row__meta">
+              {{ row.ready ? i18n.t('preTrip.readyBadge') : i18n.t('preTrip.partialBadge') }}
+            </span>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</div>

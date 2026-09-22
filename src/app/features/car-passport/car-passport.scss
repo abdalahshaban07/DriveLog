@@ -1,0 +1,44 @@
+.passport-preview h2 {
+  margin: 0 0 var(--space-3);
+  font-size: 1.2rem;
+}
+
+.passport-preview__grid {
+  margin: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.passport-preview__grid dt {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.passport-preview__grid dd {
+  margin: var(--space-1) 0 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.passport-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.passport-status {
+  margin: 0;
+  color: var(--ok);
+}
+
+.ghost {
+  min-height: var(--tap);
+  padding-inline: var(--space-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}

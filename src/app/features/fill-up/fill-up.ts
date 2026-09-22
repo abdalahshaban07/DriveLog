@@ -23,11 +23,21 @@ import {
   validateFillDistance,
 } from '../../domain/fill-up-distance';
 import type { FuelGrade } from '../../domain/models';
+import { kWhPer100Km } from '../../domain/charge-economy';
 import { distinctPlaceLabels } from '../../domain/place-labels';
 import { isRealFillUp } from '../../domain/setup-checklist';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { countryFuelPrices, getCoords, nearbyPoi, type NearbyPoi } from '../../data/remote';
+import { takeSharedFillImage } from '../../pwa/share-target';
+import {
+  bestReceiptPick,
+  parseReceiptText,
+  receiptMathOk,
+  type ReceiptCandidates,
+  type ReceiptPick,
+} from '../../domain/receipt-ocr';
+import { ocrReceiptImage } from '../../domain/receipt-ocr-worker';
 import { ConfirmBar } from '../../ui/confirm-bar';
 import { DateField } from '../../ui/date-field';
 import {
@@ -48,6 +58,8 @@ const GRADE_KEYS: Record<FuelGrade, MsgKey> = {
   solar: 'home.fuelSolar',
   custom: 'fillUp.lastPaid',
 };
+
+type LogMode = 'fuel' | 'charge';
 
 @Component({
   selector: 'app-fill-up',
@@ -103,6 +115,25 @@ export class FillUpPage {
   readonly fuelPrices = signal<Awaited<ReturnType<typeof countryFuelPrices>>>(null);
   readonly manualUnitPrice = signal('');
   readonly nextDueBanner = signal(false);
+  /** Image from PWA share_target (?shared=1) — feeds OCR in F1. */
+  readonly sharedPreviewUrl = signal<string | null>(null);
+  readonly sharedBlob = signal<Blob | null>(null);
+  readonly logMode = signal<LogMode>('fuel');
+  readonly chargeOdo = signal('');
+  readonly chargeKWh = signal('');
+  readonly chargeCost = signal('');
+  readonly chargeDistance = signal('');
+  readonly chargeOdoError = signal('');
+  readonly chargeKWhError = signal('');
+  readonly chargeCostError = signal('');
+  readonly editChargeId = signal<string | null>(null);
+  readonly ocrBusy = signal(false);
+  readonly ocrError = signal('');
+  readonly ocrCandidates = signal<ReceiptCandidates | null>(null);
+  readonly ocrPick = signal<ReceiptPick>({});
+  readonly ocrStage = signal<'idle' | 'review'>('idle');
+  readonly softStation = signal<NearbyPoi | null>(null);
+  readonly softStationDismissed = signal(false);
 
   readonly lastUnit = computed(() => lastFillUnitPriceFromHistory(this.db.fillUps()));
 
@@ -193,6 +224,9 @@ export class FillUpPage {
   });
 
   readonly canSave = computed(() => {
+    if (this.logMode() === 'charge') {
+      return this.canSaveCharge();
+    }
     const distance = this.distanceNum();
     const liters = this.litersNum();
     return (
@@ -207,17 +241,236 @@ export class FillUpPage {
     );
   });
 
+  readonly chargeEconomy = computed(() => {
+    const kWh = Number(this.chargeKWh()) || 0;
+    const d = Number(this.chargeDistance()) || 0;
+    return kWhPer100Km({ kWh, distanceKm: d > 0 ? d : undefined });
+  });
+
+  readonly ocrMath = computed(() => receiptMathOk(this.ocrPick()));
+
+  private canSaveCharge(): boolean {
+    const odo = Number(this.chargeOdo());
+    const kWh = Number(this.chargeKWh());
+    const cost = Number(this.chargeCost());
+    return (
+      Number.isFinite(odo) &&
+      odo > 0 &&
+      Number.isFinite(kWh) &&
+      kWh > 0 &&
+      Number.isFinite(cost) &&
+      cost >= 0 &&
+      /^\d{4}-\d{2}-\d{2}$/.test(this.date()) &&
+      !this.saving()
+    );
+  }
+
   constructor() {
     void this.loadPrices();
+    const chargeId = this.route.snapshot.queryParamMap.get('chargeId');
     const id = this.route.snapshot.queryParamMap.get('id');
-    if (id) {
+    if (chargeId) {
+      this.logMode.set('charge');
+      this.loadCharge(chargeId);
+    } else if (id) {
       this.load(id);
     } else {
       const lastGrade = lastFuelGrade(this.db.fillUps());
       if (lastGrade) {
         this.fuelGrade.set(lastGrade);
       }
+      const car = this.db.car();
+      if (car) {
+        this.chargeOdo.set(String(car.currentOdometer));
+      }
     }
+    if (this.route.snapshot.queryParamMap.get('shared') === '1') {
+      void this.loadSharedImage();
+    }
+    void this.maybeSoftStation();
+  }
+
+  /** F4: only if geolocation permission already granted — never prompt on open. */
+  private async maybeSoftStation(): Promise<void> {
+    if (this.editId() || this.editChargeId() || this.logMode() === 'charge') {
+      return;
+    }
+    try {
+      const perms = navigator.permissions;
+      if (!perms?.query) {
+        return;
+      }
+      const status = await perms.query({ name: 'geolocation' as PermissionName });
+      if (status.state !== 'granted') {
+        return;
+      }
+      const coords = await getCoords();
+      if (!coords) {
+        return;
+      }
+      const list = await nearbyPoi(coords, 'fuel');
+      const nearest = list.filter((p) => p.kind === 'fuel')[0];
+      if (nearest) {
+        this.softStation.set(nearest);
+        this.nearbyStations.set(list.filter((p) => p.kind === 'fuel').slice(0, 5));
+      }
+    } catch {
+      /* ignore permission / API errors */
+    }
+  }
+
+  useSoftStation(): void {
+    const poi = this.softStation();
+    if (!poi) {
+      return;
+    }
+    this.selectStation(poi);
+    this.softStationDismissed.set(true);
+  }
+
+  dismissSoftStation(): void {
+    this.softStationDismissed.set(true);
+  }
+
+  setLogMode(mode: LogMode): void {
+    this.logMode.set(mode);
+  }
+
+  private async loadSharedImage(): Promise<void> {
+    const shared = await takeSharedFillImage();
+    if (!shared) {
+      return;
+    }
+    this.clearSharedImage();
+    this.sharedBlob.set(shared.blob);
+    this.sharedPreviewUrl.set(shared.objectUrl);
+  }
+
+  clearSharedImage(): void {
+    const url = this.sharedPreviewUrl();
+    if (url) {
+      URL.revokeObjectURL(url);
+    }
+    this.sharedPreviewUrl.set(null);
+    this.sharedBlob.set(null);
+  }
+
+  async onScanFile(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) {
+      return;
+    }
+    await this.runOcr(file);
+  }
+
+  async scanSharedOrPick(): Promise<void> {
+    const blob = this.sharedBlob();
+    if (blob) {
+      await this.runOcr(blob);
+      return;
+    }
+    document.getElementById('receipt-scan-input')?.click();
+  }
+
+  private async runOcr(image: Blob): Promise<void> {
+    this.ocrBusy.set(true);
+    this.ocrError.set('');
+    this.ocrStage.set('idle');
+    try {
+      const text = await ocrReceiptImage(image);
+      const candidates = parseReceiptText(text);
+      const pick = bestReceiptPick(candidates);
+      this.ocrCandidates.set(candidates);
+      this.ocrPick.set(pick);
+      this.ocrStage.set('review');
+      if (!this.sharedPreviewUrl()) {
+        this.sharedBlob.set(image);
+        this.sharedPreviewUrl.set(URL.createObjectURL(image));
+      }
+    } catch {
+      this.ocrError.set(this.i18n.t('fillUp.scanFailed'));
+    } finally {
+      this.ocrBusy.set(false);
+    }
+  }
+
+  setOcrLiters(v: string): void {
+    const n = Number(v);
+    this.ocrPick.update((p) => ({
+      ...p,
+      liters: Number.isFinite(n) && n > 0 ? n : undefined,
+    }));
+  }
+
+  ocrLitersStr(): string {
+    const n = this.ocrPick().liters;
+    return n != null ? String(n) : '';
+  }
+
+  ocrPriceStr(): string {
+    const n = this.ocrPick().unitPrice;
+    return n != null ? String(n) : '';
+  }
+
+  ocrTotalStr(): string {
+    const n = this.ocrPick().total;
+    return n != null ? String(n) : '';
+  }
+
+  setOcrPrice(v: string): void {
+    const n = Number(v);
+    this.ocrPick.update((p) => ({
+      ...p,
+      unitPrice: Number.isFinite(n) && n > 0 ? n : undefined,
+    }));
+  }
+
+  setOcrTotal(v: string): void {
+    const n = Number(v);
+    this.ocrPick.update((p) => ({
+      ...p,
+      total: Number.isFinite(n) && n > 0 ? n : undefined,
+    }));
+  }
+
+  /** Apply OCR pick into the form — never auto-saves. */
+  applyOcrPick(): void {
+    const pick = this.ocrPick();
+    if (pick.liters != null) {
+      this.liters.set(String(pick.liters));
+      this.onLitersChange();
+    }
+    if (pick.unitPrice != null) {
+      this.manualUnitPrice.set(String(pick.unitPrice));
+      if (!this.fuelGrade()) {
+        this.fuelGrade.set('custom');
+      }
+    }
+    this.ocrStage.set('idle');
+  }
+
+  discardOcr(): void {
+    this.ocrStage.set('idle');
+    this.ocrCandidates.set(null);
+    this.ocrPick.set({});
+    this.ocrError.set('');
+  }
+
+  loadCharge(id: string): void {
+    const row = this.db.chargeSessions().find((c) => c.id === id);
+    if (!row) {
+      return;
+    }
+    this.editChargeId.set(id);
+    this.chargeOdo.set(String(row.odometer));
+    this.chargeKWh.set(String(row.kWh));
+    this.chargeCost.set(String(row.cost));
+    this.chargeDistance.set(row.distanceKm != null ? String(row.distanceKm) : '');
+    this.date.set(row.date);
+    this.placeLabel.set(row.placeLabel ?? '');
+    this.note.set(row.note ?? '');
   }
 
   async loadPrices(): Promise<void> {
@@ -362,6 +615,16 @@ export class FillUpPage {
   }
 
   async doDelete(): Promise<void> {
+    if (this.logMode() === 'charge') {
+      const cid = this.editChargeId();
+      if (!cid) {
+        return;
+      }
+      await this.db.deleteChargeSession(cid);
+      this.confirmDelete.set(false);
+      await this.router.navigateByUrl('/history/fill-ups');
+      return;
+    }
     const id = this.editId();
     if (!id) {
       return;
@@ -372,6 +635,10 @@ export class FillUpPage {
   }
 
   async save(): Promise<void> {
+    if (this.logMode() === 'charge') {
+      await this.saveCharge();
+      return;
+    }
     this.distanceError.set('');
     this.distanceWarn.set('');
     this.litersError.set('');
@@ -461,6 +728,54 @@ export class FillUpPage {
       } else {
         await this.router.navigateByUrl('/fuel');
       }
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  private async saveCharge(): Promise<void> {
+    this.chargeOdoError.set('');
+    this.chargeKWhError.set('');
+    this.chargeCostError.set('');
+    this.dateError.set('');
+    const odo = Number(this.chargeOdo());
+    const kWh = Number(this.chargeKWh());
+    const cost = Number(this.chargeCost());
+    const dist = Number(this.chargeDistance());
+    const date = this.date();
+    let ok = true;
+    if (!Number.isFinite(odo) || odo <= 0) {
+      this.chargeOdoError.set(this.i18n.t('charge.err.odometer'));
+      ok = false;
+    }
+    if (!Number.isFinite(kWh) || kWh <= 0) {
+      this.chargeKWhError.set(this.i18n.t('charge.err.kWh'));
+      ok = false;
+    }
+    if (!Number.isFinite(cost) || cost < 0) {
+      this.chargeCostError.set(this.i18n.t('charge.err.cost'));
+      ok = false;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      this.dateError.set(this.i18n.t('fillUp.err.date'));
+      ok = false;
+    }
+    if (!ok || !this.db.car()) {
+      return;
+    }
+    this.saving.set(true);
+    try {
+      await this.db.saveChargeSession({
+        id: this.editChargeId() ?? undefined,
+        odometer: odo,
+        kWh,
+        cost,
+        date,
+        distanceKm: Number.isFinite(dist) && dist > 0 ? dist : undefined,
+        placeLabel: this.placeLabel().trim() || undefined,
+        note: this.note().trim() || undefined,
+      });
+      await this.router.navigateByUrl('/history/fill-ups');
     } finally {
       this.saving.set(false);
     }
