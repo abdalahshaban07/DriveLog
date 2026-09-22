@@ -48,6 +48,10 @@
   color: var(--warn);
 }
 
+.chip--charge {
+  border-color: color-mix(in srgb, var(--mint, var(--ok)) 45%, var(--hairline));
+}
+
 .history-months {
   display: grid;
   gap: var(--space-5);
@@ -116,8 +120,14 @@
   align-items: center;
   min-height: var(--tap);
   padding: var(--space-3);
+  border: 0;
+  background: transparent;
   color: inherit;
+  text-align: start;
   text-decoration: none;
+  cursor: pointer;
+  width: 100%;
+  font: inherit;
 }
 
 .history-ledger__main {

@@ -267,6 +267,51 @@
   color: var(--muted);
 }
 
+.shared-receipt {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.shared-receipt__img {
+  max-width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+  border-radius: var(--radius);
+  background: var(--well);
+}
+
+.ghost-btn {
+  min-height: var(--tap);
+  padding-inline: var(--space-3);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  justify-self: start;
+}
+
+.log-mode {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.log-mode__btn {
+  min-height: var(--tap);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--well);
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.log-mode__btn--on {
+  border-color: var(--fuel);
+  background: color-mix(in srgb, var(--fuel) 18%, var(--surface));
+}
+
 .danger {
   min-height: 44px;
   border: 0;

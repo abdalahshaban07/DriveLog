@@ -23,6 +23,7 @@ import {
   validateFillDistance,
 } from '../../domain/fill-up-distance';
 import type { FuelGrade } from '../../domain/models';
+import { kWhPer100Km } from '../../domain/charge-economy';
 import { distinctPlaceLabels } from '../../domain/place-labels';
 import { isRealFillUp } from '../../domain/setup-checklist';
 import { I18n } from '../../i18n/i18n';
@@ -49,6 +50,8 @@ const GRADE_KEYS: Record<FuelGrade, MsgKey> = {
   solar: 'home.fuelSolar',
   custom: 'fillUp.lastPaid',
 };
+
+type LogMode = 'fuel' | 'charge';
 
 @Component({
   selector: 'app-fill-up',
@@ -107,6 +110,15 @@ export class FillUpPage {
   /** Image from PWA share_target (?shared=1) — feeds OCR in F1. */
   readonly sharedPreviewUrl = signal<string | null>(null);
   readonly sharedBlob = signal<Blob | null>(null);
+  readonly logMode = signal<LogMode>('fuel');
+  readonly chargeOdo = signal('');
+  readonly chargeKWh = signal('');
+  readonly chargeCost = signal('');
+  readonly chargeDistance = signal('');
+  readonly chargeOdoError = signal('');
+  readonly chargeKWhError = signal('');
+  readonly chargeCostError = signal('');
+  readonly editChargeId = signal<string | null>(null);
 
   readonly lastUnit = computed(() => lastFillUnitPriceFromHistory(this.db.fillUps()));
 
@@ -197,6 +209,9 @@ export class FillUpPage {
   });
 
   readonly canSave = computed(() => {
+    if (this.logMode() === 'charge') {
+      return this.canSaveCharge();
+    }
     const distance = this.distanceNum();
     const liters = this.litersNum();
     return (
@@ -211,20 +226,54 @@ export class FillUpPage {
     );
   });
 
+  readonly chargeEconomy = computed(() => {
+    const kWh = Number(this.chargeKWh()) || 0;
+    const d = Number(this.chargeDistance()) || 0;
+    return kWhPer100Km({ kWh, distanceKm: d > 0 ? d : undefined });
+  });
+
+  private canSaveCharge(): boolean {
+    const odo = Number(this.chargeOdo());
+    const kWh = Number(this.chargeKWh());
+    const cost = Number(this.chargeCost());
+    return (
+      Number.isFinite(odo) &&
+      odo > 0 &&
+      Number.isFinite(kWh) &&
+      kWh > 0 &&
+      Number.isFinite(cost) &&
+      cost >= 0 &&
+      /^\d{4}-\d{2}-\d{2}$/.test(this.date()) &&
+      !this.saving()
+    );
+  }
+
   constructor() {
     void this.loadPrices();
+    const chargeId = this.route.snapshot.queryParamMap.get('chargeId');
     const id = this.route.snapshot.queryParamMap.get('id');
-    if (id) {
+    if (chargeId) {
+      this.logMode.set('charge');
+      this.loadCharge(chargeId);
+    } else if (id) {
       this.load(id);
     } else {
       const lastGrade = lastFuelGrade(this.db.fillUps());
       if (lastGrade) {
         this.fuelGrade.set(lastGrade);
       }
+      const car = this.db.car();
+      if (car) {
+        this.chargeOdo.set(String(car.currentOdometer));
+      }
     }
     if (this.route.snapshot.queryParamMap.get('shared') === '1') {
       void this.loadSharedImage();
     }
+  }
+
+  setLogMode(mode: LogMode): void {
+    this.logMode.set(mode);
   }
 
   private async loadSharedImage(): Promise<void> {
@@ -244,6 +293,21 @@ export class FillUpPage {
     }
     this.sharedPreviewUrl.set(null);
     this.sharedBlob.set(null);
+  }
+
+  loadCharge(id: string): void {
+    const row = this.db.chargeSessions().find((c) => c.id === id);
+    if (!row) {
+      return;
+    }
+    this.editChargeId.set(id);
+    this.chargeOdo.set(String(row.odometer));
+    this.chargeKWh.set(String(row.kWh));
+    this.chargeCost.set(String(row.cost));
+    this.chargeDistance.set(row.distanceKm != null ? String(row.distanceKm) : '');
+    this.date.set(row.date);
+    this.placeLabel.set(row.placeLabel ?? '');
+    this.note.set(row.note ?? '');
   }
 
   async loadPrices(): Promise<void> {
@@ -388,6 +452,16 @@ export class FillUpPage {
   }
 
   async doDelete(): Promise<void> {
+    if (this.logMode() === 'charge') {
+      const cid = this.editChargeId();
+      if (!cid) {
+        return;
+      }
+      await this.db.deleteChargeSession(cid);
+      this.confirmDelete.set(false);
+      await this.router.navigateByUrl('/history/fill-ups');
+      return;
+    }
     const id = this.editId();
     if (!id) {
       return;
@@ -398,6 +472,10 @@ export class FillUpPage {
   }
 
   async save(): Promise<void> {
+    if (this.logMode() === 'charge') {
+      await this.saveCharge();
+      return;
+    }
     this.distanceError.set('');
     this.distanceWarn.set('');
     this.litersError.set('');
@@ -487,6 +565,58 @@ export class FillUpPage {
       } else {
         await this.router.navigateByUrl('/fuel');
       }
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  private async saveCharge(): Promise<void> {
+    this.chargeOdoError.set('');
+    this.chargeKWhError.set('');
+    this.chargeCostError.set('');
+    this.dateError.set('');
+    const odo = Number(this.chargeOdo());
+    const kWh = Number(this.chargeKWh());
+    const cost = Number(this.chargeCost());
+    const dist = Number(this.chargeDistance());
+    const date = this.date();
+    let ok = true;
+    if (!Number.isFinite(odo) || odo <= 0) {
+      this.chargeOdoError.set(this.i18n.t('charge.err.odometer'));
+      ok = false;
+    }
+    if (!Number.isFinite(kWh) || kWh <= 0) {
+      this.chargeKWhError.set(this.i18n.t('charge.err.kWh'));
+      ok = false;
+    }
+    if (!Number.isFinite(cost) || cost < 0) {
+      this.chargeCostError.set(this.i18n.t('charge.err.cost'));
+      ok = false;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      this.dateError.set(this.i18n.t('fillUp.err.date'));
+      ok = false;
+    }
+    if (!ok || !this.db.car()) {
+      return;
+    }
+    this.saving.set(true);
+    try {
+      await this.db.saveChargeSession({
+        id: this.editChargeId() ?? undefined,
+        odometer: odo,
+        kWh,
+        cost,
+        date,
+        distanceKm: Number.isFinite(dist) && dist > 0 ? dist : undefined,
+        placeLabel: this.placeLabel().trim() || undefined,
+        note: this.note().trim() || undefined,
+      });
+      await this.router.navigateByUrl('/history/fill-ups');
+    } finally {
+      this.saving.set(false);
+    }
+  }
     } finally {
       this.saving.set(false);
     }

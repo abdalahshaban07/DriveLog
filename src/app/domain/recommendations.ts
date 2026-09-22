@@ -14,6 +14,7 @@ import type {
   OtherExpense,
   Settings,
 } from './models';
+import { tireReminders } from './tire-set';
 
 export type RecommendationTone = 'overdue' | 'soon' | 'fuel' | 'spending' | 'tip';
 
@@ -262,6 +263,18 @@ export function buildRecommendations(input: {
       bodyParams: item.labelParams,
       tone: 'soon',
       route: dueRoute(item),
+    });
+  }
+
+  for (const tire of tireReminders(car, input.maintenance, today)) {
+    candidates.push({
+      id: tire.id,
+      kind: tire.id === 'tire-tread' ? 'dueSoon' : 'localTip',
+      titleKey: tire.titleKey,
+      bodyKey: tire.bodyKey,
+      bodyParams: tire.bodyParams,
+      tone: tire.id === 'tire-tread' ? 'soon' : 'tip',
+      route: '/settings',
     });
   }
 
