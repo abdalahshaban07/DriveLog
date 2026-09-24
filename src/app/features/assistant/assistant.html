@@ -34,7 +34,7 @@
   <section class="assistant__chat card" [attr.aria-label]="i18n.t('assistant.chat')">
     <p class="section-label">{{ i18n.t('assistant.chat') }}</p>
 
-    @if (messages().length === 0) {
+    @if (messages().length === 0 && !busy()) {
       <p class="empty-state">{{ i18n.t('assistant.emptyChat') }}</p>
     } @else {
       <ul class="chat__list list-reveal">
@@ -45,6 +45,17 @@
             [attr.data-source]="msg.source ?? null"
           >
             <p>{{ msg.content }}</p>
+          </li>
+        }
+        @if (busy()) {
+          <li
+            class="chat__bubble chat__bubble--loading"
+            data-role="assistant"
+            role="status"
+            aria-live="polite"
+            [attr.aria-label]="i18n.t('common.loading')"
+          >
+            <span class="chat__spinner" aria-hidden="true"></span>
           </li>
         }
       </ul>

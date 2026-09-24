@@ -88,6 +88,7 @@ export class AssistantPage {
       ...list,
       { role: 'user', content: question },
     ]);
+    this.scrollToLatest();
 
     try {
       const reply = await fetchChatReply(
@@ -118,21 +119,32 @@ export class AssistantPage {
       this.scrollToLatest();
     } finally {
       this.busy.set(false);
+      this.scrollToLatest();
     }
   }
 
+  /** ponytail: double rAF so Angular paints; scroll shell `.main` to bottom */
   private scrollToLatest(): void {
-    queueMicrotask(() => {
-      const end = this.host.nativeElement.querySelector('[data-chat-end]');
-      if (!(end instanceof HTMLElement)) {
-        return;
-      }
-      const reduce =
-        typeof matchMedia === 'function' &&
-        matchMedia('(prefers-reduced-motion: reduce)').matches;
-      end.scrollIntoView({
-        block: 'nearest',
-        behavior: reduce ? 'auto' : 'smooth',
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const reduce =
+          typeof matchMedia === 'function' &&
+          matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const main = this.host.nativeElement.closest('.main');
+        if (main instanceof HTMLElement) {
+          main.scrollTo({
+            top: main.scrollHeight,
+            behavior: reduce ? 'auto' : 'smooth',
+          });
+          return;
+        }
+        const end = this.host.nativeElement.querySelector('[data-chat-end]');
+        if (end instanceof HTMLElement) {
+          end.scrollIntoView({
+            block: 'end',
+            behavior: reduce ? 'auto' : 'smooth',
+          });
+        }
       });
     });
   }
