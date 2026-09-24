@@ -119,6 +119,13 @@
         capture="environment"
         (change)="onScanFile($event)"
       />
+      <input
+        id="receipt-gallery-input"
+        class="sr-only"
+        type="file"
+        accept="image/*"
+        (change)="onScanFile($event)"
+      />
       <button
         type="button"
         class="ghost-btn"
@@ -126,6 +133,14 @@
         (click)="scanSharedOrPick()"
       >
         {{ ocrBusy() ? i18n.t('fillUp.scanBusy') : i18n.t('fillUp.scan') }}
+      </button>
+      <button
+        type="button"
+        class="ghost-btn"
+        [disabled]="ocrBusy()"
+        (click)="pickFromGallery()"
+      >
+        {{ i18n.t('fillUp.scanGallery') }}
       </button>
       @if (ocrError()) {
         <p class="error-state" role="alert">{{ ocrError() }}</p>

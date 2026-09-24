@@ -63,7 +63,10 @@ export class SelectField {
     return this.options().find((o) => o.value === v)?.label ?? v;
   });
 
-  /** Move scrim/menu to <body> so card backdrop-filter / .main overflow cannot trap z-index. */
+  /**
+   * Move scrim/menu to <body> (or open <dialog>) so card backdrop-filter / .main
+   * overflow cannot trap z-index. Dialog host keeps the menu in the top layer.
+   */
   private readonly portalEffect = afterRenderEffect(() => {
     if (!this.opened()) {
       return;
@@ -195,15 +198,22 @@ export class SelectField {
     }
   }
 
+  private portalHost(): HTMLElement {
+    const dlg = (this.el.nativeElement as HTMLElement).closest('dialog');
+    return dlg ?? document.body;
+  }
+
   private mountPortal(): void {
     const root = this.el.nativeElement as HTMLElement;
+    const host = this.portalHost();
     const scrim = root.querySelector('.scrim');
     const menu = root.querySelector('.menu');
-    if (scrim && scrim.parentElement !== document.body) {
-      document.body.appendChild(scrim);
+    // Keep menus inside open <dialog> (top layer). Body portals sit under showModal().
+    if (scrim && scrim.parentElement !== host) {
+      host.appendChild(scrim);
     }
-    if (menu && menu.parentElement !== document.body) {
-      document.body.appendChild(menu);
+    if (menu && menu.parentElement !== host) {
+      host.appendChild(menu);
     }
   }
 
@@ -219,11 +229,11 @@ export class SelectField {
       return;
     }
     const r = trigger.getBoundingClientRect();
+    const host = this.portalHost();
     const gap = 6;
-    const nav = 88;
+    const nav = host instanceof HTMLDialogElement ? 16 : 88;
     const spaceBelow = window.innerHeight - r.bottom - gap - nav;
     const spaceAbove = r.top - gap - 8;
-    // Prefer down; flip only when below can't fit ~3 rows
     const openUp = spaceBelow < 10 * 16 && spaceAbove > spaceBelow;
     const avail = Math.max(8 * 16, openUp ? spaceAbove : spaceBelow);
     const maxH = Math.min(20 * 16, window.innerHeight * 0.5, avail);
@@ -233,7 +243,7 @@ export class SelectField {
         top: 'auto',
         bottom: `${window.innerHeight - r.top + gap}px`,
         left: `${r.left}px`,
-        width: `${r.width}px`,
+        width: `${Math.max(r.width, 8 * 16)}px`,
         maxHeight: `${maxH}px`,
       });
       return;
@@ -242,7 +252,7 @@ export class SelectField {
       top: `${r.bottom + gap}px`,
       bottom: 'auto',
       left: `${r.left}px`,
-      width: `${r.width}px`,
+      width: `${Math.max(r.width, 8 * 16)}px`,
       maxHeight: `${maxH}px`,
     });
   }

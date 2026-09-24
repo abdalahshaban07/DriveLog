@@ -84,56 +84,6 @@
     </div>
   </section>
 
-  <section class="card list vehicle-fields" [attr.aria-label]="i18n.t('settings.tireSection')">
-    <p class="section-label">{{ i18n.t('settings.tireSection') }}</p>
-    <div class="vehicle-fields__body stack">
-      <p class="hint">{{ i18n.t('settings.tireSet') }}</p>
-      <div class="tire-set" role="radiogroup" [attr.aria-label]="i18n.t('settings.tireSet')">
-        <button
-          type="button"
-          role="radio"
-          class="tire-set__btn"
-          [class.tire-set__btn--on]="activeTireSet() === 'A'"
-          [attr.aria-checked]="activeTireSet() === 'A'"
-          (click)="onTireSet('A')"
-        >
-          {{ i18n.t('settings.tireSet.A') }}
-        </button>
-        <button
-          type="button"
-          role="radio"
-          class="tire-set__btn"
-          [class.tire-set__btn--on]="activeTireSet() === 'B'"
-          [attr.aria-checked]="activeTireSet() === 'B'"
-          (click)="onTireSet('B')"
-        >
-          {{ i18n.t('settings.tireSet.B') }}
-        </button>
-      </div>
-      @if (tireSwappedAt()) {
-        <p class="hint" role="status">
-          {{ i18n.t('settings.tireSwappedAt') }}: {{ i18n.formatDate(tireSwappedAt()) }}
-        </p>
-      }
-      <button type="button" class="line" (click)="markTireSwap()">
-        <span class="line__text">
-          <strong>{{ i18n.t('settings.tireSwap') }}</strong>
-        </span>
-      </button>
-      <app-numeric-field
-        [label]="i18n.t('settings.tireTread')"
-        [value]="tireTread()"
-        (valueChange)="tireTread.set($event)"
-      />
-      <p class="hint">{{ i18n.t('settings.tireTreadHint') }}</p>
-      <button type="button" class="line" (click)="saveTireTread()">
-        <span class="line__text">
-          <strong>{{ i18n.t('settings.tireTreadSave') }}</strong>
-        </span>
-      </button>
-    </div>
-  </section>
-
   <section class="card list" [attr.aria-label]="i18n.t('settings.dataSection')">
     <p class="section-label">{{ i18n.t('settings.dataSection') }}</p>
     <button type="button" class="line" (click)="exportBackup()">

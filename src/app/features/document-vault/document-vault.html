@@ -5,10 +5,10 @@
     (back)="router.navigateByUrl('/more')"
   />
 
-  <section class="card stack" [attr.aria-label]="i18n.t('vault.form')">
-    @if (editId()) {
-      <p class="label">{{ i18n.t('vault.editing') }}</p>
-    }
+  <section class="vault-form card stack" [attr.aria-label]="i18n.t('vault.form')">
+    <p class="vault-form__label">
+      {{ editId() ? i18n.t('vault.editing') : i18n.t('vault.form') }}
+    </p>
     <app-select-field
       [label]="i18n.t('vault.kind')"
       [options]="kindOptions()"
@@ -45,30 +45,29 @@
   @if (list().length === 0) {
     <p class="empty-state">{{ i18n.t('vault.empty') }}</p>
   } @else {
-    <ul class="record-list list-reveal">
+    <ul class="doc-list list-reveal">
       @for (row of list(); track row.id) {
-        <li class="record-row" [attr.data-urgency]="urgencyClass(row.expiryDate)">
-          <div class="record-row__main">
-            <strong>
+        <li class="doc-card" [attr.data-urgency]="urgencyClass(row.expiryDate)">
+          <div class="doc-card__top">
+            <strong class="doc-card__kind">
               {{ kindLabel(row.kind) }}
               @if (row.label) {
                 — {{ row.label }}
               }
             </strong>
-            <span class="record-row__meta">
-              {{ i18n.formatDate(row.expiryDate) }} · {{ urgencyLabel(row.expiryDate) }}
+            <span class="doc-chip" [attr.data-urgency]="urgencyClass(row.expiryDate)">
+              {{ urgencyLabel(row.expiryDate) }}
             </span>
-            @if (row.note) {
-              <span class="record-row__meta">{{ row.note }}</span>
-            }
           </div>
-          <div class="record-row__side">
-            <div class="record-row__actions">
-              <button type="button" (click)="startEdit(row)">{{ i18n.t('common.edit') }}</button>
-              <button type="button" (click)="askDelete(row.id)">
-                {{ i18n.t('vault.delete') }}
-              </button>
-            </div>
+          <p class="doc-card__meta">{{ i18n.formatDate(row.expiryDate) }}</p>
+          @if (row.note) {
+            <p class="doc-card__note">{{ row.note }}</p>
+          }
+          <div class="doc-card__actions">
+            <button type="button" (click)="startEdit(row)">{{ i18n.t('common.edit') }}</button>
+            <button type="button" class="doc-card__delete" (click)="askDelete(row.id)">
+              {{ i18n.t('vault.delete') }}
+            </button>
           </div>
         </li>
       }

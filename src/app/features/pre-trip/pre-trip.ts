@@ -76,6 +76,8 @@ export class PreTripPage {
         ready: this.allChecked(),
         note: this.note(),
       });
+      this.items.set(emptyPreTripItems());
+      this.note.set('');
       this.savedFlash.set(true);
       setTimeout(() => this.savedFlash.set(false), 2000);
     } finally {
