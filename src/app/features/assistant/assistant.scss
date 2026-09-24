@@ -117,6 +117,28 @@
   white-space: pre-wrap;
 }
 
+.chat__bubble--loading {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: calc(var(--tap) * 0.75);
+}
+
+.chat__spinner {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  border: 2px solid color-mix(in srgb, var(--fuel) 25%, transparent);
+  border-block-start-color: var(--fuel);
+  border-radius: 50%;
+  animation: chat-spin 0.7s linear infinite;
+}
+
+@keyframes chat-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .composer {
   display: flex;
   flex-direction: column;
@@ -160,5 +182,11 @@
   .chip:active:not(:disabled),
   .ghost:active:not(:disabled) {
     transform: none;
+  }
+
+  .chat__spinner {
+    animation: none;
+    border-color: var(--fuel);
+    opacity: 0.7;
   }
 }
