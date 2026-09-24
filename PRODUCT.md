@@ -19,7 +19,7 @@ Phone-first **Operate** PWA for personal fuel + maintenance. Local-first Indexed
 
 ## Intelligence
 
-Visible Home nudges + analytics. **BYOK LLM** allowed (user-supplied API key; optional assistant). Free public APIs degrade offline. No earnings/parking features.
+Visible Home nudges + analytics. **Zero-key online assistant** (Kilo → LLM7 free gateways; Settings toggle; default on) with local coach fallback when off, rate-limited, or unreachable. Free public APIs degrade offline. No earnings/parking features.
 
 ## Stack
 

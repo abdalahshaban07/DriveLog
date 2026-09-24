@@ -78,6 +78,7 @@ function defaultSettings(): Settings {
     unitSystem: DEFAULT_UNIT_SYSTEM,
     installBannerDismissed: false,
     remindersEnabled: false,
+    assistantEnabled: true,
     customMaintenanceTypes: [],
     soonThresholdRatio: DEFAULT_SOON_THRESHOLD,
     notifyMaintenance: true,
@@ -1197,7 +1198,6 @@ export class Db {
       assistantApiKey: _k,
       assistantBaseUrl: _b,
       assistantModel: _m,
-      assistantEnabled: _e,
       ...settings
     } = this._settings();
     return {
@@ -1433,7 +1433,6 @@ export class Db {
       assistantApiKey: _k,
       assistantBaseUrl: _b,
       assistantModel: _m,
-      assistantEnabled: _e,
       ...incomingSettings
     } = backup.settings;
     const settings = {
@@ -1873,7 +1872,8 @@ function normalizeSettings(raw: unknown): Settings {
     firstRealFillAt: o.firstRealFillAt ? String(o.firstRealFillAt) : undefined,
     firstDueAt: o.firstDueAt ? String(o.firstDueAt) : undefined,
     customMaintenanceTypes: normalizeCustomTypes(o.customMaintenanceTypes),
-    // Discard remote assistant keys (8A) — accept then drop.
+    // Persist online toggle; discard legacy BYOK key fields.
+    assistantEnabled: o.assistantEnabled === false ? false : true,
     soonThresholdRatio: Number.isFinite(soon) ? soon : DEFAULT_SOON_THRESHOLD,
     notifyMaintenance: o.notifyMaintenance === false ? false : true,
     notifyBudget: o.notifyBudget === false ? false : true,

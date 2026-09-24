@@ -329,13 +329,16 @@ export interface Settings {
   /** ISO timestamp of first maintenance with dueDate or dueKm. */
   firstDueAt?: string;
   customMaintenanceTypes?: string[];
-  /** @deprecated Removed — Ask DriveLog is always local (8A). Accepted on import then discarded. */
+  /**
+   * Use online (keyless) AI assistant. Default on when undefined.
+   * Off forces local coach only.
+   */
   assistantEnabled?: boolean;
-  /** @deprecated Removed (8A). */
+  /** @deprecated Unused — zero-key gateways; discarded on import. */
   assistantApiKey?: string;
-  /** @deprecated Removed (8A). */
+  /** @deprecated Unused — zero-key gateways; discarded on import. */
   assistantBaseUrl?: string;
-  /** @deprecated Removed (8A). */
+  /** @deprecated Unused — zero-key gateways; discarded on import. */
   assistantModel?: string;
   soonThresholdRatio?: number;
   notifyMaintenance?: boolean;

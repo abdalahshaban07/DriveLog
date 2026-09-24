@@ -6,7 +6,6 @@ import {
   signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { fetchFuelTip } from '../../data/assistant';
 import { Db } from '../../data/db';
 import { contextualFuelTipKey, nextFuelTipKey } from '../../domain/local-coach';
 import { fuelDashboardMetrics } from '../../domain/fuel-dashboard';
@@ -33,7 +32,8 @@ export class FuelPage {
   readonly tip = signal('');
   readonly tipKey = signal<MsgKey | null>(null);
   readonly tipBusy = signal(false);
-  readonly tipSource = signal<'ai' | 'local'>('local');
+  /** Fuel tips are local-only (not remote coach). */
+  readonly tipSource = signal<'local'>('local');
   readonly tipFlash = signal(false);
 
   private readonly gradeOptions: { id: GradeFilter; labelKey: MsgKey }[] = [
@@ -98,16 +98,10 @@ export class FuelPage {
       ? nextFuelTipKey(prevKey, this.db)
       : contextualFuelTipKey(this.db);
     try {
-      const lang = this.i18n.language();
-      const reply = await fetchFuelTip(this.db, lang, (k) => this.i18n.t(k as MsgKey));
-      if (reply.source === 'local') {
-        this.tipKey.set(nextKey);
-        this.tip.set(this.i18n.t(nextKey));
-        this.tipSource.set('local');
-      } else {
-        this.tip.set(reply.text);
-        this.tipSource.set(reply.source);
-      }
+      // Fuel tips stay local-only (never remote coach).
+      this.tipKey.set(nextKey);
+      this.tip.set(this.i18n.t(nextKey));
+      this.tipSource.set('local');
       if (prevKey && nextKey !== prevKey) {
         this.tipFlash.set(true);
         window.setTimeout(() => this.tipFlash.set(false), 600);
