@@ -233,6 +233,28 @@
     }
   </section>
 
+  <section class="card list" [attr.aria-label]="i18n.t('settings.assistantSection')">
+    <p class="section-label">{{ i18n.t('settings.assistantSection') }}</p>
+    <label class="line">
+      <span class="line__text" [id]="assistantOnlineLbl">{{
+        i18n.t('settings.assistantEnabled')
+      }}</span>
+      <span class="switch">
+        <input
+          type="checkbox"
+          class="switch__input"
+          role="switch"
+          [checked]="assistantOnline()"
+          [attr.aria-checked]="assistantOnline()"
+          [attr.aria-labelledby]="assistantOnlineLbl"
+          (change)="onAssistantOnline($event)"
+        />
+        <span class="switch__track" aria-hidden="true"></span>
+      </span>
+    </label>
+    <p class="line line--hint">{{ i18n.t('settings.assistantHint') }}</p>
+  </section>
+
   @if (!install.installed()) {
     <section class="card list" [attr.aria-label]="i18n.t('settings.deviceSection')">
       <p class="section-label">{{ i18n.t('settings.deviceSection') }}</p>

@@ -12,7 +12,7 @@ export const FUEL_TIP_KEYS = [
   'fuel.tip.compareGrades',
 ] as const satisfies readonly MsgKey[];
 
-export type CoachSource = 'local';
+export type CoachSource = 'local' | 'remote';
 
 export type CoachReply = {
   text: string;

@@ -66,9 +66,12 @@ export class SettingsPage {
   readonly router = inject(Router);
 
   readonly remindersLbl = 'settings-reminders';
+  readonly assistantOnlineLbl = 'settings-assistant-online';
   readonly theme = computed(() => this.db.settings().theme);
   readonly look = computed(() => this.db.settings().look);
   readonly remindersEnabled = computed(() => this.db.settings().remindersEnabled === true);
+  /** Online AI default on when undefined. */
+  readonly assistantOnline = computed(() => this.db.settings().assistantEnabled !== false);
   readonly notifyMaintenance = computed(() => this.db.settings().notifyMaintenance !== false);
   readonly notifyBudget = computed(() => this.db.settings().notifyBudget !== false);
   readonly notifyForecast = computed(() => this.db.settings().notifyForecast !== false);
@@ -167,6 +170,11 @@ export class SettingsPage {
   async onReminders(event: Event): Promise<void> {
     const on = (event.target as HTMLInputElement).checked;
     await this.db.updateSettings({ remindersEnabled: on });
+  }
+
+  async onAssistantOnline(event: Event): Promise<void> {
+    const on = (event.target as HTMLInputElement).checked;
+    await this.db.updateSettings({ assistantEnabled: on });
   }
 
   async onNotifyFlag(

@@ -26,14 +26,23 @@ describe('AppFeaturesPage', () => {
     expect(fixture.componentInstance.items.length).toBeGreaterThan(8);
     expect(el.textContent).toContain('features.home.title');
     expect(el.textContent).toContain('features.exportPdf.title');
+    expect(el.textContent).toContain('features.assistant.title');
     expect(el.textContent).toContain('features.health.body');
     expect(el.textContent).toContain('features.budget.title');
-    expect(el.textContent).not.toContain('features.assistant');
   });
 
-  it('does not claim a BYOK API key for health or budget', () => {
+  it('lists zero-key Smart Advisor and does not claim BYOK for health or budget', () => {
+    expect(en['features.assistant.body'].toLowerCase()).toMatch(/no api key/);
+    expect(en['features.assistant.body'].toLowerCase()).not.toMatch(
+      /your own api key|with your api key|bring your own/,
+    );
+    expect(ar['features.assistant.title']).toBeTruthy();
+    expect(ar['features.assistant.body']).toBeTruthy();
     expect(en['features.health.body'].toLowerCase()).not.toMatch(
-      /your own api key|with your api key/,
+      /your own api key|with your api key|cloud llm/,
+    );
+    expect(en['features.budget.body'].toLowerCase()).not.toMatch(
+      /your own api key|with your api key|cloud llm/,
     );
     expect(ar['features.budget.body']).toBeTruthy();
     expect(en['features.exportPdf.title']).toBeTruthy();

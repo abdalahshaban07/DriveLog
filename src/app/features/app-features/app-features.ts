@@ -13,7 +13,9 @@ type FeatureGroup = {
 
 /**
  * SSOT for /settings/features — keep in sync with shipped surfaces
- * (routes, history PDF export, local coach). No BYOK / API-key claims.
+ * (routes, history PDF export, zero-key Smart Advisor). Health/budget are
+ * local math — not cloud LLM / not BYOK. Assistant uses free public
+ * gateways with Settings toggle + local fallback — no API key.
  */
 export const FEATURE_CATALOG: readonly FeatureGroup[] = [
   {
@@ -40,6 +42,7 @@ export const FEATURE_CATALOG: readonly FeatureGroup[] = [
   {
     headingKey: 'features.group.tools',
     items: [
+      { titleKey: 'features.assistant.title', bodyKey: 'features.assistant.body' },
       { titleKey: 'features.health.title', bodyKey: 'features.health.body' },
       { titleKey: 'features.budget.title', bodyKey: 'features.budget.body' },
       { titleKey: 'features.breakdowns.title', bodyKey: 'features.breakdowns.body' },

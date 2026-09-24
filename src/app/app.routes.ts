@@ -125,6 +125,12 @@ export const routes: Routes = [
     canActivate: [setupGuard],
   },
   {
+    path: 'assistant',
+    loadComponent: () =>
+      import('./features/assistant/assistant').then((m) => m.AssistantPage),
+    canActivate: [setupGuard],
+  },
+  {
     path: 'settings/features',
     loadComponent: () =>
       import('./features/app-features/app-features').then(

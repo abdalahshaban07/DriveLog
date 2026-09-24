@@ -1,0 +1,82 @@
+<app-page-header
+  [title]="i18n.t('assistant.title')"
+  [showBack]="true"
+  (back)="router.navigateByUrl('/more')"
+/>
+
+<div class="assistant page">
+  <p class="hint">{{ i18n.t('assistant.setupHint') }}</p>
+  <p class="hint privacy">{{ i18n.t('assistant.privacy') }}</p>
+
+  @if (!online()) {
+    <p class="status" role="status" aria-live="polite">
+      {{ i18n.t('assistant.localOnly') }}
+      <a routerLink="/settings">{{ i18n.t('assistant.openSettings') }}</a>
+    </p>
+  }
+
+  <section class="card list" [attr.aria-label]="i18n.t('assistant.faqTitle')">
+    <p class="section-label">{{ i18n.t('assistant.faqTitle') }}</p>
+    @for (key of faqKeys; track key) {
+      <button
+        type="button"
+        class="line"
+        [disabled]="busy()"
+        (click)="sendFaq(key)"
+      >
+        <span class="line__text">{{ i18n.t(key) }}</span>
+      </button>
+    }
+  </section>
+
+  <section class="card chat" [attr.aria-label]="i18n.t('assistant.chat')">
+    <p class="section-label">{{ i18n.t('assistant.chat') }}</p>
+
+    @if (messages().length === 0) {
+      <p class="empty-state">{{ i18n.t('assistant.emptyChat') }}</p>
+    } @else {
+      <ul class="chat__list list-reveal">
+        @for (msg of messages(); track $index) {
+          <li
+            class="chat__bubble"
+            [attr.data-role]="msg.role"
+            [attr.data-source]="msg.source ?? null"
+          >
+            <p>{{ msg.content }}</p>
+          </li>
+        }
+      </ul>
+    }
+
+    @if (statusKey()) {
+      <p class="status" role="status" aria-live="polite">
+        {{ i18n.t(statusKey()!) }}
+        @if (statusKey() === 'assistant.localOnly' || statusKey() === 'assistant.network') {
+          <a routerLink="/settings">{{ i18n.t('assistant.openSettings') }}</a>
+        }
+      </p>
+    }
+
+    <app-text-field
+      [label]="i18n.t('assistant.input')"
+      [(value)]="draft"
+      [multiline]="true"
+    />
+    <div class="chat__actions">
+      <app-primary-button
+        [label]="i18n.t('assistant.send')"
+        [disabled]="busy() || !draft().trim()"
+        [stretch]="true"
+        (pressed)="sendTyped()"
+      />
+      <button
+        type="button"
+        class="ghost"
+        [disabled]="busy() || messages().length === 0"
+        (click)="clearChat()"
+      >
+        {{ i18n.t('assistant.clear') }}
+      </button>
+    </div>
+  </section>
+</div>
