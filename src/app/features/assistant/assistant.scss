@@ -5,20 +5,83 @@
   padding-block-end: calc(var(--space-5) + env(safe-area-inset-bottom));
 }
 
-.privacy {
-  color: var(--muted);
-  font-size: 0.9rem;
+.assistant__lead {
+  margin: 0;
+  color: var(--text);
 }
 
-.status {
+.assistant__privacy {
   margin: 0;
   color: var(--muted);
   font-size: 0.9rem;
 }
 
-.status a {
+.assistant__status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.assistant__status a {
   color: var(--cta);
   margin-inline-start: var(--space-2);
+}
+
+.assistant__faq {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.chip-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip {
+  min-height: var(--tap);
+  padding-inline: var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
+  border-radius: var(--radius);
+  background: var(--well);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition:
+    transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .chip:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--fuel) 12%, var(--surface));
+    border-color: color-mix(in srgb, var(--fuel) 40%, transparent);
+  }
+}
+
+.chip:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--fuel);
+  outline-offset: 2px;
+}
+
+.assistant__chat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--paper);
+  color: var(--paper-text);
 }
 
 .chat__list {
@@ -37,6 +100,7 @@
   background: var(--well);
   color: var(--text);
   max-inline-size: 100%;
+  transition: opacity 160ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .chat__bubble[data-role='user'] {
@@ -53,11 +117,17 @@
   white-space: pre-wrap;
 }
 
-.chat__actions {
+.composer {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  margin-block-start: var(--space-3);
+  margin-block-start: var(--space-2);
+}
+
+.composer__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 .ghost {
@@ -68,9 +138,27 @@
   font: inherit;
   cursor: pointer;
   text-align: start;
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.ghost:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .ghost:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip,
+  .ghost,
+  .chat__bubble {
+    transition: none;
+  }
+
+  .chip:active:not(:disabled),
+  .ghost:active:not(:disabled) {
+    transform: none;
+  }
 }

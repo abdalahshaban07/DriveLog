@@ -622,6 +622,12 @@ export const ar: Record<MsgKey, string> = {
   'reports.economyTitle': 'اقتصاد البنزين',
   'reports.economy.body': 'آخر تنك مليان: {l100}.',
   'reports.economy.empty': 'سجّل تنك مليان عشان تتبّع الاقتصاد.',
+  'reports.economy.better':
+    'التنك ده {current} مقابل معتادك {baseline} — أحسن بحوالي {pct}٪. كمّل بنفس الأسلوب.',
+  'reports.economy.worse':
+    'التنك ده {current} مقابل معتادك {baseline} — استهلاك أعلى بحوالي {pct}٪. راجع الكاوتش وأسلوب السواقة.',
+  'reports.economy.flat':
+    'التنك ده {current} قريب من معتادك {baseline}. كمّل ثابت.',
   'reports.maintTitle': 'الصيانة',
   'reports.maint.count': '{count} سجلات في الفترة دي.',
   'reports.maint.empty': 'مفيش صيانة مسجّلة في الفترة دي.',
@@ -668,7 +674,13 @@ export const ar: Record<MsgKey, string> = {
   'fuel.tip.compareGrades': 'خد بنزين المحرك المطلوب — ٩٥ مش دايمًا أوفر من ٩٢.',
   'fuel.tip.highConsumption': 'الاستهلاك الأخير عالي — راجع الكاوتش وأسلوب السواقة.',
   'fuel.tip.logMore': 'سجّل تعبئتين تلاتة كمان عشان النصايح تبقى أدق.',
+  'fuel.tip.worseThanUsual':
+    'التنك ده استهلك أكتر من معتادك — راجع ضغط الكاوتش وأسلوب السواقة.',
+  'fuel.tip.betterThanUsual':
+    'التنك ده أحسن من معتادك — كمّل بنفس العادات.',
   'fuel.tip.source': 'النصايح محلية من سجلاتك على الجهاز',
+  'fuel.tip.sourceRemote': 'نصيحة من المدرب الأونلاين المجاني (محفوظة لليوم)',
+  'fuel.tip.sourceOffline': 'المساعد الأونلاين مقفول — نصيحة على الجهاز',
   'fuel.gradeFilter': 'نوع البنزين',
   'fuel.gradeAll': 'كل الأنواع',
   'fuel.metrics': 'مؤشرات البنزين',
@@ -870,6 +882,12 @@ export const ar: Record<MsgKey, string> = {
   'health.empty': 'مفيش قطع نشطة. سجّل صيانة أو فعّل قطع من الكتالوج.',
   'health.attentionCount': '{count} محتاجين اهتمام',
   'health.summary.ok': 'كل حاجة تمام دلوقتي',
+  'health.insight.title': 'لمحة الصحة',
+  'health.insight.refresh': 'حدّث اللمحة',
+  'health.insight.onDevice': 'ملخص على الجهاز فقط',
+  'health.insight.prompt':
+    'اكتب جملة لثلاث جمل قصيرة ترتّب أولويات الاهتمام بالعربية دي. استخدم بس حقائق JSON. من غير VIN. كن عملي.',
+  'health.insight.sourceRemote': 'لمحة من المدرب الأونلاين المجاني (محفوظة لليوم)',
   'health.glance.attention': 'مستحق',
   'health.glance.upcoming': 'قريب',
   'health.glance.healthy': 'كويس',

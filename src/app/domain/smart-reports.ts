@@ -1,3 +1,4 @@
+import { tankEconomyVsAvg } from './economy';
 import { fuelDashboardMetrics } from './fuel-dashboard';
 import { periodTotals, type PeriodTotals } from './expense-period';
 import type {
@@ -66,8 +67,22 @@ export function buildSmartReports(input: {
     });
   }
 
+  const vsAvg = tankEconomyVsAvg(input.fills);
   const fuel = fuelDashboardMetrics(input.fills);
-  if (fuel.lastL100 != null) {
+  if (vsAvg) {
+    const pct = Math.round(Math.abs(vsAvg.deltaPct));
+    cards.push({
+      id: 'economy',
+      titleKey: 'reports.economyTitle',
+      bodyKey: `reports.economy.${vsAvg.direction}`,
+      bodyParams: {
+        current: vsAvg.currentL100,
+        baseline: vsAvg.baselineL100,
+        pct,
+      },
+      tone: 'fuel',
+    });
+  } else if (fuel.lastL100 != null) {
     cards.push({
       id: 'economy',
       titleKey: 'reports.economyTitle',

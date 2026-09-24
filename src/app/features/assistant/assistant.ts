@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  ElementRef,
   inject,
   signal,
 } from '@angular/core';
@@ -43,6 +44,7 @@ export class AssistantPage {
   readonly i18n = inject(I18n);
   readonly db = inject(Db);
   readonly router = inject(Router);
+  private readonly host = inject(ElementRef<HTMLElement>);
 
   readonly draft = signal('');
   readonly busy = signal(false);
@@ -113,8 +115,25 @@ export class AssistantPage {
           source: reply.source,
         },
       ]);
+      this.scrollToLatest();
     } finally {
       this.busy.set(false);
     }
+  }
+
+  private scrollToLatest(): void {
+    queueMicrotask(() => {
+      const end = this.host.nativeElement.querySelector('[data-chat-end]');
+      if (!(end instanceof HTMLElement)) {
+        return;
+      }
+      const reduce =
+        typeof matchMedia === 'function' &&
+        matchMedia('(prefers-reduced-motion: reduce)').matches;
+      end.scrollIntoView({
+        block: 'nearest',
+        behavior: reduce ? 'auto' : 'smooth',
+      });
+    });
   }
 }

@@ -233,10 +233,12 @@ export function buildFuelCostGlance(
   };
 }
 
-/** Min full segments before below-baseline chip can fire. */
+/** Min full segments before below-baseline chip / vs-avg tips can fire. */
 export const EFFICIENCY_BASELINE_MIN_SEGMENTS = 3;
 /** Latest L/100 must be this fraction worse than prior baseline. */
 export const EFFICIENCY_WORSE_THRESHOLD = 0.15;
+/** |deltaPct| below this → flat vs personal average. */
+export const TANK_ECONOMY_FLAT_PCT = 3;
 
 export type EfficiencyBelowBaseline = {
   endId: string;
@@ -245,17 +247,30 @@ export type EfficiencyBelowBaseline = {
   pctWorse: number;
 };
 
+export type TankEconomyVsAvg = {
+  endId: string;
+  currentL100: number;
+  baselineL100: number;
+  /** (current - baseline) / baseline * 100; positive = higher use. */
+  deltaPct: number;
+  direction: 'better' | 'worse' | 'flat';
+};
+
+function segmentsForBaseline(fillUps: readonly FillUp[]): EconomySegment[] {
+  const perFill = computePerFillSegments(fillUps);
+  return perFill.length > 0 ? perFill : computeEconomySegments(fillUps);
+}
+
 /**
- * True when latest segment L/100 is ≥15% worse than distance-weighted
- * baseline of prior segments (≥3 total). Prefers per-fill segments.
+ * Latest segment L/100 vs distance-weighted average of prior segments.
+ * Needs ≥3 segments (latest + ≥2 priors). Lower L/100 = better.
  */
-export function efficiencyBelowBaseline(
+export function tankEconomyVsAvg(
   fillUps: readonly FillUp[],
   minSegments: number = EFFICIENCY_BASELINE_MIN_SEGMENTS,
-  worseThreshold: number = EFFICIENCY_WORSE_THRESHOLD,
-): EfficiencyBelowBaseline | null {
-  const perFill = computePerFillSegments(fillUps);
-  const segments = perFill.length > 0 ? perFill : computeEconomySegments(fillUps);
+  flatPct: number = TANK_ECONOMY_FLAT_PCT,
+): TankEconomyVsAvg | null {
+  const segments = segmentsForBaseline(fillUps);
   if (segments.length < minSegments) {
     return null;
   }
@@ -274,15 +289,40 @@ export function efficiencyBelowBaseline(
   if (baselineL100 <= 0) {
     return null;
   }
-  const pctWorse = (last.litersPer100Km - baselineL100) / baselineL100;
-  if (pctWorse < worseThreshold) {
-    return null;
+  const deltaPct = ((last.litersPer100Km - baselineL100) / baselineL100) * 100;
+  let direction: TankEconomyVsAvg['direction'] = 'flat';
+  if (deltaPct <= -flatPct) {
+    direction = 'better';
+  } else if (deltaPct >= flatPct) {
+    direction = 'worse';
   }
   return {
     endId: last.endId,
-    lastL100: last.litersPer100Km,
+    currentL100: last.litersPer100Km,
     baselineL100,
-    pctWorse: pctWorse * 100,
+    deltaPct,
+    direction,
+  };
+}
+
+/**
+ * True when latest segment L/100 is ≥15% worse than distance-weighted
+ * baseline of prior segments (≥3 total). Prefers per-fill segments.
+ */
+export function efficiencyBelowBaseline(
+  fillUps: readonly FillUp[],
+  minSegments: number = EFFICIENCY_BASELINE_MIN_SEGMENTS,
+  worseThreshold: number = EFFICIENCY_WORSE_THRESHOLD,
+): EfficiencyBelowBaseline | null {
+  const cmp = tankEconomyVsAvg(fillUps, minSegments, 0);
+  if (!cmp || cmp.deltaPct < worseThreshold * 100) {
+    return null;
+  }
+  return {
+    endId: cmp.endId,
+    lastL100: cmp.currentL100,
+    baselineL100: cmp.baselineL100,
+    pctWorse: cmp.deltaPct,
   };
 }
 
