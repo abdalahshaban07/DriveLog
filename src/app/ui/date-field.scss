@@ -60,24 +60,22 @@
   padding: 0;
   border: 0;
   background: transparent;
+  overflow: visible;
   opacity: 0;
-  transform: scale(0.95);
+  /* no transform — fixed portaled selects break inside transformed dialogs */
   transition:
     opacity 250ms var(--ease),
-    transform 250ms var(--ease),
     overlay 250ms allow-discrete,
     display 250ms allow-discrete;
 }
 
 .cal-dialog[open] {
   opacity: 1;
-  transform: scale(1);
 }
 
 @starting-style {
   .cal-dialog[open] {
     opacity: 0;
-    transform: scale(0.95);
   }
 }
 
@@ -116,16 +114,15 @@
   .cal-dialog::backdrop {
     transition: none;
   }
-
-  .cal-dialog[open] {
-    transform: none;
-  }
 }
 
 .cal {
+  position: relative;
+  z-index: 1;
   display: grid;
   gap: 8px;
   padding: 12px;
+  overflow: visible;
   border-radius: var(--radius);
   border: 1px solid color-mix(in srgb, var(--fuel) 28%, transparent);
   background: var(--fill-surface);
@@ -203,12 +200,16 @@
 }
 
 .cal__nav {
+  position: relative;
+  z-index: 2;
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
   gap: var(--space-2);
 }
 
 .cal__select-field {
+  position: relative;
+  z-index: 3;
   min-inline-size: 0;
 }
 

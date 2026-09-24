@@ -71,7 +71,7 @@
 }
 
 .menu {
-  /* top/left/width/max-height from TS; node is ported to document.body */
+  /* top/left/width/max-height from TS; node is ported to document.body or dialog */
   position: fixed;
   z-index: 410;
   margin: 0;
@@ -88,6 +88,14 @@
     0 16px 40px color-mix(in srgb, #000 28%, transparent),
     0 0 0 1px color-mix(in srgb, var(--well) 80%, transparent);
   scrollbar-color: var(--muted) var(--well);
+}
+
+dialog .menu {
+  z-index: 500;
+}
+
+dialog .scrim {
+  z-index: 490;
 }
 
 .menu li {

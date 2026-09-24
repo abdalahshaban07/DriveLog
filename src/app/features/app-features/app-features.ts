@@ -46,7 +46,6 @@ export const FEATURE_CATALOG: readonly FeatureGroup[] = [
       { titleKey: 'features.expenses.title', bodyKey: 'features.expenses.body' },
       { titleKey: 'features.vault.title', bodyKey: 'features.vault.body' },
       { titleKey: 'features.preTrip.title', bodyKey: 'features.preTrip.body' },
-      { titleKey: 'features.tires.title', bodyKey: 'features.tires.body' },
     ],
   },
   {

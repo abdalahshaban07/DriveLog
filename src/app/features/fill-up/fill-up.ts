@@ -374,6 +374,10 @@ export class FillUpPage {
     document.getElementById('receipt-scan-input')?.click();
   }
 
+  pickFromGallery(): void {
+    document.getElementById('receipt-gallery-input')?.click();
+  }
+
   private async runOcr(image: Blob): Promise<void> {
     this.ocrBusy.set(true);
     this.ocrError.set('');

@@ -9,8 +9,17 @@ import {
 import { latestEconomy, monthFuelSpend } from '../../domain/economy';
 import { nextExpiringDoc } from '../../domain/vehicle-docs';
 import { I18n } from '../../i18n/i18n';
+import type { MsgKey } from '../../i18n/en';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
+
+/** Short currency label for passport PDF (avoids Intl BiDi mess). */
+function pdfCurrencyLabel(code: string, lang: string): string {
+  if (lang === 'ar' && code === 'EGP') {
+    return 'ج.م';
+  }
+  return code;
+}
 
 @Component({
   selector: 'app-car-passport',
@@ -55,27 +64,38 @@ export class CarPassportPage {
     this.error.set('');
     this.status.set('');
     try {
+      const next = nextExpiringDoc(this.db.vehicleDocuments());
+      const currency = this.db.settings().currency;
       const blob = await carPassportToPdf(
         {
           car,
           fillUps: this.db.fillUps(),
           documents: this.db.vehicleDocuments(),
-          formatMoney: (n) => this.i18n.formatMoney(n, this.db.settings().currency, 2),
-          formatUnit: (n) => this.i18n.formatUnit(n, 'common.lPer100', 1),
-          formatDate: (d) => this.i18n.formatDate(d),
-          formatNumber: (n) => this.i18n.formatNumber(n, { maximumFractionDigits: 0 }),
+          maintenance: this.db.maintenance(),
         },
         {
           title: this.i18n.t('passport.title'),
-          generated: this.i18n.t('passport.generated', {
-            date: new Date().toISOString().slice(0, 10),
-          }),
+          generatedPrefix: this.i18n.t('passport.generatedPrefix'),
           vehicle: this.i18n.t('passport.vehicle'),
           odometer: this.i18n.t('passport.odometer'),
           economy: this.i18n.t('passport.economy'),
           monthSpend: this.i18n.t('passport.monthSpend'),
           nextDoc: this.i18n.t('passport.nextDoc'),
           none: this.i18n.t('passport.none'),
+          km: this.i18n.t('common.km'),
+          lPer100: this.i18n.t('common.lPer100'),
+          currencyLabel: pdfCurrencyLabel(currency, this.i18n.language()),
+          maintenance: this.i18n.t('passport.maintenance'),
+          maintEmpty: this.i18n.t('passport.maintEmpty'),
+          nextDocKind: next
+            ? this.i18n.t(`vault.kind.${next.kind}` as MsgKey)
+            : undefined,
+          typeLabel: (type, otherLabel) => {
+            if (type === 'other' && otherLabel) {
+              return otherLabel;
+            }
+            return this.i18n.t(`maintenance.type.${type}` as MsgKey);
+          },
         },
         { rtl: this.i18n.dir() === 'rtl' },
       );

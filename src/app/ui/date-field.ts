@@ -138,7 +138,13 @@ export class DateField {
     this.monthOptions().map((m) => ({ value: String(m.value), label: m.label })),
   );
   readonly yearSelectOptions = computed<SelectOption[]>(() =>
-    this.yearOptions().map((y) => ({ value: String(y), label: String(y) })),
+    this.yearOptions().map((y) => ({
+      value: String(y),
+      label: this.i18n.formatNumber(y, {
+        maximumFractionDigits: 0,
+        useGrouping: false,
+      }),
+    })),
   );
   readonly dayLabels = computed(() => {
     const fmt = new Intl.DateTimeFormat(this.locale(), { day: 'numeric' });

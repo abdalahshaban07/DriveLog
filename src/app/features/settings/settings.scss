@@ -34,27 +34,6 @@
   border: 1px solid var(--hairline);
 }
 
-.tire-set {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-2);
-}
-
-.tire-set__btn {
-  min-height: var(--tap);
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius);
-  background: var(--well);
-  color: var(--text);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.tire-set__btn--on {
-  border-color: var(--fuel);
-  background: color-mix(in srgb, var(--fuel) 18%, var(--surface));
-}
-
 .list {
   display: grid;
 }
