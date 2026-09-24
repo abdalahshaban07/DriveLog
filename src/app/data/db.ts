@@ -1880,6 +1880,8 @@ function normalizeSettings(raw: unknown): Settings {
     notifyForecast: o.notifyForecast === false ? false : true,
     fuelTipText: o.fuelTipText ? String(o.fuelTipText) : undefined,
     fuelTipDay: o.fuelTipDay ? String(o.fuelTipDay) : undefined,
+    healthInsightText: o.healthInsightText ? String(o.healthInsightText) : undefined,
+    healthInsightDay: o.healthInsightDay ? String(o.healthInsightDay) : undefined,
     licenseExpiry: o.licenseExpiry ? String(o.licenseExpiry) : undefined,
     registrationExpiry: o.registrationExpiry
       ? String(o.registrationExpiry)

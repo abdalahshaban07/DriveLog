@@ -620,6 +620,12 @@ export const en = {
   'reports.economyTitle': 'Fuel economy',
   'reports.economy.body': 'Latest full tank: {l100}.',
   'reports.economy.empty': 'Log a full tank fill-up to track economy.',
+  'reports.economy.better':
+    'This tank {current} vs your usual {baseline} — about {pct}% better. Keep the same habits.',
+  'reports.economy.worse':
+    'This tank {current} vs your usual {baseline} — about {pct}% higher use. Check tires and driving style.',
+  'reports.economy.flat':
+    'This tank {current} is about the same as your usual {baseline}. Stay consistent.',
   'reports.maintTitle': 'Maintenance',
   'reports.maint.count': '{count} entries logged this period.',
   'reports.maint.empty': 'No maintenance logged this period.',
@@ -665,7 +671,13 @@ export const en = {
   'fuel.tip.compareGrades': 'Stick to the grade your engine needs — higher octane is not always better.',
   'fuel.tip.highConsumption': 'Recent consumption looks high — check tire pressure and driving style.',
   'fuel.tip.logMore': 'Log a few more fill-ups to unlock personalized fuel insights.',
+  'fuel.tip.worseThanUsual':
+    'This tank used more fuel than your usual pace — check tire pressure and driving style.',
+  'fuel.tip.betterThanUsual':
+    'This tank beat your usual economy — keep the same habits.',
   'fuel.tip.source': 'Tips are on-device from your logs',
+  'fuel.tip.sourceRemote': 'Tip from free online coach (cached today)',
+  'fuel.tip.sourceOffline': 'Online assistant is off — on-device tip',
   'fuel.gradeFilter': 'Fuel grade',
   'fuel.gradeAll': 'All grades',
   'fuel.metrics': 'Fuel metrics',
@@ -867,6 +879,12 @@ export const en = {
   'health.empty': 'No active parts yet. Log maintenance or enable parts from the catalog.',
   'health.attentionCount': '{count} need attention',
   'health.summary.ok': 'All clear for now',
+  'health.insight.title': 'Health insight',
+  'health.insight.refresh': 'Refresh insight',
+  'health.insight.onDevice': 'On-device summary only',
+  'health.insight.prompt':
+    'Write 1–3 short sentences prioritizing what needs attention on this car. Use only the JSON facts. No VIN. Be practical.',
+  'health.insight.sourceRemote': 'Insight from free online coach (cached today)',
   'health.glance.attention': 'Due',
   'health.glance.upcoming': 'Soon',
   'health.glance.healthy': 'OK',

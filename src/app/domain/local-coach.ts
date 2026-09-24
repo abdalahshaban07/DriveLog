@@ -1,3 +1,4 @@
+import { tankEconomyVsAvg } from './economy';
 import { fuelDashboardMetrics } from './fuel-dashboard';
 import { periodTotals, activePeriod } from './expense-period';
 import { createLocalAdvisor } from './smart-advisor';
@@ -42,6 +43,13 @@ export function contextualFuelTipKey(db: Db): MsgKey {
   const car = db.car();
   if (!car) {
     return FUEL_TIP_KEYS[0]!;
+  }
+  const vsAvg = tankEconomyVsAvg(db.fillUps());
+  if (vsAvg?.direction === 'worse') {
+    return 'fuel.tip.worseThanUsual';
+  }
+  if (vsAvg?.direction === 'better') {
+    return 'fuel.tip.betterThanUsual';
   }
   const fuel = fuelDashboardMetrics(db.fillUps());
   if (fuel.lastL100 != null && fuel.lastL100 > 10) {

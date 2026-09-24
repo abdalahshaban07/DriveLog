@@ -88,6 +88,61 @@ describe('economy', () => {
     expect(fuelMonthCompare([], new Date(2026, 2, 1))).toBeNull();
   });
 
+  it('tankEconomyVsAvg compares latest to prior average', async () => {
+    const { tankEconomyVsAvg } = await import('./economy');
+    const fills = [
+      fill({
+        id: 'a',
+        odometer: 10000,
+        liters: 40,
+        cost: 50,
+        tankFull: true,
+        distanceKm: 500,
+        date: '2026-01-01',
+      }),
+      fill({
+        id: 'b',
+        odometer: 10500,
+        liters: 40,
+        cost: 50,
+        tankFull: true,
+        distanceKm: 500,
+        date: '2026-02-01',
+      }),
+      fill({
+        id: 'c',
+        odometer: 11000,
+        liters: 50,
+        cost: 60,
+        tankFull: true,
+        distanceKm: 500,
+        date: '2026-03-01',
+      }),
+    ];
+    const worse = tankEconomyVsAvg(fills);
+    expect(worse).not.toBeNull();
+    expect(worse!.direction).toBe('worse');
+    expect(worse!.baselineL100).toBeCloseTo(8, 5);
+    expect(worse!.currentL100).toBeCloseTo(10, 5);
+
+    const betterFills = [
+      fills[0]!,
+      fills[1]!,
+      fill({
+        id: 'ok',
+        odometer: 11000,
+        liters: 35,
+        cost: 45,
+        tankFull: true,
+        distanceKm: 500,
+        date: '2026-03-01',
+      }),
+    ];
+    const better = tankEconomyVsAvg(betterFills);
+    expect(better!.direction).toBe('better');
+    expect(tankEconomyVsAvg(fills.slice(0, 2))).toBeNull();
+  });
+
   it('efficiencyBelowBaseline fires when latest is ≥15% worse', async () => {
     const { efficiencyBelowBaseline } = await import('./economy');
     // Three per-fill segments: 8, 8, then 10 L/100 (= +25% vs baseline 8)

@@ -23,6 +23,35 @@
     </ul>
   </div>
 
+  <section
+    class="health__insight tip-strip card"
+    [attr.aria-label]="i18n.t('health.insight.title')"
+  >
+    <div class="tip-strip__head">
+      <p class="tip-strip__label">{{ i18n.t('health.insight.title') }}</p>
+    </div>
+    @if (insightBusy()) {
+      <p class="tip-strip__text">{{ i18n.t('common.loading') }}</p>
+    } @else if (insight()) {
+      <p class="tip-strip__text">{{ insight() }}</p>
+      <p class="tip-strip__hint">{{ i18n.t('health.insight.sourceRemote') }}</p>
+    } @else {
+      <p class="tip-strip__text tip-strip__text--muted">
+        {{ i18n.t('health.insight.onDevice') }}
+      </p>
+    }
+    @if (online()) {
+      <button
+        type="button"
+        class="tip-strip__refresh"
+        [disabled]="insightBusy()"
+        (click)="loadInsight(true)"
+      >
+        {{ i18n.t('health.insight.refresh') }}
+      </button>
+    }
+  </section>
+
   <p class="health__privacy" role="status">{{ i18n.t('privacy.onDevice') }}</p>
 
   <div class="health__actions">

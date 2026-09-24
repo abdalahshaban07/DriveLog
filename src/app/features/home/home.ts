@@ -551,8 +551,11 @@ export class HomePage {
 
   reportBody(key: string, params?: Record<string, string | number>): string {
     const next = { ...(params ?? {}) };
-    if (typeof next['l100'] === 'number') {
-      next['l100'] = this.i18n.formatUnit(next['l100'], 'common.lPer100', 1);
+    for (const k of ['l100', 'current', 'baseline'] as const) {
+      const v = next[k];
+      if (typeof v === 'number') {
+        next[k] = this.i18n.formatUnit(v, 'common.lPer100', 1);
+      }
     }
     return this.i18n.t(key as MsgKey, next);
   }

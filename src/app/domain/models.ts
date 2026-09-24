@@ -347,6 +347,9 @@ export interface Settings {
   /** Cached fuel tip text + day key. */
   fuelTipText?: string;
   fuelTipDay?: DateOnly;
+  /** Cached vehicle health insight + day key. */
+  healthInsightText?: string;
+  healthInsightDay?: DateOnly;
   /**
    * @deprecated v3 only — migrated onto Car in DB v4.
    */

@@ -5,31 +5,33 @@
 />
 
 <div class="assistant page">
-  <p class="hint">{{ i18n.t('assistant.setupHint') }}</p>
-  <p class="hint privacy">{{ i18n.t('assistant.privacy') }}</p>
+  <p class="assistant__lead">{{ i18n.t('assistant.setupHint') }}</p>
+  <p class="assistant__privacy">{{ i18n.t('assistant.privacy') }}</p>
 
   @if (!online()) {
-    <p class="status" role="status" aria-live="polite">
+    <p class="assistant__status" role="status" aria-live="polite">
       {{ i18n.t('assistant.localOnly') }}
       <a routerLink="/settings">{{ i18n.t('assistant.openSettings') }}</a>
     </p>
   }
 
-  <section class="card list" [attr.aria-label]="i18n.t('assistant.faqTitle')">
+  <section class="assistant__faq" [attr.aria-label]="i18n.t('assistant.faqTitle')">
     <p class="section-label">{{ i18n.t('assistant.faqTitle') }}</p>
-    @for (key of faqKeys; track key) {
-      <button
-        type="button"
-        class="line"
-        [disabled]="busy()"
-        (click)="sendFaq(key)"
-      >
-        <span class="line__text">{{ i18n.t(key) }}</span>
-      </button>
-    }
+    <div class="chip-rail">
+      @for (key of faqKeys; track key) {
+        <button
+          type="button"
+          class="chip"
+          [disabled]="busy()"
+          (click)="sendFaq(key)"
+        >
+          {{ i18n.t(key) }}
+        </button>
+      }
+    </div>
   </section>
 
-  <section class="card chat" [attr.aria-label]="i18n.t('assistant.chat')">
+  <section class="assistant__chat card" [attr.aria-label]="i18n.t('assistant.chat')">
     <p class="section-label">{{ i18n.t('assistant.chat') }}</p>
 
     @if (messages().length === 0) {
@@ -46,10 +48,11 @@
           </li>
         }
       </ul>
+      <div data-chat-end tabindex="-1" aria-hidden="true"></div>
     }
 
     @if (statusKey()) {
-      <p class="status" role="status" aria-live="polite">
+      <p class="assistant__status" role="status" aria-live="polite">
         {{ i18n.t(statusKey()!) }}
         @if (statusKey() === 'assistant.localOnly' || statusKey() === 'assistant.network') {
           <a routerLink="/settings">{{ i18n.t('assistant.openSettings') }}</a>
@@ -57,26 +60,28 @@
       </p>
     }
 
-    <app-text-field
-      [label]="i18n.t('assistant.input')"
-      [(value)]="draft"
-      [multiline]="true"
-    />
-    <div class="chat__actions">
-      <app-primary-button
-        [label]="i18n.t('assistant.send')"
-        [disabled]="busy() || !draft().trim()"
-        [stretch]="true"
-        (pressed)="sendTyped()"
+    <div class="composer">
+      <app-text-field
+        [label]="i18n.t('assistant.input')"
+        [(value)]="draft"
+        [multiline]="true"
       />
-      <button
-        type="button"
-        class="ghost"
-        [disabled]="busy() || messages().length === 0"
-        (click)="clearChat()"
-      >
-        {{ i18n.t('assistant.clear') }}
-      </button>
+      <div class="composer__actions">
+        <app-primary-button
+          [label]="i18n.t('assistant.send')"
+          [disabled]="busy() || !draft().trim()"
+          [stretch]="true"
+          (pressed)="sendTyped()"
+        />
+        <button
+          type="button"
+          class="ghost"
+          [disabled]="busy() || messages().length === 0"
+          (click)="clearChat()"
+        >
+          {{ i18n.t('assistant.clear') }}
+        </button>
+      </div>
     </div>
   </section>
 </div>

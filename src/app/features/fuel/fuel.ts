@@ -6,9 +6,12 @@ import {
   signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { fetchChatReply, isAssistantOnline } from '../../data/assistant';
 import { Db } from '../../data/db';
-import { contextualFuelTipKey, nextFuelTipKey } from '../../domain/local-coach';
+import { todayDateOnly } from '../../domain/dues';
+import { tankEconomyVsAvg } from '../../domain/economy';
 import { fuelDashboardMetrics } from '../../domain/fuel-dashboard';
+import { contextualFuelTipKey, nextFuelTipKey } from '../../domain/local-coach';
 import type { FuelGrade } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
@@ -32,9 +35,20 @@ export class FuelPage {
   readonly tip = signal('');
   readonly tipKey = signal<MsgKey | null>(null);
   readonly tipBusy = signal(false);
-  /** Fuel tips are local-only (not remote coach). */
-  readonly tipSource = signal<'local'>('local');
+  readonly tipSource = signal<'local' | 'ai'>('local');
   readonly tipFlash = signal(false);
+
+  readonly online = computed(() => isAssistantOnline(this.db));
+
+  readonly tipHintKey = computed<MsgKey>(() => {
+    if (this.tipSource() === 'ai') {
+      return 'fuel.tip.sourceRemote';
+    }
+    if (!this.online()) {
+      return 'fuel.tip.sourceOffline';
+    }
+    return 'fuel.tip.source';
+  });
 
   private readonly gradeOptions: { id: GradeFilter; labelKey: MsgKey }[] = [
     { id: 'all', labelKey: 'fuel.gradeAll' },
@@ -77,7 +91,7 @@ export class FuelPage {
   }
 
   constructor() {
-    void this.loadTip();
+    void this.loadTip(false);
   }
 
   formatMoney(value: number): string {
@@ -91,18 +105,57 @@ export class FuelPage {
     return this.i18n.formatUnit(value, unitKey, 1);
   }
 
-  async loadTip(): Promise<void> {
+  async loadTip(force = true): Promise<void> {
     this.tipBusy.set(true);
     const prevKey = this.tipKey();
-    const nextKey = prevKey
-      ? nextFuelTipKey(prevKey, this.db)
-      : contextualFuelTipKey(this.db);
+    const today = todayDateOnly();
+    const settings = this.db.settings();
+
     try {
-      // Fuel tips stay local-only (never remote coach).
-      this.tipKey.set(nextKey);
-      this.tip.set(this.i18n.t(nextKey));
-      this.tipSource.set('local');
-      if (prevKey && nextKey !== prevKey) {
+      if (
+        !force &&
+        this.online() &&
+        settings.fuelTipText &&
+        settings.fuelTipDay === today
+      ) {
+        this.tip.set(settings.fuelTipText);
+        this.tipSource.set('ai');
+        this.tipKey.set(null);
+        return;
+      }
+
+      const nextKey = prevKey
+        ? nextFuelTipKey(prevKey, this.db)
+        : contextualFuelTipKey(this.db);
+      let text = this.i18n.t(nextKey);
+      let source: 'local' | 'ai' = 'local';
+
+      if (this.online()) {
+        const vsAvg = tankEconomyVsAvg(this.db.fillUps());
+        let question = this.i18n.t('fuel.tip.prompt');
+        if (vsAvg) {
+          question += ` Current L/100km=${vsAvg.currentL100.toFixed(1)}. Usual L/100km=${vsAvg.baselineL100.toFixed(1)}. Direction=${vsAvg.direction} (${vsAvg.deltaPct.toFixed(0)}%).`;
+        }
+        const reply = await fetchChatReply(
+          this.db,
+          question,
+          this.i18n.language(),
+          (key, params) => this.i18n.t(key as MsgKey, params),
+        );
+        if (reply.source === 'remote' && reply.text.trim()) {
+          text = reply.text.trim();
+          source = 'ai';
+          await this.db.updateSettings({
+            fuelTipText: text,
+            fuelTipDay: today,
+          });
+        }
+      }
+
+      this.tipKey.set(source === 'local' ? nextKey : null);
+      this.tip.set(text);
+      this.tipSource.set(source);
+      if (prevKey && source === 'local' && nextKey !== prevKey) {
         this.tipFlash.set(true);
         window.setTimeout(() => this.tipFlash.set(false), 600);
       }

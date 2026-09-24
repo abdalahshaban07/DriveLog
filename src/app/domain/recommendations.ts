@@ -1,4 +1,5 @@
 import { buildDueItems, todayDateOnly } from './dues';
+import { tankEconomyVsAvg } from './economy';
 import { activePeriod, daysUntil, periodTotals } from './expense-period';
 import { fuelDashboardMetrics } from './fuel-dashboard';
 import { firstDueHolidayNudge, type PublicHoliday } from './holidays';
@@ -169,6 +170,13 @@ function isDueSoonForRec(item: DueItem, currentOdometer: number, today: DateOnly
 }
 
 function fuelTipKey(fills: readonly FillUp[], car: Car): string {
+  const vsAvg = tankEconomyVsAvg(fills);
+  if (vsAvg?.direction === 'worse') {
+    return 'fuel.tip.worseThanUsual';
+  }
+  if (vsAvg?.direction === 'better') {
+    return 'fuel.tip.betterThanUsual';
+  }
   const fuel = fuelDashboardMetrics(fills);
   if (fuel.lastL100 != null && fuel.lastL100 > HIGH_L100) {
     return 'fuel.tip.highConsumption';
