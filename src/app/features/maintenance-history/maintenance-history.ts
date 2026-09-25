@@ -16,6 +16,7 @@ import {
   type HistoryRangePreset,
 } from '../../domain/export-history';
 import { todayDateOnly } from '../../domain/dues';
+import { maintenanceRecordLabel } from '../../domain/part-name';
 import { MAINTENANCE_TYPES } from '../../domain/models';
 import type { Maintenance } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
@@ -137,10 +138,7 @@ export class MaintenanceHistoryPage {
   }
 
   rowLabel(m: Maintenance): string {
-    if (m.otherLabel) {
-      return m.otherLabel;
-    }
-    return this.i18n.t(`maintenance.type.${m.type}` as MsgKey);
+    return maintenanceRecordLabel(m, this.db.catalog(), (key) => this.i18n.t(key as MsgKey));
   }
 
   formatMoney(value: number | undefined): string {
