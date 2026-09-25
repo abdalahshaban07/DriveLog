@@ -245,10 +245,17 @@ export class HomePage {
     }),
   );
   readonly lastFillDate = computed(() => {
-    const sorted = [...this.db.fillUps()].sort(
-      (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
-    );
-    return sorted[0]?.date ?? null;
+    let best: { date: string; createdAt: string } | undefined;
+    for (const fill of this.db.fillUps()) {
+      if (
+        !best ||
+        fill.date > best.date ||
+        (fill.date === best.date && fill.createdAt > best.createdAt)
+      ) {
+        best = fill;
+      }
+    }
+    return best?.date ?? null;
   });
   readonly nextDue = computed(() => {
     const car = this.db.car();

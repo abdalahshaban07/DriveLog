@@ -41,8 +41,14 @@ export function buildVehicleFacts(db: Db): VehicleFactsBundle | null {
     settings,
   });
 
-  const estimate = (item: (typeof healthItems)[number]) =>
-    estimateExpectedCost(item.part, maintenance, car.id, currency);
+  const costByPart = new Map<string, ReturnType<typeof estimateExpectedCost>>();
+  const estimate = (item: (typeof healthItems)[number]) => {
+    const hit = costByPart.get(item.partDefinitionId);
+    if (hit) return hit;
+    const est = estimateExpectedCost(item.part, maintenance, car.id, currency);
+    costByPart.set(item.partDefinitionId, est);
+    return est;
+  };
 
   const monthlyKm = estimateMonthlyKm({
     car,

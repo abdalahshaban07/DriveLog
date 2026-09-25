@@ -15,6 +15,7 @@ function byOdometer(a: FillUp, b: FillUp): number {
 export function computeEconomySegments(fillUps: readonly FillUp[]): EconomySegment[] {
   const sorted = [...fillUps].sort(byOdometer);
   const fulls = sorted.filter((f) => f.tankFull);
+  const indexById = new Map(sorted.map((f, i) => [f.id, i]));
   const segments: EconomySegment[] = [];
 
   for (let i = 0; i < fulls.length - 1; i++) {
@@ -25,31 +26,11 @@ export function computeEconomySegments(fillUps: readonly FillUp[]): EconomySegme
       continue;
     }
 
-    const inSegment = sorted.filter(
-      (f) =>
-        f.odometer > start.odometer ||
-        (f.odometer === start.odometer && f.id === start.id) ||
-        f.id === start.id,
-    ).filter(
-      (f) =>
-        f.odometer < end.odometer ||
-        (f.odometer === end.odometer && f.id === end.id) ||
-        f.id === end.id,
-    );
-
-    // Inclusive range by odometer between start and end (including both fulls).
-    const costs = sorted.filter(
-      (f) => f.odometer >= start.odometer && f.odometer <= end.odometer,
-    );
-    // When equal odometers exist outside the pair, still include only from start through end by sort index.
-    const startIdx = sorted.findIndex((f) => f.id === start.id);
-    const endIdx = sorted.findIndex((f) => f.id === end.id);
+    const startIdx = indexById.get(start.id) ?? -1;
+    const endIdx = indexById.get(end.id) ?? -1;
     const slice =
-      startIdx >= 0 && endIdx >= startIdx
-        ? sorted.slice(startIdx, endIdx + 1)
-        : costs;
+      startIdx >= 0 && endIdx >= startIdx ? sorted.slice(startIdx, endIdx + 1) : [];
 
-    void inSegment;
     const totalCost = slice.reduce((sum, f) => sum + f.cost, 0);
 
     segments.push({

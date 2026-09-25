@@ -63,10 +63,7 @@ const INNER_H = 84;
               [attr.height]="liquidHeight()"
             />
             @if (liquidHeight() > 2) {
-              <path
-                class="tank-wave"
-                [attr.d]="wavePath()"
-              />
+              <path class="tank-wave" [attr.d]="wavePath()" />
             }
           </g>
         </svg>
@@ -105,6 +102,15 @@ const INNER_H = 84;
     .tank-wave {
       fill: color-mix(in srgb, var(--fuel) 85%, white);
       opacity: 0.55;
+      /* ponytail: CSS shift, not a 60fps signal. One period = 25% of the 4-cycle path. */
+      animation: tank-wave 2.4s linear infinite;
+    }
+    @keyframes tank-wave {
+      from { transform: translateX(0); }
+      to { transform: translateX(-25%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .tank-wave { animation: none; }
     }
     .tank-pct-overlay {
       position: absolute;
@@ -204,7 +210,6 @@ export class FuelTankCanvas implements AfterViewInit {
 
   private animeScope: Scope | null = null;
   private animToken = 0;
-  private wavePhase = signal(0);
 
   readonly fillRatio = computed(() => {
     const cap = Math.max(this.tankCapacityLiters(), 1);
@@ -223,14 +228,16 @@ export class FuelTankCanvas implements AfterViewInit {
 
   readonly wavePath = computed(() => {
     const y = this.liquidY();
-    const phase = this.wavePhase();
     const amp = 2.2;
-    const w = 104;
     const x0 = 28;
-    const mid = x0 + w / 2;
-    const c1x = x0 + w * 0.25 + Math.sin(phase) * 4;
-    const c2x = x0 + w * 0.75 - Math.sin(phase) * 4;
-    return `M${x0} ${y + amp} Q${c1x} ${y - amp} ${mid} ${y} T${x0 + w} ${y + amp} L${x0 + w} ${y + 8} L${x0} ${y + 8} Z`;
+    const period = 52;
+    let d = `M${x0} ${y + amp}`;
+    for (let i = 0; i < 4; i++) {
+      const base = x0 + i * period;
+      d += ` Q${base + 13} ${y - amp} ${base + 26} ${y} Q${base + 39} ${y + amp * 2} ${base + period} ${y + amp}`;
+    }
+    const endX = x0 + 4 * period;
+    return `${d} L${endX} ${y + 8} L${x0} ${y + 8} Z`;
   });
 
   readonly label = computed(() =>
@@ -251,9 +258,6 @@ export class FuelTankCanvas implements AfterViewInit {
       }
       void this.animateFill(ratio);
     });
-    if (!this.policy.prefersReducedMotion()) {
-      this.startWaveLoop();
-    }
   }
 
   ngAfterViewInit(): void {
@@ -271,16 +275,6 @@ export class FuelTankCanvas implements AfterViewInit {
         this.useFallback.set(true);
       }
     });
-  }
-
-  private startWaveLoop(): void {
-    let raf = 0;
-    const loop = () => {
-      this.wavePhase.update((p) => p + 0.06);
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-    this.destroyRef.onDestroy(() => cancelAnimationFrame(raf));
   }
 
   private async animateFill(target: number): Promise<void> {
