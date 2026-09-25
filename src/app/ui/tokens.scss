@@ -1017,11 +1017,124 @@ html[data-theme='dusk'][data-look='aurora'] {
   }
 }
 
-/* Glass / spatial / aurora: opaque + no blur for contrast or reduced transparency */
+/* Liquid Plasma — ocean mesh + frost plates.
+   ponytail: CSS frost only. Plates do not fuse or refract.
+   Ceiling: no shared WebGL plasma. Upgrade path is a canvas island if one is ever allowed. */
+html[data-look='plasma'] {
+  --bg: #dfe6ea;
+  --surface: #f4f8fa;
+  --well: #d5e0e6;
+  --aura-1: #9fd8e4;
+  --aura-2: #c5d5dc;
+  --radius: 22px;
+  --raise-1: 0 10px 28px color-mix(in srgb, #04111c 16%, transparent);
+  --raise-2: 0 18px 40px color-mix(in srgb, #04111c 22%, transparent);
+  --bevel-hi: none;
+  --bevel-lo: none;
+  --shadow-soft: var(--raise-1);
+  --plate-shadow:
+    var(--raise-1),
+    inset 0 1px 0 rgb(255 255 255 / 0.65);
+  --press-inset: inset 0 1px 0 rgb(255 255 255 / 0.4);
+  --border-width: 1px;
+  --hairline: rgb(13 26 34 / 0.16);
+  --ink: color-mix(in srgb, #fff 45%, var(--hairline));
+  --fill-surface: rgb(255 255 255 / 0.62);
+  --fill-well: rgb(255 255 255 / 0.48);
+  --fill-paper: rgb(255 255 255 / 0.78);
+  --glass-blur: 28px;
+  --glass-edge: rgb(255 255 255 / 0.55);
+  --nav-fill: rgb(255 255 255 / 0.62);
+  --nav-inset: 12px;
+  --cta-surface: var(--cta);
+  --btn-bg: var(--cta);
+  --btn-border: 0;
+  --btn-radius: 999px;
+  --btn-shadow: var(--raise-1);
+  --btn-hover-shadow: var(--raise-2), 0 0 18px var(--glow);
+  --btn-press-shadow: var(--press-inset);
+  --btn-press-x: 0;
+  --btn-press-y: 1px;
+  --btn-blur: 0px;
+  --btn-tracking: 0.01em;
+  --tab-track: rgb(255 255 255 / 0.45);
+  --tab-track-pad: var(--space-1);
+  --tab-track-radius: 999px;
+  --tab-track-border: 1px solid var(--glass-edge);
+  --tab-track-shadow: none;
+  --tab-btn-bg: transparent;
+  --tab-btn-on-bg: rgb(255 255 255 / 0.72);
+  --tab-btn-radius: 999px;
+  --tab-btn-border: 0;
+  --tab-btn-shadow: none;
+  --tab-btn-on-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7);
+  --tab-underline: transparent;
+  --tab-underline-h: 0;
+  --mesh-canvas:
+    radial-gradient(
+      120% 80% at 100% 0%,
+      color-mix(in srgb, var(--aura-1) 80%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      90% 70% at 0% 100%,
+      color-mix(in srgb, var(--aura-2) 70%, transparent),
+      transparent 50%
+    ),
+    radial-gradient(
+      60% 45% at 40% 40%,
+      color-mix(in srgb, #9ff3e4 28%, transparent),
+      transparent 60%
+    );
+}
+
+html[data-theme='dark'][data-look='plasma'],
+html[data-theme='dusk'][data-look='plasma'] {
+  --bg: #04111c;
+  --surface: #0a1a26;
+  --well: #061018;
+  --aura-1: #0d3d48;
+  --aura-2: #123044;
+  --hairline: rgb(238 244 246 / 0.14);
+  --fill-surface: rgb(6 16 22 / 0.52);
+  --fill-well: rgb(6 16 22 / 0.62);
+  --fill-paper: rgb(20 40 52 / 0.72);
+  --glass-edge: rgb(159 243 228 / 0.35);
+  --nav-fill: rgb(6 16 22 / 0.62);
+  --plate-shadow:
+    0 12px 32px rgb(0 0 0 / 0.35),
+    inset 0 1px 0 rgb(159 243 228 / 0.22);
+  --tab-track: rgb(6 16 22 / 0.45);
+  --tab-btn-on-bg: rgb(238 244 246 / 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-theme='system'][data-look='plasma'] {
+    --bg: #04111c;
+    --surface: #0a1a26;
+    --well: #061018;
+    --aura-1: #0d3d48;
+    --aura-2: #123044;
+    --hairline: rgb(238 244 246 / 0.14);
+    --fill-surface: rgb(6 16 22 / 0.52);
+    --fill-well: rgb(6 16 22 / 0.62);
+    --fill-paper: rgb(20 40 52 / 0.72);
+    --glass-edge: rgb(159 243 228 / 0.35);
+    --nav-fill: rgb(6 16 22 / 0.62);
+    --plate-shadow:
+      0 12px 32px rgb(0 0 0 / 0.35),
+      inset 0 1px 0 rgb(159 243 228 / 0.22);
+    --tab-track: rgb(6 16 22 / 0.45);
+    --tab-btn-on-bg: rgb(238 244 246 / 0.12);
+  }
+}
+
+/* Glass / spatial / aurora / plasma: opaque + no blur for contrast or reduced transparency */
 @media (prefers-reduced-transparency: reduce) {
   html[data-look='glass'],
   html[data-look='spatial'],
-  html[data-look='aurora'] {
+  html[data-look='aurora'],
+  html[data-look='plasma'] {
     --fill-surface: var(--surface);
     --fill-well: var(--well);
     --fill-paper: var(--paper);
@@ -1035,7 +1148,8 @@ html[data-theme='dusk'][data-look='aurora'] {
 
 html[data-theme='contrast'][data-look='glass'],
 html[data-theme='contrast'][data-look='spatial'],
-html[data-theme='contrast'][data-look='aurora'] {
+html[data-theme='contrast'][data-look='aurora'],
+html[data-theme='contrast'][data-look='plasma'] {
   --fill-surface: var(--surface);
   --fill-well: var(--well);
   --fill-paper: var(--paper);
@@ -1047,6 +1161,16 @@ html[data-theme='contrast'][data-look='aurora'] {
   --shadow-soft: none;
   --nav-fill: var(--bg);
   --nav-inset: 0px;
+}
+
+html[data-theme='contrast'][data-look='plasma'] {
+  --bg: #000000;
+  --surface: #121212;
+  --well: #000000;
+  --btn-radius: var(--radius);
+  --tab-track-radius: var(--radius);
+  --tab-btn-radius: calc(var(--radius) - 4px);
+  --mesh-canvas: none;
 }
 
 *,
@@ -1852,7 +1976,9 @@ html[data-look='neu'] .disclosure {
 html[data-look='glass'] .card,
 html[data-look='glass'] .due-card,
 html[data-look='spatial'] .card,
-html[data-look='spatial'] .due-card {
+html[data-look='spatial'] .due-card,
+html[data-look='plasma'] .card,
+html[data-look='plasma'] .due-card {
   border-color: var(--glass-edge);
 }
 

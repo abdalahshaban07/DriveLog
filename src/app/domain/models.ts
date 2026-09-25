@@ -9,7 +9,8 @@ export type Look =
   | 'glass'
   | 'spatial'
   | 'neo'
-  | 'aurora';
+  | 'aurora'
+  | 'plasma';
 export const LOOKS: readonly Look[] = [
   'receipt',
   'skeuo',
@@ -18,6 +19,7 @@ export const LOOKS: readonly Look[] = [
   'spatial',
   'neo',
   'aurora',
+  'plasma',
 ] as const;
 export const DEFAULT_LOOK: Look = 'receipt';
 export type FuelGrade = 'gasoline92' | 'gasoline95' | 'diesel' | 'solar' | 'custom';

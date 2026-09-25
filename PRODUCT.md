@@ -4,7 +4,7 @@ Phone-first **Operate** PWA for personal fuel + maintenance. Local-first Indexed
 
 ## Visual world
 
-**Night Receipt** (default Look): near-black / warm-paper dual surfaces, amber `--cta` single accent, ink `--text`, paper slips for fill-up. Home keeps a flat glance strip (not a hero card). Themes: system / light / dark / contrast / dusk. Settings **Look** switches chrome packs (`receipt` · `skeuo` · `neu` · `glass` · `spatial` · `neo` · `aurora`) without changing theme text colors.
+**Night Receipt** (default Look): near-black / warm-paper dual surfaces, amber `--cta` single accent, ink `--text`, paper slips for fill-up. Home keeps a flat glance strip (not a hero card). Themes: system / light / dark / contrast / dusk. Settings **Look** switches chrome packs (`receipt` · `skeuo` · `neu` · `glass` · `spatial` · `neo` · `aurora` · `plasma`) without changing theme text colors.
 
 ## Core flows
 

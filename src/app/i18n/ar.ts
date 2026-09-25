@@ -285,6 +285,7 @@ export const ar: Record<MsgKey, string> = {
   'settings.look.spatial': 'فضاء بارد',
   'settings.look.neo': 'ختم الوقود',
   'settings.look.aurora': 'شبكة الشفق',
+  'settings.look.plasma': 'بلازما سائلة',
   'settings.currency': 'العملة',
   'settings.activeCar': 'العربية النشطة',
   'settings.duskAssist': 'مساعدة مظهر الغسق',

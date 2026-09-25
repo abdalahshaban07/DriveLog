@@ -615,6 +615,7 @@ describe('look packs', () => {
       'spatial',
       'neo',
       'aurora',
+      'plasma',
     ]);
   });
 });

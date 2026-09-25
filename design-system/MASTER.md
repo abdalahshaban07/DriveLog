@@ -19,9 +19,9 @@ Phone-first Operate PWA. **Default look: Night Receipt** — near-black canvas (
 | Theme | `data-theme` | `--bg`, `--surface`, `--text`, `--muted`, `--paper-text`, `--cta-text`, accents |
 | Look | `data-look` | radius, shadows, bevels, blur, borders, fill opacity, mesh — **not** body/label ink |
 
-**Looks:** `receipt` (default) · `skeuo` · `neu` · `glass` · `spatial` · `neo` · `aurora`
+**Looks:** `receipt` (default) · `skeuo` · `neu` · `glass` · `spatial` · `neo` · `aurora` · `plasma`
 
-Contrast theme + `prefers-reduced-transparency`: opaque fills, `--glass-blur: 0` for glass/spatial/aurora.
+Contrast theme + `prefers-reduced-transparency`: opaque fills, `--glass-blur: 0` for glass/spatial/aurora/plasma. `plasma` is CSS frost (ocean mesh, translucent plates, pill chrome). It is not the React `@cruxgarden/plasma-ui` package.
 
 ## Color (theme-owned)
 
@@ -35,7 +35,7 @@ Contrast theme + `prefers-reduced-transparency`: opaque fills, `--glass-blur: 0`
 | `--text` / `--muted` | Body / secondary ink (never overridden by look) |
 | `--focus` | Amber focus ring (2px) |
 
-Never: purple mesh as brand, second accent, doodle chrome. Glass/frost chrome allowed only when Look = glass/spatial.
+Never: purple mesh as brand, second accent, doodle chrome. Glass/frost chrome allowed only when Look = glass/spatial/plasma.
 
 ## Type
 
