@@ -591,6 +591,15 @@ describe('part labels', () => {
     expect(
       maintenanceRecordLabel({ type: 'other', otherLabel: 'كاوتش ميزان' }, [], t),
     ).toBe('كاوتش ميزان');
+    const { dueItemLabel } = await import('./part-name');
+    expect(
+      dueItemLabel(
+        { labelKey: 'maintenance.type.other', maintenanceId: 'm1' },
+        [{ id: 'm1', type: 'other', partDefinitionId: 'sys-shock-strut' }],
+        [{ id: 'sys-shock-strut', labelKey: 'parts.shockStrut' }],
+        t,
+      ),
+    ).toBe('المساعد');
   });
 });
 

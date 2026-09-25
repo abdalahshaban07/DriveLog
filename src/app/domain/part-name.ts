@@ -40,3 +40,16 @@ export function maintenanceRecordLabel(
   }
   return t(`maintenance.type.${row.type}`);
 }
+
+/** Next-due chip: part name, not the leftover category word "Other". */
+export function dueItemLabel(
+  due: { labelKey: string; maintenanceId?: string },
+  maintenance: readonly { id: string; type: string; otherLabel?: string; partDefinitionId?: string }[],
+  catalog: readonly NamedPart[],
+  t: (key: string) => string,
+): string {
+  const row = due.maintenanceId
+    ? maintenance.find((m) => m.id === due.maintenanceId)
+    : undefined;
+  return row ? maintenanceRecordLabel(row, catalog, t) : t(due.labelKey);
+}

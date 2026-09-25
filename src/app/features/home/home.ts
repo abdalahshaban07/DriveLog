@@ -48,6 +48,7 @@ import {
   shouldShowSetupChecklist,
 } from '../../domain/setup-checklist';
 import { buildSmartReports } from '../../domain/smart-reports';
+import { dueItemLabel } from '../../domain/part-name';
 import { homeHealthSummary } from '../../domain/vehicle-facts';
 import type { InsightKind } from '../../domain/insight-generator';
 import { I18n } from '../../i18n/i18n';
@@ -419,7 +420,9 @@ export class HomePage {
     if (!due) {
       return this.i18n.t('home.nothingDue');
     }
-    return this.i18n.t(due.labelKey as MsgKey, due.labelParams);
+    return dueItemLabel(due, this.db.maintenance(), this.db.catalog(), (key) =>
+      this.i18n.t(key as MsgKey),
+    );
   }
 
   async animateCharts(): Promise<void> {

@@ -12,7 +12,7 @@ import { countryFromCurrency } from '../../domain/country';
 import { buildDueItems, todayDateOnly } from '../../domain/dues';
 import { firstDueHolidayNudge, type PublicHoliday } from '../../domain/holidays';
 import { legacyTypeForPart } from '../../domain/health-migration';
-import { maintenanceRecordLabel, partDefinitionLabel } from '../../domain/part-name';
+import { dueItemLabel, maintenanceRecordLabel, partDefinitionLabel } from '../../domain/part-name';
 import { sampleDiscoveryHoliday } from '../../domain/sample-data';
 import { odometerInputValue, roundOdometerKm } from '../../domain/odometer';
 import {
@@ -179,7 +179,9 @@ export class MaintenancePage {
   }
 
   dueLabel(d: DueItem): string {
-    return this.i18n.t(d.labelKey as MsgKey);
+    return dueItemLabel(d, this.db.maintenance(), this.db.catalog(), (key) =>
+      this.i18n.t(key as MsgKey),
+    );
   }
 
   dueStatus(m: Maintenance): DueStatus | null {
