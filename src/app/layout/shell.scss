@@ -120,9 +120,16 @@
   box-shadow: var(--plate-shadow);
 }
 
-:host-context([data-look='spatial']) .nav {
+:host-context([data-look='spatial']) .nav,
+:host-context([data-look='plasma']) .nav {
   border-radius: var(--radius);
   border: var(--border-width) solid var(--glass-edge);
+}
+
+:host-context([data-look='plasma']) .nav {
+  border-radius: 28px;
+  overflow: hidden;
+  background-image: none;
 }
 
 .nav__inner {

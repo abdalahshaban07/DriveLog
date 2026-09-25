@@ -283,6 +283,7 @@ export const en = {
   'settings.look.spatial': 'Cold Spatial',
   'settings.look.neo': 'Fuel Stamp',
   'settings.look.aurora': 'Aurora Mesh',
+  'settings.look.plasma': 'Liquid Plasma',
   'settings.currency': 'Currency',
   'settings.activeCar': 'Active car',
   'settings.duskAssist': 'Dusk theme assist',
