@@ -7,6 +7,7 @@ import {
   sharePassportPdf,
 } from '../../domain/car-passport';
 import { latestEconomy, monthFuelSpend } from '../../domain/economy';
+import { maintenanceRecordLabel } from '../../domain/part-name';
 import { nextExpiringDoc } from '../../domain/vehicle-docs';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
@@ -90,12 +91,12 @@ export class CarPassportPage {
           nextDocKind: next
             ? this.i18n.t(`vault.kind.${next.kind}` as MsgKey)
             : undefined,
-          typeLabel: (type, otherLabel) => {
-            if (type === 'other' && otherLabel) {
-              return otherLabel;
-            }
-            return this.i18n.t(`maintenance.type.${type}` as MsgKey);
-          },
+          typeLabel: (type, otherLabel) =>
+            maintenanceRecordLabel(
+              { type, otherLabel },
+              this.db.catalog(),
+              (key) => this.i18n.t(key as MsgKey),
+            ),
         },
         { rtl: this.i18n.dir() === 'rtl' },
       );

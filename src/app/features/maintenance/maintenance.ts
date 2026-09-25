@@ -12,6 +12,7 @@ import { countryFromCurrency } from '../../domain/country';
 import { buildDueItems, todayDateOnly } from '../../domain/dues';
 import { firstDueHolidayNudge, type PublicHoliday } from '../../domain/holidays';
 import { legacyTypeForPart } from '../../domain/health-migration';
+import { maintenanceRecordLabel, partDefinitionLabel } from '../../domain/part-name';
 import { sampleDiscoveryHoliday } from '../../domain/sample-data';
 import { odometerInputValue, roundOdometerKm } from '../../domain/odometer';
 import {
@@ -174,11 +175,7 @@ export class MaintenancePage {
   }
 
   partLabel(p: PartDefinition): string {
-    if (p.labelKey) return this.i18n.t(p.labelKey as MsgKey);
-    if (p.name?.startsWith('maintenance.') || p.name?.startsWith('parts.')) {
-      return this.i18n.t(p.name as MsgKey);
-    }
-    return p.name ?? p.id;
+    return partDefinitionLabel(p, (key) => this.i18n.t(key as MsgKey));
   }
 
   dueLabel(d: DueItem): string {
@@ -306,12 +303,7 @@ export class MaintenancePage {
   }
 
   rowLabel(m: Maintenance): string {
-    if (m.partDefinitionId) {
-      const p = this.db.catalog().find((x) => x.id === m.partDefinitionId);
-      if (p) return this.partLabel(p);
-    }
-    if (m.otherLabel) return m.otherLabel;
-    return this.i18n.t(`maintenance.type.${m.type}` as MsgKey);
+    return maintenanceRecordLabel(m, this.db.catalog(), (key) => this.i18n.t(key as MsgKey));
   }
 
   askDelete(id: string): void {

@@ -577,6 +577,23 @@ describe('i18n parity', () => {
   });
 });
 
+describe('part labels', () => {
+  it('translates stored part keys and keeps custom Arabic names', async () => {
+    const { maintenanceRecordLabel } = await import('./part-name');
+    const t = (key: string) => (key === 'parts.shockStrut' ? 'المساعد' : key);
+    expect(
+      maintenanceRecordLabel(
+        { type: 'other', otherLabel: 'parts.shockStrut', partDefinitionId: 'sys-shock-strut' },
+        [{ id: 'sys-shock-strut', labelKey: 'parts.shockStrut' }],
+        t,
+      ),
+    ).toBe('المساعد');
+    expect(
+      maintenanceRecordLabel({ type: 'other', otherLabel: 'كاوتش ميزان' }, [], t),
+    ).toBe('كاوتش ميزان');
+  });
+});
+
 describe('look packs', () => {
   it('defaults to receipt and lists all looks', async () => {
     const { DEFAULT_LOOK, LOOKS } = await import('./models');

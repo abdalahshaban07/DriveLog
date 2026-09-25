@@ -32,6 +32,7 @@ import {
   type LedgerRow,
 } from '../../domain/expense-ledger';
 import { fuelDashboardMetrics } from '../../domain/fuel-dashboard';
+import { isStoredMessageKey } from '../../domain/part-name';
 import { buildFuelCostGlance } from '../../domain/economy';
 import { costPerKmTrend, economyTrend, fuelGradeCostShare, spendByMonth, spendByMonthEntries } from '../../domain/insights';
 import type { ExpenseCategory } from '../../domain/models';
@@ -535,6 +536,10 @@ export class HomePage {
     return this.i18n.t('history.kmDriven', {
       km: this.i18n.formatNumber(km, { maximumFractionDigits: 0 }),
     });
+  }
+
+  ledgerTitle(title: string): string {
+    return isStoredMessageKey(title) ? this.i18n.t(title as MsgKey) : title;
   }
 
   ledgerDateLabel(date: string): string {
