@@ -127,13 +127,15 @@ export function buildHealthItems(input: {
     list.push(m);
     byPartRecords.set(m.partDefinitionId, list);
   }
+  const overrideByPart = new Map<string, PartOverride>();
+  for (const o of input.overrides) {
+    if (o.carId === input.car.id) overrideByPart.set(o.partDefinitionId, o);
+  }
 
   const items: HealthItem[] = [];
 
   for (const base of catalog) {
-    const ov = input.overrides.find(
-      (o) => o.carId === input.car.id && o.partDefinitionId === base.id,
-    );
+    const ov = overrideByPart.get(base.id);
     const part = mergePart(base, ov);
     const records = byPartRecords.get(part.id) ?? [];
     if (!isPartActive(part, ov, records.length > 0)) continue;
@@ -149,7 +151,7 @@ export function buildHealthItems(input: {
     let dueDate: DateOnly | undefined;
     let wearKmEstimate: number | undefined;
 
-    const lastReset = lastResetRecord(input.maintenance, part.id);
+    const lastReset = lastResetRecord(records, part.id);
     const latest = [...records].sort(
       (a, b) => b.date.localeCompare(a.date) || b.odometer - a.odometer,
     )[0];
@@ -184,7 +186,7 @@ export function buildHealthItems(input: {
         reasons.push('health.reason.explicitDueDate');
       }
     } else {
-      const hist = estimateIntervalFromHistory(input.maintenance, part.id);
+      const hist = estimateIntervalFromHistory(records, part.id);
       if (hist) {
         confidence = hist.confidence;
         reasons.push('health.reason.userHistory');

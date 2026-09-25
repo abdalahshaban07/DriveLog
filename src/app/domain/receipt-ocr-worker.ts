@@ -1,12 +1,13 @@
-import { createWorker, type Worker } from 'tesseract.js';
+import type { Worker } from 'tesseract.js';
 
 let workerPromise: Promise<Worker> | null = null;
 
 async function getWorker(): Promise<Worker> {
   if (!workerPromise) {
     workerPromise = (async () => {
-      const worker = await createWorker('eng');
-      return worker;
+      // Chunk split: tesseract stays off the fill-up route until a scan runs.
+      const { createWorker } = await import('tesseract.js');
+      return createWorker('eng');
     })();
   }
   return workerPromise;
