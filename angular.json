@@ -34,7 +34,8 @@
                 "output": "assets"
               }
             ],
-            "styles": ["src/styles.scss"]
+            "styles": ["src/styles.scss"],
+            "externalDependencies": ["fs", "path"]
           },
           "configurations": {
             "production": {

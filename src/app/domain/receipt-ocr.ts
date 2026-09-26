@@ -15,6 +15,14 @@ export type ReceiptPick = {
 
 const NUM = /(\d{1,4}(?:[.,]\d{1,3})?)/g;
 
+/** Arabic-Indic and Persian digits → ASCII so labeled regexes can see them. */
+function westernDigits(raw: string): string {
+  return raw
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
+    .replace(/٫/g, '.');
+}
+
 function toNum(s: string): number | null {
   const n = Number(s.replace(',', '.'));
   return Number.isFinite(n) ? n : null;
@@ -26,7 +34,7 @@ function uniqSorted(nums: number[]): number[] {
 
 /** Extract candidate liters / unit price / totals from OCR text. */
 export function parseReceiptText(raw: string): ReceiptCandidates {
-  const text = raw.replace(/\s+/g, ' ').trim();
+  const text = westernDigits(raw).replace(/\s+/g, ' ').trim();
   const lower = text.toLowerCase();
   const liters: number[] = [];
   const unitPrice: number[] = [];

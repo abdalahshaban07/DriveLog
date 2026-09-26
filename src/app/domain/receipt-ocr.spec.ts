@@ -14,10 +14,15 @@ describe('receipt-ocr', () => {
     expect(receiptMathOk({ liters: 40, unitPrice: 10, total: 500 })).toBe(false);
   });
 
+  it('reads Arabic-Indic digits on labeled lines', () => {
+    const c = parseReceiptText('لتر: ٤٠٫٥\nسعر: ١٢٫٥\nالإجمالي: ٥٠٦٫٢٥');
+    expect(c.liters).toContain(40.5);
+    expect(c.unitPrice).toContain(12.5);
+    expect(c.total).toContain(506.25);
+  });
+
   it('picks math-consistent combo', () => {
-    const pick = bestReceiptPick(
-      parseReceiptText('Volume 35.0 L unit 14.00 total 490.00 misc 12'),
-    );
+    const pick = bestReceiptPick(parseReceiptText('Volume 35.0 L unit 14.00 total 490.00 misc 12'));
     expect(pick.liters).toBe(35);
     expect(pick.unitPrice).toBe(14);
     expect(pick.total).toBe(490);

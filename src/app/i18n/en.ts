@@ -240,7 +240,7 @@ export const en = {
   'features.charge.title': 'Charge log',
   'features.charge.body': 'Log kWh sessions next to fuel, with shared history chips and kWh/100 km.',
   'features.ocr.title': 'Receipt scan (on-device)',
-  'features.ocr.body': 'Scan a pump receipt with on-device OCR — review and edit before save. No API keys.',
+  'features.ocr.body': 'Scan a pump receipt on-device with PaddleOCR (Arabic and English). Review before save. First scan downloads the model.',
   'features.passport.title': 'Car passport PDF',
   'features.passport.body': 'One-page vehicle summary you can download or share (no VIN).',
   'features.vault.title': 'Document vault',

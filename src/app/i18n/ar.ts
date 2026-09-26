@@ -242,7 +242,7 @@ export const ar: Record<MsgKey, string> = {
   'features.charge.title': 'سجل الشحن',
   'features.charge.body': 'سجّل جلسات الكيلوواط مع البنزين، بشارات النوع و ك.و.س/١٠٠كم.',
   'features.ocr.title': 'مسح الإيصال (على الجهاز)',
-  'features.ocr.body': 'امسح إيصال المضخة بـ OCR محلي — راجع وعدّل قبل الحفظ. بدون مفاتيح API.',
+  'features.ocr.body': 'امسح إيصال المضخة على الجهاز بـ PaddleOCR (عربي وإنجليزي). راجع قبل الحفظ. أول مسح بيحمّل النموذج.',
   'features.passport.title': 'جواز العربية PDF',
   'features.passport.body': 'ملخص صفحة واحدة للعربية تقدر تحمّله أو تشاركه (بدون VIN).',
   'features.vault.title': 'خزنة المستندات',

@@ -29,6 +29,10 @@ jobs:
           node scripts/generate-whats-new.mjs --self-check
           node scripts/generate-whats-new.mjs
       - run: npx ng build --base-href /DriveLog/
+      - name: Keep PaddleOCR off the install prefetch
+        run: |
+          node scripts/ngsw-lazy-ocr.mjs --self-check
+          node scripts/ngsw-lazy-ocr.mjs
       - name: SPA fallback for Pages
         run: |
           # ponytail: GitHub Pages has no SPA fallback; 404.html = index
