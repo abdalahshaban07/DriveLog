@@ -13,7 +13,7 @@ import {
   type ChatMessage,
 } from '../../data/assistant';
 import { Db } from '../../data/db';
-import { intentFromFaqKey } from '../../domain/local-coach';
+import { intentFromFaqKey } from '../../domain/advisor-intent';
 import type { MsgKey } from '../../i18n/en';
 import { I18n } from '../../i18n/i18n';
 import { PageHeader } from '../../ui/page-header';

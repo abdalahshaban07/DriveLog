@@ -11,7 +11,7 @@ import { Db } from '../../data/db';
 import { todayDateOnly } from '../../domain/dues';
 import { tankEconomyVsAvg } from '../../domain/economy';
 import { fuelDashboardMetrics } from '../../domain/fuel-dashboard';
-import { contextualFuelTipKey, nextFuelTipKey } from '../../domain/local-coach';
+import { contextualFuelTipKey, nextFuelTipKey } from '../../domain/fuel-tips';
 import type { FuelGrade } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
