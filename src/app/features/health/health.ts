@@ -111,19 +111,7 @@ export class HealthPage {
         return;
       }
 
-      const g = this.grouped();
-      const top = [...g.attention, ...g.upcoming].slice(0, 3).map((item) => ({
-        name: item.part.name ?? item.part.labelKey ?? item.partDefinitionId,
-        status: item.status,
-      }));
-      const facts = {
-        attention: g.attention.length,
-        upcoming: g.upcoming.length,
-        healthy: g.healthy.length,
-        tracking: g.tracking.length,
-        top,
-      };
-      const question = `${this.i18n.t('health.insight.prompt')}\nJSON:${JSON.stringify(facts)}`;
+      const question = this.i18n.t('health.insight.prompt');
       const reply = await fetchChatReply(
         this.db,
         question,

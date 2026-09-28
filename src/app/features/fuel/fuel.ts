@@ -9,7 +9,6 @@ import { RouterLink } from '@angular/router';
 import { fetchChatReply, isAssistantOnline } from '../../data/assistant';
 import { Db } from '../../data/db';
 import { todayDateOnly } from '../../domain/dues';
-import { tankEconomyVsAvg } from '../../domain/economy';
 import { fuelDashboardMetrics } from '../../domain/fuel-dashboard';
 import { contextualFuelTipKey, nextFuelTipKey } from '../../domain/fuel-tips';
 import type { FuelGrade } from '../../domain/models';
@@ -131,11 +130,7 @@ export class FuelPage {
       let source: 'local' | 'ai' = 'local';
 
       if (this.online()) {
-        const vsAvg = tankEconomyVsAvg(this.db.fillUps());
-        let question = this.i18n.t('fuel.tip.prompt');
-        if (vsAvg) {
-          question += ` Current L/100km=${vsAvg.currentL100.toFixed(1)}. Usual L/100km=${vsAvg.baselineL100.toFixed(1)}. Direction=${vsAvg.direction} (${vsAvg.deltaPct.toFixed(0)}%).`;
-        }
+        const question = this.i18n.t('fuel.tip.prompt');
         const reply = await fetchChatReply(
           this.db,
           question,
