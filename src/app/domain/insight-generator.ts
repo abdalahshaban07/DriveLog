@@ -1,3 +1,4 @@
+import type { BudgetHealth } from './budget-engine';
 import type { HealthItem } from './vehicle-health';
 import type { DataQualityTip } from './data-quality';
 
