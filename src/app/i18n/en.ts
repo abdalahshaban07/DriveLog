@@ -679,6 +679,7 @@ export const en = {
   'fuel.tip.source': 'Tips are on-device from your logs',
   'fuel.tip.sourceRemote': 'Tip from free online coach (cached today)',
   'fuel.tip.sourceOffline': 'Online assistant is off — on-device tip',
+  'fuel.tip.sourceUnreachable': 'Online coach did not answer — on-device tip',
   'fuel.gradeFilter': 'Fuel grade',
   'fuel.gradeAll': 'All grades',
   'fuel.metrics': 'Fuel metrics',

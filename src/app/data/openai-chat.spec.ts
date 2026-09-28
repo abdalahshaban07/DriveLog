@@ -88,11 +88,50 @@ describe('openai-chat', () => {
     expect(JSON.parse(init.body as string).model).toBe('GLM-5.3-Flash');
   });
 
-  it('maps network/CORS failure to OpenAiChatError', async () => {
+  it('asks GLM for a short thought and returns the answer, not the scratchpad', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: 'answer', reasoning_content: 'scratchpad' } }],
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const text = await fetchOpenAiChat({
+      baseUrl: 'https://api.llm7.io/v1',
+      model: 'GLM-5.3-Flash',
+      messages: [{ role: 'user', content: 'hi' }],
+      reasoningEffort: 'low',
+      maxTokens: 640,
+    });
+
+    expect(text).toBe('answer');
+    const body = JSON.parse(fetchMock.mock.calls[0]![1].body as string) as {
+      max_tokens: number;
+      reasoning_effort: string;
+      chat_template_kwargs: { reasoning_effort: string };
+    };
+    expect(body.max_tokens).toBe(640);
+    expect(body.reasoning_effort).toBe('low');
+    expect(body.chat_template_kwargs).toEqual({ reasoning_effort: 'low' });
+  });
+
+  it('maps an abort to timeout, not a dead host', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockRejectedValue(new TypeError('Failed to fetch')),
+      vi.fn().mockRejectedValue(Object.assign(new Error('aborted'), { name: 'AbortError' })),
     );
+    await expect(
+      fetchOpenAiChat({
+        baseUrl: 'https://api.llm7.io/v1',
+        model: 'GLM-5.3-Flash',
+        messages: [{ role: 'user', content: 'hi' }],
+      }),
+    ).rejects.toMatchObject({ code: 'timeout' } satisfies Partial<OpenAiChatError>);
+  });
+
+  it('maps network/CORS failure to OpenAiChatError', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
     await expect(
       fetchOpenAiChat({
         baseUrl: FREE_LLM_GATEWAYS[0]!.baseUrl,

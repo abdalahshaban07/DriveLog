@@ -1,4 +1,8 @@
-import { ASSISTANT_HISTORY_LIMIT, FREE_LLM_GATEWAYS } from '../domain/free-llm-gateways';
+import {
+  ASSISTANT_HISTORY_LIMIT,
+  ASSISTANT_THINKING_MAX_TOKENS,
+  FREE_LLM_GATEWAYS,
+} from '../domain/free-llm-gateways';
 import type { AdvisorIntent } from '../domain/advisor-intent';
 import {
   coachSnapshot,
@@ -13,6 +17,36 @@ import type { Db } from './db';
 import { fetchOpenAiChat, OpenAiChatError, type OpenAiChatMessage } from './openai-chat';
 
 const GATEWAY_TIMEOUT_MS = 8_000;
+const THINKING_GATEWAY_TIMEOUT_MS = 15_000;
+
+const REDACTED = 'redacted_' + 'thinking';
+const THINK = 'th' + 'ink';
+const THINK_BLOCK = new RegExp(
+  `<(?:${REDACTED}|${THINK})>[\\s\\S]*?</(?:${REDACTED}|${THINK})>`,
+  'gi',
+);
+const THINK_TAG = new RegExp(`</?(?:${REDACTED}|${THINK})>`, 'gi');
+
+/**
+ * Drop leaked thoughts. Arabic replies must be mostly Arabic — free models
+ * otherwise return token salad and we would cache it for the day.
+ * ponytail: letter ratio plus a cap of 2 long Latin words. A 4-word English
+ * nickname can still fail the 75% bar; raise the cap if that shows up.
+ */
+export function usableCoachText(raw: string, lang: 'en' | 'ar'): string | null {
+  const text = raw.replace(THINK_BLOCK, '').replace(THINK_TAG, '').trim();
+  if (!text) return null;
+  if (lang === 'ar' && !mostlyArabic(text)) return null;
+  return text;
+}
+
+function mostlyArabic(text: string): boolean {
+  const arabic = text.match(/\p{Script=Arabic}/gu)?.length ?? 0;
+  const latin = text.match(/\p{Script=Latin}/gu)?.length ?? 0;
+  if (arabic === 0) return false;
+  const longLatin = text.match(/\p{Script=Latin}{4,}/gu)?.length ?? 0;
+  return longLatin < 3 && arabic / (arabic + latin) >= 0.75;
+}
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -35,7 +69,7 @@ function trimHistory(history: readonly ChatMessage[]): OpenAiChatMessage[] {
 function buildSystemPrompt(lang: 'en' | 'ar', snapshot: CoachSnapshot): string {
   const langLine =
     lang === 'ar'
-      ? 'Reply in Arabic (Egyptian-friendly clear Arabic is fine).'
+      ? 'Reply in Arabic script only, in clear Egyptian-friendly Arabic. No English words and no chain-of-thought.'
       : 'Reply in English.';
   return [
     'You are DriveLog, a concise fuel and maintenance coach for one personal car.',
@@ -69,17 +103,25 @@ async function tryRemoteChat(
 
   for (const gw of FREE_LLM_GATEWAYS) {
     if (skipBaseUrls.has(gw.baseUrl)) continue;
+    const thinking = gw.id === 'llm7-glm';
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), GATEWAY_TIMEOUT_MS);
+    const timer = setTimeout(
+      () => controller.abort(),
+      thinking ? THINKING_GATEWAY_TIMEOUT_MS : GATEWAY_TIMEOUT_MS,
+    );
     try {
-      const text = await fetchOpenAiChat({
+      const raw = await fetchOpenAiChat({
         baseUrl: gw.baseUrl,
         model: gw.model,
         messages,
+        maxTokens: thinking ? ASSISTANT_THINKING_MAX_TOKENS : undefined,
+        reasoningEffort: thinking ? 'low' : undefined,
         signal: controller.signal,
       });
-      if (text.trim()) {
-        reply = text.trim();
+      sawHttp = true;
+      const text = usableCoachText(raw, lang);
+      if (text) {
+        reply = text;
         break;
       }
     } catch (err) {

@@ -6,7 +6,7 @@ import {
   signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { fetchChatReply, isAssistantOnline } from '../../data/assistant';
+import { fetchChatReply, isAssistantOnline, usableCoachText } from '../../data/assistant';
 import { Db } from '../../data/db';
 import { todayDateOnly } from '../../domain/dues';
 import { fuelDashboardMetrics } from '../../domain/fuel-dashboard';
@@ -36,6 +36,8 @@ export class FuelPage {
   readonly tipBusy = signal(false);
   readonly tipSource = signal<'local' | 'ai'>('local');
   readonly tipFlash = signal(false);
+  /** Online switch is on, but this load got no usable coach reply. */
+  readonly tipRemoteMiss = signal(false);
 
   readonly online = computed(() => isAssistantOnline(this.db));
 
@@ -45,6 +47,9 @@ export class FuelPage {
     }
     if (!this.online()) {
       return 'fuel.tip.sourceOffline';
+    }
+    if (this.tipRemoteMiss()) {
+      return 'fuel.tip.sourceUnreachable';
     }
     return 'fuel.tip.source';
   });
@@ -111,15 +116,15 @@ export class FuelPage {
     const settings = this.db.settings();
 
     try {
-      if (
-        !force &&
-        this.online() &&
-        settings.fuelTipText &&
-        settings.fuelTipDay === today
-      ) {
-        this.tip.set(settings.fuelTipText);
+      const cached =
+        !force && this.online() && settings.fuelTipText && settings.fuelTipDay === today
+          ? usableCoachText(settings.fuelTipText, this.i18n.language())
+          : null;
+      if (cached) {
+        this.tip.set(cached);
         this.tipSource.set('ai');
         this.tipKey.set(null);
+        this.tipRemoteMiss.set(false);
         return;
       }
 
@@ -150,6 +155,7 @@ export class FuelPage {
       this.tipKey.set(source === 'local' ? nextKey : null);
       this.tip.set(text);
       this.tipSource.set(source);
+      this.tipRemoteMiss.set(this.online() && source !== 'ai');
       if (prevKey && source === 'local' && nextKey !== prevKey) {
         this.tipFlash.set(true);
         window.setTimeout(() => this.tipFlash.set(false), 600);

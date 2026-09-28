@@ -682,6 +682,7 @@ export const ar: Record<MsgKey, string> = {
   'fuel.tip.source': 'النصايح محلية من سجلاتك على الجهاز',
   'fuel.tip.sourceRemote': 'نصيحة من المدرب الأونلاين المجاني (محفوظة لليوم)',
   'fuel.tip.sourceOffline': 'المساعد الأونلاين مقفول — نصيحة على الجهاز',
+  'fuel.tip.sourceUnreachable': 'المدرب الأونلاين مجاوبش — نصيحة على الجهاز',
   'fuel.gradeFilter': 'نوع البنزين',
   'fuel.gradeAll': 'كل الأنواع',
   'fuel.metrics': 'مؤشرات البنزين',

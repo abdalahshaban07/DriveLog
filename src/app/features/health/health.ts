@@ -6,7 +6,7 @@ import {
   signal,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { fetchChatReply, isAssistantOnline } from '../../data/assistant';
+import { fetchChatReply, isAssistantOnline, usableCoachText } from '../../data/assistant';
 import { Db } from '../../data/db';
 import { todayDateOnly } from '../../domain/dues';
 import { homeHealthSummary } from '../../domain/vehicle-facts';
@@ -94,13 +94,15 @@ export class HealthPage {
     const settings = this.db.settings();
 
     try {
-      if (
+      const cached =
         !force &&
         this.online() &&
         settings.healthInsightText &&
         settings.healthInsightDay === today
-      ) {
-        this.insight.set(settings.healthInsightText);
+          ? usableCoachText(settings.healthInsightText, this.i18n.language())
+          : null;
+      if (cached) {
+        this.insight.set(cached);
         this.insightSource.set('ai');
         return;
       }

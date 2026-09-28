@@ -29,4 +29,6 @@ export const FREE_LLM_GATEWAYS: readonly FreeLlmGateway[] = [
 ] as const;
 
 export const ASSISTANT_MAX_TOKENS = 220;
+/** GLM-5.3 thinks before answering; 220 tokens dies inside the thought. */
+export const ASSISTANT_THINKING_MAX_TOKENS = 640;
 export const ASSISTANT_HISTORY_LIMIT = 6;

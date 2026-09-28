@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ASSISTANT_MAX_TOKENS, FREE_LLM_GATEWAYS } from '../domain/free-llm-gateways';
+import { ASSISTANT_THINKING_MAX_TOKENS, FREE_LLM_GATEWAYS } from '../domain/free-llm-gateways';
 import { ASSISTANT_RATE_DAY, ASSISTANT_RATE_HOUR } from './assistant-rate-limit';
-import { fetchChatReply, type ChatMessage } from './assistant';
+import { fetchChatReply, usableCoachText, type ChatMessage } from './assistant';
 import type { Db } from './db';
 
 const RATE_KEY = 'drivelog.assistant.rate.v1';
@@ -76,10 +76,14 @@ describe('fetchChatReply', () => {
     const body = JSON.parse((init as RequestInit).body as string) as {
       model: string;
       max_tokens: number;
+      reasoning_effort?: string;
+      chat_template_kwargs?: { reasoning_effort: string };
       messages: Array<{ role: string; content: string }>;
     };
     expect(body.model).toBe(FREE_LLM_GATEWAYS[0]!.model);
-    expect(body.max_tokens).toBe(ASSISTANT_MAX_TOKENS);
+    expect(body.max_tokens).toBe(ASSISTANT_THINKING_MAX_TOKENS);
+    expect(body.reasoning_effort).toBe('low');
+    expect(body.chat_template_kwargs).toEqual({ reasoning_effort: 'low' });
     expect(init.signal).toBeInstanceOf(AbortSignal);
     const system = body.messages.find((m) => m.role === 'system');
     expect(system?.content).toContain('"nickname":"Test"');
@@ -197,5 +201,73 @@ describe('fetchChatReply', () => {
     expect(fetchMock).not.toHaveBeenCalled();
     expect(reply).toEqual({ text: 'assistant.local.noCar', source: 'local' });
     expect(hourCount()).toBe(0);
+  });
+
+  it('drops a scrambled Arabic reply and keeps the next gateway', async () => {
+    const salad =
+      'يحتاج المحرك crk211 إلى تغيير الزيت الكامل في أقرب وقت ممكن. brú567737 حصلت على ترزياح عجلة مت Öz دوم Casting Collier 3001570 exploits restée larinda مباراة حي ميكانيكلاى. دسترسى. لا أدري.';
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(okChat(salad))
+      .mockResolvedValueOnce(okChat('ظبط ضغط الكاوتش كل شهر عشان الاستهلاك ينزل.'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const reply = await fetchChatReply(mockDb(true), 'نصيحة', 'ar', (k) => k);
+
+    expect(reply).toEqual({
+      text: 'ظبط ضغط الكاوتش كل شهر عشان الاستهلاك ينزل.',
+      source: 'remote',
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const second = JSON.parse((fetchMock.mock.calls[1]![1] as RequestInit).body as string) as {
+      model: string;
+      max_tokens: number;
+      reasoning_effort?: string;
+    };
+    expect(second.model).toBe('mistral-Nemo-Instruct-2407');
+    expect(second.max_tokens).toBe(220);
+    expect(second.reasoning_effort).toBeUndefined();
+  });
+
+  it('strips a leaked thought and still accepts the Arabic answer', async () => {
+    const open = '<' + 'think' + '>';
+    const close = '</' + 'think' + '>';
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(okChat(`${open}plan in English${close} ظبط ضغط الكاوتش كل شهر.`));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const reply = await fetchChatReply(mockDb(true), 'نصيحة', 'ar', (k) => k);
+
+    expect(reply).toEqual({ text: 'ظبط ضغط الكاوتش كل شهر.', source: 'remote' });
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it('tries the next model on the same host after a timeout', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(Object.assign(new Error('aborted'), { name: 'AbortError' }))
+      .mockResolvedValueOnce(okChat('remote-ok'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const reply = await fetchChatReply(mockDb(true), 'fuel', 'en', (k) => k);
+
+    expect(reply).toEqual({ text: 'remote-ok', source: 'remote' });
+    expect(fetchMock.mock.calls.map((call) => String(call[0]))).toEqual([
+      'https://api.llm7.io/v1/chat/completions',
+      'https://api.llm7.io/v1/chat/completions',
+    ]);
+  });
+});
+
+describe('usableCoachText', () => {
+  it('rejects the scrambled health insight and keeps a normal Arabic tip', () => {
+    const salad =
+      'يحتاج المحرك crk211 إلى تغيير الزيت Casting Collier exploits restée larinda لا أدري';
+    expect(usableCoachText(salad, 'ar')).toBeNull();
+    expect(usableCoachText('خلي التنك مليان لما تعبّي عشان الحساب يطلع مظبوط.', 'ar')).toContain(
+      'التنك',
+    );
+    expect(usableCoachText('Check tire pressure.', 'en')).toBe('Check tire pressure.');
   });
 });

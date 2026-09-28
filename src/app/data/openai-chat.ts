@@ -17,7 +17,7 @@ export class OpenAiChatError extends Error {
 }
 
 type ChatCompletionsBody = {
-  choices?: Array<{ message?: { content?: string | null } }>;
+  choices?: Array<{ message?: { content?: string | null; reasoning_content?: string | null } }>;
   error?: { message?: string; code?: string };
 };
 
@@ -27,6 +27,8 @@ export async function fetchOpenAiChat(input: {
   model: string;
   messages: readonly OpenAiChatMessage[];
   maxTokens?: number;
+  /** GLM-5.3 only. Thinking stays on; this keeps it short. */
+  reasoningEffort?: 'low' | 'high';
   signal?: AbortSignal;
 }): Promise<string> {
   const base = input.baseUrl.replace(/\/+$/, '');
@@ -40,13 +42,20 @@ export async function fetchOpenAiChat(input: {
         model: input.model,
         messages: input.messages,
         max_tokens: input.maxTokens ?? ASSISTANT_MAX_TOKENS,
+        ...(input.reasoningEffort
+          ? {
+              reasoning_effort: input.reasoningEffort,
+              chat_template_kwargs: { reasoning_effort: input.reasoningEffort },
+            }
+          : {}),
       }),
       signal: input.signal,
     });
   } catch (err) {
-    // CORS / offline / network — caller falls back to local coach.
+    // Abort is one model being slow. CORS / offline is the whole host.
+    const aborted = err instanceof Error && err.name === 'AbortError';
     const msg = err instanceof Error ? err.message : 'network';
-    throw new OpenAiChatError(msg, undefined, 'network');
+    throw new OpenAiChatError(msg, undefined, aborted ? 'timeout' : 'network');
   }
 
   let body: ChatCompletionsBody = {};
@@ -64,6 +73,7 @@ export async function fetchOpenAiChat(input: {
     );
   }
 
+  // Answer only. reasoning_content is the scratchpad and must not be shown.
   const content = body.choices?.[0]?.message?.content?.trim();
   if (!content) {
     throw new OpenAiChatError('empty', res.status, 'empty');
