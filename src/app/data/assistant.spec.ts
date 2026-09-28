@@ -1,22 +1,40 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { FREE_LLM_GATEWAYS } from '../domain/free-llm-gateways';
-import {
-  ASSISTANT_RATE_DAY,
-  ASSISTANT_RATE_HOUR,
-} from './assistant-rate-limit';
+import { ASSISTANT_MAX_TOKENS, FREE_LLM_GATEWAYS } from '../domain/free-llm-gateways';
+import { ASSISTANT_RATE_DAY, ASSISTANT_RATE_HOUR } from './assistant-rate-limit';
 import { fetchChatReply, type ChatMessage } from './assistant';
 import type { Db } from './db';
 
-function mockDb(online = true): Db {
+const RATE_KEY = 'drivelog.assistant.rate.v1';
+
+function hourCount(): number {
+  const raw = localStorage.getItem(RATE_KEY);
+  if (!raw) return 0;
+  const o = JSON.parse(raw) as { hourCount?: number };
+  return o.hourCount ?? 0;
+}
+
+function mockDb(online = true, car: boolean = true): Db {
   return {
-    settings: () => ({ assistantEnabled: online }),
-    car: () => null,
+    settings: () => ({ assistantEnabled: online, currency: 'EGP' }),
+    car: () =>
+      car
+        ? {
+            id: 'c1',
+            nickname: 'Test',
+            initialOdometer: 0,
+            currentOdometer: 12000,
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          }
+        : null,
+    snapshotCurrency: () => 'EGP',
     fillUps: () => [],
     maintenance: () => [],
     breakdowns: () => [],
     otherExpenses: () => [],
     expensePeriods: () => [],
-    milestones: () => [],
+    parts: () => [],
+    partOverrides: () => [],
   } as unknown as Db;
 }
 
@@ -24,6 +42,14 @@ function okChat(content: string) {
   return {
     ok: true,
     json: async () => ({ choices: [{ message: { content } }] }),
+  };
+}
+
+function httpStatus(status: number) {
+  return {
+    ok: false,
+    status,
+    json: async () => ({ error: { message: `HTTP ${status}` } }),
   };
 }
 
@@ -41,49 +67,63 @@ describe('fetchChatReply', () => {
     const fetchMock = vi.fn().mockResolvedValue(okChat('remote-ok'));
     vi.stubGlobal('fetch', fetchMock);
 
-    const reply = await fetchChatReply(
-      mockDb(true),
-      'How is my fuel?',
-      'en',
-      (k) => k,
-    );
+    const reply = await fetchChatReply(mockDb(true), 'How is my fuel?', 'en', (k) => k);
 
     expect(reply).toEqual({ text: 'remote-ok', source: 'remote' });
     expect(fetchMock).toHaveBeenCalled();
     const [url, init] = fetchMock.mock.calls[0]!;
     expect(String(url)).toContain(FREE_LLM_GATEWAYS[0]!.baseUrl.replace(/\/+$/, ''));
-    expect(JSON.parse((init as RequestInit).body as string).model).toBe(
-      FREE_LLM_GATEWAYS[0]!.model,
-    );
+    const body = JSON.parse((init as RequestInit).body as string) as {
+      model: string;
+      max_tokens: number;
+      messages: Array<{ role: string; content: string }>;
+    };
+    expect(body.model).toBe(FREE_LLM_GATEWAYS[0]!.model);
+    expect(body.max_tokens).toBe(ASSISTANT_MAX_TOKENS);
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+    const system = body.messages.find((m) => m.role === 'system');
+    expect(system?.content).toContain('"nickname":"Test"');
+    expect(system?.content).not.toContain('healthItems');
+    expect(hourCount()).toBe(1);
   });
 
   it('falls through gateways then local when all remote fail', async () => {
     const fetchMock = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
     vi.stubGlobal('fetch', fetchMock);
 
-    const reply = await fetchChatReply(
-      mockDb(true),
-      'anything',
-      'en',
-      (k) => `L:${k}`,
-    );
+    const reply = await fetchChatReply(mockDb(true), 'anything', 'en', (k) => `L:${k}`);
 
     expect(reply.source).toBe('local');
-    expect(fetchMock).toHaveBeenCalledTimes(FREE_LLM_GATEWAYS.length);
+    const urls = fetchMock.mock.calls.map((call) => String(call[0]));
+    expect(urls).toEqual([
+      'https://api.llm7.io/v1/chat/completions',
+      'https://api.kilo.ai/api/gateway/chat/completions',
+    ]);
     expect(reply.text.startsWith('L:')).toBe(true);
+    expect(hourCount()).toBe(0);
+  });
+
+  it('records one rate hit when HTTP 429 is followed by a reply', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(httpStatus(429))
+      .mockResolvedValueOnce(okChat('remote-ok'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const reply = await fetchChatReply(mockDb(true), 'fuel', 'en', (k) => k);
+
+    expect(reply).toEqual({ text: 'remote-ok', source: 'remote' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(hourCount()).toBe(1);
   });
 
   it('skips remote when online is off', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
-    const reply = await fetchChatReply(
-      mockDb(false),
-      'fuel',
-      'en',
-      (k) => k,
-    );
+    const reply = await fetchChatReply(mockDb(false), 'fuel', 'en', (k) => k);
     expect(fetchMock).not.toHaveBeenCalled();
     expect(reply.source).toBe('local');
+    expect(hourCount()).toBe(0);
   });
 
   it('skips remote when device rate limited', async () => {
@@ -91,7 +131,7 @@ describe('fetchChatReply', () => {
     const hourKey = `${now.getUTCFullYear()}-${now.getUTCMonth()}-${now.getUTCDate()}-${now.getUTCHours()}`;
     const dayKey = `${now.getUTCFullYear()}-${now.getUTCMonth()}-${now.getUTCDate()}`;
     localStorage.setItem(
-      'drivelog.assistant.rate.v1',
+      RATE_KEY,
       JSON.stringify({
         hourKey,
         hourCount: ASSISTANT_RATE_HOUR,
@@ -104,6 +144,7 @@ describe('fetchChatReply', () => {
     const reply = await fetchChatReply(mockDb(true), 'fuel', 'en', (k) => k);
     expect(fetchMock).not.toHaveBeenCalled();
     expect(reply.source).toBe('local');
+    expect(hourCount()).toBe(ASSISTANT_RATE_HOUR);
   });
 
   it('sends at most 6 prior turns plus the new user message', async () => {
@@ -120,13 +161,41 @@ describe('fetchChatReply', () => {
 
     await fetchChatReply(mockDb(true), 'newest', 'en', (k) => k, undefined, history);
 
-    const body = JSON.parse(
-      (fetchMock.mock.calls[0]![1] as RequestInit).body as string,
-    ) as { messages: Array<{ role: string; content: string }> };
+    const body = JSON.parse((fetchMock.mock.calls[0]![1] as RequestInit).body as string) as {
+      messages: Array<{ role: string; content: string }>;
+    };
     const nonSystem = body.messages.filter((m) => m.role !== 'system');
     // 6 history + 1 newest user
     expect(nonSystem).toHaveLength(7);
     expect(nonSystem.at(-1)).toEqual({ role: 'user', content: 'newest' });
     expect(nonSystem[0]!.content).toBe('m4');
+  });
+
+  it('skips the network for an empty question, an FAQ hint, and offline', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const empty = await fetchChatReply(mockDb(true), '   ', 'en', (k) => k);
+    expect(empty).toEqual({ text: 'assistant.local.generic', source: 'local' });
+
+    const hinted = await fetchChatReply(mockDb(true), 'fuel', 'en', (k) => k, 'BREAKDOWN');
+    expect(hinted.source).toBe('local');
+    expect(hinted.text).toContain('advisor.answer.breakdownBody');
+
+    vi.stubGlobal('navigator', { onLine: false });
+    const offline = await fetchChatReply(mockDb(true), 'fuel', 'en', (k) => k);
+    expect(offline.source).toBe('local');
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(hourCount()).toBe(0);
+  });
+
+  it('does not call the network when there is no car', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const reply = await fetchChatReply(mockDb(true, false), 'fuel', 'en', (k) => k);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(reply).toEqual({ text: 'assistant.local.noCar', source: 'local' });
+    expect(hourCount()).toBe(0);
   });
 });

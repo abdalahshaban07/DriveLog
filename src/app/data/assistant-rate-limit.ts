@@ -67,7 +67,7 @@ export function canRemoteAssistantCall(
   return b.hourCount < ASSISTANT_RATE_HOUR && b.dayCount < ASSISTANT_RATE_DAY;
 }
 
-/** Record one remote attempt (success or network hit that counted toward quota). */
+/** Record one remote chain after a gateway reply or an HTTP status. */
 export function recordRemoteAssistantCall(
   storage: Storage | null = typeof localStorage !== 'undefined' ? localStorage : null,
   now = new Date(),

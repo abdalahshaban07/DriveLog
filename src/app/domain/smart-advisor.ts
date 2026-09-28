@@ -54,7 +54,7 @@ function answer(
   return { titleKey, bodyKey, params };
 }
 
-function statusKey(status: HealthStatus): MsgKey {
+export function statusKey(status: HealthStatus): MsgKey {
   switch (status) {
     case 'good':
       return 'health.status.good';
@@ -115,7 +115,7 @@ function affordLabel(verdict: Affordability, t: Translate): string {
   }
 }
 
-function partLabel(item: HealthItem, t: Translate): string {
+export function partLabel(item: HealthItem, t: Translate): string {
   const name = item.part.name?.trim();
   if (name) return name;
   if (item.part.labelKey) return t(item.part.labelKey as MsgKey);
