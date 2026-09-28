@@ -1,4 +1,4 @@
-import type { Affordability, BudgetHealth } from './budget-engine';
+import type { BudgetHealth } from './budget-engine';
 import type { HealthItem } from './vehicle-health';
 import type { DataQualityTip } from './data-quality';
 
@@ -181,15 +181,3 @@ export function rankInsights(insights: readonly Insight[]): Insight[] {
     return a.id.localeCompare(b.id);
   });
 }
-
-export type AdvisorResponse = {
-  intent: string;
-  titleKey: string;
-  bodyKey: string;
-  confidence: 'low' | 'medium' | 'high';
-  sources: string[];
-  affordability?: Affordability;
-  insights: Insight[];
-};
-
-void (0 as unknown as BudgetHealth);

@@ -3,11 +3,8 @@ import {
   FREE_LLM_GATEWAYS,
 } from '../domain/free-llm-gateways';
 import { buildAssistantContext } from '../domain/assistant-context';
-import {
-  fetchCoachReply,
-  type CoachIntent,
-  type CoachReply,
-} from '../domain/local-coach';
+import type { AdvisorIntent } from '../domain/advisor-intent';
+import { fetchCoachReply, type CoachReply } from '../domain/local-coach';
 import type { MsgKey } from '../i18n/en';
 import {
   canRemoteAssistantCall,
@@ -103,7 +100,7 @@ export async function fetchChatReply(
   question: string,
   lang: 'en' | 'ar',
   t: (key: string, params?: Record<string, string | number>) => string,
-  intentHint?: CoachIntent,
+  intentHint?: AdvisorIntent,
   history: readonly ChatMessage[] = [],
 ): Promise<CoachReply> {
   const q = question.trim();

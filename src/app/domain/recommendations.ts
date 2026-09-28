@@ -3,7 +3,7 @@ import { tankEconomyVsAvg } from './economy';
 import { activePeriod, daysUntil, periodTotals } from './expense-period';
 import { fuelDashboardMetrics } from './fuel-dashboard';
 import { firstDueHolidayNudge, type PublicHoliday } from './holidays';
-import { pickFuelTipKey } from './local-coach';
+import { pickFuelTipKey } from './fuel-tips';
 import type {
   Breakdown,
   Car,
