@@ -605,6 +605,17 @@
   margin-block-end: var(--space-4);
 }
 
+/* Swipe rows: snap handles affordance, native bar is noise */
+.rec-row,
+.carousel {
+  scrollbar-width: none;
+}
+
+.rec-row::-webkit-scrollbar,
+.carousel::-webkit-scrollbar {
+  display: none;
+}
+
 .rec-row {
   display: grid;
   grid-auto-flow: column;
@@ -678,6 +689,7 @@
 
 /* Flat hairline plate — .card --plate-shadow bleeds onto glance-strip */
 .vehicle-status {
+  margin-block-end: var(--space-5);
   box-shadow: none;
 }
 

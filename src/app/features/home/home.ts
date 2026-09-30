@@ -280,6 +280,13 @@ export class HomePage {
     return nextDueItem(items);
   });
   readonly nextVaultDoc = computed(() => nextExpiringDoc(this.db.vehicleDocuments()));
+  /** At most one dismissible nudge on the dashboard, highest priority first. */
+  readonly nudge = computed((): 'checklist' | 'vault' | 'install' | null => {
+    if (this.showChecklist()) return 'checklist';
+    if (this.nextVaultDoc()) return 'vault';
+    if (this.showInstallCard()) return 'install';
+    return null;
+  });
   readonly economyTrend = computed(() => economyTrend(this.db.fillUps(), this.chartPeriod()));
   readonly costTrend = computed(() => costPerKmTrend(this.db.fillUps(), this.chartPeriod()));
   readonly spendTrendEntries = computed(() =>
