@@ -74,6 +74,50 @@
       "purpose": "maskable"
     }
   ],
+  "screenshots": [
+    {
+      "src": "screenshots/narrow-home-ar.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "لوحة التحكم: البنزين والصيانة في نظرة واحدة"
+    },
+    {
+      "src": "screenshots/narrow-fillups-ar.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "سجل التعبئات بالشهر والتكلفة"
+    },
+    {
+      "src": "screenshots/narrow-charts-ar.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "رسوم المصاريف الشهرية"
+    },
+    {
+      "src": "screenshots/narrow-maintenance-ar.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "مواعيد الصيانة والتذكيرات"
+    },
+    {
+      "src": "screenshots/narrow-home-en.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Dashboard: fuel economy, costs and next service"
+    },
+    {
+      "src": "screenshots/wide-home.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "DriveLog dashboard on desktop"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Add fill-up",
