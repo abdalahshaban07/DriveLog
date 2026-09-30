@@ -17,18 +17,15 @@ export type MoreSection = {
 export const MORE_SECTIONS: readonly MoreSection[] = [
   {
     headingKey: 'more.group.app',
-    items: [
-      { route: '/settings', labelKey: 'more.settings' },
-      { route: '/settings/features', labelKey: 'settings.features' },
-    ],
+    items: [{ route: '/settings', labelKey: 'more.settings' }],
   },
   {
     headingKey: 'more.group.logs',
     items: [
-      { route: '/history/fill-ups', labelKey: 'more.fillUpHistory' },
-      { route: '/history/maintenance', labelKey: 'more.maintHistory' },
       { route: '/breakdowns', labelKey: 'more.breakdowns' },
       { route: '/other-expenses', labelKey: 'more.otherExpenses' },
+      { route: '/vault', labelKey: 'more.vault' },
+      { route: '/passport', labelKey: 'more.passport' },
     ],
   },
   {
@@ -37,17 +34,13 @@ export const MORE_SECTIONS: readonly MoreSection[] = [
       { route: '/health', labelKey: 'more.health' },
       { route: '/budget', labelKey: 'more.budget' },
       { route: '/assistant', labelKey: 'more.assistant' },
-      { route: '/vault', labelKey: 'more.vault' },
       { route: '/pre-trip', labelKey: 'more.preTrip' },
-      { route: '/passport', labelKey: 'more.passport' },
     ],
   },
   {
     headingKey: 'more.group.support',
     items: [
       { route: '/help', labelKey: 'more.help' },
-      { route: '/legal', labelKey: 'more.legal' },
-      { route: '/about', labelKey: 'more.about' },
       { route: '/contact', labelKey: 'more.contact' },
     ],
   },

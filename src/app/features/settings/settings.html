@@ -286,6 +286,14 @@
 
   <section class="card list" [attr.aria-label]="i18n.t('settings.supportSection')">
     <p class="section-label">{{ i18n.t('settings.supportSection') }}</p>
+    <a class="line" routerLink="/settings/features">
+      <span class="line__text">
+        <strong>{{ i18n.t('settings.features') }}</strong>
+      </span>
+      <svg class="line__go" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 6l6 6-6 6" />
+      </svg>
+    </a>
     <a class="line" routerLink="/help">
       <span class="line__text">
         <strong>{{ i18n.t('more.help') }}</strong>

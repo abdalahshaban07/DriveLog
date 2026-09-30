@@ -455,7 +455,7 @@ export const en = {
   'more.fillUpHistory': 'Fill-up history',
   'more.maintHistory': 'Maintenance history',
   'more.group.app': 'App',
-  'more.group.logs': 'Logs',
+  'more.group.logs': 'Records',
   'more.group.tools': 'Tools',
   'more.group.support': 'Support',
   'more.help': 'Help & FAQ',

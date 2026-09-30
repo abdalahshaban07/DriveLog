@@ -10,12 +10,13 @@ Phone-first **Operate** PWA for personal fuel + maintenance. Local-first Indexed
 
 | Surface | Behavior |
 |---------|----------|
-| Shell | Fixed bottom nav (Home, Fuel, Maintenance, More); update as modal |
+| Shell | Fixed bottom nav (Home, Fuel, Maintenance, More); section tab stays active on sub-pages; update as modal |
 | Setup | 2 steps: vehicle → theme/lang/currency (no VIN) |
+| Fuel | Section tabs: Fuel · Around. Fill-up tabs: Log · History |
 | Fill-up | Numeric fields + fuel grade chips; cost = liters × unit price |
 | Home | Glance strip + quick log, spend outlook, recommendations |
-| Maintenance | Service log + due reminders |
-| More | Grouped lists (app, logs, tools, support). Settings for appearance, vehicle, backup, reminders. Help, privacy, about. |
+| Maintenance | Service log + due reminders; tabs: Log · History |
+| More | Grouped lists (app, records, tools, support), ~11 links. Settings holds appearance, vehicle, backup, reminders, app features, help, privacy, about. |
 
 ## Intelligence
 

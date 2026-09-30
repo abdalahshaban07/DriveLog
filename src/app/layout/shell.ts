@@ -58,6 +58,13 @@ export class Shell {
   );
 
   readonly showNav = computed(() => !this.url().startsWith('/setup'));
+  /** Bottom-nav section for pages reached through in-section tabs. */
+  readonly section = computed(() => {
+    const path = this.url().split(/[?#]/)[0];
+    if (/^\/(fuel|around|fill-up|history\/fill-ups)(\/|$)/.test(path)) return 'fuel';
+    if (/^\/(maintenance|history\/maintenance)(\/|$)/.test(path)) return 'maintenance';
+    return null;
+  });
   readonly updateReady = computed(
     () => this.install.updateReady() && !this.updateDismissed(),
   );

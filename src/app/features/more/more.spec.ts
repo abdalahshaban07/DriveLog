@@ -25,14 +25,13 @@ describe('MorePage', () => {
     expect(el.textContent).toContain('more.group.tools');
     expect(el.textContent).toContain('more.group.support');
     expect(el.textContent).toContain('more.help');
-    expect(el.textContent).toContain('more.legal');
-    expect(el.textContent).toContain('more.about');
     expect(el.textContent).toContain('more.contact');
     expect(el.textContent).not.toContain('more.whatsNew');
     expect(el.querySelector('a[href="/help"]')).toBeTruthy();
-    expect(el.querySelector('a[href="/legal"]')).toBeTruthy();
-    expect(el.querySelector('a[href="/about"]')).toBeTruthy();
     expect(el.querySelector('a[href="/contact"]')).toBeTruthy();
+    // History lives under Fuel/Maintenance tabs; legal + about under Settings.
+    expect(el.querySelector('a[href="/history/fill-ups"]')).toBeNull();
+    expect(el.querySelectorAll('a.line').length).toBe(11);
     expect(MORE_SECTIONS.map((s) => s.headingKey)).toEqual([
       'more.group.app',
       'more.group.logs',

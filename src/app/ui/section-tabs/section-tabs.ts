@@ -9,6 +9,11 @@ export type SectionTab = {
   exact?: boolean;
 };
 
+export const FUEL_TABS: SectionTab[] = [
+  { labelKey: 'fuel.title', link: '/fuel' },
+  { labelKey: 'nav.around', link: '/around' },
+];
+
 @Component({
   selector: 'app-section-tabs',
   changeDetection: ChangeDetectionStrategy.OnPush,
