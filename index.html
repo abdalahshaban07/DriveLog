@@ -15,5 +15,11 @@
   <body>
     <app-root></app-root>
     <noscript>Please enable JavaScript to continue using this application.</noscript>
+    <!-- Store audit tools (PWABuilder) only detect registrations in HTML; same URL as provideServiceWorker, so it is idempotent. -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('drivelog-sw.js').catch(() => {});
+      }
+    </script>
   <script src="main-JVX4TYXK.js" type="module"></script></body>
 </html>
