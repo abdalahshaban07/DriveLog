@@ -7,6 +7,8 @@ from PIL import Image
 BG = (11, 13, 16, 255)  # #0B0D10
 FUEL = (232, 163, 23)  # #E8A317
 PNG_SIZES = (72, 96, 128, 144, 152, 192, 384, 512)
+MASKABLE_SIZES = (192, 512)
+MASKABLE_SAFE_ZONE = 0.8  # Android crops maskable icons to the central 80%
 ICO_SIZES = (16, 32, 48)
 MASTER_SIZE = 1024
 
@@ -53,6 +55,14 @@ def main() -> None:
         master.resize((s, s), Image.Resampling.LANCZOS).save(
             ICONS / f"icon-{s}x{s}.png", "PNG"
         )
+    inner = int(MASTER_SIZE * MASKABLE_SAFE_ZONE)
+    maskable = Image.new("RGBA", (MASTER_SIZE, MASTER_SIZE), BG)
+    offset = (MASTER_SIZE - inner) // 2
+    maskable.paste(master.resize((inner, inner), Image.Resampling.LANCZOS), (offset, offset))
+    for s in MASKABLE_SIZES:
+        maskable.resize((s, s), Image.Resampling.LANCZOS).save(
+            ICONS / f"maskable-{s}.png", "PNG"
+        )
     icos = [master.resize((s, s), Image.Resampling.LANCZOS) for s in ICO_SIZES]
     icos[0].save(
         ROOT / "public" / "favicon.ico",
@@ -68,5 +78,8 @@ if __name__ == "__main__":
     for s in PNG_SIZES:
         p = ICONS / f"icon-{s}x{s}.png"
         assert p.is_file() and p.stat().st_size > 0, p
+    for s in MASKABLE_SIZES:
+        p = ICONS / f"maskable-{s}.png"
+        assert p.is_file() and Image.open(p).size == (s, s), p
     assert SVG.is_file() and (ROOT / "public" / "favicon.ico").is_file()
-    print("ok", MASTER, SVG, *PNG_SIZES)
+    print("ok", MASTER, SVG, *PNG_SIZES, *(f"maskable-{s}" for s in MASKABLE_SIZES))

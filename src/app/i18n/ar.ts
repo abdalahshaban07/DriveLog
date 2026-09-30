@@ -640,6 +640,7 @@ export const ar: Record<MsgKey, string> = {
   'assistant.input': 'رسالتك',
   'assistant.send': 'إرسال',
   'assistant.clear': 'امسح المحادثة',
+  'assistant.report': 'الإبلاغ عن الرد',
   'assistant.empty': 'رد فاضي من المدرب.',
   'assistant.network': 'مقدرناش نوصل للمدرب — بنورّي إجابة محلية.',
   'assistant.localOnly': 'المساعد الأونلاين مطفي — بنجاوب من على الجهاز.',

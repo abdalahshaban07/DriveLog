@@ -117,6 +117,20 @@
   white-space: pre-wrap;
 }
 
+.chat__report {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: calc(var(--tap) * 0.75);
+  margin-block-start: var(--space-2);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.chat__report:focus-visible {
+  outline: 2px solid var(--fuel);
+  outline-offset: 2px;
+}
+
 .chat__bubble--loading {
   display: flex;
   align-items: center;

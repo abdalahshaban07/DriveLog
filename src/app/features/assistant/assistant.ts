@@ -19,6 +19,7 @@ import { I18n } from '../../i18n/i18n';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
 import { TextField } from '../../ui/text-field';
+import { CONTACT_EMAIL } from '../support/support';
 
 const FAQ_KEYS = [
   'assistant.faq.economy',
@@ -62,6 +63,13 @@ export class AssistantPage {
     };
     return FAQ_KEYS.filter((k) => has[k]);
   });
+
+  /** Play generative-AI policy: users must be able to flag AI output. */
+  reportHref(content: string): string {
+    const subject = encodeURIComponent('DriveLog: report AI response');
+    const body = encodeURIComponent(content.slice(0, 500));
+    return `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
+  }
 
   clearChat(): void {
     this.messages.set([]);

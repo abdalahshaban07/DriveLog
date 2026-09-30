@@ -45,6 +45,11 @@
             [attr.data-source]="msg.source ?? null"
           >
             <p>{{ msg.content }}</p>
+            @if (msg.role === 'assistant' && msg.source === 'remote') {
+              <a class="chat__report" [href]="reportHref(msg.content)">
+                {{ i18n.t('assistant.report') }}
+              </a>
+            }
           </li>
         }
         @if (busy()) {
