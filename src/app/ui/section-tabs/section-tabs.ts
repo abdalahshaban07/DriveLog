@@ -14,7 +14,6 @@ export type SectionTab = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, RouterLinkActive],
   templateUrl: './section-tabs.html',
-  styleUrl: './section-tabs.scss',
 })
 export class SectionTabs {
   readonly i18n = inject(I18n);

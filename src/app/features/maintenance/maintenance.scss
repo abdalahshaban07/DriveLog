@@ -264,21 +264,6 @@
   color: var(--stop);
 }
 
-.ghost {
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  font-weight: 600;
-  min-height: var(--tap);
-  padding-inline: var(--space-2);
-  cursor: pointer;
-}
-
-.ghost:focus-visible {
-  outline: 2px solid var(--fuel);
-  outline-offset: 2px;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .due-card__actions {
     transition: none;

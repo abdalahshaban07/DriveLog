@@ -48,7 +48,7 @@
         [disabled]="busy()"
         (pressed)="exportPdf(false)"
       />
-      <button type="button" class="ghost" [disabled]="busy()" (click)="exportPdf(true)">
+      <button type="button" class="ghost-btn" [disabled]="busy()" (click)="exportPdf(true)">
         {{ i18n.t('passport.share') }}
       </button>
     </div>

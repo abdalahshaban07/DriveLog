@@ -1,0 +1,31 @@
+@media (min-width: 768px) {
+  .shell,
+  .frame {
+    max-inline-size: var(--shell);
+  }
+
+  .row--wide {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --shell: var(--shell-wide);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .cta:active,
+  .nav a:active,
+  .disclosure > summary::after {
+    transform: none;
+  }
+}

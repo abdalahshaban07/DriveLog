@@ -1,0 +1,70 @@
+html[data-theme='contrast'] .input,
+html[data-theme='contrast'] .file-pick {
+  border-width: 2px;
+  border-color: color-mix(in srgb, var(--text) 70%, transparent);
+}
+
+html[data-theme='contrast'] .receipt-line {
+  border-bottom-width: 2px;
+  border-bottom-color: color-mix(in srgb, var(--text) 55%, transparent);
+}
+
+html[data-theme='contrast'] :focus-visible,
+html[data-theme='contrast'] .input:focus,
+html[data-theme='contrast'] .input:focus-visible,
+html[data-theme='contrast'] .file-pick:focus-within {
+  outline-width: 3px;
+}
+
+html[data-look='neo'] .tab-on-fuel,
+html[data-look='neo'] .section-tabs__link--on {
+  color: var(--cta-text);
+}
+
+html[data-look='neo'] .pill,
+html[data-look='neo'] .chip {
+  border-radius: var(--radius);
+  border: var(--border-width) solid var(--ink);
+  box-shadow: var(--raise-1);
+}
+
+html[data-look='neo'] .cta,
+html[data-look='neo'] .card,
+html[data-look='neo'] .due-card,
+html[data-look='neo'] .nav,
+html[data-look='neo'] .input,
+html[data-look='neo'] .file-pick,
+html[data-look='neo'] .disclosure {
+  border-color: var(--ink);
+  box-shadow: var(--raise-1);
+}
+
+html[data-look='neo'] .cta:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html[data-look='neo'] .cta:hover {
+    box-shadow: var(--raise-2);
+  }
+
+  html[data-look='skeuo'] .cta:hover {
+    box-shadow: 0 0 16px var(--glow), var(--raise-2);
+  }
+}
+
+html[data-look='neu'] .card,
+html[data-look='neu'] .due-card,
+html[data-look='neu'] .disclosure {
+  border-color: transparent;
+}
+
+html[data-look='glass'] .card,
+html[data-look='glass'] .due-card,
+html[data-look='spatial'] .card,
+html[data-look='spatial'] .due-card,
+html[data-look='plasma'] .card,
+html[data-look='plasma'] .due-card {
+  border-color: var(--glass-edge);
+}
