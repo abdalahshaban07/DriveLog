@@ -1,4 +1,4 @@
-import type { PreTripCheck, PreTripItemId } from './models';
+import type { PreTripItemId } from './models';
 import { PRE_TRIP_ITEM_IDS } from './models';
 
 export type PreTripItemDef = {
@@ -24,17 +24,4 @@ export function emptyPreTripItems(): Record<PreTripItemId, boolean> {
 
 export function allPreTripChecked(items: Record<PreTripItemId, boolean>): boolean {
   return PRE_TRIP_ITEM_IDS.every((id) => items[id]);
-}
-
-export function latestPreTripForCar(
-  checks: readonly PreTripCheck[],
-  carId: string,
-): PreTripCheck | null {
-  const list = checks.filter((c) => c.carId === carId);
-  if (!list.length) {
-    return null;
-  }
-  return [...list].sort(
-    (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
-  )[0]!;
 }

@@ -1,7 +1,5 @@
 import type { PartDefinition, PartTrackingMode } from './models';
 
-export const PART_CATALOG_VERSION = 1;
-
 /** Stable system id for the only DriveLog SYSTEM_RULE interval (52A). */
 export const ROUTINE_CHECK_PART_ID = 'sys-routine-check-10k';
 

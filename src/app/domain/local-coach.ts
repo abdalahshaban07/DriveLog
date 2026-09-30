@@ -129,17 +129,3 @@ export function localCoachAnswer(
   const text = `${t(answer.titleKey)} ${t(answer.bodyKey, answer.params)}`.trim();
   return { text, source: 'local' };
 }
-
-export function fetchCoachReply(
-  db: Db,
-  question: string,
-  _lang: 'en' | 'ar',
-  t: Translate,
-  intentHint?: AdvisorIntent,
-): CoachReply {
-  const loaded = loadCoachInputs(db);
-  if (!loaded) {
-    return { text: t('assistant.local.noCar'), source: 'local' };
-  }
-  return localCoachAnswer(question, loaded.facts, loaded.logs, t, intentHint);
-}

@@ -56,16 +56,6 @@ export function sortMilestones(
   return [...milestones].sort((a, b) => a.targetKm - b.targetKm);
 }
 
-export function nextMilestone(
-  milestones: readonly MaintenanceMilestone[],
-  currentOdometer: number,
-): MaintenanceMilestone | null {
-  const open = sortMilestones(milestones).find((m) =>
-    m.tasks.some((t) => !t.maintenanceId) && m.targetKm >= currentOdometer - MILESTONE_INTERVAL_KM,
-  );
-  return open ?? sortMilestones(milestones).find((m) => m.tasks.some((t) => !t.maintenanceId)) ?? null;
-}
-
 export function completeTask(
   milestone: MaintenanceMilestone,
   taskId: string,

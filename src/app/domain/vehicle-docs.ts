@@ -1,9 +1,6 @@
 import { compareDateOnly, todayDateOnly } from './dues';
 import type { Car, DateOnly, VehicleDocKind, VehicleDocument } from './models';
 
-/** Nudge windows (days before expiry). */
-export const DOC_NUDGE_DAYS = [30, 7, 1] as const;
-
 export type DocUrgency = 'expired' | 'd1' | 'd7' | 'd30' | 'ok';
 
 export function daysUntilExpiry(expiry: DateOnly, today: DateOnly = todayDateOnly()): number {

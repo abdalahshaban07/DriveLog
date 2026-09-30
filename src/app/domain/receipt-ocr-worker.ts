@@ -77,12 +77,3 @@ export async function ocrReceiptImage(image: Blob | string): Promise<string> {
     .filter((line) => line.length > 0)
     .join('\n');
 }
-
-export async function disposeOcrWorker(): Promise<void> {
-  if (!enginePromise) {
-    return;
-  }
-  const engine = await enginePromise;
-  enginePromise = null;
-  await engine.dispose();
-}

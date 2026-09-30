@@ -501,13 +501,3 @@ export const PART_CONDITIONS: readonly PartCondition[] = [
   'poor',
   'critical',
 ] as const;
-
-export const HEALTH_STATUSES: readonly HealthStatus[] = [
-  'critical',
-  'overdue',
-  'due',
-  'inspect',
-  'soon',
-  'good',
-  'unknown',
-] as const;
