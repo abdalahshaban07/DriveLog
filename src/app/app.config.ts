@@ -19,7 +19,7 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => inject(Db).init()),
     provideServiceWorker('drivelog-sw.js', {
       enabled: !isDevMode(),
-      registrationStrategy: 'registerWhenStable:30000',
+      registrationStrategy: 'registerWhenStable:5000',
     }),
   ],
 };

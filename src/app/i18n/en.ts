@@ -637,6 +637,7 @@ export const en = {
   'assistant.input': 'Your message',
   'assistant.send': 'Send',
   'assistant.clear': 'Clear chat',
+  'assistant.report': 'Report response',
   'assistant.empty': 'Coach returned an empty reply.',
   'assistant.network': 'Could not reach the coach — showing a local answer.',
   'assistant.localOnly': 'Online assistant is off — using on-device answers.',
