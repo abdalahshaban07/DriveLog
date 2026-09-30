@@ -114,21 +114,3 @@ export function lastFuelGrade(fills: readonly FillUp[]): FuelGrade | null {
   // ponytail: diesel removed from picker; treat legacy as solar for new fills
   return grade === 'diesel' ? 'solar' : grade;
 }
-
-/** ponytail: naive km-until-empty from last full tank segment only */
-export function suggestFillUpDueKm(
-  fills: readonly FillUp[],
-  currentOdometer: number,
-  thresholdKm = 400,
-): number | null {
-  const full = [...fills]
-    .filter((f) => f.tankFull)
-    .sort((a, b) => b.odometer - a.odometer);
-  const lastFull = full[0];
-  if (!lastFull) {
-    return null;
-  }
-  const since = currentOdometer - lastFull.odometer;
-  const remaining = thresholdKm - since;
-  return remaining > 0 && remaining <= thresholdKm ? Math.round(remaining) : null;
-}

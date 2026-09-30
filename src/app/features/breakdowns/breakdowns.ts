@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Router } from '@angular/router';
 import { Db } from '../../data/db';
 import { todayDateOnly } from '../../domain/dues';
-import { odometerInputValue, roundOdometerKm } from '../../domain/odometer';
+import { odometerInputValue } from '../../domain/odometer';
 import type { Breakdown, BreakdownCategory } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';

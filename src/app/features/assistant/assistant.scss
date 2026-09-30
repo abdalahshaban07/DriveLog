@@ -167,11 +167,6 @@
   transform: scale(0.97);
 }
 
-.ghost:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .chip,
   .ghost,
@@ -189,4 +184,8 @@
     border-color: var(--fuel);
     opacity: 0.7;
   }
+}
+
+[data-chat-end] {
+  scroll-margin-block-end: calc(var(--nav-height) + var(--space-4));
 }

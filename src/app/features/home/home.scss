@@ -1,45 +1,32 @@
-.home__head {
-  margin-block-end: var(--space-3);
-}
-
 .reports-panel,
 .charts-panel {
   display: grid;
   gap: var(--space-5);
 }
 
-.reports-glance,
-.charts-glance {
+.tab-glance,
+.tab-block {
   display: grid;
   gap: var(--space-3);
 }
 
-.reports-glance__lead,
-.charts-glance__lead {
+.tab-glance__lead {
   margin: 0;
   font-weight: 600;
   color: var(--text);
 }
 
-.reports-glance__counts,
-.charts-glance__counts {
+.tab-glance__counts {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   gap: var(--space-2);
 }
 
-.reports-glance__counts {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.charts-glance__counts {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.reports-glance__count,
-.charts-glance__count {
+.tab-glance__count {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -51,8 +38,7 @@
   min-width: 0;
 }
 
-.reports-glance__num,
-.charts-glance__num {
+.tab-glance__num {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   font-size: var(--type-body);
@@ -64,24 +50,31 @@
   max-width: 100%;
 }
 
-.reports-glance__label,
-.charts-glance__label {
+/* Shared flat hairline plate */
+.ledger-row,
+.month-outlook__strip,
+.rec-card {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--fill-surface);
+}
+
+/* Shared small-caps label rhythm */
+.tab-glance__label,
+.glance-strip__label,
+.month-outlook__label,
+.report-row__title,
+.chart-card__label {
+  margin: 0;
   color: var(--muted);
   font-size: var(--type-label);
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   line-height: 1.2;
 }
 
-.reports-block,
-.charts-block {
-  display: grid;
-  gap: var(--space-3);
-}
-
-.reports-block__title,
-.charts-block__title {
+.tab-block__title {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -94,8 +87,7 @@
   color: var(--text);
 }
 
-.reports-block__count,
-.charts-block__count {
+.tab-block__count {
   color: var(--muted);
   font-weight: 500;
   font-size: 0.875rem;
@@ -123,12 +115,7 @@
 }
 
 .report-row__title {
-  margin: 0;
-  font-size: var(--type-label);
   font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--muted);
 }
 
 .report-row[data-tone='fuel'] .report-row__title {
@@ -185,83 +172,6 @@
   align-items: center;
 }
 
-.ghost {
-  min-height: var(--tap);
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.home__brand {
-  margin: 0;
-  font-size: 1.65rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--text);
-}
-
-.home__sub {
-  margin: var(--space-1) 0 0;
-  color: var(--muted);
-  font-size: 0.95rem;
-}
-
-.home-tabs {
-  display: flex;
-  gap: var(--space-2);
-  margin-block-end: var(--space-4);
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: var(--tab-track-pad, 0);
-  border-block-end: var(--tab-track-border, 1px solid var(--hairline));
-  border-radius: var(--tab-track-radius, 0);
-  background: var(--tab-track, transparent);
-  box-shadow: var(--tab-track-shadow, none);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  scrollbar-width: none;
-}
-
-.home-tabs::-webkit-scrollbar {
-  display: none;
-}
-
-.home-tabs__btn {
-  position: relative;
-  flex: 1 1 auto;
-  min-height: var(--tap);
-  padding: 0 var(--space-4);
-  border: var(--tab-btn-border, 0);
-  border-radius: var(--tab-btn-radius, 0);
-  background: var(--tab-btn-bg, transparent);
-  color: var(--muted);
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  box-shadow: var(--tab-btn-shadow, none);
-}
-
-.home-tabs__btn--on {
-  color: var(--text);
-  background: var(--tab-btn-on-bg, transparent);
-  box-shadow: var(--tab-btn-on-shadow, var(--tab-btn-shadow, none));
-}
-
-.home-tabs__btn--on::after {
-  content: '';
-  position: absolute;
-  inset-inline: var(--space-2);
-  bottom: -1px;
-  height: var(--tab-underline-h, 2px);
-  border-radius: 2px;
-  background: var(--tab-underline, var(--cta));
-}
-
 .glance-strip {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -314,15 +224,6 @@
   text-align: center;
 }
 
-.glance-strip__label {
-  font-size: var(--type-label);
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--muted);
-  line-height: 1.2;
-}
-
 .glance-strip__cell strong {
   font-variant-numeric: tabular-nums;
   font-size: var(--type-body);
@@ -335,7 +236,6 @@
   text-overflow: ellipsis;
 }
 
-.spark-grid,
 .chart-grid {
   display: grid;
   gap: var(--space-3);
@@ -357,9 +257,6 @@
   margin-block-end: var(--space-2);
   font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--muted);
 }
 
 .empty-cta {
@@ -595,9 +492,6 @@
   gap: var(--space-2);
   min-width: 0;
   padding: var(--space-3);
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius);
-  background: var(--fill-surface);
 }
 
 .ledger-row__head {
@@ -688,9 +582,6 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
   padding: var(--space-4);
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius);
-  background: var(--fill-surface);
 }
 
 .month-outlook__cell {
@@ -700,14 +591,6 @@
 
 .month-outlook__cell--projected strong {
   color: var(--cta);
-}
-
-.month-outlook__label {
-  font-size: var(--type-label);
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--muted);
 }
 
 .month-outlook__cell strong {
@@ -720,6 +603,17 @@
 
 .rec-section {
   margin-block-end: var(--space-4);
+}
+
+/* Swipe rows: snap handles affordance, native bar is noise */
+.rec-row,
+.carousel {
+  scrollbar-width: none;
+}
+
+.rec-row::-webkit-scrollbar,
+.carousel::-webkit-scrollbar {
+  display: none;
 }
 
 .rec-row {
@@ -746,9 +640,6 @@
   gap: var(--space-2);
   min-height: 6.5rem;
   padding: var(--space-4);
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius);
-  background: var(--fill-surface);
   text-decoration: none;
   color: inherit;
 }
@@ -792,28 +683,13 @@
   margin-block-end: var(--space-4);
 }
 
-.health-card__head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.health-card__head h2,
 .advisor-card h2 {
   margin: 0;
 }
 
-.health-card__list {
-  list-style: none;
-  margin: var(--space-3) 0 0;
-  padding: 0;
-  display: grid;
-  gap: var(--space-2);
-}
-
 /* Flat hairline plate — .card --plate-shadow bleeds onto glance-strip */
 .vehicle-status {
+  margin-block-end: var(--space-5);
   box-shadow: none;
 }
 

@@ -1,0 +1,711 @@
+/* Dark + dusk + system-dark share one block per look. */
+@mixin dark-look($look) {
+  html[data-theme='dark'][data-look='#{$look}'],
+  html[data-theme='dusk'][data-look='#{$look}'] {
+    @content;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    html[data-theme='system'][data-look='#{$look}'] {
+      @content;
+    }
+  }
+}
+
+/* ——— Look packs: materials + chrome; text ink stays on data-theme ——— */
+:root,
+html[data-look='receipt'] {
+  /* Night Receipt warm room — theme already sets surfaces; reinforce chrome */
+  --radius: 10px;
+  --raise-1: none;
+  --raise-2: none;
+  --bevel-hi: none;
+  --bevel-lo: none;
+  --press-inset: inset 0 2px 4px color-mix(in srgb, var(--text) 14%, transparent);
+  --plate-shadow: var(--shadow-soft);
+  --border-width: 1px;
+  --ink: var(--text);
+  --fill-surface: var(--surface);
+  --fill-well: var(--well);
+  --fill-paper: var(--paper);
+  --glass-blur: 0px;
+  --glass-edge: transparent;
+  --nav-fill: var(--bg);
+  --nav-inset: 0px;
+  --cta-surface: var(--cta);
+  /* Primary CTA chrome — each look owns these */
+  --btn-bg: var(--cta);
+  --btn-border: 0;
+  --btn-radius: var(--radius);
+  --btn-shadow: none;
+  --btn-hover-shadow: 0 0 16px var(--glow);
+  --btn-press-shadow: var(--press-inset);
+  --btn-press-x: 0;
+  --btn-press-y: 1px;
+  --btn-blur: 0px;
+  --btn-tracking: 0;
+  --tab-track: transparent;
+  --tab-track-pad: 0;
+  --tab-track-radius: 0;
+  --tab-track-border: 1px solid var(--hairline);
+  --tab-track-shadow: none;
+  --tab-btn-bg: transparent;
+  --tab-btn-on-bg: transparent;
+  --tab-btn-radius: 0;
+  --tab-btn-border: 0;
+  --tab-btn-shadow: none;
+  --tab-btn-on-shadow: none;
+  --tab-underline: var(--cta);
+  --tab-underline-h: 2px;
+  --mesh-canvas:
+    radial-gradient(
+      120% 80% at 100% 0%,
+      color-mix(in srgb, var(--aura-1) 55%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      90% 70% at 0% 100%,
+      color-mix(in srgb, var(--aura-2) 40%, transparent),
+      transparent 50%
+    );
+}
+
+/* Pump Console — cool metal panel (light) */
+html[data-look='skeuo'] {
+  --bg: #c8ced6;
+  --surface: #e8ecf0;
+  --well: #aeb6c0;
+  --aura-1: #b8c0cc;
+  --aura-2: #9aa3b0;
+  --hairline: color-mix(in srgb, #3a4048 28%, transparent);
+  --radius: 12px;
+  --well-inset:
+    inset 0 4px 10px color-mix(in srgb, #1a1d22 32%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, #fff 40%, transparent);
+  --bevel-hi: inset 0 1px 0 color-mix(in srgb, #fff 72%, transparent);
+  --bevel-lo: inset 0 -1px 0 color-mix(in srgb, #1a1d22 22%, transparent);
+  --raise-1:
+    0 1px 2px color-mix(in srgb, #1a1d22 22%, transparent),
+    0 6px 14px color-mix(in srgb, #1a1d22 16%, transparent);
+  --raise-2:
+    0 2px 4px color-mix(in srgb, #1a1d22 26%, transparent),
+    0 10px 22px color-mix(in srgb, #1a1d22 18%, transparent);
+  --press-inset:
+    inset 0 3px 8px color-mix(in srgb, #1a1d22 40%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #1a1d22 22%, transparent);
+  --plate-shadow: var(--bevel-hi), var(--bevel-lo), var(--raise-1);
+  --shadow-soft: var(--raise-1);
+  --border-width: 1px;
+  --ink: var(--text);
+  --fill-surface: var(--surface);
+  --fill-well: var(--well);
+  --fill-paper: var(--paper);
+  --glass-blur: 0px;
+  --glass-edge: transparent;
+  --nav-fill: var(--bg);
+  --nav-inset: 0px;
+  --cta-surface: linear-gradient(
+    180deg,
+    color-mix(in srgb, #fff 42%, var(--cta)) 0%,
+    var(--cta) 46%,
+    color-mix(in srgb, #1a1d22 22%, var(--cta)) 100%
+  );
+  --btn-bg: var(--cta-surface);
+  --btn-border: 1px solid color-mix(in srgb, #1a1d22 28%, var(--cta));
+  --btn-radius: var(--radius);
+  --btn-shadow: var(--bevel-hi), var(--bevel-lo), var(--raise-1);
+  --btn-hover-shadow: var(--bevel-hi), var(--bevel-lo), var(--raise-2);
+  --btn-press-shadow: var(--press-inset);
+  --btn-press-x: 0;
+  --btn-press-y: 2px;
+  --btn-blur: 0px;
+  --btn-tracking: 0;
+  --tab-track: transparent;
+  --tab-track-pad: var(--space-1);
+  --tab-track-radius: var(--radius);
+  --tab-track-border: 0;
+  --tab-track-shadow: var(--well-inset);
+  --tab-btn-bg: var(--fill-surface);
+  --tab-btn-on-bg: var(--fill-surface);
+  --tab-btn-radius: calc(var(--radius) - 4px);
+  --tab-btn-border: 1px solid var(--hairline);
+  --tab-btn-shadow: var(--bevel-hi), var(--bevel-lo), var(--raise-1);
+  --tab-btn-on-shadow: var(--bevel-hi), var(--bevel-lo), var(--raise-2);
+  --tab-underline: transparent;
+  --tab-underline-h: 0;
+  --mesh-canvas:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, #fff 22%, transparent) 0%,
+      transparent 42%,
+      color-mix(in srgb, #1a1d22 10%, transparent) 100%
+    ),
+    radial-gradient(
+      100% 70% at 100% 0%,
+      color-mix(in srgb, var(--aura-1) 50%, transparent),
+      transparent 55%
+    );
+}
+
+@include dark-look('skeuo') {
+  --bg: #0b0d10;
+  --surface: #1a1e24;
+  --well: #0e1116;
+  --aura-1: #2a3038;
+  --aura-2: #14181e;
+  --hairline: color-mix(in srgb, #fff 12%, transparent);
+  --well-inset:
+    inset 0 4px 12px color-mix(in srgb, #000 55%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, #fff 12%, transparent);
+  --bevel-hi: inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent);
+  --bevel-lo: inset 0 -1px 0 color-mix(in srgb, #000 55%, transparent);
+  --raise-1:
+    0 1px 2px color-mix(in srgb, #000 50%, transparent),
+    0 6px 16px color-mix(in srgb, #000 40%, transparent);
+  --raise-2:
+    0 2px 6px color-mix(in srgb, #000 55%, transparent),
+    0 12px 28px color-mix(in srgb, #000 45%, transparent);
+  --plate-shadow: var(--bevel-hi), var(--bevel-lo), var(--raise-1);
+  --shadow-soft: var(--raise-1);
+}
+
+/* Soft Clay — mono clay canvas */
+html[data-look='neu'] {
+  --bg: #e4e7ec;
+  --surface: #e4e7ec;
+  --well: #d5d9e0;
+  --aura-1: #e4e7ec;
+  --aura-2: #e4e7ec;
+  --radius: 16px;
+  --hairline: transparent;
+  --input-border: transparent;
+  --well-inset:
+    5px 5px 12px color-mix(in srgb, #8a919c 45%, transparent) inset,
+    -4px -4px 10px color-mix(in srgb, #fff 85%, transparent) inset;
+  --raise-1: none;
+  --raise-2: none;
+  --bevel-hi: none;
+  --bevel-lo: none;
+  --shadow-soft:
+    8px 8px 18px color-mix(in srgb, #8a919c 42%, transparent),
+    -6px -6px 14px color-mix(in srgb, #fff 90%, transparent);
+  --press-inset: var(--well-inset);
+  --plate-shadow: var(--shadow-soft);
+  --border-width: 0px;
+  --ink: transparent;
+  --fill-surface: var(--surface);
+  --fill-well: var(--well);
+  --fill-paper: var(--surface);
+  --glass-blur: 0px;
+  --glass-edge: transparent;
+  --nav-fill: var(--bg);
+  --nav-inset: 0px;
+  --cta-surface: var(--cta);
+  --btn-bg: var(--cta);
+  --btn-border: 0;
+  --btn-radius: var(--radius);
+  --btn-shadow: var(--shadow-soft);
+  --btn-hover-shadow: var(--shadow-soft);
+  --btn-press-shadow: var(--well-inset);
+  --btn-press-x: 0;
+  --btn-press-y: 1px;
+  --btn-blur: 0px;
+  --btn-tracking: 0;
+  --mesh-canvas: none;
+  --glow: transparent;
+  --tab-track: var(--well);
+  --tab-track-pad: var(--space-1);
+  --tab-track-radius: var(--radius);
+  --tab-track-border: 0;
+  --tab-track-shadow: var(--well-inset);
+  --tab-btn-bg: transparent;
+  --tab-btn-on-bg: var(--surface);
+  --tab-btn-radius: calc(var(--radius) - 4px);
+  --tab-btn-border: 0;
+  --tab-btn-shadow: none;
+  --tab-btn-on-shadow: var(--shadow-soft);
+  --tab-underline: transparent;
+  --tab-underline-h: 0;
+}
+
+@include dark-look('neu') {
+  --bg: #2c3038;
+  --surface: #2c3038;
+  --well: #22262e;
+  --aura-1: #2c3038;
+  --aura-2: #2c3038;
+  --well-inset:
+    5px 5px 14px color-mix(in srgb, #000 65%, transparent) inset,
+    -3px -3px 10px color-mix(in srgb, #fff 8%, transparent) inset;
+  --shadow-soft:
+    8px 8px 18px color-mix(in srgb, #000 60%, transparent),
+    -5px -5px 12px color-mix(in srgb, #fff 7%, transparent);
+  --plate-shadow: var(--shadow-soft);
+}
+
+html[data-theme='contrast'][data-look='neu'] {
+  --shadow-soft: none;
+  --plate-shadow: none;
+  --well-inset: none;
+  --btn-shadow: none;
+  --btn-hover-shadow: none;
+  --btn-press-shadow: none;
+  --btn-border: 1px solid var(--text);
+  --hairline: color-mix(in srgb, var(--text) 40%, transparent);
+  --input-border: color-mix(in srgb, var(--text) 70%, transparent);
+  --border-width: 1px;
+  --bg: #000000;
+  --surface: #121212;
+  --well: #000000;
+}
+
+/* Amber Glass — strong frost + aura bleed */
+html[data-look='glass'] {
+  --aura-1: color-mix(in srgb, var(--fuel) 28%, #dcc9a0);
+  --aura-2: color-mix(in srgb, var(--fuel) 12%, #c4b8a4);
+  --radius: 16px;
+  --raise-1: 0 10px 28px color-mix(in srgb, #000 20%, transparent);
+  --raise-2: 0 16px 40px color-mix(in srgb, #000 28%, transparent);
+  --bevel-hi: none;
+  --bevel-lo: none;
+  --shadow-soft: var(--raise-1);
+  --plate-shadow: var(--raise-1), inset 0 1px 0 color-mix(in srgb, #fff 40%, transparent);
+  --press-inset: inset 0 1px 0 color-mix(in srgb, #fff 30%, transparent);
+  --border-width: 1px;
+  --ink: color-mix(in srgb, #fff 45%, var(--hairline));
+  --fill-surface: color-mix(in srgb, var(--surface) 48%, transparent);
+  --fill-well: color-mix(in srgb, var(--well) 58%, transparent);
+  --fill-paper: color-mix(in srgb, var(--paper) 72%, transparent);
+  --glass-blur: 22px;
+  --glass-edge: color-mix(in srgb, #fff 42%, var(--hairline));
+  --nav-fill: color-mix(in srgb, var(--bg) 45%, transparent);
+  --nav-inset: 0px;
+  --cta-surface: color-mix(in srgb, var(--cta) 78%, transparent);
+  --btn-bg: var(--cta-surface);
+  --btn-border: 1px solid var(--glass-edge);
+  --btn-radius: var(--radius);
+  --btn-shadow:
+    var(--raise-1),
+    inset 0 1px 0 color-mix(in srgb, #fff 45%, transparent);
+  --btn-hover-shadow:
+    var(--raise-2),
+    inset 0 1px 0 color-mix(in srgb, #fff 50%, transparent),
+    0 0 20px var(--glow);
+  --btn-press-shadow: var(--press-inset);
+  --btn-press-x: 0;
+  --btn-press-y: 1px;
+  --btn-blur: 12px;
+  --btn-tracking: 0;
+  --tab-track: color-mix(in srgb, var(--surface) 40%, transparent);
+  --tab-track-pad: var(--space-1);
+  --tab-track-radius: var(--radius);
+  --tab-track-border: 1px solid var(--glass-edge);
+  --tab-track-shadow: none;
+  --tab-btn-bg: transparent;
+  --tab-btn-on-bg: color-mix(in srgb, var(--surface) 55%, transparent);
+  --tab-btn-radius: calc(var(--radius) - 4px);
+  --tab-btn-border: 0;
+  --tab-btn-shadow: none;
+  --tab-btn-on-shadow: inset 0 1px 0 color-mix(in srgb, #fff 35%, transparent);
+  --tab-underline: transparent;
+  --tab-underline-h: 0;
+  --mesh-canvas:
+    radial-gradient(
+      130% 90% at 100% 0%,
+      color-mix(in srgb, var(--aura-1) 85%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      100% 80% at 0% 100%,
+      color-mix(in srgb, var(--aura-2) 70%, transparent),
+      transparent 50%
+    ),
+    radial-gradient(
+      70% 55% at 50% 35%,
+      color-mix(in srgb, var(--fuel) 22%, transparent),
+      transparent 65%
+    );
+}
+
+@include dark-look('glass') {
+  --aura-1: color-mix(in srgb, var(--fuel) 35%, #2a2210);
+  --aura-2: #1a1420;
+  --fill-surface: color-mix(in srgb, var(--surface) 42%, transparent);
+  --fill-well: color-mix(in srgb, var(--well) 52%, transparent);
+  --fill-paper: color-mix(in srgb, var(--paper) 78%, transparent);
+  --nav-fill: color-mix(in srgb, var(--bg) 40%, transparent);
+}
+
+/* Cold Spatial — floating frost dock */
+html[data-look='spatial'] {
+  --bg: #d8dde6;
+  --surface: #eef1f6;
+  --well: #c5ccd8;
+  --aura-1: #c8d0dc;
+  --aura-2: #b0b8c8;
+  --radius: 20px;
+  --raise-1:
+    0 6px 20px color-mix(in srgb, #000 16%, transparent),
+    0 1px 0 color-mix(in srgb, #fff 50%, transparent);
+  --raise-2: 0 14px 36px color-mix(in srgb, #000 22%, transparent);
+  --bevel-hi: none;
+  --bevel-lo: none;
+  --shadow-soft: var(--raise-1);
+  --plate-shadow: var(--raise-2);
+  --press-inset: inset 0 2px 8px color-mix(in srgb, #000 18%, transparent);
+  --border-width: 1px;
+  --ink: color-mix(in srgb, #fff 35%, var(--hairline));
+  --fill-surface: color-mix(in srgb, var(--surface) 55%, transparent);
+  --fill-well: color-mix(in srgb, var(--well) 65%, transparent);
+  --fill-paper: color-mix(in srgb, var(--surface) 70%, transparent);
+  --glass-blur: 24px;
+  --glass-edge: color-mix(in srgb, #fff 40%, var(--hairline));
+  --nav-fill: color-mix(in srgb, var(--surface) 50%, transparent);
+  --nav-inset: 10px;
+  --cta-surface: var(--cta);
+  --btn-bg: var(--cta);
+  --btn-border: 1px solid color-mix(in srgb, #fff 40%, transparent);
+  --btn-radius: calc(var(--radius) - 2px);
+  --btn-shadow: var(--raise-2);
+  --btn-hover-shadow: 0 18px 44px color-mix(in srgb, #000 26%, transparent);
+  --btn-press-shadow: var(--press-inset);
+  --btn-press-x: 0;
+  --btn-press-y: 2px;
+  --btn-blur: 8px;
+  --btn-tracking: 0.02em;
+  --tab-track: color-mix(in srgb, var(--surface) 45%, transparent);
+  --tab-track-pad: var(--space-1);
+  --tab-track-radius: var(--radius);
+  --tab-track-border: 1px solid var(--glass-edge);
+  --tab-track-shadow: var(--raise-1);
+  --tab-btn-bg: transparent;
+  --tab-btn-on-bg: color-mix(in srgb, var(--surface) 60%, transparent);
+  --tab-btn-radius: calc(var(--radius) - 6px);
+  --tab-btn-border: 0;
+  --tab-btn-shadow: none;
+  --tab-btn-on-shadow: var(--raise-1);
+  --tab-underline: transparent;
+  --tab-underline-h: 0;
+  --mesh-canvas:
+    radial-gradient(
+      110% 85% at 85% 0%,
+      color-mix(in srgb, var(--aura-1) 65%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      90% 70% at 10% 95%,
+      color-mix(in srgb, var(--aura-2) 55%, transparent),
+      transparent 50%
+    );
+}
+
+@include dark-look('spatial') {
+  --bg: #080a10;
+  --surface: #141824;
+  --well: #0a0c12;
+  --aura-1: #1c2434;
+  --aura-2: #10141c;
+  --fill-surface: color-mix(in srgb, var(--surface) 50%, transparent);
+  --fill-well: color-mix(in srgb, var(--well) 60%, transparent);
+  --fill-paper: color-mix(in srgb, var(--surface) 65%, transparent);
+  --nav-fill: color-mix(in srgb, var(--surface) 45%, transparent);
+}
+
+/* Fuel Stamp neo — hard ink chrome */
+html[data-look='neo'] {
+  --bg: #f2f0ea;
+  --surface: #ffffff;
+  --well: #e8e4dc;
+  --aura-1: #f2f0ea;
+  --aura-2: #e8e4dc;
+  --radius: 4px;
+  --raise-1: 4px 4px 0 var(--ink);
+  --raise-2: 6px 6px 0 var(--ink);
+  --bevel-hi: none;
+  --bevel-lo: none;
+  --shadow-soft: var(--raise-1);
+  --plate-shadow: var(--raise-1);
+  --press-inset: none;
+  --well-inset: none;
+  --border-width: 2px;
+  --ink: #1a1814;
+  --hairline: #1a1814;
+  --input-border: #1a1814;
+  --glow: transparent;
+  --fill-surface: var(--surface);
+  --fill-well: var(--well);
+  --fill-paper: var(--paper);
+  --glass-blur: 0px;
+  --glass-edge: transparent;
+  --nav-fill: var(--surface);
+  --nav-inset: 0px;
+  --cta-surface: var(--cta);
+  --btn-bg: var(--cta);
+  --btn-border: 2px solid var(--ink);
+  --btn-radius: var(--radius);
+  --btn-shadow: var(--raise-1);
+  --btn-hover-shadow: var(--raise-2);
+  --btn-press-shadow: 1px 1px 0 var(--ink);
+  --btn-press-x: 2px;
+  --btn-press-y: 2px;
+  --btn-blur: 0px;
+  --btn-tracking: 0.06em;
+  --tab-track: transparent;
+  --tab-track-pad: 0;
+  --tab-track-radius: 0;
+  --tab-track-border: 2px solid var(--ink);
+  --tab-track-shadow: none;
+  --tab-btn-bg: var(--surface);
+  --tab-btn-on-bg: var(--cta);
+  --tab-btn-radius: var(--radius);
+  --tab-btn-border: 2px solid var(--ink);
+  --tab-btn-shadow: var(--raise-1);
+  --tab-btn-on-shadow: var(--raise-1);
+  --tab-underline: transparent;
+  --tab-underline-h: 0;
+  --mesh-canvas: none;
+}
+
+@include dark-look('neo') {
+  --bg: #0a0a0a;
+  --surface: #161616;
+  --well: #0a0a0a;
+  --aura-1: #0a0a0a;
+  --aura-2: #0a0a0a;
+  --ink: #efeae2;
+  --hairline: #efeae2;
+  --input-border: #efeae2;
+  --nav-fill: var(--surface);
+}
+
+html[data-theme='contrast'][data-look='neo'] {
+  --bg: #000000;
+  --surface: #121212;
+  --well: #000000;
+  --ink: #ffffff;
+  --hairline: #ffffff;
+  --input-border: #ffffff;
+  --raise-1: none;
+  --plate-shadow: none;
+  --shadow-soft: none;
+  --btn-shadow: none;
+  --btn-hover-shadow: none;
+  --btn-press-shadow: none;
+  --btn-press-x: 0;
+  --btn-press-y: 0;
+}
+
+/* Aurora Mesh — strong mesh + translucent cards */
+html[data-look='aurora'] {
+  --aura-1: color-mix(in srgb, var(--fuel) 40%, #dcc9a0);
+  --aura-2: color-mix(in srgb, var(--fuel) 18%, #c4b8a4);
+  --radius: 10px;
+  --raise-1: none;
+  --raise-2: none;
+  --bevel-hi: none;
+  --bevel-lo: none;
+  --press-inset: inset 0 2px 4px color-mix(in srgb, var(--text) 12%, transparent);
+  --plate-shadow: 0 1px 3px color-mix(in srgb, var(--text) 8%, transparent);
+  --shadow-soft: var(--plate-shadow);
+  --border-width: 1px;
+  --ink: var(--text);
+  --fill-surface: color-mix(in srgb, var(--surface) 58%, transparent);
+  --fill-well: color-mix(in srgb, var(--well) 68%, transparent);
+  --fill-paper: color-mix(in srgb, var(--paper) 88%, transparent);
+  --glass-blur: 0px;
+  --glass-edge: transparent;
+  --nav-fill: color-mix(in srgb, var(--bg) 70%, transparent);
+  --nav-inset: 0px;
+  --cta-surface: linear-gradient(
+    135deg,
+    color-mix(in srgb, #fff 28%, var(--cta)) 0%,
+    var(--cta) 55%,
+    color-mix(in srgb, var(--fuel) 70%, #b45309) 100%
+  );
+  --btn-bg: var(--cta-surface);
+  --btn-border: 1px solid color-mix(in srgb, var(--fuel) 40%, transparent);
+  --btn-radius: var(--radius);
+  --btn-shadow: 0 0 22px color-mix(in srgb, var(--fuel) 38%, transparent);
+  --btn-hover-shadow: 0 0 32px color-mix(in srgb, var(--fuel) 52%, transparent);
+  --btn-press-shadow: var(--press-inset);
+  --btn-press-x: 0;
+  --btn-press-y: 1px;
+  --btn-blur: 0px;
+  --btn-tracking: 0.02em;
+  --tab-track: color-mix(in srgb, var(--surface) 50%, transparent);
+  --tab-track-pad: var(--space-1);
+  --tab-track-radius: var(--radius);
+  --tab-track-border: 1px solid var(--hairline);
+  --tab-track-shadow: none;
+  --tab-btn-bg: transparent;
+  --tab-btn-on-bg: color-mix(in srgb, var(--surface) 70%, transparent);
+  --tab-btn-radius: calc(var(--radius) - 2px);
+  --tab-btn-border: 0;
+  --tab-btn-shadow: none;
+  --tab-btn-on-shadow: none;
+  --tab-underline: var(--cta);
+  --tab-underline-h: 2px;
+  --mesh-canvas:
+    radial-gradient(
+      140% 100% at 100% 0%,
+      color-mix(in srgb, var(--aura-1) 95%, transparent),
+      transparent 50%
+    ),
+    radial-gradient(
+      110% 90% at 0% 100%,
+      color-mix(in srgb, var(--aura-2) 80%, transparent),
+      transparent 48%
+    ),
+    radial-gradient(
+      80% 60% at 50% 30%,
+      color-mix(in srgb, var(--fuel) 28%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      50% 40% at 70% 70%,
+      color-mix(in srgb, var(--fuel) 12%, transparent),
+      transparent 70%
+    );
+}
+
+@include dark-look('aurora') {
+  --aura-1: color-mix(in srgb, var(--fuel) 45%, #2a2210);
+  --aura-2: #181420;
+  --fill-surface: color-mix(in srgb, var(--surface) 52%, transparent);
+  --fill-well: color-mix(in srgb, var(--well) 62%, transparent);
+  --nav-fill: color-mix(in srgb, var(--bg) 65%, transparent);
+}
+
+/* Liquid Plasma — ocean mesh + frost plates.
+   ponytail: CSS frost only. Plates do not fuse or refract.
+   Ceiling: no shared WebGL plasma. Upgrade path is a canvas island if one is ever allowed. */
+html[data-look='plasma'] {
+  --bg: #dfe6ea;
+  --surface: #f4f8fa;
+  --well: #d5e0e6;
+  --aura-1: #9fd8e4;
+  --aura-2: #c5d5dc;
+  --radius: 22px;
+  --raise-1: 0 10px 28px color-mix(in srgb, #04111c 16%, transparent);
+  --raise-2: 0 18px 40px color-mix(in srgb, #04111c 22%, transparent);
+  --bevel-hi: none;
+  --bevel-lo: none;
+  --shadow-soft: var(--raise-1);
+  --plate-shadow:
+    var(--raise-1),
+    inset 0 1px 0 rgb(255 255 255 / 0.65);
+  --press-inset: inset 0 1px 0 rgb(255 255 255 / 0.4);
+  --border-width: 1px;
+  --hairline: rgb(13 26 34 / 0.16);
+  --ink: color-mix(in srgb, #fff 45%, var(--hairline));
+  --fill-surface: rgb(255 255 255 / 0.62);
+  --fill-well: rgb(255 255 255 / 0.48);
+  --fill-paper: rgb(255 255 255 / 0.78);
+  --glass-blur: 28px;
+  --glass-edge: rgb(255 255 255 / 0.55);
+  --nav-fill: rgb(255 255 255 / 0.62);
+  --nav-inset: 12px;
+  --cta-surface: var(--cta);
+  --btn-bg: var(--cta);
+  --btn-border: 0;
+  --btn-radius: 999px;
+  --btn-shadow: var(--raise-1);
+  --btn-hover-shadow: var(--raise-2), 0 0 18px var(--glow);
+  --btn-press-shadow: var(--press-inset);
+  --btn-press-x: 0;
+  --btn-press-y: 1px;
+  --btn-blur: 0px;
+  --btn-tracking: 0.01em;
+  --tab-track: rgb(255 255 255 / 0.45);
+  --tab-track-pad: var(--space-1);
+  --tab-track-radius: 999px;
+  --tab-track-border: 1px solid var(--glass-edge);
+  --tab-track-shadow: none;
+  --tab-btn-bg: transparent;
+  --tab-btn-on-bg: rgb(255 255 255 / 0.72);
+  --tab-btn-radius: 999px;
+  --tab-btn-border: 0;
+  --tab-btn-shadow: none;
+  --tab-btn-on-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7);
+  --tab-underline: transparent;
+  --tab-underline-h: 0;
+  --mesh-canvas:
+    radial-gradient(
+      120% 80% at 100% 0%,
+      color-mix(in srgb, var(--aura-1) 80%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      90% 70% at 0% 100%,
+      color-mix(in srgb, var(--aura-2) 70%, transparent),
+      transparent 50%
+    ),
+    radial-gradient(
+      60% 45% at 40% 40%,
+      color-mix(in srgb, #9ff3e4 28%, transparent),
+      transparent 60%
+    );
+}
+
+@include dark-look('plasma') {
+  --bg: #04111c;
+  --surface: #0a1a26;
+  --well: #061018;
+  --aura-1: #0d3d48;
+  --aura-2: #123044;
+  --hairline: rgb(238 244 246 / 0.14);
+  --fill-surface: rgb(6 16 22 / 0.52);
+  --fill-well: rgb(6 16 22 / 0.62);
+  --fill-paper: rgb(20 40 52 / 0.72);
+  --glass-edge: rgb(159 243 228 / 0.35);
+  --nav-fill: rgb(6 16 22 / 0.62);
+  --plate-shadow:
+    0 12px 32px rgb(0 0 0 / 0.35),
+    inset 0 1px 0 rgb(159 243 228 / 0.22);
+  --tab-track: rgb(6 16 22 / 0.45);
+  --tab-btn-on-bg: rgb(238 244 246 / 0.12);
+}
+
+/* Glass / spatial / aurora / plasma: opaque + no blur for contrast or reduced transparency */
+@media (prefers-reduced-transparency: reduce) {
+  html[data-look='glass'],
+  html[data-look='spatial'],
+  html[data-look='aurora'],
+  html[data-look='plasma'] {
+    --fill-surface: var(--surface);
+    --fill-well: var(--well);
+    --fill-paper: var(--paper);
+    --glass-blur: 0px;
+    --btn-blur: 0px;
+    --btn-bg: var(--cta);
+    --cta-surface: var(--cta);
+    --nav-fill: var(--bg);
+  }
+}
+
+html[data-theme='contrast'][data-look='glass'],
+html[data-theme='contrast'][data-look='spatial'],
+html[data-theme='contrast'][data-look='aurora'],
+html[data-theme='contrast'][data-look='plasma'] {
+  --fill-surface: var(--surface);
+  --fill-well: var(--well);
+  --fill-paper: var(--paper);
+  --glass-blur: 0px;
+  --btn-blur: 0px;
+  --btn-bg: var(--cta);
+  --cta-surface: var(--cta);
+  --plate-shadow: none;
+  --shadow-soft: none;
+  --nav-fill: var(--bg);
+  --nav-inset: 0px;
+}
+
+html[data-theme='contrast'][data-look='plasma'] {
+  --bg: #000000;
+  --surface: #121212;
+  --well: #000000;
+  --btn-radius: var(--radius);
+  --tab-track-radius: var(--radius);
+  --tab-btn-radius: calc(var(--radius) - 4px);
+  --mesh-canvas: none;
+}

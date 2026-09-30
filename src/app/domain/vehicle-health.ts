@@ -173,9 +173,6 @@ export function buildHealthItems(input: {
       }
       if (lastReset.dueDate) {
         const cmp = input.today.localeCompare(lastReset.dueDate);
-        const s: HealthStatus =
-          cmp > 0 ? 'overdue' : cmp === 0 ? 'due' : 'soon'; // soon if before — refine below
-        // If before due date, treat as good unless within soon window roughly by months
         let dateStatus: HealthStatus = 'good';
         if (cmp > 0) dateStatus = 'overdue';
         else if (cmp === 0) dateStatus = 'due';

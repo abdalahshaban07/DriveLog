@@ -8,7 +8,7 @@ import {
   TANK_MAX,
   TANK_MIN,
 } from '../../domain/fill-up-distance';
-import { odometerInputValue, roundOdometerKm } from '../../domain/odometer';
+import { odometerInputValue } from '../../domain/odometer';
 import { THEMES, LOOKS, type BackupFile, type Look, type Theme } from '../../domain/models';
 import type { MsgKey } from '../../i18n/en';
 import { I18n } from '../../i18n/i18n';

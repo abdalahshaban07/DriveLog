@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { AroundPage } from './around';
 import { I18n } from '../../i18n/i18n';
 
@@ -8,6 +9,7 @@ describe('AroundPage', () => {
     await TestBed.configureTestingModule({
       imports: [AroundPage],
       providers: [
+        provideRouter([]),
         {
           provide: I18n,
           useValue: {

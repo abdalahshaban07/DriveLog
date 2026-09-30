@@ -15,6 +15,7 @@ import type { FuelGrade } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { PageHeader } from '../../ui/page-header';
+import { FUEL_TABS, SectionTabs } from '../../ui/section-tabs/section-tabs';
 import { SelectField, type SelectOption } from '../../ui/select-field';
 
 type GradeFilter = FuelGrade | 'all';
@@ -22,13 +23,14 @@ type GradeFilter = FuelGrade | 'all';
 @Component({
   selector: 'app-fuel',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, RouterLink, SelectField],
+  imports: [PageHeader, RouterLink, SectionTabs, SelectField],
   templateUrl: './fuel.html',
   styleUrl: './fuel.scss',
 })
 export class FuelPage {
   readonly i18n = inject(I18n);
   readonly db = inject(Db);
+  readonly tabs = FUEL_TABS;
 
   readonly grade = signal<GradeFilter>('all');
   readonly tip = signal('');

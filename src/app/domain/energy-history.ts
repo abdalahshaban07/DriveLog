@@ -31,7 +31,3 @@ export function mergeEnergyHistory(
     return b.row.createdAt.localeCompare(a.row.createdAt);
   });
 }
-
-export function energyRowCost(item: EnergyHistoryRow): number {
-  return item.row.cost;
-}

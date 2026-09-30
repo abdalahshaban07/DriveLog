@@ -1,5 +1,6 @@
 <div class="stack fuel">
   <app-page-header [title]="i18n.t('fuel.title')" />
+  <app-section-tabs [tabs]="tabs" [ariaLabel]="i18n.t('nav.fuel')" />
 
   <section class="card last-fill-strip receipt-slip" role="status" [attr.aria-label]="i18n.t('fuel.lastFillStrip')">
     @if (lastFill(); as f) {

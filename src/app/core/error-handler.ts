@@ -1,4 +1,4 @@
-import { ErrorHandler, Injectable, inject } from '@angular/core';
+import { ErrorHandler, Injectable } from '@angular/core';
 
 @Injectable()
 export class DriveLogErrorHandler implements ErrorHandler {
@@ -9,9 +9,4 @@ export class DriveLogErrorHandler implements ErrorHandler {
 
 export function provideDriveLogErrorHandler() {
   return { provide: ErrorHandler, useClass: DriveLogErrorHandler };
-}
-
-/** Convenience inject for future UI toast wiring. */
-export function injectErrorHandler(): ErrorHandler {
-  return inject(ErrorHandler);
 }

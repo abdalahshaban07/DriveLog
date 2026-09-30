@@ -1,13 +1,6 @@
 import { DEFAULT_SOON_THRESHOLD } from '../core/config';
 import type { Confidence, DateOnly, HealthStatus, HealthSource } from './models';
 
-export type IntervalDimension = {
-  remaining: number;
-  interval: number;
-  dueAt: number;
-  source: HealthSource;
-};
-
 export type IntervalStatusResult = {
   status: HealthStatus;
   remainingKm?: number;

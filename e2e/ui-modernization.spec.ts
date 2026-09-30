@@ -30,16 +30,22 @@ test.describe('UI modernization smoke', () => {
     await page.setViewportSize({ width: 375, height: 812 });
   });
 
-  test('docked five-tab nav includes Around', async ({ page }) => {
+  test('docked four-tab nav; Around lives under Fuel tabs', async ({ page }) => {
     await ensureSampleCar(page);
     await page.goto('/');
     await dismissWhatsNewIfOpen(page);
     const nav = page.getByRole('navigation', { name: /primary|التنقل/i });
+    await expect(nav.getByRole('link')).toHaveCount(4);
     await expect(nav.getByRole('link', { name: /home|الرئيسية/i })).toBeVisible();
     await expect(nav.getByRole('link', { name: /fuel|الوقود/i })).toBeVisible();
-    await expect(nav.getByRole('link', { name: /around|حولي/i })).toBeVisible();
     await expect(nav.getByRole('link', { name: /maintenance|صيانة/i })).toBeVisible();
     await expect(nav.getByRole('link', { name: /more|المزيد/i })).toBeVisible();
+
+    await page.goto('/around');
+    await expect(nav.getByRole('link', { name: /fuel|الوقود/i })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
   });
 
   test('around waits for location CTA', async ({ page }) => {

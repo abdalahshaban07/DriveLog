@@ -15,17 +15,19 @@ import { I18n } from '../../i18n/i18n';
 import { NumericField } from '../../ui/numeric-field';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
+import { FUEL_TABS, SectionTabs } from '../../ui/section-tabs/section-tabs';
 import { AroundResults } from './around-results';
 
 @Component({
   selector: 'app-around-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, AroundResults, PrimaryButton, NumericField],
+  imports: [PageHeader, AroundResults, PrimaryButton, NumericField, SectionTabs],
   templateUrl: './around.html',
   styleUrl: './around.scss',
 })
 export class AroundPage {
   readonly i18n = inject(I18n);
+  readonly tabs = FUEL_TABS;
 
   readonly requested = signal(false);
   readonly nearbyKind = signal<'fuel' | 'charge'>('fuel');

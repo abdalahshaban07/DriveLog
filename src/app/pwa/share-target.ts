@@ -30,19 +30,3 @@ export async function takeSharedFillImage(): Promise<SharedImage | null> {
     return null;
   }
 }
-
-export async function putSharedFillImage(file: Blob, filename = 'scan.jpg'): Promise<void> {
-  if (typeof caches === 'undefined') {
-    return;
-  }
-  const cache = await caches.open(CACHE);
-  await cache.put(
-    KEY,
-    new Response(file, {
-      headers: {
-        'content-type': file.type || 'image/jpeg',
-        'x-filename': filename,
-      },
-    }),
-  );
-}

@@ -18,7 +18,7 @@
   <section class="assistant__faq" [attr.aria-label]="i18n.t('assistant.faqTitle')">
     <p class="section-label">{{ i18n.t('assistant.faqTitle') }}</p>
     <div class="chip-rail">
-      @for (key of faqKeys; track key) {
+      @for (key of faqKeys(); track key) {
         <button
           type="button"
           class="chip"

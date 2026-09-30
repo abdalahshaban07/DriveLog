@@ -1,0 +1,238 @@
+@mixin dark-theme-vars {
+  --petrol: #0e1014;
+  --petrol-muted: #8a8278;
+  --mint: #5cdba8;
+  --mint-bright: #7aecc0;
+  --cta-text: #1a1814;
+  --warn: #f0a020;
+  --card-dark: #0e1014;
+  --card-dark-text: #f3eee4;
+  --paper: #ebe4d8;
+  --paper-text: #1a1814;
+  --paper-muted: #6b6358;
+  --bg: #07080a;
+  --surface: #12141a;
+  --well: #0a0b0e;
+  --text: #efeae2;
+  --muted: #a39a8c;
+  --ok: var(--mint);
+  --stop: #f87171;
+  --aura-1: #2a2210;
+  --aura-2: #141018;
+  --glow: color-mix(in srgb, var(--fuel) 42%, transparent);
+  --hairline: color-mix(in srgb, var(--text) 10%, transparent);
+  --input-border: color-mix(in srgb, var(--muted) 28%, transparent);
+  --well-inset: inset 0 2px 10px color-mix(in srgb, #000 42%, transparent);
+  --shadow-soft: 0 1px 2px color-mix(in srgb, #000 40%, transparent);
+  --metric-tint: color-mix(in srgb, var(--fuel) 12%, var(--surface));
+  --metric-blue: var(--metric-tint);
+  --metric-green: var(--metric-tint);
+  --metric-orange: var(--metric-tint);
+  color-scheme: dark;
+}
+
+:root,
+html[data-theme='light'] {
+  /* Night Receipt — warm paper room, ink, amber single accent */
+  --petrol: #2a2620;
+  --petrol-muted: #5a5248;
+  --mint: #3d9b72;
+  --mint-bright: #4fb888;
+  --fuel: #e8a317;
+  --cta: var(--fuel);
+  --cta-text: #1a1814;
+  --focus: var(--fuel);
+  --warn: #d97706;
+  --card-dark: #1c1a17;
+  --card-dark-text: #f3eee4;
+  --paper: #fff9f0;
+  --paper-text: #1a1814;
+  --paper-muted: #6b6358;
+
+  /* Unified metric tint */
+  --metric-tint: color-mix(in srgb, var(--fuel) 10%, var(--surface));
+  --metric-blue: var(--metric-tint);
+  --metric-green: var(--metric-tint);
+  --metric-orange: var(--metric-tint);
+
+  --radius: 10px;
+  --page-head-gap: var(--space-4);
+  --tap: 56px;
+  --shell: 32rem;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --card-pad: var(--space-5);
+  --motion: 200ms;
+  --motion-fast: 160ms;
+  --motion-normal: 250ms;
+  --motion-slow: 400ms;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --nav-height: calc(var(--tap) + var(--space-4) + var(--space-3) + env(safe-area-inset-bottom, 0px));
+  --type-hero: clamp(2.75rem, 12vw, 3.5rem);
+  --type-title: 1.6rem;
+  --type-metric: 1.375rem;
+  --type-body: 1rem;
+  --type-label: 0.75rem;
+  --type-nav: 0.6875rem;
+  --shell-wide: 48rem;
+  --bg: #e6dfd2;
+  --surface: #f7f1e6;
+  --well: #ddd4c4;
+  --text: #1a1814;
+  --muted: #6b6358;
+  --ok: var(--mint);
+  --stop: #c44747;
+  --aura-1: #dcc9a0;
+  --aura-2: #c4b8a4;
+  --glow: color-mix(in srgb, var(--fuel) 28%, transparent);
+  --hairline: color-mix(in srgb, #5a5248 22%, transparent);
+  --input-border: color-mix(in srgb, var(--muted) 40%, transparent);
+  --well-inset: inset 0 2px 8px color-mix(in srgb, #1a1814 6%, transparent);
+  --shadow-soft: 0 1px 3px color-mix(in srgb, #1a1814 10%, transparent);
+  /* Look chrome defaults (receipt) — overridden by html[data-look] */
+  --raise-1: none;
+  --raise-2: none;
+  --bevel-hi: none;
+  --bevel-lo: none;
+  --press-inset: inset 0 2px 4px color-mix(in srgb, #1a1814 18%, transparent);
+  --plate-shadow: var(--shadow-soft);
+  --ink: #1a1814;
+  --border-width: 1px;
+  --fill-surface: var(--surface);
+  --fill-well: var(--well);
+  --fill-paper: var(--paper);
+  --glass-blur: 0px;
+  --glass-edge: transparent;
+  --mesh-canvas:
+    radial-gradient(
+      120% 80% at 100% 0%,
+      color-mix(in srgb, var(--aura-1) 55%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      90% 70% at 0% 100%,
+      color-mix(in srgb, var(--aura-2) 40%, transparent),
+      transparent 50%
+    );
+  --cta-surface: var(--cta);
+  --btn-bg: var(--cta);
+  --btn-border: 0;
+  --btn-radius: var(--radius);
+  --btn-shadow: none;
+  --btn-hover-shadow: 0 0 16px var(--glow);
+  --btn-press-shadow: inset 0 2px 4px color-mix(in srgb, #1a1814 18%, transparent);
+  --btn-press-x: 0;
+  --btn-press-y: 1px;
+  --btn-blur: 0px;
+  --btn-tracking: 0;
+  color-scheme: light;
+}
+
+html[data-theme='system'] {
+  --bg: #e6dfd2;
+  --surface: #f7f1e6;
+  --well: #ddd4c4;
+  --text: #1a1814;
+  --muted: #6b6358;
+  --paper: #fff9f0;
+  --paper-text: #1a1814;
+  --paper-muted: #6b6358;
+  --ok: var(--mint);
+  --stop: #c44747;
+  --warn: #d97706;
+  --aura-1: #dcc9a0;
+  --aura-2: #c4b8a4;
+  --glow: color-mix(in srgb, var(--fuel) 28%, transparent);
+  --hairline: color-mix(in srgb, #5a5248 22%, transparent);
+  --input-border: color-mix(in srgb, var(--muted) 40%, transparent);
+  --well-inset: inset 0 2px 8px color-mix(in srgb, #1a1814 6%, transparent);
+  --shadow-soft: 0 1px 3px color-mix(in srgb, #1a1814 10%, transparent);
+  --metric-tint: color-mix(in srgb, var(--fuel) 10%, var(--surface));
+  --metric-blue: var(--metric-tint);
+  --metric-green: var(--metric-tint);
+  --metric-orange: var(--metric-tint);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-theme='system'] {
+    @include dark-theme-vars;
+  }
+}
+
+html[data-theme='dark'] {
+  @include dark-theme-vars;
+}
+
+html[data-theme='contrast'] {
+  --petrol: #000000;
+  --petrol-muted: #c8c8c8;
+  --mint: #6eecc0;
+  --mint-bright: #9af5dc;
+  --cta-text: #000000;
+  --focus: var(--fuel);
+  --warn: #ffb020;
+  --card-dark: #000000;
+  --card-dark-text: #ffffff;
+  --paper: #ffffff;
+  --paper-text: #000000;
+  --paper-muted: #444444;
+  --bg: #000000;
+  --surface: #121212;
+  --well: #000000;
+  --text: #ffffff;
+  --muted: #c8c8c8;
+  --ok: var(--mint);
+  --stop: #ff6b6b;
+  --aura-1: #2a2000;
+  --aura-2: #101010;
+  --glow: color-mix(in srgb, var(--fuel) 55%, transparent);
+  --hairline: color-mix(in srgb, var(--text) 40%, transparent);
+  --input-border: color-mix(in srgb, var(--text) 70%, transparent);
+  --well-inset: inset 0 2px 10px color-mix(in srgb, #000 42%, transparent);
+  --shadow-soft: none;
+  --metric-tint: color-mix(in srgb, var(--fuel) 14%, var(--surface));
+  --metric-blue: var(--metric-tint);
+  --metric-green: var(--metric-tint);
+  --metric-orange: var(--metric-tint);
+  color-scheme: dark;
+}
+
+html[data-theme='dusk'] {
+  --petrol: #141018;
+  --petrol-muted: #9a9084;
+  --mint: #5cdba8;
+  --mint-bright: #7aecc0;
+  --cta-text: #1a1814;
+  --warn: #f0a020;
+  --card-dark: #141018;
+  --card-dark-text: #f3eee4;
+  --paper: #e8e0d2;
+  --paper-text: #1a1814;
+  --paper-muted: #6b6358;
+  --bg: #0e0c10;
+  --surface: #1a1620;
+  --well: #0a080c;
+  --text: #efeae2;
+  --muted: #a39a8c;
+  --ok: var(--mint);
+  --stop: #f87171;
+  --aura-1: #2a1c28;
+  --aura-2: #181420;
+  --glow: color-mix(in srgb, var(--fuel) 38%, transparent);
+  --hairline: color-mix(in srgb, var(--text) 12%, transparent);
+  --input-border: color-mix(in srgb, var(--muted) 28%, transparent);
+  --well-inset: inset 0 2px 10px color-mix(in srgb, #000 42%, transparent);
+  --shadow-soft: 0 1px 2px color-mix(in srgb, #000 35%, transparent);
+  --metric-tint: color-mix(in srgb, var(--fuel) 10%, var(--surface));
+  --metric-blue: var(--metric-tint);
+  --metric-green: var(--metric-tint);
+  --metric-orange: var(--metric-tint);
+  color-scheme: dark;
+}

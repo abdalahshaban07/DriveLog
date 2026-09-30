@@ -52,7 +52,16 @@ export class AssistantPage {
   readonly statusKey = signal<MsgKey | null>(null);
 
   readonly online = computed(() => isAssistantOnline(this.db));
-  readonly faqKeys = FAQ_KEYS;
+  /** Only suggest questions the car's logs can actually answer. */
+  readonly faqKeys = computed(() => {
+    const has: Record<(typeof FAQ_KEYS)[number], boolean> = {
+      'assistant.faq.economy': this.db.fillUps().length >= 2,
+      'assistant.faq.period': true,
+      'assistant.faq.maintenance': this.db.maintenance().length > 0,
+      'assistant.faq.breakdown': this.db.breakdowns().length > 0,
+    };
+    return FAQ_KEYS.filter((k) => has[k]);
+  });
 
   clearChat(): void {
     this.messages.set([]);
@@ -123,21 +132,13 @@ export class AssistantPage {
     }
   }
 
-  /** ponytail: double rAF so Angular paints; scroll shell `.main` to bottom */
+  /** ponytail: double rAF so Angular paints; scrollIntoView works whichever ancestor scrolls */
   private scrollToLatest(): void {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         const reduce =
           typeof matchMedia === 'function' &&
           matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const main = this.host.nativeElement.closest('.main');
-        if (main instanceof HTMLElement) {
-          main.scrollTo({
-            top: main.scrollHeight,
-            behavior: reduce ? 'auto' : 'smooth',
-          });
-          return;
-        }
         const end = this.host.nativeElement.querySelector('[data-chat-end]');
         if (end instanceof HTMLElement) {
           end.scrollIntoView({

@@ -1,13 +1,13 @@
 <div class="stack home">
   <app-page-header [title]="i18n.t('app.name')" [subtitle]="i18n.t('app.subtitle')" />
 
-  <div class="home-tabs" role="tablist" [attr.aria-label]="i18n.t('home.tabs')">
+  <div class="section-tabs" role="tablist" [attr.aria-label]="i18n.t('home.tabs')">
     @for (tab of tabOptions; track tab.id) {
       <button
         type="button"
         role="tab"
-        class="home-tabs__btn"
-        [class.home-tabs__btn--on]="view() === tab.id"
+        class="section-tabs__link"
+        [class.section-tabs__link--on]="view() === tab.id"
         [attr.aria-selected]="view() === tab.id"
         (click)="setView(tab.id)"
       >
@@ -41,38 +41,28 @@
           <app-sample-banner (clear)="clearSample()" />
         }
 
-        @if (showChecklist()) {
-          <app-setup-checklist
-            [items]="checklistItems()"
-            (dismiss)="dismissChecklist()"
-          />
-        }
-
-        <section class="card vehicle-status" [attr.aria-label]="i18n.t('home.vehicleStatus')">
-          <div class="vehicle-status__head">
-            <h2>{{ i18n.t('home.vehicleStatus') }}</h2>
-            <a routerLink="/health">{{ i18n.t('health.viewAll') }}</a>
-          </div>
-          <p class="vehicle-status__count">
-            {{ i18n.t('health.attentionCount', { count: healthAttention() }) }}
-          </p>
-          @if (healthTop().length) {
-            <ul class="vehicle-status__list">
-              @for (item of healthTop(); track item.partDefinitionId) {
-                <li>
-                  <app-health-row [item]="item" />
-                </li>
-              }
-            </ul>
+        @switch (nudge()) {
+          @case ('checklist') {
+            <app-setup-checklist
+              [items]="checklistItems()"
+              (dismiss)="dismissChecklist()"
+            />
           }
-          @if (topAdvisorInsight(); as tip) {
-            <p class="vehicle-status__insight muted">
-              <a [routerLink]="insightLink(tip)">
-                {{ insightTitle(tip) }} · {{ insightBody(tip) }}
+          @case ('vault') {
+            @if (nextVaultDoc(); as doc) {
+              <a routerLink="/vault" class="vault-nudge" role="status">
+                <span class="vault-nudge__label">{{ i18n.t('vault.homeNext') }}</span>
+                <strong>{{ i18n.formatDate(doc.expiryDate) }}</strong>
               </a>
-            </p>
+            }
           }
-        </section>
+          @case ('install') {
+            <app-install-card
+              (install)="promptInstall()"
+              (dismiss)="dismissInstallCard()"
+            />
+          }
+        }
 
         <div
           #glanceStrip
@@ -140,13 +130,6 @@
           </div>
         </div>
 
-        @if (nextVaultDoc(); as doc) {
-          <a routerLink="/vault" class="vault-nudge" role="status">
-            <span class="vault-nudge__label">{{ i18n.t('vault.homeNext') }}</span>
-            <strong>{{ i18n.formatDate(doc.expiryDate) }}</strong>
-          </a>
-        }
-
         @if (!hasRealFills() && !sampleMode()) {
           <a routerLink="/fill-up" class="ghost-cta">{{ i18n.t('home.ghost.cta') }}</a>
         }
@@ -154,6 +137,32 @@
         @if (showQuickLog()) {
           <app-quick-log (saved)="onQuickSaved()" />
         }
+
+        <section class="card vehicle-status" [attr.aria-label]="i18n.t('home.vehicleStatus')">
+          <div class="vehicle-status__head">
+            <h2>{{ i18n.t('home.vehicleStatus') }}</h2>
+            <a routerLink="/health">{{ i18n.t('health.viewAll') }}</a>
+          </div>
+          <p class="vehicle-status__count">
+            {{ i18n.t('health.attentionCount', { count: healthAttention() }) }}
+          </p>
+          @if (healthTop().length) {
+            <ul class="vehicle-status__list">
+              @for (item of healthTop(); track item.partDefinitionId) {
+                <li>
+                  <app-health-row [item]="item" />
+                </li>
+              }
+            </ul>
+          }
+          @if (topAdvisorInsight(); as tip) {
+            <p class="vehicle-status__insight muted">
+              <a [routerLink]="insightLink(tip)">
+                {{ insightTitle(tip) }} · {{ insightBody(tip) }}
+              </a>
+            </p>
+          }
+        </section>
 
         @if (hasRealFills() || sampleMode()) {
           @let outlook = monthOutlook();
@@ -185,13 +194,6 @@
             [currency]="db.settings().currency"
           />
           <app-weather-tip [weather]="weather()" [busy]="weatherBusy()" />
-        }
-
-        @if (showInstallCard()) {
-          <app-install-card
-            (install)="promptInstall()"
-            (dismiss)="dismissInstallCard()"
-          />
         }
       }
 
@@ -322,22 +324,22 @@
       role="tabpanel"
       [attr.aria-label]="i18n.t('home.tab.reports')"
     >
-      <div class="reports-glance" role="status" [attr.aria-label]="i18n.t('home.tab.reports')">
-        <p class="reports-glance__lead">{{ i18n.t('reports.lead') }}</p>
-        <ul class="reports-glance__counts">
-          <li class="reports-glance__count">
-            <span class="reports-glance__num" [class.metric--ghost]="totals().total <= 0">
+      <div class="tab-glance" role="status" [attr.aria-label]="i18n.t('home.tab.reports')">
+        <p class="tab-glance__lead">{{ i18n.t('reports.lead') }}</p>
+        <ul class="tab-glance__counts">
+          <li class="tab-glance__count">
+            <span class="tab-glance__num" [class.metric--ghost]="totals().total <= 0">
               @if (totals().total > 0) {
                 {{ formatMoney(totals().total) }}
               } @else {
                 —.—
               }
             </span>
-            <span class="reports-glance__label">{{ i18n.t('reports.glance.spend') }}</span>
+            <span class="tab-glance__label">{{ i18n.t('reports.glance.spend') }}</span>
           </li>
-          <li class="reports-glance__count">
+          <li class="tab-glance__count">
             <span
-              class="reports-glance__num"
+              class="tab-glance__num"
               [class.metric--ghost]="fuelMetrics().lastL100 == null"
             >
               @if (fuelMetrics().lastL100 != null) {
@@ -346,16 +348,16 @@
                 —.—
               }
             </span>
-            <span class="reports-glance__label">{{ i18n.t('reports.glance.economy') }}</span>
+            <span class="tab-glance__label">{{ i18n.t('reports.glance.economy') }}</span>
           </li>
-          <li class="reports-glance__count">
+          <li class="tab-glance__count">
             <span
-              class="reports-glance__num"
+              class="tab-glance__num"
               [class.metric--ghost]="db.maintenance().length === 0"
             >
               {{ i18n.formatNumber(db.maintenance().length, { maximumFractionDigits: 0 }) }}
             </span>
-            <span class="reports-glance__label">{{ i18n.t('reports.glance.services') }}</span>
+            <span class="tab-glance__label">{{ i18n.t('reports.glance.services') }}</span>
           </li>
         </ul>
       </div>
@@ -366,10 +368,10 @@
           <a routerLink="/fill-up" class="empty-cta">{{ i18n.t('home.logFillUp') }}</a>
         </div>
       } @else {
-        <section class="reports-block" [attr.aria-label]="i18n.t('reports.insights')">
-          <h2 class="reports-block__title">
+        <section class="tab-block" [attr.aria-label]="i18n.t('reports.insights')">
+          <h2 class="tab-block__title">
             {{ i18n.t('reports.insights') }}
-            <span class="reports-block__count">{{ reports().length }}</span>
+            <span class="tab-block__count">{{ reports().length }}</span>
           </h2>
           <ul class="reports-list">
             @for (card of reports(); track card.id) {
@@ -393,42 +395,42 @@
       role="tabpanel"
       [attr.aria-label]="i18n.t('home.tab.charts')"
     >
-      <div class="charts-glance" role="status" [attr.aria-label]="i18n.t('home.tab.charts')">
-        <p class="charts-glance__lead">{{ i18n.t('charts.lead') }}</p>
-        <ul class="charts-glance__counts">
-          <li class="charts-glance__count">
+      <div class="tab-glance" role="status" [attr.aria-label]="i18n.t('home.tab.charts')">
+        <p class="tab-glance__lead">{{ i18n.t('charts.lead') }}</p>
+        <ul class="tab-glance__counts">
+          <li class="tab-glance__count">
             <span
-              class="charts-glance__num"
+              class="tab-glance__num"
               [class.metric--ghost]="ltGlance.fuel <= 0"
             >{{ formatMoney(ltGlance.fuel) }}</span>
-            <span class="charts-glance__label">{{ i18n.t('charts.cat.fuel') }}</span>
+            <span class="tab-glance__label">{{ i18n.t('charts.cat.fuel') }}</span>
           </li>
-          <li class="charts-glance__count">
+          <li class="tab-glance__count">
             <span
-              class="charts-glance__num"
+              class="tab-glance__num"
               [class.metric--ghost]="ltGlance.maintenance <= 0"
             >{{ formatMoney(ltGlance.maintenance) }}</span>
-            <span class="charts-glance__label">{{ i18n.t('charts.cat.maintenance') }}</span>
+            <span class="tab-glance__label">{{ i18n.t('charts.cat.maintenance') }}</span>
           </li>
-          <li class="charts-glance__count">
+          <li class="tab-glance__count">
             <span
-              class="charts-glance__num"
+              class="tab-glance__num"
               [class.metric--ghost]="ltGlance.breakdown <= 0"
             >{{ formatMoney(ltGlance.breakdown) }}</span>
-            <span class="charts-glance__label">{{ i18n.t('charts.cat.breakdown') }}</span>
+            <span class="tab-glance__label">{{ i18n.t('charts.cat.breakdown') }}</span>
           </li>
-          <li class="charts-glance__count">
+          <li class="tab-glance__count">
             <span
-              class="charts-glance__num"
+              class="tab-glance__num"
               [class.metric--ghost]="ltGlance.other <= 0"
             >{{ formatMoney(ltGlance.other) }}</span>
-            <span class="charts-glance__label">{{ i18n.t('charts.cat.other') }}</span>
+            <span class="tab-glance__label">{{ i18n.t('charts.cat.other') }}</span>
           </li>
         </ul>
       </div>
 
-      <section class="charts-block" [attr.aria-label]="i18n.t('charts.trends')">
-        <h2 class="charts-block__title">{{ i18n.t('charts.trends') }}</h2>
+      <section class="tab-block" [attr.aria-label]="i18n.t('charts.trends')">
+        <h2 class="tab-block__title">{{ i18n.t('charts.trends') }}</h2>
         <div class="chart-grid">
           <div class="chart-card">
             <span class="chart-card__label">{{ i18n.t('home.monthSpend') }}</span>
@@ -459,8 +461,8 @@
         </div>
       </section>
 
-      <section class="charts-block" [attr.aria-label]="i18n.t('charts.mix')">
-        <h2 class="charts-block__title">{{ i18n.t('charts.mix') }}</h2>
+      <section class="tab-block" [attr.aria-label]="i18n.t('charts.mix')">
+        <h2 class="tab-block__title">{{ i18n.t('charts.mix') }}</h2>
         <div class="charts-filters">
           <app-select-field
             class="filter-select"
@@ -516,10 +518,10 @@
         }
       </section>
 
-      <section class="charts-block" [attr.aria-label]="i18n.t('charts.ledger')">
-        <h2 class="charts-block__title">
+      <section class="tab-block" [attr.aria-label]="i18n.t('charts.ledger')">
+        <h2 class="tab-block__title">
           {{ i18n.t('charts.ledger') }}
-          <span class="charts-block__count">{{ ledgerRows().length }}</span>
+          <span class="tab-block__count">{{ ledgerRows().length }}</span>
         </h2>
         @if (ledgerRows().length === 0) {
           <div class="empty-state">

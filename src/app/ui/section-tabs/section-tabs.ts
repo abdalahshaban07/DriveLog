@@ -9,12 +9,16 @@ export type SectionTab = {
   exact?: boolean;
 };
 
+export const FUEL_TABS: SectionTab[] = [
+  { labelKey: 'fuel.title', link: '/fuel' },
+  { labelKey: 'nav.around', link: '/around' },
+];
+
 @Component({
   selector: 'app-section-tabs',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, RouterLinkActive],
   templateUrl: './section-tabs.html',
-  styleUrl: './section-tabs.scss',
 })
 export class SectionTabs {
   readonly i18n = inject(I18n);

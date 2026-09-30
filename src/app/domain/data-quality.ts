@@ -96,14 +96,3 @@ export function maintenanceDuplicateKey(m: {
     m.currency ?? '',
   ].join('|');
 }
-
-export function findExactDuplicate(
-  rows: readonly Maintenance[],
-  candidate: Parameters<typeof maintenanceDuplicateKey>[0],
-  excludeId?: string,
-): Maintenance | undefined {
-  const key = maintenanceDuplicateKey(candidate);
-  return rows.find(
-    (m) => m.id !== excludeId && maintenanceDuplicateKey(m) === key,
-  );
-}

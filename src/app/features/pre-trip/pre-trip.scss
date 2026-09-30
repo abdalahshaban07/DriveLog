@@ -67,13 +67,3 @@
   font-size: 0.85rem;
   color: var(--muted);
 }
-
-.ghost {
-  min-height: var(--tap);
-  padding-inline: var(--space-3);
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius);
-  background: transparent;
-  color: var(--text);
-  cursor: pointer;
-}
