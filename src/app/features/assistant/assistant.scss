@@ -185,3 +185,7 @@
     opacity: 0.7;
   }
 }
+
+[data-chat-end] {
+  scroll-margin-block-end: calc(var(--nav-height) + var(--space-4));
+}
