@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1790782656980,
+  "timestamp": 1790784259600,
   "index": "/DriveLog/index.html",
   "assetGroups": [
     {
@@ -91,7 +91,13 @@
         "/DriveLog/icons/icon-96x96.png",
         "/DriveLog/icons/icon-master.png",
         "/DriveLog/icons/maskable-192.png",
-        "/DriveLog/icons/maskable-512.png"
+        "/DriveLog/icons/maskable-512.png",
+        "/DriveLog/screenshots/narrow-charts-ar.png",
+        "/DriveLog/screenshots/narrow-fillups-ar.png",
+        "/DriveLog/screenshots/narrow-home-ar.png",
+        "/DriveLog/screenshots/narrow-home-en.png",
+        "/DriveLog/screenshots/narrow-maintenance-ar.png",
+        "/DriveLog/screenshots/wide-home.png"
       ],
       "patterns": []
     },
@@ -196,7 +202,13 @@
     "/DriveLog/icons/maskable-512.png": "1c5739ef20c6b2ade04db2a54460766e4ffcb685",
     "/DriveLog/index.html": "13cad207b58ce11ef839cc70cd86292da0bc2583",
     "/DriveLog/main-JVX4TYXK.js": "84409f1f0902f334275117687c95aa84b355b12e",
-    "/DriveLog/manifest.webmanifest": "15e1426b3cf3c31a36403d51cd0945dd731d9718",
+    "/DriveLog/manifest.webmanifest": "79c4957ec1006608b2a1989c78f989220a0733a0",
+    "/DriveLog/screenshots/narrow-charts-ar.png": "f8817f33cdb6ff5c2d17a2c4def5809b5f394155",
+    "/DriveLog/screenshots/narrow-fillups-ar.png": "dd0ed5de2932e7d71e315966d1afd6063b667554",
+    "/DriveLog/screenshots/narrow-home-ar.png": "64880b70eadd6bb00e29357f418fb0e7def5374b",
+    "/DriveLog/screenshots/narrow-home-en.png": "48cca0206a9db630ce52f0bf29e88587f21b0abf",
+    "/DriveLog/screenshots/narrow-maintenance-ar.png": "d0575e05a6186a9b5b0d05dd70edcb28c28a7975",
+    "/DriveLog/screenshots/wide-home.png": "cb076c43040b4849da300e7c5bcf54163f23e314",
     "/DriveLog/styles-LCIHWO2I.css": "916ec1a7087b52452245b98c438f629ee113b4d1"
   },
   "navigationUrls": [
