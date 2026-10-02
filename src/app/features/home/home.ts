@@ -34,7 +34,14 @@ import {
 import { fuelDashboardMetrics } from '../../domain/fuel-dashboard';
 import { isStoredMessageKey } from '../../domain/part-name';
 import { buildFuelCostGlance } from '../../domain/economy';
-import { costPerKmTrend, economyTrend, fuelGradeCostShare, spendByMonth, spendByMonthEntries } from '../../domain/insights';
+import {
+  costPerKmTrend,
+  economyTrend,
+  fuelGradeCostShare,
+  spendByMonth,
+  spendByMonthEntries,
+  type TrendPoint,
+} from '../../domain/insights';
 import type { ExpenseCategory } from '../../domain/models';
 import {
   buildMonthOutlook,
@@ -55,7 +62,6 @@ import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { HealthRow } from '../../ui/health-row/health-row';
 import { InstallPwa } from '../../pwa/install-pwa';
-import { Sparkline } from '../../ui/charts/sparkline';
 import { BarChart } from '../../ui/charts/bar-chart';
 import { LineChart } from '../../ui/charts/line-chart';
 import { DonutChart, type DonutSlice } from '../../ui/charts/donut-chart';
@@ -85,7 +91,6 @@ type ChartCategory = ExpenseCategory | 'all';
     DateField,
     PrimaryButton,
     RouterLink,
-    Sparkline,
     BarChart,
     LineChart,
     DonutChart,
@@ -287,12 +292,32 @@ export class HomePage {
     if (this.showInstallCard()) return 'install';
     return null;
   });
-  readonly economyTrend = computed(() => economyTrend(this.db.fillUps(), this.chartPeriod()));
-  readonly costTrend = computed(() => costPerKmTrend(this.db.fillUps(), this.chartPeriod()));
+  readonly economySeries = computed(() => economyTrend(this.db.fillUps(), this.chartPeriod()));
+  readonly economyValues = computed(() => this.economySeries().map((p) => p.value));
+  readonly economyLabels = computed(() =>
+    this.economySeries().map((p) => this.shortDate(p.date)),
+  );
+  readonly economyLatest = computed(() => this.economySeries().at(-1)?.value ?? null);
+  readonly economyDelta = computed(() => seriesDelta(this.economySeries()));
+  readonly economyAvg = computed(() => seriesMean(this.economySeries()));
+  readonly costSeries = computed(() => costPerKmTrend(this.db.fillUps(), this.chartPeriod()));
+  readonly costValues = computed(() => this.costSeries().map((p) => p.value));
+  readonly costLabels = computed(() => this.costSeries().map((p) => this.shortDate(p.date)));
+  readonly costLatest = computed(() => this.costSeries().at(-1)?.value ?? null);
+  readonly costDelta = computed(() => seriesDelta(this.costSeries()));
+  readonly costAvg = computed(() => seriesMean(this.costSeries()));
   readonly spendTrendEntries = computed(() =>
     spendByMonthEntries(this.db.fillUps(), this.chartPeriod()),
   );
   readonly spendTrend = computed(() => spendByMonth(this.db.fillUps(), this.chartPeriod()));
+  readonly spendTotal = computed(() => this.spendTrend().reduce((sum, v) => sum + v, 0));
+  readonly spendDelta = computed(() => {
+    const values = this.spendTrend();
+    if (values.length < 2) {
+      return null;
+    }
+    return values.at(-1)! - values.at(-2)!;
+  });
   readonly spendTrendLabels = computed(() =>
     this.spendTrendEntries().map((e) =>
       this.i18n.formatDate(`${e.month}-01`, { month: 'short' }),
@@ -301,6 +326,9 @@ export class HomePage {
   readonly fuelGradeShare = computed(() =>
     fuelGradeCostShare(this.db.fillUps(), this.chartPeriod()),
   );
+  readonly fuelGradeTotal = computed(() =>
+    this.fuelGradeShare().reduce((sum, s) => sum + s.cost, 0),
+  );
   readonly fuelGradeSlices = computed((): DonutSlice[] =>
     this.fuelGradeShare().map((s) => ({
       label:
@@ -308,6 +336,7 @@ export class HomePage {
           ? this.i18n.t('charts.gradeUnknown')
           : this.gradeLabel(s.grade),
       value: s.cost,
+      detail: this.formatMoney(s.cost),
     })),
   );
   readonly monthOutlook = computed(() =>
@@ -494,6 +523,41 @@ export class HomePage {
     return this.i18n.formatMoney(value, this.db.settings().currency, 0);
   }
 
+  formatCostPerKm(value: number): string {
+    return this.i18n.formatMoney(value, this.db.settings().currency, 2);
+  }
+
+  formatSigned(value: number, digits: number): string {
+    return this.formatDelta(value, digits, (abs) =>
+      this.i18n.formatNumber(abs, {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+      }),
+    );
+  }
+
+  formatMoneyDelta(value: number, digits = 0): string {
+    return this.formatDelta(value, digits, (abs) =>
+      this.i18n.formatMoney(abs, this.db.settings().currency, digits),
+    );
+  }
+
+  private shortDate(date: string): string {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return '';
+    }
+    return this.i18n.formatDate(date, { day: 'numeric', month: 'short' });
+  }
+
+  private formatDelta(value: number, digits: number, formatAbs: (abs: number) => string): string {
+    const abs = Math.abs(value);
+    if (abs < 0.5 * 10 ** -digits) {
+      return this.i18n.t('charts.deltaFlat');
+    }
+    const body = formatAbs(abs);
+    return value > 0 ? `+${body}` : `−${body}`;
+  }
+
   monthFuelDeltaLabel(): string {
     const pct = this.fuelCostGlance().deltaPct;
     if (pct == null) {
@@ -635,4 +699,18 @@ export class HomePage {
       this.startingPeriod.set(false);
     }
   }
+}
+
+function seriesDelta(points: readonly TrendPoint[]): number | null {
+  if (points.length < 2) {
+    return null;
+  }
+  return points.at(-1)!.value - points.at(-2)!.value;
+}
+
+function seriesMean(points: readonly TrendPoint[]): number | null {
+  if (points.length < 2) {
+    return null;
+  }
+  return points.reduce((sum, point) => sum + point.value, 0) / points.length;
 }

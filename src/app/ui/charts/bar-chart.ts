@@ -52,7 +52,7 @@ import { linearScale } from './scale';
             [attr.y]="bar.y"
             [attr.width]="bar.w"
             [attr.height]="bar.h"
-            rx="2"
+            rx="6"
           />
           @if (bar.label) {
             <text
@@ -124,7 +124,7 @@ export class BarChart {
   readonly height = 144;
   readonly padLeft = 36;
   readonly padRight = 8;
-  readonly padTop = 8;
+  readonly padTop = 16;
   readonly padBottom = 22;
   readonly plotLeft = this.padLeft;
   readonly values = input<number[]>([]);
@@ -153,14 +153,19 @@ export class BarChart {
       return [0, 1];
     }
     const max = Math.max(...vals, 0);
-    return [0, max || 1];
+    return [0, (max || 1) * 1.12];
   });
 
   readonly yScale = computed(() =>
     linearScale(this.yDomain(), [this.plotBottom(), this.padTop]),
   );
 
-  readonly yTicks = computed(() => this.yScale().ticks().filter((t) => t >= 0));
+  readonly yTicks = computed(() => {
+    const scale = this.yScale();
+    const lo = 8;
+    const hi = this.plotBottom() + 1;
+    return scale.ticks().filter((t) => t >= 0 && scale(t) >= lo && scale(t) <= hi);
+  });
 
   readonly bars = computed(() => {
     const vals = this.values();

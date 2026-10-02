@@ -1,7 +1,6 @@
 import { compareDateOnly } from './dues';
-import { computeEconomySegments } from './economy';
 import { periodFilterStart, type LedgerPeriodFilter } from './expense-ledger';
-import type { FillUp, FuelGrade } from './models';
+import type { EconomySegment, FillUp, FuelGrade } from './models';
 
 function inPeriod(f: FillUp, period: LedgerPeriodFilter): boolean {
   const start = periodFilterStart(period);
@@ -11,28 +10,77 @@ function inPeriod(f: FillUp, period: LedgerPeriodFilter): boolean {
   return compareDateOnly(f.date, start) >= 0;
 }
 
-/** Rolling cost/km per fill-up segment (tank-full pairs). */
+export interface TrendPoint {
+  value: number;
+  /** End-fill date (YYYY-MM-DD). */
+  date: string;
+}
+
+function byOdometer(a: FillUp, b: FillUp): number {
+  if (a.odometer !== b.odometer) {
+    return a.odometer - b.odometer;
+  }
+  return a.createdAt.localeCompare(b.createdAt);
+}
+
+/** Logged trip distance, otherwise the odometer gap from the previous fill. */
+function fillDistance(end: FillUp, prev: FillUp | undefined): number {
+  const stored = end.distanceKm;
+  if (stored != null && Number.isFinite(stored) && stored > 0) {
+    return stored;
+  }
+  if (prev && end.odometer > prev.odometer) {
+    return end.odometer - prev.odometer;
+  }
+  return 0;
+}
+
+/** One point per fill. A full tank is not required. */
+function trendSegments(
+  fills: readonly FillUp[],
+  period: LedgerPeriodFilter,
+): { segments: EconomySegment[]; byId: Map<string, FillUp> } {
+  const sorted = [...fills].sort(byOdometer);
+  const segments: EconomySegment[] = [];
+  for (let i = 0; i < sorted.length; i++) {
+    const end = sorted[i]!;
+    const prev = i > 0 ? sorted[i - 1] : undefined;
+    const distance = fillDistance(end, prev);
+    if (distance <= 0 || !inPeriod(end, period)) {
+      continue;
+    }
+    segments.push({
+      startId: prev?.id ?? end.id,
+      endId: end.id,
+      distanceKm: distance,
+      litersPer100Km: (end.liters / distance) * 100,
+      costPerKm: end.cost / distance,
+      totalCost: end.cost,
+    });
+  }
+  return { segments, byId: new Map(fills.map((f) => [f.id, f])) };
+}
+
+function toTrendPoints(
+  fills: readonly FillUp[],
+  period: LedgerPeriodFilter,
+  pick: (segment: EconomySegment) => number,
+  digits: number,
+): TrendPoint[] {
+  const { segments, byId } = trendSegments(fills, period);
+  const factor = 10 ** digits;
+  return segments.map((segment) => ({
+    value: Math.round(pick(segment) * factor) / factor,
+    date: byId.get(segment.endId)?.date ?? '',
+  }));
+}
+
+/** Cost/km per fill. Distance or odometer gap; a full tank is not required. */
 export function costPerKmTrend(
   fills: readonly FillUp[],
   period: LedgerPeriodFilter,
-): number[] {
-  const sorted = [...fills]
-    .filter((f) => inPeriod(f, period))
-    .sort((a, b) => a.odometer - b.odometer);
-  const out: number[] = [];
-  for (let i = 1; i < sorted.length; i++) {
-    const prev = sorted[i - 1]!;
-    const cur = sorted[i]!;
-    if (!cur.tankFull || !prev.tankFull) {
-      continue;
-    }
-    const dist = cur.odometer - prev.odometer;
-    if (dist <= 0) {
-      continue;
-    }
-    out.push(Math.round((cur.cost / dist) * 100) / 100);
-  }
-  return out;
+): TrendPoint[] {
+  return toTrendPoints(fills, period, (segment) => segment.costPerKm, 2);
 }
 
 export interface MonthSpend {
@@ -64,15 +112,12 @@ export function spendByMonth(
   return spendByMonthEntries(fills, period).map((e) => e.value);
 }
 
-/** L/100 km per full-tank segment in period order. */
+/** L/100 km per fill. Distance or odometer gap; a full tank is not required. */
 export function economyTrend(
   fills: readonly FillUp[],
   period: LedgerPeriodFilter,
-): number[] {
-  const filtered = fills.filter((f) => inPeriod(f, period));
-  return computeEconomySegments(filtered).map(
-    (s) => Math.round(s.litersPer100Km * 10) / 10,
-  );
+): TrendPoint[] {
+  return toTrendPoints(fills, period, (segment) => segment.litersPer100Km, 1);
 }
 
 export type FuelGradeShareGrade = FuelGrade | 'unknown';
