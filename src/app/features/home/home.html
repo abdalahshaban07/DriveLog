@@ -430,33 +430,104 @@
       </div>
 
       <section class="tab-block" [attr.aria-label]="i18n.t('charts.trends')">
-        <h2 class="tab-block__title">{{ i18n.t('charts.trends') }}</h2>
+        <div class="trends-head">
+          <h2 class="tab-block__title">{{ i18n.t('charts.trends') }}</h2>
+          <app-select-field
+            class="filter-select trends-period"
+            [compact]="true"
+            [label]="i18n.t('charts.period')"
+            [options]="chartPeriodSelectOptions()"
+            [value]="chartPeriod()"
+            (valueChange)="chartPeriod.set($any($event))"
+          />
+        </div>
         <div class="chart-grid">
           <div class="chart-card">
-            <span class="chart-card__label">{{ i18n.t('home.monthSpend') }}</span>
-            <app-bar-chart
-              [values]="spendTrend()"
-              [labels]="spendTrendLabels()"
-              [label]="i18n.t('home.monthSpend')"
-            />
+            <span class="chart-card__label">{{ i18n.t('charts.periodSpend') }}</span>
+            <div class="chart-card__head">
+              <strong class="chart-card__value" [class.metric--ghost]="spendTotal() <= 0">
+                {{ formatMoney(spendTotal()) }}
+              </strong>
+              @if (spendDelta(); as delta) {
+                <span class="chart-card__delta">{{ formatMoneyDelta(delta) }}</span>
+              }
+            </div>
+            @if (spendTrend().length) {
+              <app-bar-chart
+                [values]="spendTrend()"
+                [labels]="spendTrendLabels()"
+                [label]="i18n.t('charts.periodSpend')"
+              />
+            } @else {
+              <p class="chart-card__empty">{{ i18n.t('charts.empty') }}</p>
+            }
           </div>
           <div class="chart-card">
             <span class="chart-card__label">{{ i18n.t('home.economy') }}</span>
-            <app-line-chart
-              [values]="economyTrend()"
-              [label]="i18n.t('home.economy')"
-            />
+            <div class="chart-card__head">
+              <strong class="chart-card__value" [class.metric--ghost]="economyLatest() == null">
+                @if (economyLatest(); as latest) {
+                  {{ i18n.formatUnit(latest, 'common.lPer100', 1) }}
+                } @else {
+                  {{ i18n.t('home.monthFuelDelta.none') }}
+                }
+              </strong>
+              @if (economyDelta(); as delta) {
+                <span class="chart-card__delta">{{ formatSigned(delta, 1) }}</span>
+              }
+            </div>
+            @if (economyValues().length >= 2) {
+              <app-line-chart
+                [values]="economyValues()"
+                [labels]="economyLabels()"
+                [reference]="economyAvg()"
+                [label]="i18n.t('home.economy')"
+              />
+            } @else {
+              <p class="chart-card__empty">{{ i18n.t('charts.needDistance') }}</p>
+            }
           </div>
           <div class="chart-card">
             <span class="chart-card__label">{{ i18n.t('home.costPerKm') }}</span>
-            <app-sparkline [values]="costTrend()" [label]="i18n.t('home.costPerKm')" />
+            <div class="chart-card__head">
+              <strong class="chart-card__value" [class.metric--ghost]="costLatest() == null">
+                @if (costLatest(); as latest) {
+                  {{ formatCostPerKm(latest) }}
+                } @else {
+                  {{ i18n.t('home.monthFuelDelta.none') }}
+                }
+              </strong>
+              @if (costDelta(); as delta) {
+                <span class="chart-card__delta">{{ formatMoneyDelta(delta, 2) }}</span>
+              }
+            </div>
+            @if (costValues().length >= 2) {
+              <app-line-chart
+                [values]="costValues()"
+                [labels]="costLabels()"
+                [reference]="costAvg()"
+                [tickDigits]="2"
+                [label]="i18n.t('home.costPerKm')"
+              />
+            } @else {
+              <p class="chart-card__empty">{{ i18n.t('charts.needDistance') }}</p>
+            }
           </div>
           <div class="chart-card">
             <span class="chart-card__label">{{ i18n.t('charts.fuelGradeShare') }}</span>
-            <app-donut-chart
-              [slices]="fuelGradeSlices()"
-              [label]="i18n.t('charts.fuelGradeShare')"
-            />
+            <div class="chart-card__head">
+              <strong class="chart-card__value" [class.metric--ghost]="fuelGradeTotal() <= 0">
+                {{ formatMoney(fuelGradeTotal()) }}
+              </strong>
+            </div>
+            @if (fuelGradeSlices().length) {
+              <app-donut-chart
+                [slices]="fuelGradeSlices()"
+                [label]="i18n.t('charts.fuelGradeShare')"
+              />
+            } @else {
+              <p class="chart-card__empty">{{ i18n.t('charts.empty') }}</p>
+            }
           </div>
         </div>
       </section>
@@ -471,14 +542,6 @@
             [options]="chartCategorySelectOptions()"
             [value]="chartCategory()"
             (valueChange)="chartCategory.set($any($event))"
-          />
-          <app-select-field
-            class="filter-select"
-            [compact]="true"
-            [label]="i18n.t('charts.period')"
-            [options]="chartPeriodSelectOptions()"
-            [value]="chartPeriod()"
-            (valueChange)="chartPeriod.set($any($event))"
           />
         </div>
 

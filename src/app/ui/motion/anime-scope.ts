@@ -6,7 +6,7 @@ export async function createAnimeScope(
   root: HTMLElement,
   destroyRef: DestroyRef,
   policy: MotionPolicy,
-  surface: AnimeSurface = 'sparkline',
+  surface: AnimeSurface = 'lineChart',
 ): Promise<Scope | null> {
   if (!policy.allowAnime(surface)) {
     return null;

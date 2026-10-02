@@ -14,6 +14,8 @@ export interface DonutSlice {
   label: string;
   value: number;
   color?: string;
+  /** Preformatted amount, shown in the legend. */
+  detail?: string;
 }
 
 @Component({
@@ -44,13 +46,31 @@ export interface DonutSlice {
             pathLength="100"
           />
         }
+        @if (lead(); as lead) {
+          <text
+            class="donut-chart__hole-label"
+            [attr.x]="cx"
+            [attr.y]="cy - 4"
+            text-anchor="middle"
+          >
+            {{ lead.label }}
+          </text>
+          <text
+            class="donut-chart__hole-pct"
+            [attr.x]="cx"
+            [attr.y]="cy + 14"
+            text-anchor="middle"
+          >
+            {{ lead.pct }}%
+          </text>
+        }
       </svg>
       @if (legend().length) {
         <ul class="donut-chart__legend">
           @for (item of legend(); track item.label) {
             <li>
               <span class="donut-chart__swatch" [style.background]="item.color"></span>
-              {{ item.label }} · {{ item.pct }}%
+              <span>{{ item.label }} · {{ item.pct }}%{{ item.detail ? ' · ' + item.detail : '' }}</span>
             </li>
           }
         </ul>
@@ -67,9 +87,20 @@ export interface DonutSlice {
     .donut-chart {
       display: block;
       width: 100%;
-      max-width: 9rem;
+      max-width: 11rem;
       margin-inline: auto;
       height: auto;
+    }
+    .donut-chart__hole-label {
+      fill: var(--muted);
+      font-size: 9px;
+      font-weight: 600;
+    }
+    .donut-chart__hole-pct {
+      fill: var(--text);
+      font-size: 16px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
     }
     .donut-chart__seg {
       transform-origin: center;
@@ -183,12 +214,15 @@ export class DonutChart {
       .filter((s) => s.value > 0)
       .map((s, i) => ({
         label: s.label,
+        detail: s.detail ?? '',
         color: s.color ?? DonutChart.palette[i % DonutChart.palette.length]!,
         pct: this.i18n.formatNumber(Math.round((s.value / total) * 100), {
           maximumFractionDigits: 0,
         }),
       }));
   });
+
+  readonly lead = computed(() => this.legend()[0] ?? null);
 
   private async drawWithAnime(): Promise<void> {
     try {

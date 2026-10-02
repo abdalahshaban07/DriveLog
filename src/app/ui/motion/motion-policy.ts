@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 
 export type AnimeSurface =
-  | 'sparkline'
   | 'barChart'
   | 'lineChart'
   | 'donutChart'

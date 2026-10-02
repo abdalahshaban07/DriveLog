@@ -1,7 +1,7 @@
 import { compareDateOnly } from './dues';
-import { computeEconomySegments } from './economy';
+import { computeEconomySegments, computePerFillSegments } from './economy';
 import { periodFilterStart, type LedgerPeriodFilter } from './expense-ledger';
-import type { FillUp, FuelGrade } from './models';
+import type { EconomySegment, FillUp, FuelGrade } from './models';
 
 function inPeriod(f: FillUp, period: LedgerPeriodFilter): boolean {
   const start = periodFilterStart(period);
@@ -11,28 +11,49 @@ function inPeriod(f: FillUp, period: LedgerPeriodFilter): boolean {
   return compareDateOnly(f.date, start) >= 0;
 }
 
-/** Rolling cost/km per fill-up segment (tank-full pairs). */
+export interface TrendPoint {
+  value: number;
+  /** End-fill date (YYYY-MM-DD). */
+  date: string;
+}
+
+/**
+ * Per-fill distance when any fill has it (same priority as latestEconomy).
+ * Full-tank pairs only when none do.
+ * ponytail: one distanceKm in the period hides older full-tank-only rows.
+ */
+function trendSegments(
+  fills: readonly FillUp[],
+  period: LedgerPeriodFilter,
+): { segments: EconomySegment[]; byId: Map<string, FillUp> } {
+  const filtered = fills.filter((f) => inPeriod(f, period));
+  const perFill = computePerFillSegments(filtered);
+  return {
+    segments: perFill.length > 0 ? perFill : computeEconomySegments(filtered),
+    byId: new Map(filtered.map((f) => [f.id, f])),
+  };
+}
+
+function toTrendPoints(
+  fills: readonly FillUp[],
+  period: LedgerPeriodFilter,
+  pick: (segment: EconomySegment) => number,
+  digits: number,
+): TrendPoint[] {
+  const { segments, byId } = trendSegments(fills, period);
+  const factor = 10 ** digits;
+  return segments.map((segment) => ({
+    value: Math.round(pick(segment) * factor) / factor,
+    date: byId.get(segment.endId)?.date ?? '',
+  }));
+}
+
+/** Cost/km per fill. Uses distanceKm, then full-tank pairs. */
 export function costPerKmTrend(
   fills: readonly FillUp[],
   period: LedgerPeriodFilter,
-): number[] {
-  const sorted = [...fills]
-    .filter((f) => inPeriod(f, period))
-    .sort((a, b) => a.odometer - b.odometer);
-  const out: number[] = [];
-  for (let i = 1; i < sorted.length; i++) {
-    const prev = sorted[i - 1]!;
-    const cur = sorted[i]!;
-    if (!cur.tankFull || !prev.tankFull) {
-      continue;
-    }
-    const dist = cur.odometer - prev.odometer;
-    if (dist <= 0) {
-      continue;
-    }
-    out.push(Math.round((cur.cost / dist) * 100) / 100);
-  }
-  return out;
+): TrendPoint[] {
+  return toTrendPoints(fills, period, (segment) => segment.costPerKm, 2);
 }
 
 export interface MonthSpend {
@@ -64,15 +85,12 @@ export function spendByMonth(
   return spendByMonthEntries(fills, period).map((e) => e.value);
 }
 
-/** L/100 km per full-tank segment in period order. */
+/** L/100 km per fill. Uses distanceKm, then full-tank pairs. */
 export function economyTrend(
   fills: readonly FillUp[],
   period: LedgerPeriodFilter,
-): number[] {
-  const filtered = fills.filter((f) => inPeriod(f, period));
-  return computeEconomySegments(filtered).map(
-    (s) => Math.round(s.litersPer100Km * 10) / 10,
-  );
+): TrendPoint[] {
+  return toTrendPoints(fills, period, (segment) => segment.litersPer100Km, 1);
 }
 
 export type FuelGradeShareGrade = FuelGrade | 'unknown';

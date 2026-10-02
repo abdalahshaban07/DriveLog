@@ -510,8 +510,39 @@ describe('insights series', () => {
       ],
       'all',
     );
-    expect(trend.length).toBe(1);
-    expect(trend[0]).toBeCloseTo(22.5, 1);
+    expect(trend).toEqual([{ value: 22.5, date: '2026-01-01' }]);
+  });
+
+  it('builds economy and cost trends from distance without a full tank', async () => {
+    const { costPerKmTrend, economyTrend } = await import('./insights');
+    const fills = [
+      fill({
+        id: 'a',
+        odometer: 1000,
+        liters: 40,
+        cost: 100,
+        tankFull: false,
+        distanceKm: 200,
+        date: '2026-01-04',
+      }),
+      fill({
+        id: 'b',
+        odometer: 1250,
+        liters: 30,
+        cost: 90,
+        tankFull: false,
+        distanceKm: 250,
+        date: '2026-02-04',
+      }),
+    ];
+    expect(economyTrend(fills, 'all')).toEqual([
+      { value: 20, date: '2026-01-04' },
+      { value: 12, date: '2026-02-04' },
+    ]);
+    expect(costPerKmTrend(fills, 'all')).toEqual([
+      { value: 0.5, date: '2026-01-04' },
+      { value: 0.36, date: '2026-02-04' },
+    ]);
   });
 
   it('groups fuel grade cost share for the period', async () => {

@@ -1,14 +1,5 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  input,
-  signal,
-  afterNextRender,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { I18n } from '../../i18n/i18n';
-import { MotionPolicy } from '../motion/motion-policy';
 import { linearScale } from './scale';
 
 @Component({
@@ -19,7 +10,6 @@ import { linearScale } from './scale';
     @if (points().length >= 2) {
       <svg
         class="line-chart"
-        [class.line-chart--draw]="draw()"
         [attr.viewBox]="'0 0 ' + width + ' ' + height"
         preserveAspectRatio="xMidYMid meet"
         role="img"
@@ -45,21 +35,30 @@ import { linearScale } from './scale';
             </text>
           </g>
         }
+        @if (refY() != null) {
+          <line
+            class="line-chart__ref"
+            [attr.x1]="plotLeft"
+            [attr.x2]="width - padRight"
+            [attr.y1]="refY()"
+            [attr.y2]="refY()"
+          />
+        }
+        <polygon class="line-chart__area" [attr.points]="area()" />
+        <polyline class="line-chart__line" fill="none" [attr.points]="polyline()" />
+        @if (lastPoint(); as dot) {
+          <circle class="line-chart__dot" [attr.cx]="dot.x" [attr.cy]="dot.y" r="3.5" />
+        }
         @for (tick of xTicks(); track tick.i) {
           <text
             class="line-chart__x-label"
             [attr.x]="tick.x"
             [attr.y]="height - 4"
-            text-anchor="middle"
+            [attr.text-anchor]="tick.anchor"
           >
             {{ tick.label }}
           </text>
         }
-        <polyline
-          class="line-chart__line"
-          fill="none"
-          [attr.points]="polyline()"
-        />
       </svg>
     } @else {
       <div class="line-chart line-chart--empty" [attr.aria-label]="label()"></div>
@@ -86,26 +85,25 @@ import { linearScale } from './scale';
       font-size: 9px;
       font-variant-numeric: tabular-nums;
     }
+    .line-chart__area {
+      fill: color-mix(in srgb, var(--fuel) 16%, transparent);
+      stroke: none;
+    }
     .line-chart__line {
       stroke: var(--fuel);
       stroke-width: 2;
       vector-effect: non-scaling-stroke;
-      stroke-dasharray: 400;
-      stroke-dashoffset: 400;
     }
-    .line-chart--draw .line-chart__line {
-      animation: line-draw var(--motion-slow, 0.55s) var(--ease-out, ease-out) forwards;
+    .line-chart__ref {
+      stroke: var(--muted);
+      stroke-width: 1;
+      stroke-dasharray: 3 3;
+      vector-effect: non-scaling-stroke;
     }
-    @keyframes line-draw {
-      to {
-        stroke-dashoffset: 0;
-      }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .line-chart__line {
-        stroke-dashoffset: 0;
-        animation: none;
-      }
+    .line-chart__dot {
+      fill: var(--surface, var(--fill-surface));
+      stroke: var(--fuel);
+      stroke-width: 2;
     }
     .line-chart--empty {
       height: 9rem;
@@ -117,27 +115,18 @@ import { linearScale } from './scale';
 export class LineChart {
   readonly width = 280;
   readonly height = 144;
-  readonly padLeft = 36;
+  readonly padLeft = 42;
   readonly padRight = 8;
-  readonly padTop = 8;
+  readonly padTop = 16;
   readonly padBottom = 22;
   readonly plotLeft = this.padLeft;
   readonly values = input<number[]>([]);
+  readonly labels = input<string[]>([]);
+  readonly reference = input<number | null>(null);
+  readonly tickDigits = input(1);
   readonly label = input('');
-  readonly draw = signal(false);
 
   private readonly i18n = inject(I18n);
-  private readonly policy = inject(MotionPolicy);
-
-  constructor() {
-    afterNextRender(() => {
-      if (this.policy.allowAnime('lineChart')) {
-        void this.drawWithAnime();
-      } else {
-        this.draw.set(true);
-      }
-    });
-  }
 
   readonly plotBottom = computed(() => this.height - this.padBottom);
 
@@ -145,11 +134,14 @@ export class LineChart {
 
   readonly yDomain = computed((): [number, number] => {
     const vals = this.points();
-    if (vals.length < 2) {
+    const ref = this.reference();
+    const pool =
+      ref != null && Number.isFinite(ref) ? [...vals, ref] : vals;
+    if (pool.length < 2) {
       return [0, 1];
     }
-    const min = Math.min(...vals);
-    const max = Math.max(...vals);
+    const min = Math.min(...pool);
+    const max = Math.max(...pool);
     const pad = (max - min) * 0.08 || 1;
     return [min - pad, max + pad];
   });
@@ -158,7 +150,12 @@ export class LineChart {
     linearScale(this.yDomain(), [this.plotBottom(), this.padTop]),
   );
 
-  readonly yTicks = computed(() => this.yScale().ticks());
+  readonly yTicks = computed(() => {
+    const scale = this.yScale();
+    const lo = 8;
+    const hi = this.plotBottom() + 1;
+    return scale.ticks().filter((t) => scale(t) >= lo && scale(t) <= hi);
+  });
 
   readonly xScale = computed(() => {
     const n = this.points().length;
@@ -166,57 +163,64 @@ export class LineChart {
     return linearScale([0, Math.max(1, n - 1)], [this.padLeft, this.padLeft + plotW]);
   });
 
-  readonly xTicks = computed(() => {
+  readonly coords = computed(() => {
     const vals = this.points();
-    const n = vals.length;
+    if (vals.length < 2) {
+      return [];
+    }
+    const xScale = this.xScale();
+    const yScale = this.yScale();
+    return vals.map((v, i) => ({ x: xScale(i), y: yScale(v) }));
+  });
+
+  readonly xTicks = computed(() => {
+    const n = this.points().length;
     if (n < 2) {
       return [];
     }
     const scale = this.xScale();
+    const labels = this.labels();
     const picks =
-      n <= 4
-        ? vals.map((_, i) => i)
-        : [0, Math.floor((n - 1) / 2), n - 1];
+      n <= 3 ? this.points().map((_, i) => i) : [0, Math.floor((n - 1) / 2), n - 1];
     return picks.map((i) => ({
       i,
       x: scale(i),
-      label: this.i18n.formatNumber(i + 1, { maximumFractionDigits: 0 }),
+      anchor: i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle',
+      label: labels[i] || this.i18n.formatNumber(i + 1, { maximumFractionDigits: 0 }),
     }));
   });
 
-  readonly polyline = computed(() => {
-    const vals = this.points();
-    if (vals.length < 2) {
+  readonly polyline = computed(() =>
+    this.coords()
+      .map((p) => `${p.x},${p.y}`)
+      .join(' '),
+  );
+
+  readonly area = computed(() => {
+    const pts = this.coords();
+    if (pts.length < 2) {
       return '';
     }
-    const xScale = this.xScale();
-    const yScale = this.yScale();
-    return vals
-      .map((v, i) => `${xScale(i)},${yScale(v)}`)
-      .join(' ');
+    const y0 = this.plotBottom();
+    const first = pts[0]!;
+    const last = pts[pts.length - 1]!;
+    return `${first.x},${y0} ${pts.map((p) => `${p.x},${p.y}`).join(' ')} ${last.x},${y0}`;
+  });
+
+  readonly lastPoint = computed(() => this.coords().at(-1) ?? null);
+
+  readonly refY = computed(() => {
+    const ref = this.reference();
+    if (ref == null || !Number.isFinite(ref) || this.points().length < 2) {
+      return null;
+    }
+    return this.yScale()(ref);
   });
 
   formatTick(value: number): string {
-    return this.i18n.formatNumber(value, { maximumFractionDigits: 1 });
-  }
-
-  private async drawWithAnime(): Promise<void> {
-    try {
-      const { animate, createDrawable } = await import('animejs');
-      const line = document.querySelector('.line-chart__line');
-      if (!(line instanceof SVGPolylineElement)) {
-        this.draw.set(true);
-        return;
-      }
-      const drawable = createDrawable(line);
-      animate(drawable, {
-        draw: '0 1',
-        duration: 550,
-        ease: 'out(3)',
-      });
-      this.draw.set(true);
-    } catch {
-      this.draw.set(true);
-    }
+    return this.i18n.formatNumber(value, {
+      maximumFractionDigits: this.tickDigits(),
+      minimumFractionDigits: 0,
+    });
   }
 }
