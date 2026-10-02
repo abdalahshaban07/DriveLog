@@ -476,7 +476,7 @@
                 <span class="chart-card__delta">{{ formatSigned(delta, 1) }}</span>
               }
             </div>
-            @if (economyValues().length >= 2) {
+            @if (economyValues().length >= 1) {
               <app-line-chart
                 [values]="economyValues()"
                 [labels]="economyLabels()"
@@ -501,7 +501,7 @@
                 <span class="chart-card__delta">{{ formatMoneyDelta(delta, 2) }}</span>
               }
             </div>
-            @if (costValues().length >= 2) {
+            @if (costValues().length >= 1) {
               <app-line-chart
                 [values]="costValues()"
                 [labels]="costLabels()"

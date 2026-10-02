@@ -1,5 +1,4 @@
 import { compareDateOnly } from './dues';
-import { computeEconomySegments, computePerFillSegments } from './economy';
 import { periodFilterStart, type LedgerPeriodFilter } from './expense-ledger';
 import type { EconomySegment, FillUp, FuelGrade } from './models';
 
@@ -17,21 +16,49 @@ export interface TrendPoint {
   date: string;
 }
 
-/**
- * Per-fill distance when any fill has it (same priority as latestEconomy).
- * Full-tank pairs only when none do.
- * ponytail: one distanceKm in the period hides older full-tank-only rows.
- */
+function byOdometer(a: FillUp, b: FillUp): number {
+  if (a.odometer !== b.odometer) {
+    return a.odometer - b.odometer;
+  }
+  return a.createdAt.localeCompare(b.createdAt);
+}
+
+/** Logged trip distance, otherwise the odometer gap from the previous fill. */
+function fillDistance(end: FillUp, prev: FillUp | undefined): number {
+  const stored = end.distanceKm;
+  if (stored != null && Number.isFinite(stored) && stored > 0) {
+    return stored;
+  }
+  if (prev && end.odometer > prev.odometer) {
+    return end.odometer - prev.odometer;
+  }
+  return 0;
+}
+
+/** One point per fill. A full tank is not required. */
 function trendSegments(
   fills: readonly FillUp[],
   period: LedgerPeriodFilter,
 ): { segments: EconomySegment[]; byId: Map<string, FillUp> } {
-  const filtered = fills.filter((f) => inPeriod(f, period));
-  const perFill = computePerFillSegments(filtered);
-  return {
-    segments: perFill.length > 0 ? perFill : computeEconomySegments(filtered),
-    byId: new Map(filtered.map((f) => [f.id, f])),
-  };
+  const sorted = [...fills].sort(byOdometer);
+  const segments: EconomySegment[] = [];
+  for (let i = 0; i < sorted.length; i++) {
+    const end = sorted[i]!;
+    const prev = i > 0 ? sorted[i - 1] : undefined;
+    const distance = fillDistance(end, prev);
+    if (distance <= 0 || !inPeriod(end, period)) {
+      continue;
+    }
+    segments.push({
+      startId: prev?.id ?? end.id,
+      endId: end.id,
+      distanceKm: distance,
+      litersPer100Km: (end.liters / distance) * 100,
+      costPerKm: end.cost / distance,
+      totalCost: end.cost,
+    });
+  }
+  return { segments, byId: new Map(fills.map((f) => [f.id, f])) };
 }
 
 function toTrendPoints(
@@ -48,7 +75,7 @@ function toTrendPoints(
   }));
 }
 
-/** Cost/km per fill. Uses distanceKm, then full-tank pairs. */
+/** Cost/km per fill. Distance or odometer gap; a full tank is not required. */
 export function costPerKmTrend(
   fills: readonly FillUp[],
   period: LedgerPeriodFilter,
@@ -85,7 +112,7 @@ export function spendByMonth(
   return spendByMonthEntries(fills, period).map((e) => e.value);
 }
 
-/** L/100 km per fill. Uses distanceKm, then full-tank pairs. */
+/** L/100 km per fill. Distance or odometer gap; a full tank is not required. */
 export function economyTrend(
   fills: readonly FillUp[],
   period: LedgerPeriodFilter,

@@ -593,7 +593,7 @@ export const en = {
   'charts.cat.other': 'Other',
   'charts.stackLabel': 'Spend by category',
   'charts.periodSpend': 'Period spend',
-  'charts.needDistance': 'Log distance on two fill-ups to see this.',
+  'charts.needDistance': 'Log two fill-ups to see this.',
   'charts.deltaFlat': '~0',
   'charts.fuelGradeShare': 'Fuel grade share',
   'charts.gradeUnknown': 'Unspecified',

@@ -595,7 +595,7 @@ export const ar: Record<MsgKey, string> = {
   'charts.cat.other': 'تاني',
   'charts.stackLabel': 'الصرف حسب الفئة',
   'charts.periodSpend': 'صرف الفترة',
-  'charts.needDistance': 'سجّل المسافة في تعبئتين عشان يظهر الرسم.',
+  'charts.needDistance': 'سجّل تعبئتين عشان يظهر الرسم.',
   'charts.deltaFlat': '~٠',
   'charts.fuelGradeShare': 'حصة نوع البنزين',
   'charts.gradeUnknown': 'مش محدد',

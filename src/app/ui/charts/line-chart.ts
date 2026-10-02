@@ -7,7 +7,7 @@ import { linearScale } from './scale';
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { dir: 'ltr' },
   template: `
-    @if (points().length >= 2) {
+    @if (points().length >= 1) {
       <svg
         class="line-chart"
         [attr.viewBox]="'0 0 ' + width + ' ' + height"
@@ -137,12 +137,12 @@ export class LineChart {
     const ref = this.reference();
     const pool =
       ref != null && Number.isFinite(ref) ? [...vals, ref] : vals;
-    if (pool.length < 2) {
+    if (!pool.length) {
       return [0, 1];
     }
     const min = Math.min(...pool);
     const max = Math.max(...pool);
-    const pad = (max - min) * 0.08 || 1;
+    const pad = (max - min) * 0.08 || Math.abs(max) * 0.08 || 1;
     return [min - pad, max + pad];
   });
 
@@ -165,18 +165,34 @@ export class LineChart {
 
   readonly coords = computed(() => {
     const vals = this.points();
-    if (vals.length < 2) {
+    if (!vals.length) {
       return [];
     }
-    const xScale = this.xScale();
     const yScale = this.yScale();
+    if (vals.length === 1) {
+      const plotW = this.width - this.padLeft - this.padRight;
+      return [{ x: this.padLeft + plotW / 2, y: yScale(vals[0]!) }];
+    }
+    const xScale = this.xScale();
     return vals.map((v, i) => ({ x: xScale(i), y: yScale(v) }));
   });
 
   readonly xTicks = computed(() => {
     const n = this.points().length;
-    if (n < 2) {
+    if (!n) {
       return [];
+    }
+    if (n === 1) {
+      const dot = this.coords()[0];
+      return [
+        {
+          i: 0,
+          x: dot?.x ?? this.padLeft,
+          anchor: 'middle',
+          label:
+            this.labels()[0] || this.i18n.formatNumber(1, { maximumFractionDigits: 0 }),
+        },
+      ];
     }
     const scale = this.xScale();
     const labels = this.labels();
