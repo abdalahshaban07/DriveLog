@@ -21,6 +21,8 @@ describe('FillUpPage', () => {
       updatedAt: string;
       unitPrice?: number;
       fuelGrade?: string;
+      placeLabel?: string;
+      distanceKm?: number;
     }[]
   >([]);
   const settings = signal({
@@ -91,6 +93,9 @@ describe('FillUpPage', () => {
               return k;
             },
             formatNumber: (n: number) => String(n),
+            formatDate: (v: string) => v,
+            formatUnit: (n: number, k: string) => `${n} ${k}`,
+            formatMoney: (n: number, c: string) => `${n} ${c}`,
             language: () => 'en',
             dir: () => 'ltr',
           },
@@ -134,6 +139,9 @@ describe('FillUpPage', () => {
           useValue: {
             t: (k: string) => k,
             formatNumber: (n: number) => String(n),
+            formatDate: (v: string) => v,
+            formatUnit: (n: number, k: string) => `${n} ${k}`,
+            formatMoney: (n: number, c: string) => `${n} ${c}`,
             language: () => 'en',
             dir: () => 'ltr',
           },
@@ -234,5 +242,32 @@ describe('FillUpPage', () => {
     expect(saveFillUp).toHaveBeenCalledOnce();
     expect(page.nextDueBanner()).toBe(false);
     expect(navigateSpy).toHaveBeenCalledWith('/fuel');
+  });
+
+  it('shows the last reading and last fill details', () => {
+    fillUps.set([
+      {
+        id: 'f1',
+        odometer: 10050,
+        liters: 30,
+        cost: 400,
+        tankFull: false,
+        date: '2026-09-01',
+        createdAt: '2026-09-01T00:00:00.000Z',
+        updatedAt: '2026-09-01T00:00:00.000Z',
+        placeLabel: 'Shell',
+        distanceKm: 50,
+      },
+    ]);
+    const fixture = TestBed.createComponent(FillUpPage);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('.capture__num')?.textContent).toContain('10000');
+    const facts = root.querySelector('.capture__facts')?.textContent ?? '';
+    expect(facts).toContain('2026-09-01');
+    expect(facts).toContain('30');
+    expect(facts).toContain('400');
+    expect(facts).toContain('Shell');
+    expect(root.querySelectorAll('.scan-tile')).toHaveLength(2);
   });
 });
