@@ -67,13 +67,103 @@
     </section>
   }
 
-  <p class="hint fill-up__odo" role="status">
-    {{ i18n.t('fillUp.lastOdo') }}:
-    {{
-      i18n.formatNumber(db.car()?.currentOdometer ?? 0, { maximumFractionDigits: 0 })
-    }}
-    {{ i18n.t('common.km') }}
-  </p>
+  <section class="card capture" [attr.aria-label]="i18n.t('fillUp.lastOdo')">
+    <div class="capture__meter">
+      <p class="capture__label">{{ i18n.t('fillUp.lastOdo') }}</p>
+      <p class="capture__value" role="status">
+        <span class="capture__num">{{
+          i18n.formatNumber(db.car()?.currentOdometer ?? 0, { maximumFractionDigits: 0 })
+        }}</span>
+        <span class="capture__unit">{{ i18n.t('common.km') }}</span>
+      </p>
+    </div>
+
+    @if (lastFillGlance(); as last) {
+      <dl class="capture__facts">
+        <div>
+          <dt>{{ i18n.t('home.lastFill') }}</dt>
+          <dd>{{ last.date }}</dd>
+        </div>
+        <div>
+          <dt>{{ i18n.t('fillUp.liters') }}</dt>
+          <dd>{{ last.liters }}</dd>
+        </div>
+        <div>
+          <dt>{{ i18n.t('fillUp.cost') }}</dt>
+          <dd>{{ last.cost }}</dd>
+        </div>
+        @if (last.economy) {
+          <div>
+            <dt>{{ i18n.t('fuel.lastL100') }}</dt>
+            <dd>{{ last.economy }}</dd>
+          </div>
+        }
+        @if (last.place) {
+          <div class="capture__place">
+            <dt>{{ i18n.t('fillUp.station') }}</dt>
+            <dd>{{ last.place }}</dd>
+          </div>
+        }
+      </dl>
+    }
+
+    @if (logMode() === 'fuel') {
+      <div class="capture__scan" [attr.aria-busy]="ocrBusy()">
+        <input
+          id="receipt-scan-input"
+          class="sr-only"
+          type="file"
+          accept="image/*"
+          capture="environment"
+          (change)="onScanFile($event)"
+        />
+        <input
+          id="receipt-gallery-input"
+          class="sr-only"
+          type="file"
+          accept="image/*"
+          (change)="onScanFile($event)"
+        />
+        <p class="capture__lead">{{ i18n.t('fillUp.scanLead') }}</p>
+        <div class="capture__actions">
+          <button
+            type="button"
+            class="scan-tile"
+            [disabled]="ocrBusy()"
+            (click)="scanSharedOrPick()"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M4.5 8.5h3l1.4-2h6.2l1.4 2h3a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18v-8a1.5 1.5 0 0 1 1.5-1.5z"
+              />
+              <circle cx="12" cy="13.2" r="3" />
+            </svg>
+            <span class="scan-tile__title">{{
+              ocrBusy() ? i18n.t('fillUp.scanBusy') : i18n.t('fillUp.scan')
+            }}</span>
+            <span class="scan-tile__hint">{{ i18n.t('fillUp.scanHint') }}</span>
+          </button>
+          <button
+            type="button"
+            class="scan-tile"
+            [disabled]="ocrBusy()"
+            (click)="pickFromGallery()"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3.5" y="5" width="17" height="14" rx="2" />
+              <path d="M3.5 15.5 7.7 12l3.4 2.6 2.6-1.8 6.8 4.6" />
+              <circle cx="8.5" cy="9.2" r="1.15" fill="currentColor" stroke="none" />
+            </svg>
+            <span class="scan-tile__title">{{ i18n.t('fillUp.scanGallery') }}</span>
+            <span class="scan-tile__hint">{{ i18n.t('fillUp.scanGalleryHint') }}</span>
+          </button>
+        </div>
+        @if (ocrError()) {
+          <p class="error-state" role="alert">{{ ocrError() }}</p>
+        }
+      </div>
+    }
+  </section>
 
   @if (sharedPreviewUrl(); as imgUrl) {
     <section class="card shared-receipt" [attr.aria-label]="i18n.t('fillUp.sharedImage')">
@@ -107,45 +197,6 @@
         </button>
       </div>
     </section>
-  }
-
-  @if (logMode() === 'fuel') {
-    <div class="ocr-bar">
-      <input
-        id="receipt-scan-input"
-        class="sr-only"
-        type="file"
-        accept="image/*"
-        capture="environment"
-        (change)="onScanFile($event)"
-      />
-      <input
-        id="receipt-gallery-input"
-        class="sr-only"
-        type="file"
-        accept="image/*"
-        (change)="onScanFile($event)"
-      />
-      <button
-        type="button"
-        class="ghost-btn"
-        [disabled]="ocrBusy()"
-        (click)="scanSharedOrPick()"
-      >
-        {{ ocrBusy() ? i18n.t('fillUp.scanBusy') : i18n.t('fillUp.scan') }}
-      </button>
-      <button
-        type="button"
-        class="ghost-btn"
-        [disabled]="ocrBusy()"
-        (click)="pickFromGallery()"
-      >
-        {{ i18n.t('fillUp.scanGallery') }}
-      </button>
-      @if (ocrError()) {
-        <p class="error-state" role="alert">{{ ocrError() }}</p>
-      }
-    </div>
   }
 
   @if (ocrStage() === 'review' && ocrCandidates()) {

@@ -17,9 +17,11 @@ import {
 } from '../../domain/fill-up-cost';
 import { countryFromCurrency } from '../../domain/country';
 import { todayDateOnly } from '../../domain/dues';
+import { latestEconomy } from '../../domain/economy';
 import {
   TANK_FALLBACK,
   computeOdometerFromDistance,
+  previousFillForCar,
   validateFillDistance,
 } from '../../domain/fill-up-distance';
 import type { FuelGrade } from '../../domain/models';
@@ -136,6 +138,28 @@ export class FillUpPage {
   readonly softStationDismissed = signal(false);
 
   readonly lastUnit = computed(() => lastFillUnitPriceFromHistory(this.db.fillUps()));
+
+  /** Last logged fill, so the odometer strip can show date, volume, cost, and economy. */
+  readonly lastFillGlance = computed(() => {
+    const car = this.db.car();
+    if (!car) {
+      return null;
+    }
+    const fills = this.db.fillUps().filter((f) => f.id !== this.editId());
+    const last = previousFillForCar(fills, car.id);
+    if (!last) {
+      return null;
+    }
+    const eco = latestEconomy(fills.filter((f) => !f.carId || f.carId === car.id));
+    const currency = last.currency ?? this.db.settings().currency;
+    return {
+      date: this.i18n.formatDate(last.date, { day: 'numeric', month: 'short' }),
+      liters: this.i18n.formatUnit(last.liters, 'common.liters', 1),
+      cost: this.i18n.formatMoney(last.cost, currency),
+      economy: eco ? this.i18n.formatUnit(eco.litersPer100Km, 'common.lPer100', 1) : null,
+      place: last.placeLabel?.trim() || null,
+    };
+  });
 
   readonly stationSuggestions = computed(() => distinctPlaceLabels(this.db.fillUps()));
 
