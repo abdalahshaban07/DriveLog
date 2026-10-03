@@ -18,6 +18,8 @@ export const en = {
   'home.lastFill': 'Last fill',
   'home.glanceStrip': 'At a glance',
   'home.nextDue': 'Next due',
+  'home.kmLeft': '{km} km left',
+  'home.kmOver': '{km} km over',
   'home.nothingDue': 'Nothing due',
   'home.fuelSolar': 'Solar',
   'home.fuelDiesel': 'Diesel',

@@ -31,9 +31,9 @@ import {
   type LedgerPeriodFilter,
   type LedgerRow,
 } from '../../domain/expense-ledger';
-import { fuelDashboardMetrics } from '../../domain/fuel-dashboard';
+import { fuelBoard, fuelDashboardMetrics, sparklineGeometry } from '../../domain/fuel-dashboard';
 import { isStoredMessageKey } from '../../domain/part-name';
-import { buildFuelCostGlance, tankEconomyVsAvg } from '../../domain/economy';
+import { buildFuelCostGlance, tankEconomyVsAvg, TANK_ECONOMY_FLAT_PCT } from '../../domain/economy';
 import {
   costPerKmTrend,
   distanceByMonth,
@@ -45,7 +45,7 @@ import {
   unitPriceTrend,
   type TrendPoint,
 } from '../../domain/insights';
-import type { ExpenseCategory } from '../../domain/models';
+import type { DueSource, DueStatus, ExpenseCategory, FillUp } from '../../domain/models';
 import {
   buildMonthOutlook,
   buildRecommendations,
@@ -211,6 +211,8 @@ export class HomePage {
   readonly ledgerTotals = computed(() => ledgerCategoryTotals(this.ledgerRows()));
   readonly fuelMetrics = computed(() => fuelDashboardMetrics(this.db.fillUps()));
   readonly fuelCostGlance = computed(() => buildFuelCostGlance(this.db.fillUps()));
+  readonly fuelPulse = computed(() => fuelBoard(this.db.fillUps()));
+  readonly pulseSpark = computed(() => sparklineGeometry(this.fuelPulse().series, 168, 64));
   readonly sampleMode = computed(() => this.db.settings().sampleMode === true);
   readonly hasRealFills = computed(() => this.db.fillUps().some(isRealFillUp));
   /** ponytail: empty when no logs at all — domain always returns 4 placeholder cards */
@@ -262,8 +264,8 @@ export class HomePage {
       })),
     }),
   );
-  readonly lastFillDate = computed(() => {
-    let best: { date: string; createdAt: string } | undefined;
+  readonly lastFill = computed((): FillUp | null => {
+    let best: FillUp | undefined;
     for (const fill of this.db.fillUps()) {
       if (
         !best ||
@@ -273,7 +275,7 @@ export class HomePage {
         best = fill;
       }
     }
-    return best?.date ?? null;
+    return best ?? null;
   });
   readonly nextDue = computed(() => {
     const car = this.db.car();
@@ -498,6 +500,125 @@ export class HomePage {
     return dueItemLabel(due, this.db.maintenance(), this.db.catalog(), (key) =>
       this.i18n.t(key as MsgKey),
     );
+  }
+
+  dueRoute(): string {
+    const source = this.nextDue()?.source;
+    if (!source) {
+      return '/maintenance';
+    }
+    return this.routeForDue(source);
+  }
+
+  dueTone(): 'none' | 'ok' | 'soon' | 'overdue' {
+    const status = this.nextDue()?.status;
+    if (!status) {
+      return 'none';
+    }
+    return this.toneForDue(status);
+  }
+
+  dueCountdown(): string | null {
+    const due = this.nextDue();
+    if (!due) {
+      return null;
+    }
+    if (due.dueDate) {
+      const days = daysUntil(due.dueDate, todayDateOnly());
+      if (days === 0) {
+        return this.i18n.t('vault.dueToday');
+      }
+      const n = this.i18n.formatNumber(Math.abs(days), { maximumFractionDigits: 0 });
+      return days < 0
+        ? this.i18n.t('vault.daysOver', { days: n })
+        : this.i18n.t('home.license.days', { days: n });
+    }
+    if (due.dueKm != null) {
+      const left = due.dueKm - (this.db.car()?.currentOdometer ?? 0);
+      const km = this.i18n.formatNumber(Math.abs(left), { maximumFractionDigits: 0 });
+      if (left < 0) {
+        return this.i18n.t('home.kmOver', { km });
+      }
+      if (left === 0) {
+        return this.i18n.t('due.overdue');
+      }
+      return this.i18n.t('home.kmLeft', { km });
+    }
+    return null;
+  }
+
+  /** This month vs last month, as a percent of the larger bar. */
+  spendShare(which: 'current' | 'previous'): number {
+    const glance = this.fuelCostGlance();
+    const value = which === 'current' ? glance.currentMonth : glance.previousMonth;
+    const max = Math.max(glance.currentMonth, glance.previousMonth);
+    if (max <= 0 || value <= 0) {
+      return 0;
+    }
+    return Math.max(8, Math.round((value / max) * 100));
+  }
+
+  economyTone(): 'none' | 'flat' | 'better' | 'worse' {
+    const pct = this.fuelPulse().economyDeltaPct;
+    if (pct == null) {
+      return 'none';
+    }
+    if (Math.abs(pct) < TANK_ECONOMY_FLAT_PCT) {
+      return 'flat';
+    }
+    return pct > 0 ? 'worse' : 'better';
+  }
+
+  economyCaption(): string | null {
+    const tone = this.economyTone();
+    switch (tone) {
+      case 'none':
+        return null;
+      case 'flat':
+        return this.i18n.t('fuel.vsUsualFlat');
+      case 'worse':
+      case 'better': {
+        const abs = this.i18n.formatNumber(Math.abs(this.fuelPulse().economyDeltaPct ?? 0), {
+          maximumFractionDigits: 0,
+        });
+        return tone === 'worse'
+          ? this.i18n.t('fuel.vsUsualWorse', { pct: abs })
+          : this.i18n.t('fuel.vsUsualBetter', { pct: abs });
+      }
+      default: {
+        const _exhaustive: never = tone;
+        return _exhaustive;
+      }
+    }
+  }
+
+  private routeForDue(source: DueSource): string {
+    switch (source) {
+      case 'license':
+      case 'registration':
+        return '/vault';
+      case 'maintenance':
+        return '/maintenance';
+      default: {
+        const _exhaustive: never = source;
+        return _exhaustive;
+      }
+    }
+  }
+
+  private toneForDue(status: DueStatus): 'ok' | 'soon' | 'overdue' {
+    switch (status) {
+      case 'overdue':
+        return 'overdue';
+      case 'dueSoon':
+        return 'soon';
+      case 'future':
+        return 'ok';
+      default: {
+        const _exhaustive: never = status;
+        return _exhaustive;
+      }
+    }
   }
 
   async animateCharts(): Promise<void> {

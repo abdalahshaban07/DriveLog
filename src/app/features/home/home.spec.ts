@@ -100,6 +100,20 @@ describe('HomePage', () => {
     expect(panel).toBeTruthy();
   });
 
+  it('renders the pulse glance and a flat month compare', () => {
+    const fixture = TestBed.createComponent(HomePage);
+    fixture.detectChanges();
+    const page = fixture.componentInstance;
+    expect(fixture.nativeElement.querySelector('.pulse')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.pulse__hero')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.glance-strip')).toBeFalsy();
+    expect(page.spendShare('current')).toBe(0);
+    expect(page.spendShare('previous')).toBe(0);
+    expect(page.dueRoute()).toBe('/maintenance');
+    expect(page.dueTone()).toBe('none');
+    expect(page.economyCaption()).toBeNull();
+  });
+
   it('keeps an empty reports tab free of a spend hero', () => {
     const fixture = TestBed.createComponent(HomePage);
     fixture.componentInstance.view.set('reports');
