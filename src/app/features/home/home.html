@@ -458,6 +458,7 @@
                 [labels]="spendTrendLabels()"
                 [label]="i18n.t('charts.periodSpend')"
               />
+              <p class="chart-card__foot">{{ perMonth(spendTotal(), spendTrend().length) }}</p>
             } @else {
               <p class="chart-card__empty">{{ i18n.t('charts.empty') }}</p>
             }
@@ -483,6 +484,11 @@
                 [reference]="economyAvg()"
                 [label]="i18n.t('home.economy')"
               />
+              @if (economyBest(); as best) {
+                <p class="chart-card__foot">
+                  {{ i18n.t('charts.best') }} {{ i18n.formatUnit(best, 'common.lPer100', 1) }}
+                </p>
+              }
             } @else {
               <p class="chart-card__empty">{{ i18n.t('charts.needDistance') }}</p>
             }
@@ -509,6 +515,9 @@
                 [tickDigits]="2"
                 [label]="i18n.t('home.costPerKm')"
               />
+              @if (costBest(); as best) {
+                <p class="chart-card__foot">{{ i18n.t('charts.best') }} {{ formatCostPerKm(best) }}</p>
+              }
             } @else {
               <p class="chart-card__empty">{{ i18n.t('charts.needDistance') }}</p>
             }
@@ -525,8 +534,77 @@
                 [slices]="fuelGradeSlices()"
                 [label]="i18n.t('charts.fuelGradeShare')"
               />
+              <p class="chart-card__foot">{{ i18n.t('charts.gradeCount', { count: fuelGradeShare().length }) }}</p>
             } @else {
               <p class="chart-card__empty">{{ i18n.t('charts.empty') }}</p>
+            }
+          </div>
+          <div class="chart-card">
+            <span class="chart-card__label">{{ i18n.t('charts.kmDriven') }}</span>
+            <div class="chart-card__head">
+              <strong class="chart-card__value" [class.metric--ghost]="distanceTotal() <= 0">
+                {{ i18n.formatNumber(distanceTotal(), { maximumFractionDigits: 0 }) }}
+                {{ i18n.t('common.km') }}
+              </strong>
+              @if (distanceDelta(); as delta) {
+                <span class="chart-card__delta">{{ formatSigned(delta, 0) }}</span>
+              }
+            </div>
+            @if (distanceValues().length) {
+              <app-bar-chart
+                [values]="distanceValues()"
+                [labels]="distanceLabels()"
+                [label]="i18n.t('charts.kmDriven')"
+              />
+              <p class="chart-card__foot">{{ i18n.t('charts.tripCount', { count: economySeries().length }) }}</p>
+            } @else {
+              <p class="chart-card__empty">{{ i18n.t('charts.needDistance') }}</p>
+            }
+          </div>
+          <div class="chart-card">
+            <span class="chart-card__label">{{ i18n.t('charts.unitPrice') }}</span>
+            <div class="chart-card__head">
+              <strong class="chart-card__value" [class.metric--ghost]="priceLatest() == null">
+                @if (priceLatest(); as latest) {
+                  {{ formatCostPerKm(latest) }}
+                } @else {
+                  {{ i18n.t('home.monthFuelDelta.none') }}
+                }
+              </strong>
+              @if (priceDelta(); as delta) {
+                <span class="chart-card__delta">{{ formatMoneyDelta(delta, 2) }}</span>
+              }
+            </div>
+            @if (priceValues().length >= 1) {
+              <app-line-chart
+                [values]="priceValues()"
+                [labels]="priceLabels()"
+                [reference]="priceAvg()"
+                [tickDigits]="2"
+                [label]="i18n.t('charts.unitPrice')"
+              />
+              @if (priceAvg(); as avg) {
+                <p class="chart-card__foot">{{ i18n.t('charts.avgPrice', { amount: formatCostPerKm(avg) }) }}</p>
+              }
+            } @else {
+              <p class="chart-card__empty">{{ i18n.t('charts.empty') }}</p>
+            }
+          </div>
+          <div class="chart-card">
+            <span class="chart-card__label">{{ i18n.t('charts.stations') }}</span>
+            <div class="chart-card__head">
+              <strong class="chart-card__value" [class.metric--ghost]="!placeSlices().length">
+                {{ placeSlices()[0]?.label || i18n.t('home.monthFuelDelta.none') }}
+              </strong>
+            </div>
+            @if (placeSlices().length) {
+              <app-donut-chart
+                [slices]="placeSlices()"
+                [label]="i18n.t('charts.stations')"
+              />
+              <p class="chart-card__foot">{{ placeSlices()[0]?.detail }}</p>
+            } @else {
+              <p class="chart-card__empty">{{ i18n.t('charts.placesEmpty') }}</p>
             }
           </div>
         </div>
@@ -567,10 +645,38 @@
               ></span>
             </div>
             <ul class="stack-legend">
-              <li>{{ i18n.t('charts.cat.fuel') }} · {{ formatMoney(lt.fuel) }}</li>
-              <li>{{ i18n.t('charts.cat.maintenance') }} · {{ formatMoney(lt.maintenance) }}</li>
-              <li>{{ i18n.t('charts.cat.breakdown') }} · {{ formatMoney(lt.breakdown) }}</li>
-              <li>{{ i18n.t('charts.cat.other') }} · {{ formatMoney(lt.other) }}</li>
+              @if (lt.fuel > 0) {
+                <li>
+                  <span class="stack-legend__swatch stack-bar__seg--fuel"></span>
+                  <span>{{ i18n.t('charts.cat.fuel') }}</span>
+                  <strong>{{ formatMoney(lt.fuel) }}</strong>
+                  <span>{{ sharePct(lt.fuel, lt.total) }}%</span>
+                </li>
+              }
+              @if (lt.maintenance > 0) {
+                <li>
+                  <span class="stack-legend__swatch stack-bar__seg--maint"></span>
+                  <span>{{ i18n.t('charts.cat.maintenance') }}</span>
+                  <strong>{{ formatMoney(lt.maintenance) }}</strong>
+                  <span>{{ sharePct(lt.maintenance, lt.total) }}%</span>
+                </li>
+              }
+              @if (lt.breakdown > 0) {
+                <li>
+                  <span class="stack-legend__swatch stack-bar__seg--break"></span>
+                  <span>{{ i18n.t('charts.cat.breakdown') }}</span>
+                  <strong>{{ formatMoney(lt.breakdown) }}</strong>
+                  <span>{{ sharePct(lt.breakdown, lt.total) }}%</span>
+                </li>
+              }
+              @if (lt.other > 0) {
+                <li>
+                  <span class="stack-legend__swatch stack-bar__seg--other"></span>
+                  <span>{{ i18n.t('charts.cat.other') }}</span>
+                  <strong>{{ formatMoney(lt.other) }}</strong>
+                  <span>{{ sharePct(lt.other, lt.total) }}%</span>
+                </li>
+              }
             </ul>
           </div>
         } @else {

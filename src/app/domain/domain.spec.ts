@@ -562,6 +562,52 @@ describe('insights series', () => {
     ]);
   });
 
+  it('builds distance, price, and station charts without a full tank', async () => {
+    const { distanceByMonth, placeSpendShare, unitPriceTrend } = await import('./insights');
+    const fills = [
+      fill({
+        id: 'a',
+        odometer: 1000,
+        liters: 40,
+        cost: 80,
+        tankFull: false,
+        date: '2026-01-02',
+        placeLabel: 'Shell',
+        unitPrice: 2,
+      }),
+      fill({
+        id: 'b',
+        odometer: 1200,
+        liters: 30,
+        cost: 90,
+        tankFull: false,
+        date: '2026-02-02',
+        placeLabel: 'Total',
+      }),
+      fill({
+        id: 'c',
+        odometer: 1500,
+        liters: 20,
+        cost: 40,
+        tankFull: false,
+        date: '2026-02-20',
+        placeLabel: 'Shell',
+      }),
+    ];
+    expect(distanceByMonth(fills, 'all')).toEqual([
+      { month: '2026-02', value: 500 },
+    ]);
+    expect(unitPriceTrend(fills, 'all')).toEqual([
+      { value: 2, date: '2026-01-02' },
+      { value: 3, date: '2026-02-02' },
+      { value: 2, date: '2026-02-20' },
+    ]);
+    expect(placeSpendShare(fills, 'all')).toEqual([
+      { label: 'Shell', cost: 120 },
+      { label: 'Total', cost: 90 },
+    ]);
+  });
+
   it('groups fuel grade cost share for the period', async () => {
     const { fuelGradeCostShare } = await import('./insights');
     const share = fuelGradeCostShare(

@@ -263,15 +263,22 @@
   margin-block-end: var(--space-4);
 }
 
+@media (min-width: 840px) {
+  .chart-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .chart-card {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   min-height: 14.5rem;
   padding: var(--space-3);
-  border-radius: var(--radius);
+  border-radius: calc(var(--radius) + 4px);
   background: var(--fill-surface, var(--surface));
   border: 1px solid var(--hairline, transparent);
+  border-block-start: 3px solid color-mix(in srgb, var(--fuel) 72%, transparent);
   box-shadow: var(--raise-1, none);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
@@ -297,10 +304,21 @@
 
 .chart-card__delta {
   flex: 0 0 auto;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--fill-well);
   font-size: 0.75rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.chart-card__foot {
+  margin: 0;
   color: var(--muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
 }
 
 .chart-card__empty {
@@ -516,7 +534,7 @@
 
 .stack-bar__track {
   display: flex;
-  height: 0.75rem;
+  height: 1.15rem;
   border-radius: 999px;
   overflow: hidden;
   background: var(--fill-well);
@@ -540,9 +558,27 @@
   padding: 0;
   list-style: none;
   display: grid;
-  gap: var(--space-1);
+  gap: var(--space-2);
   font-size: 0.85rem;
   color: var(--muted);
+}
+
+.stack-legend li {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.stack-legend strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.stack-legend__swatch {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 2px;
 }
 
 /* Flat gapped ledger — Health list rhythm; no soft-elevate cards */
