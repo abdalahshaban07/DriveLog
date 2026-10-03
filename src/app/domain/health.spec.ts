@@ -5,6 +5,8 @@ import { measurementThresholdStatus } from './measurement-intel';
 import {
   attentionCount,
   buildHealthItems,
+  healthScore,
+  lifeRemainingPct,
   sectionForStatus,
 } from './vehicle-health';
 import {
@@ -235,5 +237,26 @@ describe('vehicle-health', () => {
     });
     const c = items.find((i) => i.partDefinitionId === 'custom-1');
     expect(c?.status).toBe('unknown');
+  });
+});
+
+describe('health presentation', () => {
+  it('scores a mix of statuses and clamps remaining life', () => {
+    expect(healthScore([])).toBeNull();
+    expect(healthScore(['good', 'good'])).toBe(100);
+    expect(healthScore(['good', 'due'])).toBe(58);
+    expect(healthScore(['critical'])).toBe(0);
+
+    expect(lifeRemainingPct({ remainingKm: 280, part: { intervalKm: 1_000 } })).toBe(28);
+    expect(
+      lifeRemainingPct({
+        remainingKm: 280,
+        dueKm: 11_000,
+        lastServiceOdo: 10_000,
+        part: { intervalKm: 10_000 },
+      }),
+    ).toBe(28);
+    expect(lifeRemainingPct({ remainingKm: -40, part: { intervalKm: 1_000 } })).toBe(0);
+    expect(lifeRemainingPct({ remainingKm: 100, part: {} })).toBeNull();
   });
 });

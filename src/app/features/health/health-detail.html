@@ -2,30 +2,49 @@
   @if (item(); as it) {
     <app-page-header [title]="label()" [showBack]="true" (back)="router.navigateByUrl('/health')" />
 
-    <section class="card stack health-detail__status" [attr.aria-label]="statusLabel()">
-      <p class="health-detail__badge" [attr.data-status]="it.status">{{ statusLabel() }}</p>
-      <p class="muted">
-        {{ i18n.t('health.detail.source') }} · {{ sourceLabel(it.primarySource) }}
+    <section class="card health-detail__plate" [attr.data-status]="it.status" [attr.aria-label]="statusLabel()">
+      <p class="health-detail__badge" [attr.data-status]="it.status">
+        <span class="health-detail__dot" aria-hidden="true"></span>
+        {{ statusLabel() }}
       </p>
-      @if (it.lastServiceDate) {
-        <p>
-          {{ i18n.t('health.detail.lastService') }} ·
-          {{ i18n.formatDate(it.lastServiceDate, { day: 'numeric', month: 'short', year: 'numeric' }) }}
+      @let pct = lifePct(it);
+      @if (pct != null) {
+        <div class="health-detail__meter" aria-hidden="true">
+          <span [attr.data-status]="it.status" [style.width.%]="pct"></span>
+        </div>
+        <p class="health-detail__pct">
+          {{ i18n.formatNumber(pct / 100, { style: 'percent', maximumFractionDigits: 0 }) }}
         </p>
       }
-      @if (it.remainingKm != null) {
-        <p>
-          {{ i18n.t('health.detail.remaining') }} ·
-          {{ i18n.formatNumber(it.remainingKm, { maximumFractionDigits: 0 }) }}
-          {{ i18n.t('common.km') }}
-        </p>
-      }
-      @if (it.remainingMonths != null) {
-        <p>
-          {{ i18n.t('health.detail.remaining') }} ·
-          {{ i18n.t('health.row.monthsLeft', { n: it.remainingMonths }) }}
-        </p>
-      }
+      <dl class="health-detail__specs">
+        <div>
+          <dt>{{ i18n.t('health.detail.source') }}</dt>
+          <dd>{{ sourceLabel(it.primarySource) }}</dd>
+        </div>
+        @if (it.lastServiceDate) {
+          <div>
+            <dt>{{ i18n.t('health.detail.lastService') }}</dt>
+            <dd>
+              {{ i18n.formatDate(it.lastServiceDate, { day: 'numeric', month: 'short', year: 'numeric' }) }}
+            </dd>
+          </div>
+        }
+        @if (it.remainingKm != null) {
+          <div>
+            <dt>{{ i18n.t('health.detail.remaining') }}</dt>
+            <dd>
+              {{ i18n.formatNumber(it.remainingKm, { maximumFractionDigits: 0 }) }}
+              {{ i18n.t('common.km') }}
+            </dd>
+          </div>
+        }
+        @if (it.remainingMonths != null) {
+          <div>
+            <dt>{{ i18n.t('health.detail.remaining') }}</dt>
+            <dd>{{ i18n.t('health.row.monthsLeft', { n: it.remainingMonths }) }}</dd>
+          </div>
+        }
+      </dl>
     </section>
 
     @if (it.reasons.length) {

@@ -375,3 +375,40 @@ export function sectionForStatus(
 export function attentionCount(items: readonly HealthItem[]): number {
   return items.filter((i) => sectionForStatus(i.status) === 'attention').length;
 }
+
+/** Weighted 0–100. ponytail: fixed status weights, not a wear model — swap the table if scoring should follow interval life. */
+const SCORE_WEIGHT: Record<HealthStatus, number> = {
+  good: 100,
+  soon: 62,
+  inspect: 48,
+  unknown: 36,
+  due: 16,
+  overdue: 6,
+  critical: 0,
+};
+
+export function healthScore(statuses: readonly HealthStatus[]): number | null {
+  if (statuses.length === 0) return null;
+  const sum = statuses.reduce((total, status) => total + SCORE_WEIGHT[status], 0);
+  return Math.round(sum / statuses.length);
+}
+
+/** Remaining life 0–100. Uses the due span when we have one, otherwise the part interval. */
+export function lifeRemainingPct(item: {
+  remainingKm?: number;
+  dueKm?: number;
+  lastServiceOdo?: number;
+  part: {
+    userIntervalKm?: number;
+    manufacturerIntervalKm?: number;
+    intervalKm?: number;
+  };
+}): number | null {
+  const span =
+    item.dueKm != null && item.lastServiceOdo != null && item.dueKm > item.lastServiceOdo
+      ? item.dueKm - item.lastServiceOdo
+      : (item.part.userIntervalKm ?? item.part.manufacturerIntervalKm ?? item.part.intervalKm);
+  if (item.remainingKm == null || span == null || !(span > 0)) return null;
+  const ratio = Math.max(0, item.remainingKm) / span;
+  return Math.max(0, Math.min(100, Math.round(ratio * 100)));
+}

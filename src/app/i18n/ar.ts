@@ -829,6 +829,7 @@ export const ar: Record<MsgKey, string> = {
   'health.empty': 'مفيش قطع نشطة. سجّل صيانة أو فعّل قطع من الكتالوج.',
   'health.attentionCount': '{count} محتاجين اهتمام',
   'health.summary.ok': 'كل حاجة تمام دلوقتي',
+  'health.score': 'التقييم',
   'health.insight.title': 'لمحة الصحة',
   'health.insight.refresh': 'حدّث اللمحة',
   'health.insight.onDevice': 'ملخص على الجهاز فقط',

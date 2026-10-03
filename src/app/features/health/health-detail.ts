@@ -4,6 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
 import { Db } from '../../data/db';
 import { ROUTINE_CHECK_PART_ID } from '../../domain/part-catalog';
+import { lifeRemainingPct, type HealthItem } from '../../domain/vehicle-health';
 import { homeHealthSummary } from '../../domain/vehicle-facts';
 import type { HealthSource } from '../../domain/models';
 import type { MsgKey } from '../../i18n/en';
@@ -41,6 +42,10 @@ export class HealthDetailPage {
       return this.i18n.t(p.name as MsgKey);
     }
     return p.name ?? p.id;
+  }
+
+  lifePct(item: HealthItem): number | null {
+    return lifeRemainingPct(item);
   }
 
   statusLabel(): string {

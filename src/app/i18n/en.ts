@@ -826,6 +826,7 @@ export const en = {
   'health.empty': 'No active parts yet. Log maintenance or enable parts from the catalog.',
   'health.attentionCount': '{count} need attention',
   'health.summary.ok': 'All clear for now',
+  'health.score': 'Score',
   'health.insight.title': 'Health insight',
   'health.insight.refresh': 'Refresh insight',
   'health.insight.onDevice': 'On-device summary only',

@@ -5,54 +5,93 @@
     (back)="router.navigateByUrl('/more')"
   />
 
-  <div class="health__glance" role="status">
-    <p class="health__lead">
-      @if (attentionCount() > 0) {
-        {{ i18n.t('health.attentionCount', { count: attentionCount() }) }}
-      } @else {
-        {{ i18n.t('health.summary.ok') }}
+  <section class="card card--paper health__hero" [attr.aria-label]="i18n.t('health.title')">
+    <div class="health__hero-top" [class.health__hero-top--solo]="score() == null">
+      @if (score() != null) {
+        <div
+          class="health__ring"
+          role="img"
+          [attr.data-tone]="tone()"
+          [style.--p]="score() + '%'"
+          [attr.aria-label]="i18n.t('health.score') + ' ' + i18n.formatNumber(score()!)"
+        >
+          <span class="health__ring-copy">
+            <span class="health__score">{{ i18n.formatNumber(score()!) }}</span>
+            <span class="health__score-label">{{ i18n.t('health.score') }}</span>
+          </span>
+        </div>
       }
-    </p>
+      <div class="health__hero-copy">
+        <p class="health__lead">
+          @if (attentionCount() > 0) {
+            {{ i18n.t('health.attentionCount', { count: attentionCount() }) }}
+          } @else {
+            {{ i18n.t('health.summary.ok') }}
+          }
+        </p>
+        @if (nextUp(); as next) {
+          <p class="health__next">
+            <span class="health__next-kicker">{{ i18n.t('home.nextDue') }}</span>
+            <a [routerLink]="['/health', next.partDefinitionId]">{{ partLabel(next) }}</a>
+            @if (next.remainingKm != null) {
+              <span class="health__next-km">
+                {{ i18n.formatNumber(next.remainingKm, { maximumFractionDigits: 0 }) }}
+                {{ i18n.t('common.km') }}
+              </span>
+            } @else if (next.remainingMonths != null) {
+              <span class="health__next-km">
+                {{ i18n.t('health.row.monthsLeft', { n: next.remainingMonths }) }}
+              </span>
+            }
+          </p>
+        }
+        <p class="health__privacy">{{ i18n.t('privacy.onDevice') }}</p>
+      </div>
+    </div>
+
     <ul class="health__counts" [attr.aria-label]="i18n.t('health.title')">
       @for (sec of sections; track sec.key) {
-        <li class="health__count" [attr.data-section]="sec.key">
-          <span class="health__count-num">{{ grouped()[sec.key].length }}</span>
-          <span class="health__count-label">{{ i18n.t(sec.glance) }}</span>
+        <li>
+          <button
+            type="button"
+            class="health__count"
+            [attr.data-section]="sec.key"
+            [attr.aria-pressed]="focus() === sec.key"
+            (click)="toggleFocus(sec.key)"
+          >
+            <span class="health__count-num">{{ i18n.formatNumber(grouped()[sec.key].length) }}</span>
+            <span class="health__count-label">{{ i18n.t(sec.glance) }}</span>
+          </button>
         </li>
       }
     </ul>
-  </div>
+  </section>
 
-  <section
-    class="health__insight tip-strip card"
-    [attr.aria-label]="i18n.t('health.insight.title')"
-  >
-    <div class="tip-strip__head">
-      <p class="tip-strip__label">{{ i18n.t('health.insight.title') }}</p>
+  <section class="card health__insight" [attr.aria-label]="i18n.t('health.insight.title')">
+    <div class="health__insight-head">
+      <p class="health__insight-label">{{ i18n.t('health.insight.title') }}</p>
+      @if (online()) {
+        <button
+          type="button"
+          class="health__insight-refresh"
+          [disabled]="insightBusy()"
+          (click)="loadInsight(true)"
+        >
+          {{ i18n.t('health.insight.refresh') }}
+        </button>
+      }
     </div>
     @if (insightBusy()) {
-      <p class="tip-strip__text">{{ i18n.t('common.loading') }}</p>
+      <p class="health__insight-text">{{ i18n.t('common.loading') }}</p>
     } @else if (insight()) {
-      <p class="tip-strip__text">{{ insight() }}</p>
-      <p class="tip-strip__hint">{{ i18n.t('health.insight.sourceRemote') }}</p>
+      <p class="health__insight-text">{{ insight() }}</p>
+      <p class="health__insight-hint">{{ i18n.t('health.insight.sourceRemote') }}</p>
     } @else {
-      <p class="tip-strip__text tip-strip__text--muted">
+      <p class="health__insight-text health__insight-text--muted">
         {{ i18n.t('health.insight.onDevice') }}
       </p>
     }
-    @if (online()) {
-      <button
-        type="button"
-        class="tip-strip__refresh"
-        [disabled]="insightBusy()"
-        (click)="loadInsight(true)"
-      >
-        {{ i18n.t('health.insight.refresh') }}
-      </button>
-    }
   </section>
-
-  <p class="health__privacy" role="status">{{ i18n.t('privacy.onDevice') }}</p>
 
   <div class="health__actions">
     <a routerLink="/maintenance" class="health__cta">{{ i18n.t('health.detail.logService') }}</a>
@@ -63,22 +102,27 @@
     <p class="empty-state">{{ i18n.t('health.empty') }}</p>
   }
 
-  @for (sec of sections; track sec.key) {
-    @if (grouped()[sec.key].length) {
+  @for (sec of visibleSections(); track sec.key) {
+    @if (focus() !== null || grouped()[sec.key].length) {
       <section class="health__block" [attr.aria-label]="i18n.t(sec.title)">
         <h2 class="health__section-title" [attr.data-section]="sec.key">
-          {{ i18n.t(sec.title) }}
+          <span class="health__section-name">
+            <span class="health__pip" aria-hidden="true"></span>
+            {{ i18n.t(sec.title) }}
+          </span>
           <span class="health__section-count" [attr.data-section]="sec.key">
-            {{ grouped()[sec.key].length }}
+            {{ i18n.formatNumber(grouped()[sec.key].length) }}
           </span>
         </h2>
-        <ul class="health__list list-reveal">
-          @for (item of grouped()[sec.key]; track item.partDefinitionId) {
-            <li>
-              <app-health-row [item]="item" />
-            </li>
-          }
-        </ul>
+        @if (grouped()[sec.key].length) {
+          <ul class="health__list list-reveal">
+            @for (item of grouped()[sec.key]; track item.partDefinitionId) {
+              <li>
+                <app-health-row [item]="item" [rich]="true" />
+              </li>
+            }
+          </ul>
+        }
       </section>
     }
   }
