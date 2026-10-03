@@ -10,33 +10,81 @@
 
   @switch (doc) {
     @case ('help') {
-      <p class="support__meta">{{ i18n.t('help.count', { n: faq.length }) }}</p>
-      <p class="support__hint">{{ i18n.t('help.hint') }}</p>
+      <section class="guide card card--dark" [attr.aria-label]="i18n.t('help.title')">
+        <div class="guide__intro">
+          <p class="guide__n" aria-hidden="true">{{ countLabel() }}</p>
+          <div class="guide__copy">
+            <p class="support__meta">{{ i18n.t('help.count', { n: faq.length }) }}</p>
+            <p class="support__hint">{{ i18n.t('help.hint') }}</p>
+          </div>
+        </div>
+        <ul class="guide__facts">
+          <li>{{ i18n.t('help.fact.device') }}</li>
+          <li>{{ i18n.t('help.fact.account') }}</li>
+          <li>{{ i18n.t('help.fact.offline') }}</li>
+        </ul>
+        <label class="guide__search">
+          <span class="sr-only">{{ i18n.t('help.search') }}</span>
+          <input
+            type="search"
+            [value]="query()"
+            [attr.placeholder]="i18n.t('help.searchPh')"
+            [attr.aria-label]="i18n.t('help.search')"
+            autocomplete="off"
+            (input)="onQuery($event)"
+          />
+        </label>
+      </section>
+
       <p class="sr-only" role="status" aria-live="polite">{{ faqStatus() }}</p>
 
-      <div class="support__ledger list-reveal">
-        @for (item of faq; track item.q) {
-          <details
-            class="disclosure"
-            [open]="openFaq() === item.q"
-            (toggle)="onFaqToggle(item.q, $event)"
-          >
-            <summary>{{ i18n.t(item.q) }}</summary>
-            <div class="disclosure__body">
-              <p class="faq__a">{{ i18n.t(item.a) }}</p>
-            </div>
-          </details>
-        }
-      </div>
+      @if (faqGroups().length === 0) {
+        <p class="support__empty" role="status">{{ i18n.t('help.empty') }}</p>
+      } @else {
+        <div class="support__ledger list-reveal">
+          @for (group of faqGroups(); track group.id) {
+            <section class="faq-group" [attr.aria-label]="i18n.t(group.labelKey)">
+              <h2 class="faq-group__title">{{ i18n.t(group.labelKey) }}</h2>
+              <div class="faq-group__list">
+                @for (item of group.items; track item.q) {
+                  <details
+                    class="disclosure"
+                    [open]="openFaq() === item.q"
+                    (toggle)="onFaqToggle(item.q, $event)"
+                  >
+                    <summary>
+                      <span class="faq__n">{{ faqIndex(item.q) }}</span>
+                      <span class="faq__q">{{ i18n.t(item.q) }}</span>
+                    </summary>
+                    <div class="disclosure__body">
+                      <div class="faq__slip">
+                        <p class="faq__a">{{ i18n.t(item.a) }}</p>
+                        @if (item.steps; as steps) {
+                          <ol class="faq__steps">
+                            @for (step of steps; track step) {
+                              <li>{{ i18n.t(step) }}</li>
+                            }
+                          </ol>
+                        }
+                        @if (item.go; as go) {
+                          <a class="faq__go" [routerLink]="faqDest[go].link">
+                            {{ i18n.t(faqDest[go].labelKey) }}
+                          </a>
+                        }
+                      </div>
+                    </div>
+                  </details>
+                }
+              </div>
+            </section>
+          }
+        </div>
+      }
     }
     @case ('legal') {
       <nav class="jump" [attr.aria-label]="i18n.t('legal.jump')">
         @for (section of legal; track section.id) {
-          <a
-            class="jump__link"
-            [href]="'#' + section.id"
-            (click)="onJump($event, section.id)"
-          >
+          <a class="jump__link" [href]="'#' + section.id" (click)="onJump($event, section.id)">
             {{ i18n.t(section.headingKey) }}
           </a>
         }
@@ -69,10 +117,15 @@
     }
     @case ('about') {
       <div class="support__ledger list-reveal">
-        <section class="about-card card--paper" [attr.aria-label]="i18n.t('about.title')">
+        <section class="about-card card card--dark" [attr.aria-label]="i18n.t('about.title')">
           <p class="about-card__eyebrow">{{ i18n.t('app.name') }}</p>
           <p class="about-card__version">{{ i18n.t('about.version', { version }) }}</p>
           <p class="about-card__body">{{ i18n.t('about.localFirst') }}</p>
+          <ul class="guide__facts">
+            <li>{{ i18n.t('help.fact.device') }}</li>
+            <li>{{ i18n.t('help.fact.account') }}</li>
+            <li>{{ i18n.t('help.fact.offline') }}</li>
+          </ul>
         </section>
         <nav class="about-links" [attr.aria-label]="i18n.t('more.group.support')">
           <a class="line" routerLink="/settings/features">
@@ -109,11 +162,7 @@
           <p class="contact-topics__label" id="contact-topic-label">
             {{ i18n.t('contact.topic') }}
           </p>
-          <div
-            class="contact-chips"
-            role="radiogroup"
-            aria-labelledby="contact-topic-label"
-          >
+          <div class="contact-chips" role="radiogroup" aria-labelledby="contact-topic-label">
             @for (opt of contactTopics; track opt.value) {
               <button
                 type="button"
@@ -123,7 +172,8 @@
                 [class.contact-chip--on]="contactTopic() === opt.value"
                 (click)="onContactTopic(opt.value)"
               >
-                {{ i18n.t(opt.labelKey) }}
+                <span class="contact-chip__title">{{ i18n.t(opt.labelKey) }}</span>
+                <span class="contact-chip__body">{{ i18n.t(opt.bodyKey) }}</span>
               </button>
             }
           </div>
