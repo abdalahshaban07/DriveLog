@@ -7,7 +7,7 @@ import {
   startNewPeriod,
 } from './expense-period';
 import { buildExpenseLedger, ledgerCategoryTotals } from './expense-ledger';
-import { fuelDashboardMetrics } from './fuel-dashboard';
+import { fuelBoard, fuelDashboardMetrics, sparklineGeometry } from './fuel-dashboard';
 import {
   addMilestoneAfter,
   completeTask,
@@ -183,5 +183,54 @@ describe('fuel-dashboard', () => {
     expect(m.lastL100).toBe(9);
     expect(m.costPerKm).toBeCloseTo(0.27, 2);
     expect(m.lastKmPerL).toBeCloseTo(100 / 9, 5);
+  });
+
+  it('builds a month ledger and a real average from per-fill distance', () => {
+    const now = new Date(2026, 9, 3);
+    const fills: FillUp[] = [
+      {
+        id: 'a',
+        odometer: 1000,
+        distanceKm: 400,
+        liters: 40,
+        cost: 800,
+        tankFull: true,
+        fuelGrade: 'gasoline92',
+        date: '2026-09-02',
+        createdAt: 'a',
+        updatedAt: 'a',
+      },
+      {
+        id: 'b',
+        odometer: 1500,
+        distanceKm: 500,
+        liters: 40,
+        cost: 900,
+        tankFull: true,
+        fuelGrade: 'gasoline95',
+        date: '2026-10-02',
+        createdAt: 'b',
+        updatedAt: 'b',
+      },
+    ];
+    const board = fuelBoard(fills, 'all', now);
+    expect(board.monthSpend).toBe(900);
+    expect(board.monthLiters).toBe(40);
+    expect(board.monthCount).toBe(1);
+    expect(board.previousSpend).toBe(800);
+    expect(board.deltaPct).toBeCloseTo(12.5, 5);
+    expect(board.lastL100).toBe(8);
+    expect(board.overallL100).toBeCloseTo((80 / 900) * 100, 5);
+    expect(board.series).toEqual([10, 8]);
+    expect(board.l100ByFillId.get('b')).toBe(8);
+    expect(fuelBoard(fills, 'gasoline95', now).monthCount).toBe(1);
+    expect(fuelBoard(fills, 'gasoline92', now).monthSpend).toBe(0);
+
+    const flat = sparklineGeometry([8, 8]);
+    const rising = sparklineGeometry([8, 10]);
+    expect(flat).not.toBeNull();
+    expect(rising).not.toBeNull();
+    expect(flat!.y).toBeGreaterThan(rising!.y);
+    expect(sparklineGeometry([8])).toBeNull();
   });
 });
