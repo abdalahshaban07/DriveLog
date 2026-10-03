@@ -1,10 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
 import {
@@ -39,13 +33,11 @@ import {
   type ReceiptCandidates,
   type ReceiptPick,
 } from '../../domain/receipt-ocr';
+import { readPumpFromBlob } from '../../domain/pump-lcd';
 import { ocrReceiptImage } from '../../domain/receipt-ocr-worker';
 import { ConfirmBar } from '../../ui/confirm-bar';
 import { DateField } from '../../ui/date-field';
-import {
-  buildGradeOptions,
-  FuelGradeSelector,
-} from '../../ui/fuel-grade-selector';
+import { buildGradeOptions, FuelGradeSelector } from '../../ui/fuel-grade-selector';
 import { NumericField } from '../../ui/numeric-field';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
@@ -182,23 +174,17 @@ export class FillUpPage {
       : this.i18n.t('fillUp.distanceKm'),
   );
 
-  readonly tankCapacity = computed(
-    () => this.db.car()?.tankCapacityLiters ?? TANK_FALLBACK,
-  );
+  readonly tankCapacity = computed(() => this.db.car()?.tankCapacityLiters ?? TANK_FALLBACK);
 
   readonly showTankHint = computed(() => this.db.car()?.tankCapacityLiters == null);
 
-  readonly gradeOptions = computed(() =>
-    buildGradeOptions(this.fuelPrices(), GRADE_KEYS),
-  );
+  readonly gradeOptions = computed(() => buildGradeOptions(this.fuelPrices(), GRADE_KEYS));
 
   readonly needsManualPrice = computed(() =>
     needsManualUnitPrice(this.fuelGrade(), this.fuelPrices()),
   );
 
-  readonly pricesUnavailable = computed(
-    () => this.pricesReady() && this.fuelPrices() == null,
-  );
+  readonly pricesUnavailable = computed(() => this.pricesReady() && this.fuelPrices() == null);
 
   readonly unitPrice = computed(() => {
     const manual = Number(this.manualUnitPrice());
@@ -406,10 +392,7 @@ export class FillUpPage {
     this.ocrBusy.set(true);
     this.ocrError.set('');
     this.ocrStage.set('idle');
-    try {
-      const text = await ocrReceiptImage(image);
-      const candidates = parseReceiptText(text);
-      const pick = bestReceiptPick(candidates);
+    const show = (candidates: ReceiptCandidates, pick: ReceiptPick) => {
       this.ocrCandidates.set(candidates);
       this.ocrPick.set(pick);
       this.ocrStage.set('review');
@@ -417,6 +400,29 @@ export class FillUpPage {
         this.sharedBlob.set(image);
         this.sharedPreviewUrl.set(URL.createObjectURL(image));
       }
+    };
+    try {
+      const lcd = await readPumpFromBlob(image).catch(() => null);
+      if (lcd) {
+        show(
+          {
+            liters: [lcd.liters],
+            unitPrice: [lcd.unitPrice],
+            total: [lcd.total],
+            raw: lcd.raw,
+            labels: {
+              liters: [lcd.liters],
+              unitPrice: [lcd.unitPrice],
+              total: [lcd.total],
+            },
+          },
+          { liters: lcd.liters, unitPrice: lcd.unitPrice, total: lcd.total },
+        );
+        return;
+      }
+      const text = await ocrReceiptImage(image);
+      const candidates = parseReceiptText(text);
+      show(candidates, bestReceiptPick(candidates));
     } catch {
       this.ocrError.set(this.i18n.t('fillUp.scanFailed'));
     } finally {
@@ -719,13 +725,11 @@ export class FillUpPage {
     const existing = this.editId()
       ? this.db.fillUps().find((f) => f.id === this.editId())
       : undefined;
-    const persistDistance =
-      !existing || existing.distanceKm != null || this.distanceTouched();
+    const persistDistance = !existing || existing.distanceKm != null || this.distanceTouched();
 
     const station = this.placeLabel().trim() || undefined;
     const selected = this.fuelNearby().find((p) => p.id === this.selectedStationId());
-    const wasFirstReal =
-      !this.editId() && !this.db.fillUps().some(isRealFillUp);
+    const wasFirstReal = !this.editId() && !this.db.fillUps().some(isRealFillUp);
     const sampleMode = this.db.settings().sampleMode === true;
 
     this.saving.set(true);
