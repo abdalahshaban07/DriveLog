@@ -36,9 +36,9 @@
 }
 
 .grades__btn--on {
-  background: var(--fill-surface);
-  color: var(--text);
-  box-shadow: var(--shadow-soft);
+  background: var(--cta);
+  color: var(--cta-text);
+  box-shadow: none;
 }
 
 .grades__btn:active {
@@ -80,9 +80,15 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-3);
+  margin-block-start: var(--space-3);
+  padding: var(--space-4);
+  border-radius: calc(var(--radius) - 2px);
+  background: var(--card-dark);
+  color: var(--card-dark-text);
 }
 
 .ledger__amount {
+  color: var(--card-dark-text);
   font-size: clamp(1.85rem, 9vw, 2.7rem);
   font-weight: 700;
   letter-spacing: -0.045em;
@@ -98,8 +104,8 @@
   min-height: 32px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--paper-text) 6%, transparent);
-  color: var(--paper-text);
+  background: color-mix(in srgb, var(--card-dark-text) 14%, transparent);
+  color: var(--card-dark-text);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   font-size: 0.9rem;
@@ -190,6 +196,11 @@ a.slip {
   line-height: 1.05;
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
+}
+
+.slip__figure:first-child strong {
+  font-size: clamp(2rem, 8vw, 2.65rem);
+  letter-spacing: -0.04em;
 }
 
 .slip__figure--end {
