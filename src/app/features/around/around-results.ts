@@ -31,7 +31,12 @@ export class AroundResults {
   readonly retry = output<void>();
 
   readonly list = computed(() => filterAroundPois(this.items(), this.kind()));
-
+  readonly fuelCount = computed(
+    () => this.items().filter((poi) => poi.kind === 'fuel').length,
+  );
+  readonly chargeCount = computed(
+    () => this.items().filter((poi) => poi.kind === 'charge').length,
+  );
 
   mapsUrl(poi: NearbyPoi): string {
     return mapsSearchUrl(poi.lat, poi.lon, this.i18n.language());
@@ -53,5 +58,20 @@ export class AroundResults {
       return this.i18n.t('around.connectorSlow');
     }
     return this.i18n.t('around.connectorMedium');
+  }
+
+  brandLabel(poi: NearbyPoi): string {
+    const brand = poi.brand?.trim() ?? '';
+    if (!brand || brand.toLowerCase() === poi.name.trim().toLowerCase()) {
+      return '';
+    }
+    return brand;
+  }
+
+  fuelBits(poi: NearbyPoi): string[] {
+    return (poi.detail ?? '')
+      .split('·')
+      .map((bit) => bit.trim())
+      .filter(Boolean);
   }
 }
