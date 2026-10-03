@@ -1,19 +1,47 @@
-<div class="stack more">
-  <app-page-header [title]="i18n.t('more.title')" />
+<div class="stack more list-reveal">
+  <app-page-header [title]="i18n.t('more.title')" [subtitle]="i18n.t('more.lead')" />
 
-  @for (section of sections(); track section.headingKey) {
-    <section class="card list" [attr.aria-label]="i18n.t(section.headingKey)">
-      <p class="section-label">{{ i18n.t(section.headingKey) }}</p>
-      @for (item of section.items; track item.labelKey) {
-        <a class="line" [routerLink]="item.route">
-          <span class="line__text">
-            <strong>{{ i18n.t(item.labelKey) }}</strong>
-          </span>
-          <svg class="line__go" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M9 6l6 6-6 6" />
-          </svg>
-        </a>
-      }
+  @if (carLine(); as car) {
+    <p class="car-chip">
+      <span class="car-chip__dot" aria-hidden="true"></span>
+      {{ car }}
+    </p>
+  }
+
+  @for (section of sections(); track section.headingKey; let i = $index) {
+    <section class="group" [attr.aria-labelledby]="'more-' + i">
+      <h2 class="group__label" [id]="'more-' + i">
+        <span class="group__index">{{ sectionIndex(i) }}</span>
+        {{ i18n.t(section.headingKey) }}
+      </h2>
+      <div
+        class="panel"
+        [class.panel--feature]="section.layout === 'feature'"
+        [class.panel--duo]="section.layout === 'duo'"
+      >
+        @for (item of section.items; track item.labelKey) {
+          <a
+            class="line"
+            [class.line--feature]="section.layout === 'feature'"
+            [routerLink]="item.route"
+          >
+            <span class="mark" [attr.data-tone]="item.tone">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                @for (d of iconPaths(item.icon); track $index) {
+                  <path [attr.d]="d" />
+                }
+              </svg>
+            </span>
+            <span class="line__text">
+              <strong>{{ i18n.t(item.labelKey) }}</strong>
+              <span class="line__hint">{{ i18n.t(item.hintKey) }}</span>
+            </span>
+            <svg class="line__go" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 6l6 6-6 6" />
+            </svg>
+          </a>
+        }
+      </div>
     </section>
   }
 </div>
