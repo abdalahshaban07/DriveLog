@@ -41,7 +41,29 @@ const PAT: Record<string, string> = {
 
 type Box = { x0: number; y0: number; x1: number; y1: number };
 
+function percentile(lum: Uint8Array, p: number): number {
+  const step = Math.max(1, Math.floor(lum.length / 20000));
+  const sample: number[] = [];
+  for (let i = 0; i < lum.length; i += step) {
+    sample.push(lum[i]!);
+  }
+  sample.sort((a, b) => a - b);
+  return sample[Math.min(sample.length - 1, Math.floor((sample.length - 1) * p))]!;
+}
+
 function findLcd(lum: Uint8Array, w: number, h: number): Box | null {
+  const bright = percentile(lum, 0.9);
+  // Phone decodes shift the backlight. Follow the bright tail instead of a fixed 170.
+  for (const cut of [bright * 0.92, bright * 0.78, bright * 0.64]) {
+    const box = findBrightBox(lum, w, h, cut);
+    if (box && box.x1 - box.x0 > w * 0.18 && box.y1 - box.y0 > h * 0.08) {
+      return box;
+    }
+  }
+  return null;
+}
+
+function findBrightBox(lum: Uint8Array, w: number, h: number, cut: number): Box | null {
   const step = 8;
   const cw = Math.floor(w / step);
   const ch = Math.floor(h / step);
@@ -58,7 +80,7 @@ function findLcd(lum: Uint8Array, w: number, h: number): Box | null {
       for (let yy = 0; yy < step; yy++) {
         const row = (yBase + yy) * w + xBase;
         for (let xx = 0; xx < step; xx++) {
-          if (lum[row + xx]! > 170) {
+          if (lum[row + xx]! > cut) {
             c++;
           }
         }
@@ -123,18 +145,28 @@ function findLcd(lum: Uint8Array, w: number, h: number): Box | null {
   };
 }
 
-function readRows(lum: Uint8Array, w: number, h: number, panel: Box): string[] | null {
+function readRows(lum: Uint8Array, w: number, panel: Box): string[] | null {
   const cw = panel.x1 - panel.x0;
   const ch = panel.y1 - panel.y0;
   if (cw < 40 || ch < 40) {
     return null;
   }
+  const sample: number[] = [];
+  const stride = Math.max(1, Math.floor((cw * ch) / 8000));
+  for (let i = 0; i < cw * ch; i += stride) {
+    const y = Math.floor(i / cw);
+    const x = i - y * cw;
+    sample.push(lum[(panel.y0 + y) * w + panel.x0 + x]!);
+  }
+  sample.sort((a, b) => a - b);
+  const bg = sample[Math.floor(sample.length / 2)]!;
+  const inkCut = bg * 0.72;
   const ink = new Uint8Array(cw * ch);
   for (let y = 0; y < ch; y++) {
     const src = (panel.y0 + y) * w + panel.x0;
     const dst = y * cw;
     for (let x = 0; x < cw; x++) {
-      if (lum[src + x]! < 150) {
+      if (lum[src + x]! < inkCut) {
         ink[dst + x] = 1;
       }
     }
@@ -163,7 +195,9 @@ function readRows(lum: Uint8Array, w: number, h: number, panel: Box): string[] |
     sm[y] = s;
     if (s > smMax) smMax = s;
   }
-  const thr = smMax * 0.15;
+  // 0.10 keeps a digit's waist inside the row. 0.15 splits 24.00 into a top half
+  // on a small photo, and the lower half is then too short to keep.
+  const thr = smMax * 0.1;
   const bands: Array<[number, number]> = [];
   let open = -1;
   for (let y = 0; y < ch; y++) {
@@ -171,17 +205,27 @@ function readRows(lum: Uint8Array, w: number, h: number, panel: Box): string[] |
       open = y;
     } else if ((sm[y]! <= thr || y === ch - 1) && open >= 0) {
       const end = sm[y]! <= thr ? y : ch;
-      if (end - open > 40) {
+      if (end - open > Math.max(16, ch * 0.1)) {
         bands.push([open, end]);
       }
       open = -1;
     }
   }
 
+  // A 7-seg digit has a gap in the middle. On a small photo that gap splits one row in two.
+  const joined: Array<[number, number]> = [];
+  for (const band of bands) {
+    const prev = joined[joined.length - 1];
+    if (prev && band[0] - prev[1] <= Math.max(3, (prev[1] - prev[0]) * 0.15)) {
+      prev[1] = band[1];
+    } else {
+      joined.push([band[0], band[1]]);
+    }
+  }
   const texts: string[] = [];
-  for (const [by0, by1] of bands) {
+  for (const [by0, by1] of joined) {
     const rh = by1 - by0;
-    const vthr = Math.max(4, Math.trunc(rh * 0.12));
+    const vthr = Math.max(3, Math.trunc(rh * 0.12));
     const gs: Array<[number, number]> = [];
     let g0 = -1;
     for (let x = 0; x < cw; x++) {
@@ -192,7 +236,7 @@ function readRows(lum: Uint8Array, w: number, h: number, panel: Box): string[] |
       if (v >= vthr && g0 < 0) {
         g0 = x;
       } else if (v < vthr && g0 >= 0) {
-        if (x - g0 > 5) {
+        if (x - g0 > Math.max(2, Math.trunc(rh * 0.04))) {
           gs.push([g0, x - 1]);
         }
         g0 = -1;
@@ -203,31 +247,35 @@ function readRows(lum: Uint8Array, w: number, h: number, panel: Box): string[] |
     }
     const widths = gs
       .map(([a, b]) => b - a)
-      .filter((width) => width >= 40)
+      .filter((width) => width >= rh * 0.28 && width <= rh * 0.9)
       .sort((a, b) => a - b);
-    const dw = widths.length ? widths[Math.floor(widths.length / 2)]! : 70;
+    const dw = widths.length
+      ? widths[Math.floor(widths.length / 2)]!
+      : Math.max(8, Math.round(rh * 0.5));
+    // A "4" has a gap between the stems, so one digit arrives as two or three pieces.
     const merged: Array<[number, number]> = [];
     for (let i = 0; i < gs.length; i++) {
-      const a = gs[i]!;
-      const b = gs[i + 1];
-      if (
-        b &&
-        a[1] - a[0] < dw * 0.65 &&
-        b[1] - b[0] < dw * 0.65 &&
-        b[1] - a[0] < dw * 1.25 &&
-        b[0] - a[1] < dw * 0.45
-      ) {
-        merged.push([a[0], b[1]]);
-        i++;
-      } else {
-        merged.push(a);
+      let a0 = gs[i]![0];
+      let a1 = gs[i]![1];
+      while (i + 1 < gs.length) {
+        const b = gs[i + 1]!;
+        const gap = b[0] - a1;
+        const span = b[1] - a0;
+        if (gap < dw * 0.35 && span < dw * 1.25 && b[1] - b[0] < dw * 0.9 && a1 - a0 < dw * 0.9) {
+          a1 = b[1];
+          i++;
+          continue;
+        }
+        break;
       }
+      merged.push([a0, a1]);
     }
     let glyphs = merged;
     if (glyphs.length >= 2 && glyphs[1]![0] - glyphs[0]![1] > dw * 1.2) {
       glyphs = glyphs.slice(1);
     }
-    glyphs = glyphs.filter(([a, b]) => b - a > dw * 0.22 && a > 8 && b < cw - 8);
+    const edge = Math.max(2, Math.round(dw * 0.08));
+    glyphs = glyphs.filter(([a, b]) => b - a > dw * 0.22 && a > edge && b < cw - edge);
 
     const seen = new Uint8Array(cw * ch);
     const dots: number[] = [];
@@ -265,7 +313,16 @@ function readRows(lum: Uint8Array, w: number, h: number, panel: Box): string[] |
         }
         const bw = maxX - minX + 1;
         const bh = maxY - minY + 1;
-        if (n >= 12 && bw <= dw * 0.45 && bh <= rh * 0.28 && bh >= rh * 0.05 && bw >= 4) {
+        const cy = (minY + maxY) / 2;
+        // The decimal sits on the baseline. A speck on the top of a digit is not one.
+        if (
+          n >= 12 &&
+          bw <= dw * 0.45 &&
+          bh <= rh * 0.28 &&
+          bh >= rh * 0.05 &&
+          bw >= 4 &&
+          cy > by0 + rh * 0.7
+        ) {
           dots.push((minX + maxX) / 2);
         }
       }
@@ -328,7 +385,7 @@ function readRows(lum: Uint8Array, w: number, h: number, panel: Box): string[] |
       }
       text += dig;
     }
-    if (!/^\d*\.?\d+$/.test(text)) {
+    if (!/^\d*\.?\d+$/.test(text) || text.replace(/\D/g, '').length < 3) {
       return null;
     }
     texts.push(text);
@@ -383,7 +440,7 @@ export function readPumpLcd(lum: Uint8Array, w: number, h: number): PumpLcdRead 
   if (!panel) {
     return null;
   }
-  const rows = readRows(lum, w, h, panel);
+  const rows = readRows(lum, w, panel);
   if (!rows) {
     return null;
   }
@@ -394,20 +451,25 @@ export function readPumpLcd(lum: Uint8Array, w: number, h: number): PumpLcdRead 
 export async function readPumpFromBlob(blob: Blob): Promise<PumpLcdRead | null> {
   const bitmap = await createImageBitmap(blob);
   try {
+    // A phone photo can be 4000px wide. iOS refuses getImageData on that canvas,
+    // and the reader only needs the glass at about the size of this working photo.
+    const scale = Math.min(1, 2000 / Math.max(bitmap.width, bitmap.height));
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
     const canvas = document.createElement('canvas');
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
+    canvas.width = width;
+    canvas.height = height;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) {
       return null;
     }
-    ctx.drawImage(bitmap, 0, 0);
-    const { data } = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
-    const lum = new Uint8Array(bitmap.width * bitmap.height);
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    const { data } = ctx.getImageData(0, 0, width, height);
+    const lum = new Uint8Array(width * height);
     for (let i = 0, p = 0; i < data.length; i += 4, p++) {
       lum[p] = (data[i]! * 3 + data[i + 1]! * 4 + data[i + 2]!) >> 3;
     }
-    return readPumpLcd(lum, bitmap.width, bitmap.height);
+    return readPumpLcd(lum, width, height);
   } finally {
     bitmap.close();
   }
