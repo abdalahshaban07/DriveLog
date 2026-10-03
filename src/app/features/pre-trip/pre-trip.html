@@ -20,7 +20,7 @@
             {{ i18n.t('preTrip.statusOpen', { left: leftCount() }) }}
           }
         </p>
-        <p class="pre-trip__score">
+        <p class="pre-trip__score" dir="ltr">
           <span class="pre-trip__score-num">{{ i18n.formatNumber(doneCount()) }}</span>
           <span class="pre-trip__of">/ {{ i18n.formatNumber(total) }}</span>
         </p>
@@ -33,7 +33,7 @@
         [attr.aria-valuemax]="total"
         [attr.aria-label]="i18n.t('preTrip.progress', { done: doneCount(), total: total })"
       >
-        <span class="pre-trip__fill" [style.--done]="progressPct()"></span>
+        <span class="pre-trip__fill" [style.--p]="progressPct() / 100"></span>
       </div>
     </div>
 
@@ -106,8 +106,9 @@
                   <span class="pre-trip__badge" [attr.data-ready]="row.ready">
                     {{ row.ready ? i18n.t('preTrip.readyBadge') : i18n.t('preTrip.partialBadge') }}
                   </span>
-                  <span class="pre-trip__frac">
-                    {{ i18n.formatNumber(doneOf(row.items)) }}/{{ i18n.formatNumber(total) }}
+                  <span class="pre-trip__frac" dir="ltr">
+                    {{ i18n.formatNumber(doneOf(row.items)) }} /
+                    {{ i18n.formatNumber(total) }}
                   </span>
                 </span>
               </summary>

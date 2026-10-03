@@ -51,6 +51,7 @@
 }
 
 .pre-trip__track {
+  inline-size: 100%;
   block-size: 6px;
   border-radius: 999px;
   background: var(--fill-well);
@@ -60,10 +61,12 @@
 .pre-trip__fill {
   display: block;
   block-size: 100%;
-  inline-size: calc(var(--done) * 1%);
-  border-radius: inherit;
+  inline-size: 100%;
+  transform-origin: inline-start;
+  /* ponytail: scale, not width — a 0% inline-size sticks at full after the bar has been 100% */
+  transform: scaleX(var(--p, 0));
   background: var(--fuel);
-  transition: inline-size var(--motion-normal) var(--ease);
+  transition: transform var(--motion-normal) var(--ease);
 }
 
 .pre-trip__meter[data-ready='true'] .pre-trip__fill {
@@ -103,7 +106,7 @@
   outline: none;
 }
 
-.pre-trip__item:focus-within {
+.pre-trip__item:has(:focus-visible) {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
   border-radius: 8px;
@@ -143,17 +146,19 @@
   border-color: var(--fuel);
 }
 
+/* Check glyph stays physical — logical borders draw it backwards in RTL. */
 .pre-trip__box::after {
   content: '';
-  inline-size: 0.35rem;
-  block-size: 0.65rem;
-  border-inline-end: 2px solid transparent;
-  border-block-end: 2px solid transparent;
+  width: 0.35rem;
+  height: 0.65rem;
+  border-right: 2px solid transparent;
+  border-bottom: 2px solid transparent;
   transform: rotate(40deg) translateY(-1px);
 }
 
 .pre-trip__item[data-on='true'] .pre-trip__box::after {
-  border-color: var(--cta-text);
+  border-right-color: var(--cta-text);
+  border-bottom-color: var(--cta-text);
 }
 
 .pre-trip__actions {
