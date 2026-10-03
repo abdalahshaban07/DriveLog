@@ -78,31 +78,98 @@ async function fetchJson(
   }
 }
 
-/** Approximate first. Android "Allowed · Approximate" rejects a precise-only request. */
+/** Coarse first. A precise-only watch times out when Android granted approximate location. */
 const GEO_ATTEMPTS: PositionOptions[] = [
-  { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 },
-  { enableHighAccuracy: true, timeout: 12_000, maximumAge: 15_000 },
+  { enableHighAccuracy: false, timeout: 8_000, maximumAge: 120_000 },
+  { enableHighAccuracy: true, timeout: 8_000, maximumAge: 15_000 },
 ];
 
+/** watchPosition: Android often errors once, then delivers a fix. Code 1 is a hard deny. */
+function watchOnce(geo: Geolocation, options: PositionOptions): Promise<Coords | null> {
+  return new Promise((resolve) => {
+    let settled = false;
+    let watchId = 0;
+    const stop = () => {
+      if (watchId) {
+        geo.clearWatch(watchId);
+      }
+    };
+    const finish = (coords: Coords | null) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timer);
+      stop();
+      resolve(coords);
+    };
+    const timer = setTimeout(() => finish(null), options.timeout ?? 8_000);
+    watchId = geo.watchPosition(
+      (pos) =>
+        finish({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+      (err) => {
+        if (err.code === 1) {
+          finish(null);
+        }
+      },
+      options,
+    );
+    // A sync success runs before watchPosition returns the id.
+    if (settled) {
+      stop();
+    }
+  });
+}
+
 export function readCoords(geo: Geolocation): Promise<Coords | null> {
-  const once = (options: PositionOptions) =>
-    new Promise<Coords | null>((resolve) => {
-      geo.getCurrentPosition(
-        (pos) =>
-          resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
-        () => resolve(null),
-        options,
-      );
-    });
   return (async () => {
     for (const options of GEO_ATTEMPTS) {
-      const coords = await once(options);
+      const coords = await watchOnce(geo, options);
       if (coords) {
         return coords;
       }
     }
     return null;
   })();
+}
+
+/** Photon GeoJSON: coordinates are [lon, lat]. No key. */
+export function parsePhotonPoint(raw: unknown): Coords | null {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  const features = (raw as { features?: unknown }).features;
+  const first = Array.isArray(features) ? features[0] : null;
+  if (!first || typeof first !== 'object') {
+    return null;
+  }
+  const coordinates = (first as { geometry?: { coordinates?: unknown } }).geometry
+    ?.coordinates;
+  if (!Array.isArray(coordinates) || coordinates.length < 2) {
+    return null;
+  }
+  const lon = Number(coordinates[0]);
+  const lat = Number(coordinates[1]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    return null;
+  }
+  return { lat, lon };
+}
+
+export async function geocodePlace(
+  query: string,
+  lang: 'en' | 'ar' = 'en',
+): Promise<Coords | null> {
+  const q = query.trim();
+  if (!q) {
+    return null;
+  }
+  const url = `https://photon.komoot.io/api/?${new URLSearchParams({
+    q,
+    limit: '1',
+    lang,
+  })}`;
+  return parsePhotonPoint(await fetchJson(url));
 }
 
 export function getCoords(): Promise<Coords | null> {

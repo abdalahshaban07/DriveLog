@@ -1,66 +1,100 @@
 import { describe, expect, it } from 'vitest';
-import { readCoords } from './remote';
+import { parsePhotonPoint, readCoords } from './remote';
 
-function fakeGeo(steps: Array<'fail' | CoordsLike>): Geolocation {
-  const queue = [...steps];
+function position(lat: number, lon: number): GeolocationPosition {
   return {
-    getCurrentPosition(success, error) {
-      const step = queue.shift();
-      if (!step || step === 'fail') {
-        error?.({ code: 1, message: 'denied' } as GeolocationPositionError);
-        return;
-      }
-      success({
-        coords: {
-          latitude: step.lat,
-          longitude: step.lon,
-          accuracy: 1,
-          altitude: null,
-          altitudeAccuracy: null,
-          heading: null,
-          speed: null,
-          toJSON() {
-            return {};
-          },
-        },
-        timestamp: 0,
-        toJSON() {
-          return {};
-        },
-      });
+    coords: {
+      latitude: lat,
+      longitude: lon,
+      accuracy: 1,
+      altitude: null,
+      altitudeAccuracy: null,
+      heading: null,
+      speed: null,
+      toJSON() {
+        return {};
+      },
     },
-    watchPosition() {
-      return 0;
+    timestamp: 0,
+    toJSON() {
+      return {};
     },
-    clearWatch() {},
   };
 }
-
-type CoordsLike = { lat: number; lon: number };
 
 describe('readCoords', () => {
   it('keeps an approximate fix and does not ask for precise GPS', async () => {
     let calls = 0;
-    const geo = fakeGeo([{ lat: 30.04, lon: 31.23 }]);
-    const orig = geo.getCurrentPosition.bind(geo);
-    geo.getCurrentPosition = (success, error, options) => {
-      calls += 1;
-      expect(options?.enableHighAccuracy).toBe(false);
-      orig(success, error, options);
-    };
+    const geo = {
+      getCurrentPosition() {},
+      clearWatch() {},
+      watchPosition(success: PositionCallback, _error: PositionErrorCallback | null, options?: PositionOptions) {
+        calls += 1;
+        expect(options?.enableHighAccuracy).toBe(false);
+        success(position(30.04, 31.23));
+        return 1;
+      },
+    } as Geolocation;
     await expect(readCoords(geo)).resolves.toEqual({ lat: 30.04, lon: 31.23 });
     expect(calls).toBe(1);
   });
 
-  it('tries precise GPS after approximate fails', async () => {
+  it('tries precise GPS after approximate is denied', async () => {
     const seen: boolean[] = [];
-    const geo = fakeGeo(['fail', { lat: 30.1, lon: 31.2 }]);
-    const orig = geo.getCurrentPosition.bind(geo);
-    geo.getCurrentPosition = (success, error, options) => {
-      seen.push(options?.enableHighAccuracy === true);
-      orig(success, error, options);
-    };
+    const steps: Array<'deny' | { lat: number; lon: number }> = [
+      'deny',
+      { lat: 30.1, lon: 31.2 },
+    ];
+    const geo = {
+      getCurrentPosition() {},
+      clearWatch() {},
+      watchPosition(
+        success: PositionCallback,
+        error: PositionErrorCallback | null,
+        options?: PositionOptions,
+      ) {
+        seen.push(options?.enableHighAccuracy === true);
+        const step = steps.shift();
+        if (!step || step === 'deny') {
+          error?.({ code: 1, message: 'denied' } as GeolocationPositionError);
+        } else {
+          success(position(step.lat, step.lon));
+        }
+        return seen.length;
+      },
+    } as Geolocation;
     await expect(readCoords(geo)).resolves.toEqual({ lat: 30.1, lon: 31.2 });
     expect(seen).toEqual([false, true]);
+  });
+
+  it('keeps listening after a temporary location error', async () => {
+    let successFn: PositionCallback = () => {};
+    const geo = {
+      getCurrentPosition() {},
+      clearWatch() {},
+      watchPosition(success: PositionCallback, error: PositionErrorCallback | null) {
+        successFn = success;
+        error?.({ code: 2, message: 'unavailable' } as GeolocationPositionError);
+        return 7;
+      },
+    } as Geolocation;
+    const pending = readCoords(geo);
+    successFn(position(1, 2));
+    await expect(pending).resolves.toEqual({ lat: 1, lon: 2 });
+  });
+});
+
+describe('parsePhotonPoint', () => {
+  it('reads lon, lat from the first feature', () => {
+    expect(
+      parsePhotonPoint({
+        features: [{ geometry: { coordinates: [31.34, 30.05] } }],
+      }),
+    ).toEqual({ lat: 30.05, lon: 31.34 });
+  });
+
+  it('returns null when the payload has no point', () => {
+    expect(parsePhotonPoint({ features: [] })).toBeNull();
+    expect(parsePhotonPoint(null)).toBeNull();
   });
 });

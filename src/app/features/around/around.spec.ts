@@ -54,6 +54,14 @@ describe('AroundPage', () => {
     expect(fixture.componentInstance.nearbyItems()).toEqual([]);
   });
 
+  it('does not search a blank area name', async () => {
+    const fixture = TestBed.createComponent(AroundPage);
+    fixture.componentInstance.areaText.set('   ');
+    await fixture.componentInstance.searchArea();
+    expect(fixture.componentInstance.requested()).toBe(false);
+    expect(fixture.componentInstance.areaError()).toBe('around.areaError');
+  });
+
   it('updates kind signal', () => {
     const fixture = TestBed.createComponent(AroundPage);
     fixture.componentInstance.setNearbyKind('charge');
