@@ -78,19 +78,38 @@ async function fetchJson(
   }
 }
 
+/** Approximate first. Android "Allowed · Approximate" rejects a precise-only request. */
+const GEO_ATTEMPTS: PositionOptions[] = [
+  { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 },
+  { enableHighAccuracy: true, timeout: 12_000, maximumAge: 15_000 },
+];
+
+export function readCoords(geo: Geolocation): Promise<Coords | null> {
+  const once = (options: PositionOptions) =>
+    new Promise<Coords | null>((resolve) => {
+      geo.getCurrentPosition(
+        (pos) =>
+          resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+        () => resolve(null),
+        options,
+      );
+    });
+  return (async () => {
+    for (const options of GEO_ATTEMPTS) {
+      const coords = await once(options);
+      if (coords) {
+        return coords;
+      }
+    }
+    return null;
+  })();
+}
+
 export function getCoords(): Promise<Coords | null> {
   if (!navigator.geolocation) {
     return Promise.resolve(null);
   }
-  return new Promise((resolve) => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) =>
-        resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
-      () => resolve(null),
-      // High accuracy + short cache: better Around/nearby distances (GPS may take longer outdoors).
-      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 10_000 },
-    );
-  });
+  return readCoords(navigator.geolocation);
 }
 
 export function parseWeather(raw: unknown, lat: number, lon: number): WeatherNow | null {
