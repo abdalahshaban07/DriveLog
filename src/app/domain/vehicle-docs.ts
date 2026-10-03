@@ -11,6 +11,23 @@ export function daysUntilExpiry(expiry: DateOnly, today: DateOnly = todayDateOnl
   return Math.round((exp - now) / 86_400_000);
 }
 
+export type VaultDayTone = 'left' | 'over' | 'today';
+
+/** Absolute day count plus which caption to show. */
+export function vaultDayParts(
+  expiry: DateOnly,
+  today: DateOnly = todayDateOnly(),
+): { count: number; tone: VaultDayTone } {
+  const days = daysUntilExpiry(expiry, today);
+  if (days === 0) {
+    return { count: 0, tone: 'today' };
+  }
+  if (days < 0) {
+    return { count: -days, tone: 'over' };
+  }
+  return { count: days, tone: 'left' };
+}
+
 export function docUrgency(expiry: DateOnly, today: DateOnly = todayDateOnly()): DocUrgency {
   const days = daysUntilExpiry(expiry, today);
   if (days < 0) {
