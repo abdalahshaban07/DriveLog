@@ -32,6 +32,7 @@ import {
   type LedgerRow,
 } from '../../domain/expense-ledger';
 import { fuelBoard, fuelDashboardMetrics, sparklineGeometry } from '../../domain/fuel-dashboard';
+import { operatingSnapshot } from '../../domain/operating-snapshot';
 import { isStoredMessageKey } from '../../domain/part-name';
 import { buildFuelCostGlance, tankEconomyVsAvg, TANK_ECONOMY_FLAT_PCT } from '../../domain/economy';
 import {
@@ -45,7 +46,7 @@ import {
   unitPriceTrend,
   type TrendPoint,
 } from '../../domain/insights';
-import type { DueSource, DueStatus, ExpenseCategory, FillUp } from '../../domain/models';
+import type { Car, DueSource, DueStatus, ExpenseCategory, FillUp } from '../../domain/models';
 import {
   buildMonthOutlook,
   buildRecommendations,
@@ -265,17 +266,51 @@ export class HomePage {
     }),
   );
   readonly lastFill = computed((): FillUp | null => {
+    const today = todayDateOnly();
     let best: FillUp | undefined;
+    let bestPast: FillUp | undefined;
     for (const fill of this.db.fillUps()) {
-      if (
+      const newer =
         !best ||
         fill.date > best.date ||
-        (fill.date === best.date && fill.createdAt > best.createdAt)
-      ) {
+        (fill.date === best.date && fill.createdAt > best.createdAt);
+      if (newer) {
         best = fill;
       }
+      const newerPast =
+        !bestPast ||
+        fill.date > bestPast.date ||
+        (fill.date === bestPast.date && fill.createdAt > bestPast.createdAt);
+      if (fill.date <= today && newerPast) {
+        bestPast = fill;
+      }
     }
-    return best ?? null;
+    return bestPast ?? best ?? null;
+  });
+  readonly operatingFacts = computed(() => {
+    const car = this.db.car();
+    const fill = this.lastFill();
+    if (!car || !fill) {
+      return null;
+    }
+    return operatingSnapshot({
+      today: todayDateOnly(),
+      fillDate: fill.date,
+      fillOdometer: fill.odometer,
+      currentOdometer: car.currentOdometer,
+      place: fill.placeLabel,
+      tankLiters: car.tankCapacityLiters,
+      litersPer100: this.fuelMetrics().lastL100,
+    });
+  });
+  readonly headerLine = computed(() => {
+    const car = this.db.car();
+    if (!car) {
+      return this.i18n.t('app.subtitle');
+    }
+    const spec = this.vehicleLine(car);
+    const km = `${this.i18n.formatNumber(car.currentOdometer, { maximumFractionDigits: 0 })} ${this.i18n.t('common.km')}`;
+    return spec ? `${car.nickname} · ${spec} · ${km}` : `${car.nickname} · ${km}`;
   });
   readonly nextDue = computed(() => {
     const car = this.db.car();
@@ -490,6 +525,13 @@ export class HomePage {
       });
     }
     return this.i18n.t(rec.bodyKey as MsgKey, params);
+  }
+
+  vehicleLine(car: Car): string {
+    return [car.year, car.make, car.model]
+      .map((part) => part?.trim())
+      .filter((part): part is string => !!part)
+      .join(' · ');
   }
 
   dueLabel(): string {

@@ -16,7 +16,7 @@
 :root,
 html[data-look='receipt'] {
   /* Night Receipt warm room — theme already sets surfaces; reinforce chrome */
-  --radius: 10px;
+  --radius: 14px;
   --raise-1: none;
   --raise-2: none;
   --bevel-hi: none;
@@ -44,19 +44,19 @@ html[data-look='receipt'] {
   --btn-press-y: 1px;
   --btn-blur: 0px;
   --btn-tracking: 0;
-  --tab-track: transparent;
-  --tab-track-pad: 0;
-  --tab-track-radius: 0;
-  --tab-track-border: 1px solid var(--hairline);
-  --tab-track-shadow: none;
+  --tab-track: var(--fill-well);
+  --tab-track-pad: 4px;
+  --tab-track-radius: 999px;
+  --tab-track-border: 0;
+  --tab-track-shadow: var(--well-inset);
   --tab-btn-bg: transparent;
-  --tab-btn-on-bg: transparent;
-  --tab-btn-radius: 0;
+  --tab-btn-on-bg: var(--fill-surface);
+  --tab-btn-radius: 999px;
   --tab-btn-border: 0;
   --tab-btn-shadow: none;
-  --tab-btn-on-shadow: none;
-  --tab-underline: var(--cta);
-  --tab-underline-h: 2px;
+  --tab-btn-on-shadow: var(--shadow-soft);
+  --tab-underline: transparent;
+  --tab-underline-h: 0px;
   --mesh-canvas:
     radial-gradient(
       120% 80% at 100% 0%,

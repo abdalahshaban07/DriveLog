@@ -4,6 +4,11 @@
   box-sizing: border-box;
 }
 
+::selection {
+  background: color-mix(in srgb, var(--cta) 38%, transparent);
+  color: var(--text);
+}
+
 html,
 body {
   margin: 0;
