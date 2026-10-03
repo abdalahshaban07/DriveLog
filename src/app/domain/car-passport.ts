@@ -1,7 +1,12 @@
 import { downloadFile } from './export-history';
 import type { Car, FillUp, Maintenance, VehicleDocument } from './models';
-import { latestEconomy, monthFuelSpend } from './economy';
-import { nextExpiringDoc } from './vehicle-docs';
+import { fuelMonthCompare, latestEconomy, monthFuelSpend, rollingCostPerKm } from './economy';
+import {
+  daysUntilExpiry,
+  docUrgency,
+  nextExpiringDoc,
+  type DocUrgency,
+} from './vehicle-docs';
 
 export type PassportCopy = {
   title: string;
@@ -27,6 +32,97 @@ export type PassportData = {
   documents: readonly VehicleDocument[];
   maintenance: readonly Maintenance[];
 };
+
+export type PassportView = {
+  title: string;
+  /** Make · model · year when it adds something the title does not already say. */
+  spec: string;
+  plate: string | null;
+  /** Year chip only when the spec line is hidden. */
+  showYear: boolean;
+  year: string | null;
+  tankLiters: number | null;
+  odo: number;
+  drivenKm: number;
+  economy: number | null;
+  monthSpend: number;
+  /** Null when the previous month had no fuel spend. */
+  monthDeltaPct: number | null;
+  costPerKm: number | null;
+  fillCount: number;
+  lastFillDate: string | null;
+  nextDoc: VehicleDocument | null;
+  docDays: number | null;
+  urgency: DocUrgency | null;
+  lastService: Maintenance | null;
+};
+
+function dateOnlyLocal(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function latestDated<T extends { date: string; createdAt: string }>(rows: readonly T[]): T | null {
+  let best: T | null = null;
+  for (const row of rows) {
+    if (
+      !best ||
+      row.date > best.date ||
+      (row.date === best.date && row.createdAt > best.createdAt)
+    ) {
+      best = row;
+    }
+  }
+  return best;
+}
+
+/** Nickname wins; spec line is omitted when it only repeats the title. */
+export function vehicleIdentity(car: Car): { title: string; spec: string; showYear: boolean } {
+  const nick = car.nickname.trim();
+  const makeModel = [car.make, car.model]
+    .map((part) => part?.trim())
+    .filter((part): part is string => !!part)
+    .join(' ');
+  const year = car.year?.trim() ?? '';
+  const spec = [makeModel, year].filter((part) => part.length > 0).join(' · ');
+  const title = nick || makeModel || year;
+  const showSpec = spec.length > 0 && spec !== title && makeModel !== title;
+  return {
+    title,
+    spec: showSpec ? spec : '',
+    showYear: year.length > 0 && !showSpec && year !== title,
+  };
+}
+
+export function buildPassportView(data: PassportData, now: Date = new Date()): PassportView {
+  const today = dateOnlyLocal(now);
+  const { car, fillUps, documents, maintenance } = data;
+  const id = vehicleIdentity(car);
+  const next = nextExpiringDoc(documents, today);
+  const compare = fuelMonthCompare(fillUps, now);
+  return {
+    title: id.title,
+    spec: id.spec,
+    plate: car.plate?.trim() || null,
+    showYear: id.showYear,
+    year: car.year?.trim() || null,
+    tankLiters: car.tankCapacityLiters ?? null,
+    odo: car.currentOdometer,
+    drivenKm: Math.max(0, car.currentOdometer - car.initialOdometer),
+    economy: latestEconomy(fillUps)?.litersPer100Km ?? null,
+    monthSpend: compare?.current ?? monthFuelSpend(fillUps, now),
+    monthDeltaPct: compare?.deltaPct ?? null,
+    costPerKm: rollingCostPerKm(fillUps, now),
+    fillCount: fillUps.length,
+    lastFillDate: latestDated(fillUps)?.date ?? null,
+    nextDoc: next,
+    docDays: next ? daysUntilExpiry(next.expiryDate, today) : null,
+    urgency: next ? docUrgency(next.expiryDate, today) : null,
+    lastService: latestDated(maintenance),
+  };
+}
 
 type PdfMakeApi = {
   addVirtualFileSystem?: (vfs: unknown) => void;

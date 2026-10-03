@@ -753,6 +753,8 @@ export const ar: Record<MsgKey, string> = {
   'passport.noCar': 'أضف عربية أولاً',
   'passport.maintenance': 'سجل الصيانة',
   'passport.maintEmpty': 'مفيش صيانة مسجّلة لسه',
+  'passport.driven': 'منذ البداية',
+  'passport.fills': 'التعبئة',
   'fillUp.sharedImage': 'إيصال مشارك',
   'fillUp.sharedImageReady': 'الصورة جاهزة للمراجعة',
   'fillUp.clearShared': 'مسح الصورة',
