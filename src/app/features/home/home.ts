@@ -33,7 +33,7 @@ import {
 } from '../../domain/expense-ledger';
 import { fuelDashboardMetrics } from '../../domain/fuel-dashboard';
 import { isStoredMessageKey } from '../../domain/part-name';
-import { buildFuelCostGlance } from '../../domain/economy';
+import { buildFuelCostGlance, tankEconomyVsAvg } from '../../domain/economy';
 import {
   costPerKmTrend,
   distanceByMonth,
@@ -57,7 +57,7 @@ import {
   isRealFillUp,
   shouldShowSetupChecklist,
 } from '../../domain/setup-checklist';
-import { buildSmartReports } from '../../domain/smart-reports';
+import { buildReportBrief, buildSmartReports } from '../../domain/smart-reports';
 import { dueItemLabel } from '../../domain/part-name';
 import { homeHealthSummary } from '../../domain/vehicle-facts';
 import type { InsightKind } from '../../domain/insight-generator';
@@ -189,6 +189,15 @@ export class HomePage {
       period: this.period(),
     }),
   );
+  readonly reportBrief = computed(() =>
+    buildReportBrief({
+      fills: this.db.fillUps(),
+      maintenance: this.db.maintenance(),
+      period: this.period(),
+      totals: this.totals(),
+    }),
+  );
+  readonly economyVsUsual = computed(() => tankEconomyVsAvg(this.db.fillUps()));
   readonly ledgerRows = computed(() =>
     buildExpenseLedger({
       fills: this.db.fillUps(),
@@ -679,6 +688,12 @@ export class HomePage {
 
   reportTitle(key: string): string {
     return this.i18n.t(key as MsgKey);
+  }
+
+  mixPct(pct: number): string {
+    return this.i18n.t('reports.pct', {
+      pct: this.i18n.formatNumber(pct, { maximumFractionDigits: 0 }),
+    });
   }
 
   reportBody(key: string, params?: Record<string, string | number>): string {

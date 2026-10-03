@@ -697,6 +697,62 @@ describe('part labels', () => {
   });
 });
 
+describe('report brief', () => {
+  it('sums in-period fuel and rounds the spend mix', async () => {
+    const { buildReportBrief } = await import('./smart-reports');
+    const brief = buildReportBrief({
+      period: { id: 'p', carId: 'c', startDate: '2026-02-01' },
+      fills: [
+        fill({
+          id: 'in',
+          odometer: 1100,
+          liters: 10,
+          cost: 40,
+          tankFull: true,
+          date: '2026-02-02',
+          distanceKm: 120,
+        }),
+        fill({
+          id: 'out',
+          odometer: 900,
+          liters: 99,
+          cost: 200,
+          tankFull: true,
+          date: '2026-01-01',
+          distanceKm: 400,
+        }),
+      ],
+      maintenance: [
+        {
+          id: 'm1',
+          type: 'oil',
+          odometer: 1100,
+          date: '2026-03-01',
+          createdAt: '2026-03-01T00:00:00.000Z',
+          updatedAt: '2026-03-01T00:00:00.000Z',
+        },
+        {
+          id: 'm0',
+          type: 'oil',
+          odometer: 100,
+          date: '2025-01-01',
+          createdAt: '2025-01-01T00:00:00.000Z',
+          updatedAt: '2025-01-01T00:00:00.000Z',
+        },
+      ],
+      totals: { fuel: 40, maintenance: 60, breakdowns: 0, other: 0, total: 100 },
+    });
+    expect(brief.liters).toBe(10);
+    expect(brief.fillCount).toBe(1);
+    expect(brief.distanceKm).toBe(120);
+    expect(brief.maintCount).toBe(1);
+    expect(brief.mix.map((slice) => [slice.key, slice.pct])).toEqual([
+      ['fuel', 40],
+      ['maintenance', 60],
+    ]);
+  });
+});
+
 describe('look packs', () => {
   it('defaults to receipt and lists all looks', async () => {
     const { DEFAULT_LOOK, LOOKS } = await import('./models');

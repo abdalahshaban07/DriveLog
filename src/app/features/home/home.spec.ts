@@ -98,6 +98,14 @@ describe('HomePage', () => {
     expect(panel).toBeTruthy();
   });
 
+  it('keeps an empty reports tab free of a spend hero', () => {
+    const fixture = TestBed.createComponent(HomePage);
+    fixture.componentInstance.view.set('reports');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.report-hero')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('.empty-state')).toBeTruthy();
+  });
+
   it('shows vehicle status block with health link', () => {
     const fixture = TestBed.createComponent(HomePage);
     fixture.detectChanges();

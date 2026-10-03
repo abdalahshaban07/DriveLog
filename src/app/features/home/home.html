@@ -324,22 +324,63 @@
       role="tabpanel"
       [attr.aria-label]="i18n.t('home.tab.reports')"
     >
-      <div class="tab-glance" role="status" [attr.aria-label]="i18n.t('home.tab.reports')">
-        <p class="tab-glance__lead">{{ i18n.t('reports.lead') }}</p>
-        <ul class="tab-glance__counts">
-          <li class="tab-glance__count">
-            <span class="tab-glance__num" [class.metric--ghost]="totals().total <= 0">
+      @if (!reportsHasSignal()) {
+        <div class="empty-state">
+          <p>{{ i18n.t('reports.empty') }}</p>
+          <a routerLink="/fill-up" class="empty-cta">{{ i18n.t('home.logFillUp') }}</a>
+        </div>
+      } @else {
+        <article class="report-hero" [attr.aria-label]="i18n.t('reports.glance.spend')">
+          <header class="report-hero__head">
+            <p class="report-hero__kicker">
+              @if (period(); as p) {
+                {{ i18n.t('home.period.since', { date: i18n.formatDate(p.startDate) }) }}
+              } @else {
+                {{ i18n.t('reports.lead') }}
+              }
+            </p>
+            <p class="report-hero__total" [class.metric--ghost]="totals().total <= 0">
               @if (totals().total > 0) {
                 {{ formatMoney(totals().total) }}
               } @else {
                 —.—
               }
-            </span>
-            <span class="tab-glance__label">{{ i18n.t('reports.glance.spend') }}</span>
-          </li>
-          <li class="tab-glance__count">
-            <span
-              class="tab-glance__num"
+            </p>
+            <p class="report-hero__label">{{ i18n.t('reports.glance.spend') }}</p>
+          </header>
+
+          @if (totals().total > 0) {
+            <div class="report-mix" role="img" [attr.aria-label]="i18n.t('charts.mix')">
+              <div class="report-mix__track">
+                @for (slice of reportBrief().mix; track slice.key) {
+                  @if (slice.amount > 0) {
+                    <span
+                      class="report-mix__seg"
+                      [attr.data-tone]="slice.key"
+                      [style.flex]="slice.pct || 1"
+                    ></span>
+                  }
+                }
+              </div>
+              <ul class="report-mix__rows">
+                @for (slice of reportBrief().mix; track slice.key) {
+                  <li>
+                    <span class="report-mix__swatch" [attr.data-tone]="slice.key" aria-hidden="true"></span>
+                    <span class="report-mix__name">{{ categoryLabel(slice.key) }}</span>
+                    <span class="report-mix__amt">{{ formatMoney(slice.amount) }}</span>
+                    <span class="report-mix__pct">{{ mixPct(slice.pct) }}</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+        </article>
+
+        <ul class="report-spec">
+          <li class="report-spec__row">
+            <span class="report-spec__label">{{ i18n.t('reports.glance.economy') }}</span>
+            <strong
+              class="report-spec__value"
               [class.metric--ghost]="fuelMetrics().lastL100 == null"
             >
               @if (fuelMetrics().lastL100 != null) {
@@ -347,27 +388,62 @@
               } @else {
                 —.—
               }
-            </span>
-            <span class="tab-glance__label">{{ i18n.t('reports.glance.economy') }}</span>
+            </strong>
+            @if (economyVsUsual(); as vs) {
+              <span class="report-spec__hint">
+                {{ i18n.t('reports.usual', { value: i18n.formatUnit(vs.baselineL100, 'common.lPer100', 1) }) }}
+              </span>
+            }
           </li>
-          <li class="tab-glance__count">
-            <span
-              class="tab-glance__num"
-              [class.metric--ghost]="db.maintenance().length === 0"
+          <li class="report-spec__row">
+            <span class="report-spec__label">{{ i18n.t('home.costPerKm') }}</span>
+            <strong
+              class="report-spec__value"
+              [class.metric--ghost]="fuelMetrics().costPerKm == null"
             >
-              {{ i18n.formatNumber(db.maintenance().length, { maximumFractionDigits: 0 }) }}
-            </span>
-            <span class="tab-glance__label">{{ i18n.t('reports.glance.services') }}</span>
+              @if (fuelMetrics().costPerKm != null) {
+                {{ formatCostPerKm(fuelMetrics().costPerKm!) }}
+              } @else {
+                —.—
+              }
+            </strong>
+          </li>
+          <li class="report-spec__row">
+            <span class="report-spec__label">{{ i18n.t('charts.cat.fuel') }}</span>
+            <strong
+              class="report-spec__value"
+              [class.metric--ghost]="reportBrief().liters <= 0"
+            >
+              @if (reportBrief().liters > 0) {
+                {{ i18n.formatUnit(reportBrief().liters, 'common.liters', 1) }}
+              } @else {
+                —.—
+              }
+            </strong>
+            @if (reportBrief().fillCount > 0) {
+              <span class="report-spec__hint">
+                {{ i18n.t('reports.fills', { count: i18n.formatNumber(reportBrief().fillCount, { maximumFractionDigits: 0 }) }) }}
+                @if (reportBrief().distanceKm > 0) {
+                  · {{ i18n.formatNumber(reportBrief().distanceKm, { maximumFractionDigits: 0 }) }}
+                  {{ i18n.t('common.km') }}
+                }
+              </span>
+            }
+          </li>
+          <li class="report-spec__row">
+            <span class="report-spec__label">{{ i18n.t('reports.glance.services') }}</span>
+            <strong
+              class="report-spec__value"
+              [class.metric--ghost]="reportBrief().maintCount === 0"
+            >
+              {{ i18n.formatNumber(reportBrief().maintCount, { maximumFractionDigits: 0 }) }}
+            </strong>
+            @if (totals().maintenance > 0) {
+              <span class="report-spec__hint">{{ formatMoney(totals().maintenance) }}</span>
+            }
           </li>
         </ul>
-      </div>
 
-      @if (!reportsHasSignal()) {
-        <div class="empty-state">
-          <p>{{ i18n.t('reports.empty') }}</p>
-          <a routerLink="/fill-up" class="empty-cta">{{ i18n.t('home.logFillUp') }}</a>
-        </div>
-      } @else {
         <section class="tab-block" [attr.aria-label]="i18n.t('reports.insights')">
           <h2 class="tab-block__title">
             {{ i18n.t('reports.insights') }}
