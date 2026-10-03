@@ -20,6 +20,8 @@ export const ar: Record<MsgKey, string> = {
   'home.lastFill': 'آخر تعبئة',
   'home.glanceStrip': 'نظرة سريعة',
   'home.nextDue': 'الجاي',
+  'home.kmLeft': 'فاضل {km} كم',
+  'home.kmOver': 'متأخر {km} كم',
   'home.nothingDue': 'مفيش حاجة مستحقة',
   'home.fuelSolar': 'سولار',
   'home.fuelDiesel': 'ديزل',

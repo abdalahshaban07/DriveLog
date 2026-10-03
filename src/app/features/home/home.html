@@ -72,91 +72,165 @@
           }
         }
 
-        <div
+        <section
           #glanceStrip
-          class="glance-strip"
+          class="pulse"
           [class.metric-flash]="glanceFlash()"
           role="status"
           [attr.aria-label]="i18n.t('home.glanceStrip')"
         >
-          <div class="glance-strip__cell glance-strip__cell--lead">
-            <span class="glance-strip__label">{{ i18n.t('home.economy') }}</span>
-            <span class="glance-strip__figure">
-              <strong [class.metric--ghost]="fuelMetrics().lastL100 == null">
+          <a class="pulse__hero" routerLink="/fuel">
+            <div class="pulse__hero-copy">
+              <span class="pulse__kicker">{{ i18n.t('home.economy') }}</span>
+              <p class="pulse__figure">
+                <strong [class.metric--ghost]="fuelMetrics().lastL100 == null">
+                  @if (fuelMetrics().lastL100 != null) {
+                    {{ i18n.formatNumber(fuelMetrics().lastL100!, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }}
+                  } @else {
+                    —.—
+                  }
+                </strong>
                 @if (fuelMetrics().lastL100 != null) {
-                  {{ i18n.formatNumber(fuelMetrics().lastL100!, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }}
+                  <span class="pulse__unit">{{ i18n.t('common.lPer100') }}</span>
+                }
+              </p>
+              <p class="pulse__sub">
+                @if (fuelMetrics().lastKmPerL != null) {
+                  <span>{{ i18n.formatUnit(fuelMetrics().lastKmPerL!, 'common.kmPerL', 1) }}</span>
+                }
+                @if (economyCaption(); as caption) {
+                  <span
+                    class="pulse__chip"
+                    [class.pulse__chip--better]="economyTone() === 'better'"
+                    [class.pulse__chip--worse]="economyTone() === 'worse'"
+                  >{{ caption }}</span>
+                } @else if (fuelPulse().overallL100 != null) {
+                  <span>
+                    {{ i18n.t('fuel.overall') }}
+                    {{ i18n.formatUnit(fuelPulse().overallL100!, 'common.lPer100', 1) }}
+                  </span>
+                }
+              </p>
+            </div>
+            @if (pulseSpark(); as spark) {
+              <div class="pulse__spark">
+                <svg
+                  class="pulse__spark-svg"
+                  viewBox="0 0 168 64"
+                  preserveAspectRatio="none"
+                  role="img"
+                  [attr.aria-label]="i18n.t('fuel.trend')"
+                >
+                  <path class="pulse__spark-area" [attr.d]="spark.area" />
+                  <path
+                    class="pulse__spark-line"
+                    [attr.d]="spark.line"
+                    vector-effect="non-scaling-stroke"
+                  />
+                </svg>
+                <span
+                  class="pulse__spark-dot"
+                  aria-hidden="true"
+                  [style.left.%]="(spark.x / spark.width) * 100"
+                  [style.top.%]="(spark.y / spark.height) * 100"
+                ></span>
+              </div>
+            }
+          </a>
+
+          <div class="pulse__facts">
+            @if (lastFill(); as fill) {
+              <a
+                class="pulse__fact"
+                [routerLink]="['/fill-up']"
+                [queryParams]="{ id: fill.id }"
+              >
+                <span class="pulse__kicker">{{ i18n.t('home.lastFill') }}</span>
+                <strong>{{ i18n.formatDate(fill.date) }}</strong>
+                <span class="pulse__meta">
+                  {{ i18n.formatUnit(fill.liters, 'common.liters', 1) }}
+                  · {{ formatMoney(fill.cost) }}
+                  @if (fill.fuelGrade) {
+                    · {{ gradeLabel(fill.fuelGrade) }}
+                  }
+                </span>
+              </a>
+            } @else {
+              <a class="pulse__fact" routerLink="/fill-up">
+                <span class="pulse__kicker">{{ i18n.t('home.lastFill') }}</span>
+                <strong class="metric--ghost">—.—</strong>
+              </a>
+            }
+            <a
+              class="pulse__fact"
+              [class.pulse__fact--soon]="dueTone() === 'soon'"
+              [class.pulse__fact--overdue]="dueTone() === 'overdue'"
+              [routerLink]="dueRoute()"
+            >
+              <span class="pulse__kicker">{{ i18n.t('home.nextDue') }}</span>
+              <strong [class.metric--ghost]="!nextDue()">{{ dueLabel() }}</strong>
+              @if (nextDue()?.dueDate; as due) {
+                <span class="pulse__meta">{{ i18n.formatDate(due) }}</span>
+              }
+              @if (dueCountdown(); as left) {
+                <span class="pulse__meta">{{ left }}</span>
+              }
+            </a>
+          </div>
+
+          <div class="pulse__spend" [attr.aria-label]="i18n.t('home.costGlance')">
+            <div class="pulse__cell">
+              <span class="pulse__kicker">{{ i18n.t('home.costPerKm') }}</span>
+              <strong [class.metric--ghost]="fuelCostGlance().costPerKm == null">
+                @if (fuelCostGlance().costPerKm != null) {
+                  {{ formatCostPerKm(fuelCostGlance().costPerKm!) }}
                 } @else {
                   —.—
                 }
               </strong>
-              @if (fuelMetrics().lastL100 != null) {
-                <span class="glance-strip__unit">{{ i18n.t('common.lPer100') }}</span>
+            </div>
+            <div class="pulse__cell pulse__cell--now">
+              <span class="pulse__kicker">{{ i18n.t('home.monthSpend') }}</span>
+              <strong [class.metric--ghost]="!hasRealFills() && fuelCostGlance().currentMonth === 0">
+                {{ formatMoney(fuelCostGlance().currentMonth) }}
+              </strong>
+              @if (fuelPulse().monthCount > 0) {
+                <span class="pulse__meta">
+                  {{ i18n.formatUnit(fuelPulse().monthLiters, 'common.liters', 1) }}
+                  · {{ i18n.t('reports.fills', { count: i18n.formatNumber(fuelPulse().monthCount, { maximumFractionDigits: 0 }) }) }}
+                </span>
               }
-            </span>
-            @if (fuelMetrics().lastKmPerL != null) {
-              <span class="glance-strip__hint">
-                {{ i18n.formatUnit(fuelMetrics().lastKmPerL!, 'common.kmPerL', 1) }}
-              </span>
+            </div>
+            <div class="pulse__cell">
+              <span class="pulse__kicker">{{ i18n.t('home.lastMonthSpend') }}</span>
+              <strong
+                [class.metric--ghost]="
+                  fuelCostGlance().previousMonth === 0 && fuelCostGlance().deltaPct == null
+                "
+              >
+                {{ formatMoney(fuelCostGlance().previousMonth) }}
+              </strong>
+              @if (fuelCostGlance().deltaPct != null) {
+                <span
+                  class="pulse__delta"
+                  dir="ltr"
+                  [class.pulse__delta--down]="(fuelCostGlance().deltaPct ?? 0) < -3"
+                  [class.pulse__delta--up]="(fuelCostGlance().deltaPct ?? 0) > 3"
+                >{{ monthFuelDeltaLabel() }}</span>
+              }
+            </div>
+            @if (fuelCostGlance().currentMonth > 0 || fuelCostGlance().previousMonth > 0) {
+              <div class="pulse__bars" aria-hidden="true">
+                <span class="pulse__track">
+                  <span class="pulse__fill" [style.inline-size.%]="spendShare('current')"></span>
+                </span>
+                <span class="pulse__track pulse__track--prev">
+                  <span class="pulse__fill" [style.inline-size.%]="spendShare('previous')"></span>
+                </span>
+              </div>
             }
           </div>
-          <div class="glance-strip__aside">
-            <div class="glance-strip__cell">
-              <span class="glance-strip__label">{{ i18n.t('home.lastFill') }}</span>
-              <strong [class.metric--ghost]="!hasRealFills()">
-                {{ hasRealFills() ? (lastFillDate() ? i18n.formatDate(lastFillDate()!) : '—') : '—.—' }}
-              </strong>
-            </div>
-            <div class="glance-strip__cell">
-              <span class="glance-strip__label">{{ i18n.t('home.nextDue') }}</span>
-              <strong [class.metric--ghost]="!nextDue()">{{ dueLabel() }}</strong>
-              @if (nextDue()?.dueDate; as due) {
-                <span class="glance-strip__hint">{{ i18n.formatDate(due) }}</span>
-              }
-            </div>
-          </div>
-        </div>
-
-        <div
-          class="glance-strip glance-strip--cost"
-          [class.metric-flash]="glanceFlash()"
-          role="status"
-          [attr.aria-label]="i18n.t('home.costGlance')"
-        >
-          <div class="glance-strip__cell">
-            <span class="glance-strip__label">{{ i18n.t('home.costPerKm') }}</span>
-            <strong [class.metric--ghost]="fuelCostGlance().costPerKm == null">
-              @if (fuelCostGlance().costPerKm != null) {
-                {{ formatMoney(fuelCostGlance().costPerKm!) }}
-              } @else {
-                —.—
-              }
-            </strong>
-          </div>
-          <div class="glance-strip__cell glance-strip__cell--now">
-            <span class="glance-strip__label">{{ i18n.t('home.monthSpend') }}</span>
-            <strong
-              [class.metric--ghost]="!hasRealFills() && fuelCostGlance().currentMonth === 0"
-            >
-              {{ formatMoney(fuelCostGlance().currentMonth) }}
-            </strong>
-          </div>
-          <div class="glance-strip__cell">
-            <span class="glance-strip__label">{{ i18n.t('home.lastMonthSpend') }}</span>
-            <strong
-              [class.metric--ghost]="
-                fuelCostGlance().previousMonth === 0 && fuelCostGlance().deltaPct == null
-              "
-            >
-              {{ formatMoney(fuelCostGlance().previousMonth) }}
-            </strong>
-            <span
-              class="glance-strip__delta"
-              [class.glance-strip__delta--down]="(fuelCostGlance().deltaPct ?? 0) < -3"
-              [class.glance-strip__delta--up]="(fuelCostGlance().deltaPct ?? 0) > 3"
-              aria-hidden="true"
-            >{{ monthFuelDeltaLabel() }}</span>
-          </div>
-        </div>
+        </section>
 
         @if (!hasRealFills() && !sampleMode()) {
           <a routerLink="/fill-up" class="ghost-cta">{{ i18n.t('home.ghost.cta') }}</a>
