@@ -5,17 +5,22 @@
   />
   <app-section-tabs [tabs]="tabs" [ariaLabel]="i18n.t('nav.fuel')" />
 
-  <app-numeric-field
-    [label]="i18n.t('around.range')"
-    [value]="rangeText()"
-    [error]="rangeError()"
-    (valueChange)="onRange($event)"
-    (touch)="onRangeCommit()"
-  />
-
   @if (!requested()) {
-    <section class="card around-cta" role="status" aria-live="polite">
-      <p class="around-cta__copy">{{ i18n.t('around.explain') }}</p>
+    <section class="card around-finder" role="status" aria-live="polite">
+      <div class="around-finder__visual" aria-hidden="true">
+        <span class="around-finder__ring"></span>
+        <span class="around-finder__ring"></span>
+        <span class="around-finder__ring"></span>
+        <span class="around-finder__core"></span>
+      </div>
+      <p class="around-finder__copy">{{ i18n.t('around.explain') }}</p>
+      <app-numeric-field
+        [label]="i18n.t('around.range')"
+        [value]="rangeText()"
+        [error]="rangeError()"
+        (valueChange)="onRange($event)"
+        (touch)="onRangeCommit()"
+      />
       <app-primary-button
         [label]="i18n.t('around.useLocation')"
         [stretch]="true"
@@ -23,6 +28,13 @@
       />
     </section>
   } @else {
+    <app-numeric-field
+      [label]="i18n.t('around.range')"
+      [value]="rangeText()"
+      [error]="rangeError()"
+      (valueChange)="onRange($event)"
+      (touch)="onRangeCommit()"
+    />
     <app-around-results
       [items]="nearbyItems()"
       [loading]="nearbyLoading()"

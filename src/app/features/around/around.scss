@@ -3,25 +3,75 @@
   gap: var(--space-4);
 }
 
-.around-hero {
-  overflow: hidden;
-  border-radius: var(--radius);
-  border: 1px solid var(--hairline);
-  background: color-mix(in srgb, var(--petrol) 12%, var(--surface));
-}
-
-.around-cta {
+.around-finder {
   display: grid;
   gap: var(--space-4);
   padding: var(--space-5);
+  overflow: hidden;
 }
 
-.around-cta__copy {
+.around-finder__visual {
+  position: relative;
+  height: 7rem;
+  display: grid;
+  place-items: center;
+}
+
+.around-finder__ring,
+.around-finder__core {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.around-finder__ring {
+  border: 1px solid color-mix(in srgb, var(--cta) 42%, var(--hairline));
+}
+
+.around-finder__ring:nth-child(1) {
+  width: 3rem;
+  height: 3rem;
+}
+
+.around-finder__ring:nth-child(2) {
+  width: 5rem;
+  height: 5rem;
+  opacity: 0.72;
+}
+
+.around-finder__ring:nth-child(3) {
+  width: 7rem;
+  height: 7rem;
+  opacity: 0.4;
+}
+
+.around-finder__core {
+  width: 0.7rem;
+  height: 0.7rem;
+  background: var(--cta);
+}
+
+.around-finder__copy {
   margin: 0;
   color: var(--muted);
   line-height: 1.45;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  /* keep host motion-policy fallbacks; no extra press motion here */
+@media (prefers-reduced-motion: no-preference) {
+  .around-finder__ring {
+    animation: around-pulse 2.8s var(--ease) infinite;
+  }
+
+  .around-finder__ring:nth-child(2) {
+    animation-delay: 0.35s;
+  }
+
+  .around-finder__ring:nth-child(3) {
+    animation-delay: 0.7s;
+  }
+}
+
+@keyframes around-pulse {
+  50% {
+    transform: scale(1.045);
+  }
 }
