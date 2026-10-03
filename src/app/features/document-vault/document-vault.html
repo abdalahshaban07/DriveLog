@@ -5,80 +5,176 @@
     (back)="router.navigateByUrl('/more')"
   />
 
-  <section class="vault-form card stack" [attr.aria-label]="i18n.t('vault.form')">
-    <p class="vault-form__label">
-      {{ editId() ? i18n.t('vault.editing') : i18n.t('vault.form') }}
-    </p>
-    <app-select-field
-      [label]="i18n.t('vault.kind')"
-      [options]="kindOptions()"
-      [(value)]="kind"
-    />
-    @if (kind() === 'other') {
-      <app-text-field [label]="i18n.t('vault.label')" [(value)]="label" />
-    }
-    <app-date-field
-      [label]="i18n.t('vault.expiry')"
-      [(value)]="expiryDate"
-      [error]="expiryError()"
-    />
-    <app-text-field
-      [label]="i18n.t('vault.note')"
-      [(value)]="note"
-      [multiline]="true"
-    />
-    <div class="form-actions">
-      @if (editId()) {
-        <button type="button" class="ghost-btn" (click)="resetForm()">
-          {{ i18n.t('common.cancel') }}
-        </button>
+  <section class="vault-hero card card--paper" [attr.aria-label]="i18n.t('vault.glance')">
+    <p class="vault-hero__kicker">{{ i18n.t('vault.glance') }}</p>
+    @if (stats().next; as next) {
+      <div class="vault-hero__main">
+        <div class="vault-hero__id">
+          <span class="vault-mark" aria-hidden="true">
+            <ng-container
+              [ngTemplateOutlet]="kindMark"
+              [ngTemplateOutletContext]="{ $implicit: next.kind }"
+            />
+          </span>
+          <div>
+            <p class="vault-hero__next">{{ i18n.t('vault.homeNext') }}</p>
+            <h2 class="vault-hero__kind">{{ docTitle(next) }}</h2>
+            @if (docKicker(next)) {
+              <p class="vault-hero__extra">{{ docKicker(next) }}</p>
+            }
+            <p class="vault-hero__date">{{ longDate(next.expiryDate) }}</p>
+          </div>
+        </div>
+        <p class="vault-hero__count" [attr.aria-label]="daySentence(next.expiryDate)">
+          @if (dayTone(next.expiryDate) === 'today') {
+            <span class="vault-hero__num vault-hero__num--word" [attr.data-urgency]="urgencyClass(next.expiryDate)">
+              {{ i18n.t('vault.dueToday') }}
+            </span>
+          } @else {
+            <span class="vault-hero__num" [attr.data-urgency]="urgencyClass(next.expiryDate)">
+              {{ i18n.formatNumber(dayCount(next.expiryDate), { maximumFractionDigits: 0 }) }}
+            </span>
+            <span class="vault-hero__unit">{{ dayUnit(next.expiryDate) }}</span>
+          }
+        </p>
+      </div>
+      @if (next.note) {
+        <p class="vault-hero__note">{{ next.note }}</p>
       }
-      <app-primary-button
-        [label]="i18n.t('vault.save')"
-        [disabled]="saving()"
-        (pressed)="save()"
-      />
-    </div>
+    } @else {
+      <h2 class="vault-hero__kind">{{ i18n.t('vault.emptyTitle') }}</h2>
+      <p class="vault-hero__date">{{ i18n.t('vault.empty') }}</p>
+    }
+
+    <ul class="vault-stats">
+      <li data-tone="ok">
+        <strong>{{ i18n.formatNumber(stats().valid, { maximumFractionDigits: 0 }) }}</strong>
+        <span>{{ i18n.t('vault.urgency.ok') }}</span>
+      </li>
+      <li data-tone="warn">
+        <strong>{{ i18n.formatNumber(stats().soon, { maximumFractionDigits: 0 }) }}</strong>
+        <span>{{ i18n.t('vault.stat.soon') }}</span>
+      </li>
+      <li data-tone="stop">
+        <strong>{{ i18n.formatNumber(stats().expired, { maximumFractionDigits: 0 }) }}</strong>
+        <span>{{ i18n.t('vault.urgency.expired') }}</span>
+      </li>
+    </ul>
   </section>
 
-  <h2 class="section-title">{{ i18n.t('vault.list') }}</h2>
-  @if (list().length === 0) {
-    <p class="empty-state">{{ i18n.t('vault.empty') }}</p>
+  @if (showForm()) {
+    <section
+      #composer
+      class="vault-form card stack"
+      [attr.aria-label]="editId() ? i18n.t('vault.editing') : i18n.t('vault.form')"
+    >
+      <p class="vault-form__label">
+        {{ editId() ? i18n.t('vault.editing') : i18n.t('vault.form') }}
+      </p>
+      <div class="kind-row" role="group" [attr.aria-label]="i18n.t('vault.kind')">
+        @for (opt of kindOptions(); track opt.value) {
+          <button
+            type="button"
+            class="kind-chip"
+            [class.kind-chip--on]="kind() === opt.value"
+            [attr.aria-pressed]="kind() === opt.value"
+            (click)="kind.set(opt.value)"
+          >
+            <span class="kind-chip__mark" aria-hidden="true">
+              <ng-container
+                [ngTemplateOutlet]="kindMark"
+                [ngTemplateOutletContext]="{ $implicit: opt.value }"
+              />
+            </span>
+            {{ opt.label }}
+          </button>
+        }
+      </div>
+      <p class="kind-hint">{{ kindHint() }}</p>
+      @if (kind() === 'other') {
+        <app-text-field [label]="i18n.t('vault.label')" [(value)]="label" />
+      }
+      <app-date-field
+        [label]="i18n.t('vault.expiry')"
+        [(value)]="expiryDate"
+        [error]="expiryError()"
+      />
+      <app-text-field
+        [label]="i18n.t('vault.note')"
+        [(value)]="note"
+        [multiline]="true"
+      />
+      <div class="form-actions">
+        <app-primary-button
+          [label]="i18n.t('vault.save')"
+          [disabled]="saving()"
+          [stretch]="true"
+          (pressed)="save()"
+        />
+        @if (editId() || list().length > 0) {
+          <button type="button" class="ghost-btn" (click)="resetForm()">
+            {{ i18n.t('common.cancel') }}
+          </button>
+        }
+      </div>
+    </section>
   } @else {
+    <button type="button" class="vault-open" (click)="openComposer()">
+      <span class="vault-open__plus" aria-hidden="true">+</span>
+      {{ i18n.t('vault.form') }}
+    </button>
+  }
+
+  @if (list().length > 0) {
+    <div class="vault-list-head">
+      <h2>{{ i18n.t('vault.list') }}</h2>
+      <span>{{ i18n.formatNumber(stats().total, { maximumFractionDigits: 0 }) }}</span>
+    </div>
     <ul class="doc-list list-reveal">
       @for (row of list(); track row.id) {
-        <li class="doc-card" [attr.data-urgency]="urgencyClass(row.expiryDate)">
+        <li class="doc-card card" [attr.data-urgency]="urgencyClass(row.expiryDate)">
           <div class="doc-card__top">
-            <strong class="doc-card__kind">
-              {{ kindLabel(row.kind) }}
-              @if (row.label) {
-                — {{ row.label }}
+            <span class="vault-mark" aria-hidden="true">
+              <ng-container
+                [ngTemplateOutlet]="kindMark"
+                [ngTemplateOutletContext]="{ $implicit: row.kind }"
+              />
+            </span>
+            <div class="doc-card__id">
+              <strong class="doc-card__kind">{{ docTitle(row) }}</strong>
+              @if (docKicker(row)) {
+                <span class="doc-card__extra">{{ docKicker(row) }}</span>
               }
-            </strong>
+            </div>
             <span class="doc-chip" [attr.data-urgency]="urgencyClass(row.expiryDate)">
               {{ urgencyLabel(row.expiryDate) }}
             </span>
           </div>
-          <p class="doc-card__meta">{{ i18n.formatDate(row.expiryDate) }}</p>
+          <p class="doc-card__count" [attr.aria-label]="daySentence(row.expiryDate)">
+            @if (dayTone(row.expiryDate) === 'today') {
+              <span class="doc-card__num doc-card__num--word">{{ i18n.t('vault.dueToday') }}</span>
+            } @else {
+              <span class="doc-card__num">
+                {{ i18n.formatNumber(dayCount(row.expiryDate), { maximumFractionDigits: 0 }) }}
+              </span>
+              <span class="doc-card__unit">{{ dayUnit(row.expiryDate) }}</span>
+            }
+          </p>
+          <p class="doc-card__meta">{{ longDate(row.expiryDate) }}</p>
           @if (row.note) {
             <p class="doc-card__note">{{ row.note }}</p>
           }
           <div class="doc-card__actions">
-            <button
-              type="button"
-              class="icon-action"
-              [attr.aria-label]="i18n.t('common.edit')"
-              (click)="startEdit(row)"
-            >
+            <button type="button" class="doc-act" (click)="startEdit(row)">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 20h9" />
                 <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
               </svg>
+              {{ i18n.t('common.edit') }}
             </button>
             <button
               type="button"
-              class="icon-action icon-action--danger"
-              [attr.aria-label]="i18n.t('vault.delete')"
+              class="doc-act doc-act--danger"
               (click)="askDelete(row.id)"
             >
               <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -86,6 +182,7 @@
                 <path d="M8 6V4h8v2" />
                 <path d="M19 6l-1 14H6L5 6" />
               </svg>
+              {{ i18n.t('vault.delete') }}
             </button>
           </div>
         </li>
@@ -104,3 +201,31 @@
     />
   }
 </div>
+
+<ng-template #kindMark let-kind>
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    @switch (kind) {
+      @case ('license') {
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <path d="M7 10h6M7 14h4" />
+        <circle cx="16.5" cy="12" r="2" />
+      }
+      @case ('registration') {
+        <path d="M7 3h8l4 4v14H7z" />
+        <path d="M15 3v4h4" />
+        <path d="M10 13h6M10 17h4" />
+      }
+      @case ('insurance') {
+        <path d="M12 3l7 3v6c0 4.2-2.8 6.8-7 8-4.2-1.2-7-3.8-7-8V6z" />
+      }
+      @case ('inspection') {
+        <circle cx="12" cy="12" r="8" />
+        <path d="M8.5 12.4l2.2 2.2 4.8-5" />
+      }
+      @case ('other') {
+        <rect x="4" y="4" width="16" height="16" rx="3" />
+        <path d="M12 8v8M8 12h8" />
+      }
+    }
+  </svg>
+</ng-template>

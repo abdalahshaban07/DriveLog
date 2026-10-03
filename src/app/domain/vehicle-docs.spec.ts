@@ -5,6 +5,7 @@ import {
   migrateCarExpiryToVault,
   nextExpiringDoc,
   sortDocsByUrgency,
+  vaultDayParts,
 } from './vehicle-docs';
 import type { VehicleDocument } from './models';
 
@@ -38,6 +39,9 @@ describe('vehicle-docs', () => {
     );
     expect(sorted.map((d) => d.id)).toEqual(['b', 'c', 'a']);
     expect(nextExpiringDoc(sorted, today)?.id).toBe('b');
+    expect(vaultDayParts('2026-03-10', today)).toEqual({ count: 10, tone: 'over' });
+    expect(vaultDayParts('2026-03-20', today)).toEqual({ count: 0, tone: 'today' });
+    expect(vaultDayParts('2026-06-01', today)).toEqual({ count: 73, tone: 'left' });
   });
 
   it('migrates car license/registration into vault once', () => {
