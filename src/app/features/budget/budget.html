@@ -5,70 +5,219 @@
     (back)="router.navigateByUrl('/more')"
   />
 
-  @if (car(); as c) {
-    <section class="card stack budget__edit" [attr.aria-label]="i18n.t('budget.save')">
-      <app-numeric-field [label]="i18n.t('budget.monthly')" [(value)]="budgetMonthly" />
-      <app-numeric-field [label]="i18n.t('budget.reserveTarget')" [(value)]="reserveTarget" />
-      <app-numeric-field [label]="i18n.t('budget.reserveBalance')" [(value)]="reserveBalance" />
-      <app-primary-button [label]="i18n.t('budget.save')" (pressed)="save()" />
-    </section>
-
-    <section class="card stack budget__health" [attr.aria-label]="i18n.t('budget.health')">
-      <div class="budget__health-head">
-        <h2>{{ i18n.t('budget.health') }}</h2>
-        <span class="budget__badge" [attr.data-health]="summary().budgetHealth">
-          {{ healthLabel() }}
-        </span>
+  @if (car()) {
+    <section
+      class="budget__hero"
+      [attr.data-health]="summary().budgetHealth"
+      [attr.aria-label]="i18n.t('budget.health')"
+    >
+      <div class="budget__hero-top">
+        <p class="budget__eyebrow">{{ i18n.t('budget.health') }}</p>
+        <span class="budget__badge">{{ healthLabel() }}</span>
       </div>
 
-      <div class="budget__metric">
-        <span class="budget__metric-label">{{ i18n.t('budget.remaining') }}</span>
-        <strong class="budget__metric-value">
-          @if (summary().remaining != null) {
-            {{ money(summary().remaining!) }}
+      @if (picture().figure === 'empty') {
+        <p class="budget__empty-lead">{{ i18n.t('budget.figure.empty') }}</p>
+      } @else {
+        <p class="budget__kicker">
+          @switch (picture().figure) {
+            @case ('remaining') {
+              {{ i18n.t('budget.remaining') }}
+            }
+            @case ('recommended') {
+              {{ i18n.t('budget.reserveRec') }}
+            }
+          }
+        </p>
+        <p class="budget__amount">{{ money(picture().figureAmount) }}</p>
+      }
+
+      @if (summary().eligible90 > 0) {
+        <p class="budget__aside">
+          {{ money(summary().eligible90) }}
+          <span>{{ i18n.t('budget.upcoming90') }}</span>
+        </p>
+      }
+
+      @if (summary().monthlyBudget != null) {
+        <div
+          class="budget__meter"
+          role="meter"
+          [attr.aria-label]="i18n.t('budget.meter')"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          [attr.aria-valuenow]="picture().spentPct"
+        >
+          <span
+            class="budget__meter-fill"
+            [class.budget__meter-fill--over]="picture().over"
+            [style.inline-size.%]="picture().spentPct"
+          ></span>
+        </div>
+        <p class="budget__meter-meta">
+          <span>{{ money(summary().spent) }}</span>
+          @if (picture().over) {
+            <span>{{ i18n.t('budget.over', { amount: money(picture().overAmount) }) }}</span>
+          } @else {
+            <span>{{
+              i18n.t('budget.ofBudget', { amount: money(summary().monthlyBudget!) })
+            }}</span>
+          }
+        </p>
+      }
+    </section>
+
+    <div class="budget__tiles">
+      <article class="budget__tile">
+        <span class="budget__tile-label">{{ i18n.t('budget.spent') }}</span>
+        <strong class="budget__tile-value">{{ money(summary().spent) }}</strong>
+        @if (summary().monthUnknown > 0) {
+          <span class="budget__tile-note">{{
+            i18n.t('budget.unpriced', { count: summary().monthUnknown })
+          }}</span>
+        }
+      </article>
+      <article class="budget__tile">
+        <span class="budget__tile-label">{{ i18n.t('budget.upcoming90') }}</span>
+        <strong class="budget__tile-value">{{ money(summary().eligible90) }}</strong>
+      </article>
+      <article class="budget__tile">
+        <span class="budget__tile-label">{{ i18n.t('budget.historyAvg') }}</span>
+        <strong class="budget__tile-value">
+          @if (summary().historical != null) {
+            {{ money(summary().historical!) }}
           } @else {
             {{ i18n.t('budget.notEnoughData') }}
           }
         </strong>
-      </div>
-      <div class="budget__metric">
-        <span class="budget__metric-label">{{ i18n.t('budget.upcoming90') }}</span>
-        <strong class="budget__metric-value">{{ money(summary().eligible90) }}</strong>
-      </div>
-      @if (summary().tiers.minimum != null) {
-        <div class="budget__metric">
-          <span class="budget__metric-label">{{ i18n.t('budget.reserveMin') }}</span>
-          <strong class="budget__metric-value">{{ money(summary().tiers.minimum!) }}</strong>
+      </article>
+      <article class="budget__tile">
+        <span class="budget__tile-label">{{ i18n.t('budget.coverage') }}</span>
+        <strong class="budget__tile-value">
+          @if (picture().coverage != null) {
+            {{ i18n.formatNumber(picture().coverage!, { maximumFractionDigits: 0 }) }}%
+          } @else {
+            {{ i18n.t('budget.notEnoughData') }}
+          }
+        </strong>
+      </article>
+    </div>
+
+    <section class="card budget__panel" [attr.aria-label]="i18n.t('budget.reserveBalance')">
+      <header class="budget__panel-head">
+        <h2>{{ i18n.t('budget.reserveNow') }}</h2>
+        <strong>{{ summary().reserve != null ? money(summary().reserve!) : '—' }}</strong>
+      </header>
+
+      @if (picture().marks.length) {
+        <div class="budget__track" aria-hidden="true">
+          <span
+            class="budget__track-fill"
+            [attr.data-fill]="picture().fill"
+            [style.inline-size.%]="picture().balancePct"
+          ></span>
+          @for (mark of picture().marks; track mark.key) {
+            <span class="budget__mark" [style.inset-inline-start.%]="mark.pct"></span>
+          }
         </div>
-      }
-      @if (summary().tiers.recommended != null) {
-        <div class="budget__metric">
-          <span class="budget__metric-label">{{ i18n.t('budget.reserveRec') }}</span>
-          <strong class="budget__metric-value">{{ money(summary().tiers.recommended!) }}</strong>
-        </div>
-      }
-      @if (summary().tiers.comfortable != null) {
-        <div class="budget__metric">
-          <span class="budget__metric-label">{{ i18n.t('budget.reserveComfy') }}</span>
-          <strong class="budget__metric-value">{{ money(summary().tiers.comfortable!) }}</strong>
-        </div>
+        <ul class="budget__rungs">
+          @for (mark of picture().marks; track mark.key) {
+            <li [class.budget__rung--met]="mark.met">
+              <span>{{ rungLabel(mark.key) }}</span>
+              <strong>{{ money(mark.amount) }}</strong>
+            </li>
+          }
+        </ul>
+        @if (summary().reserve == null) {
+          <p class="budget__note">{{ i18n.t('budget.noReserve') }}</p>
+        } @else if (picture().gap === 0) {
+          <p class="budget__note budget__note--ok">{{ i18n.t('budget.covered') }}</p>
+        } @else if (picture().gap != null && picture().gap! > 0) {
+          <p class="budget__note">
+            {{ i18n.t('budget.short', { amount: money(picture().gap!) }) }}
+          </p>
+        } @else if (picture().gap != null) {
+          <p class="budget__note budget__note--ok">
+            {{ i18n.t('budget.ahead', { amount: money(-picture().gap!) }) }}
+          </p>
+        }
+        @if (summary().reserveTarget != null) {
+          <p class="budget__note">
+            {{ i18n.t('budget.targetLine', { amount: money(summary().reserveTarget!) }) }}
+          </p>
+        }
+      } @else {
+        <p class="empty-state">{{ i18n.t('budget.notEnoughData') }}</p>
       }
     </section>
 
-    <section class="card stack budget__forecast" [attr.aria-label]="i18n.t('budget.forecast')">
-      <h2>{{ i18n.t('budget.forecast') }}</h2>
-      @if (summary().forecasts.length === 0) {
+    <section class="card budget__panel" [attr.aria-label]="i18n.t('budget.forecast')">
+      <header class="budget__panel-head">
+        <h2>{{ i18n.t('budget.forecast') }}</h2>
+      </header>
+      @if (!picture().hasForecast) {
         <p class="empty-state">{{ i18n.t('budget.notEnoughData') }}</p>
       } @else {
-        <ul class="budget__forecast-list">
-          @for (f of summary().forecasts; track f.months) {
-            <li class="budget__metric">
-              <span class="budget__metric-label">{{ f.months }}{{ i18n.t('budget.forecastMonths') }}</span>
-              <strong class="budget__metric-value">{{ money(f.known + f.estimated) }}</strong>
+        <p class="budget__legend">
+          <span
+            ><i class="budget__swatch budget__swatch--known"></i>{{ i18n.t('budget.known') }}</span
+          >
+          <span
+            ><i class="budget__swatch budget__swatch--est"></i
+            >{{ i18n.t('budget.estimated') }}</span
+          >
+        </p>
+        <ul class="budget__forecast">
+          @for (bar of picture().bars; track bar.months) {
+            <li>
+              <div class="budget__forecast-top">
+                <span>
+                  {{ i18n.formatNumber(bar.months, { maximumFractionDigits: 0 })
+                  }}{{ i18n.t('budget.forecastMonths') }}
+                </span>
+                <strong>{{ money(bar.total) }}</strong>
+              </div>
+              <div class="budget__bar" aria-hidden="true">
+                <span class="budget__bar-scale" [style.inline-size.%]="bar.widthPct">
+                  <span class="budget__bar-known" [style.flex-grow]="bar.known"></span>
+                  <span class="budget__bar-est" [style.flex-grow]="bar.estimated"></span>
+                </span>
+              </div>
+              @if (bar.known > 0 && bar.estimated > 0) {
+                <p class="budget__split">
+                  {{ money(bar.known) }} {{ i18n.t('budget.known') }}
+                  ·
+                  {{ money(bar.estimated) }} {{ i18n.t('budget.estimated') }}
+                </p>
+              }
+              @if (bar.unknownCount > 0) {
+                <p class="budget__note">
+                  {{ i18n.t('budget.unpriced', { count: bar.unknownCount }) }}
+                </p>
+              }
             </li>
           }
         </ul>
       }
+      @if (picture().mileageNote) {
+        <p class="budget__note">{{ i18n.t('budget.forecast.notEnoughMileage') }}</p>
+      }
+    </section>
+
+    <section class="card budget__panel" [attr.aria-label]="i18n.t('budget.plan')">
+      <header class="budget__panel-head">
+        <h2>{{ i18n.t('budget.plan') }}</h2>
+      </header>
+      <p class="budget__note">{{ i18n.t('budget.planHint') }}</p>
+      <div class="budget__fields">
+        <app-numeric-field [label]="i18n.t('budget.monthly')" [(value)]="budgetMonthly" />
+        <app-numeric-field [label]="i18n.t('budget.reserveTarget')" [(value)]="reserveTarget" />
+        <app-numeric-field [label]="i18n.t('budget.reserveBalance')" [(value)]="reserveBalance" />
+      </div>
+      @if (justSaved() && clean()) {
+        <p class="budget__note budget__note--ok" role="status">{{ i18n.t('budget.saved') }}</p>
+      }
+      <app-primary-button [label]="i18n.t('budget.save')" (pressed)="save()" />
     </section>
   } @else {
     <p class="empty-state">{{ i18n.t('budget.notEnoughData') }}</p>
