@@ -31,8 +31,16 @@
               [class.carousel__chip--on]="car.id === activeCarId()"
               (click)="switchCar(car.id)"
             >
-              <span class="carousel__name">{{ carLabel(car) }}</span>
-              <span class="carousel__odo">{{ i18n.formatNumber(car.currentOdometer, { maximumFractionDigits: 0 }) }} {{ i18n.t('common.km') }}</span>
+              <span class="plate__copy">
+                <span class="carousel__name">{{ car.nickname }}</span>
+                @if (car.plate?.trim()) {
+                  <span class="plate__tag">{{ car.plate }}</span>
+                }
+              </span>
+              <span class="plate__odo">
+                <strong>{{ i18n.formatNumber(car.currentOdometer, { maximumFractionDigits: 0 }) }}</strong>
+                <span>{{ i18n.t('common.km') }}</span>
+              </span>
             </button>
           }
         </div>
@@ -71,25 +79,40 @@
           role="status"
           [attr.aria-label]="i18n.t('home.glanceStrip')"
         >
-          <div class="glance-strip__cell">
-            <span class="glance-strip__label">{{ i18n.t('home.lastFill') }}</span>
-            <strong [class.metric--ghost]="!hasRealFills()">
-              {{ hasRealFills() ? (lastFillDate() ? i18n.formatDate(lastFillDate()!) : '—') : '—.—' }}
-            </strong>
-          </div>
-          <div class="glance-strip__cell">
+          <div class="glance-strip__cell glance-strip__cell--lead">
             <span class="glance-strip__label">{{ i18n.t('home.economy') }}</span>
-            <strong [class.metric--ghost]="fuelMetrics().lastL100 == null">
+            <span class="glance-strip__figure">
+              <strong [class.metric--ghost]="fuelMetrics().lastL100 == null">
+                @if (fuelMetrics().lastL100 != null) {
+                  {{ i18n.formatNumber(fuelMetrics().lastL100!, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }}
+                } @else {
+                  —.—
+                }
+              </strong>
               @if (fuelMetrics().lastL100 != null) {
-                {{ i18n.formatUnit(fuelMetrics().lastL100!, 'common.lPer100', 1) }}
-              } @else {
-                —.—
+                <span class="glance-strip__unit">{{ i18n.t('common.lPer100') }}</span>
               }
-            </strong>
+            </span>
+            @if (fuelMetrics().lastKmPerL != null) {
+              <span class="glance-strip__hint">
+                {{ i18n.formatUnit(fuelMetrics().lastKmPerL!, 'common.kmPerL', 1) }}
+              </span>
+            }
           </div>
-          <div class="glance-strip__cell">
-            <span class="glance-strip__label">{{ i18n.t('home.nextDue') }}</span>
-            <strong [class.metric--ghost]="!nextDue()">{{ dueLabel() }}</strong>
+          <div class="glance-strip__aside">
+            <div class="glance-strip__cell">
+              <span class="glance-strip__label">{{ i18n.t('home.lastFill') }}</span>
+              <strong [class.metric--ghost]="!hasRealFills()">
+                {{ hasRealFills() ? (lastFillDate() ? i18n.formatDate(lastFillDate()!) : '—') : '—.—' }}
+              </strong>
+            </div>
+            <div class="glance-strip__cell">
+              <span class="glance-strip__label">{{ i18n.t('home.nextDue') }}</span>
+              <strong [class.metric--ghost]="!nextDue()">{{ dueLabel() }}</strong>
+              @if (nextDue()?.dueDate; as due) {
+                <span class="glance-strip__hint">{{ i18n.formatDate(due) }}</span>
+              }
+            </div>
           </div>
         </div>
 
@@ -109,7 +132,7 @@
               }
             </strong>
           </div>
-          <div class="glance-strip__cell">
+          <div class="glance-strip__cell glance-strip__cell--now">
             <span class="glance-strip__label">{{ i18n.t('home.monthSpend') }}</span>
             <strong
               [class.metric--ghost]="!hasRealFills() && fuelCostGlance().currentMonth === 0"
@@ -126,7 +149,12 @@
             >
               {{ formatMoney(fuelCostGlance().previousMonth) }}
             </strong>
-            <span class="glance-strip__delta" aria-hidden="true">{{ monthFuelDeltaLabel() }}</span>
+            <span
+              class="glance-strip__delta"
+              [class.glance-strip__delta--down]="(fuelCostGlance().deltaPct ?? 0) < -3"
+              [class.glance-strip__delta--up]="(fuelCostGlance().deltaPct ?? 0) > 3"
+              aria-hidden="true"
+            >{{ monthFuelDeltaLabel() }}</span>
           </div>
         </div>
 
@@ -167,7 +195,25 @@
         @if (hasRealFills() || sampleMode()) {
           @let outlook = monthOutlook();
           <section class="month-outlook" role="status" [attr.aria-label]="i18n.t('home.monthOutlook')">
-            <h2 class="month-outlook__title">{{ i18n.t('home.monthOutlook') }}</h2>
+            <header class="month-outlook__head">
+              <h2 class="month-outlook__title">{{ i18n.t('home.monthOutlook') }}</h2>
+              <span class="month-outlook__pace">
+                {{ i18n.t('home.monthPace', { day: outlook.elapsedDays, days: outlook.daysInMonth }) }}
+              </span>
+            </header>
+            <div
+              class="month-track"
+              role="meter"
+              [attr.aria-valuenow]="monthPace(outlook.elapsedDays, outlook.daysInMonth)"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              [attr.aria-label]="i18n.t('home.monthPace', { day: outlook.elapsedDays, days: outlook.daysInMonth })"
+            >
+              <span
+                class="month-track__fill"
+                [style.inline-size.%]="monthPace(outlook.elapsedDays, outlook.daysInMonth)"
+              ></span>
+            </div>
             <div class="month-outlook__strip">
               <div class="month-outlook__cell">
                 <span class="month-outlook__label">{{ i18n.t('home.monthSpend') }}</span>
@@ -261,22 +307,52 @@
             </div>
           </div>
         }
+        @if (totals().total > 0) {
+          <div class="period-mix" role="img" [attr.aria-label]="i18n.t('charts.mix')">
+            <div class="stack-bar__track">
+              @if (totals().fuel > 0) {
+                <span class="stack-bar__seg stack-bar__seg--fuel" [style.flex]="totals().fuel"></span>
+              }
+              @if (totals().maintenance > 0) {
+                <span class="stack-bar__seg stack-bar__seg--maint" [style.flex]="totals().maintenance"></span>
+              }
+              @if (totals().breakdowns > 0) {
+                <span class="stack-bar__seg stack-bar__seg--break" [style.flex]="totals().breakdowns"></span>
+              }
+              @if (totals().other > 0) {
+                <span class="stack-bar__seg stack-bar__seg--other" [style.flex]="totals().other"></span>
+              }
+            </div>
+          </div>
+        }
         <div class="period-grid period-grid--dense">
           <div class="period-metric period-metric--fuel">
             <span class="period-metric__label">{{ i18n.t('charts.cat.fuel') }}</span>
             <strong>{{ formatMoney(totals().fuel) }}</strong>
+            @if (totals().total > 0) {
+              <span class="period-metric__share">{{ sharePct(totals().fuel, totals().total) }}%</span>
+            }
           </div>
           <div class="period-metric period-metric--maint">
             <span class="period-metric__label">{{ i18n.t('charts.cat.maintenance') }}</span>
             <strong>{{ formatMoney(totals().maintenance) }}</strong>
+            @if (totals().total > 0) {
+              <span class="period-metric__share">{{ sharePct(totals().maintenance, totals().total) }}%</span>
+            }
           </div>
           <div class="period-metric period-metric--break">
             <span class="period-metric__label">{{ i18n.t('charts.cat.breakdown') }}</span>
             <strong>{{ formatMoney(totals().breakdowns) }}</strong>
+            @if (totals().total > 0) {
+              <span class="period-metric__share">{{ sharePct(totals().breakdowns, totals().total) }}%</span>
+            }
           </div>
           <div class="period-metric period-metric--other">
             <span class="period-metric__label">{{ i18n.t('charts.cat.other') }}</span>
             <strong>{{ formatMoney(totals().other) }}</strong>
+            @if (totals().total > 0) {
+              <span class="period-metric__share">{{ sharePct(totals().other, totals().total) }}%</span>
+            }
           </div>
         </div>
         <p class="period-card__total">
@@ -289,6 +365,7 @@
         @let regDays = licenseDays(db.car()?.registrationExpiry);
         <article
           class="license-card"
+          [class.license-card--ok]="licenseStatus(licDays) === 'ok'"
           [class.license-card--overdue]="licenseStatus(licDays) === 'overdue'"
           [class.license-card--soon]="licenseStatus(licDays) === 'soon'"
         >
@@ -302,6 +379,7 @@
         </article>
         <article
           class="license-card"
+          [class.license-card--ok]="licenseStatus(regDays) === 'ok'"
           [class.license-card--overdue]="licenseStatus(regDays) === 'overdue'"
           [class.license-card--soon]="licenseStatus(regDays) === 'soon'"
         >

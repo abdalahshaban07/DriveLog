@@ -254,19 +254,80 @@
 
 .glance-strip {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-3);
-  margin-block-end: var(--space-5);
-  padding: var(--space-4) 0;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: end;
+  margin-block-end: 0;
+  padding: var(--space-4) 0 var(--space-3);
   border-block: 1px solid var(--hairline);
   background: transparent;
 }
 
 .glance-strip--cost {
-  margin-block-start: calc(var(--space-3) * -1);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--space-3);
+  margin-block-start: 0;
   margin-block-end: var(--space-5);
-  padding-block-start: var(--space-3);
+  padding-block: var(--space-3) var(--space-4);
   border-block-start: none;
+}
+
+.glance-strip__aside {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  padding-inline-start: var(--space-3);
+  border-inline-start: 1px solid var(--hairline);
+}
+
+.glance-strip__figure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.45rem;
+}
+
+.glance-strip__unit,
+.glance-strip__hint {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+}
+
+.glance-strip__cell--lead {
+  justify-items: start;
+  text-align: start;
+}
+
+.glance-strip__cell--lead strong {
+  font-size: clamp(2.75rem, 14vw, 3.6rem);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 0.9;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.glance-strip__cell--now strong {
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
+}
+
+@media (max-width: 380px) {
+  .glance-strip:not(.glance-strip--cost) {
+    grid-template-columns: 1fr;
+  }
+
+  .glance-strip__aside {
+    padding-inline-start: 0;
+    border-inline-start: 0;
+    grid-template-columns: 1fr 1fr;
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--hairline);
+  }
 }
 
 .vault-nudge {
@@ -275,24 +336,50 @@
   justify-content: space-between;
   gap: var(--space-3);
   min-height: var(--tap);
-  padding: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   margin-block-end: var(--space-4);
   border-radius: var(--radius);
-  border: 1px solid var(--hairline);
-  background: var(--surface);
-  color: inherit;
+  border: 1px solid color-mix(in srgb, var(--paper-muted) 28%, transparent);
+  background: var(--fill-paper);
+  color: var(--paper-text);
   text-decoration: none;
 }
 
+.vault-nudge strong {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
 .vault-nudge__label {
-  color: var(--muted);
-  font-size: 0.85rem;
+  color: var(--paper-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .glance-strip__delta {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: var(--fill-well);
   font-size: var(--type-label);
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--muted);
+}
+
+.glance-strip__delta--down {
+  color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 14%, var(--fill-well));
+}
+
+.glance-strip__delta--up {
+  color: var(--stop);
+  background: color-mix(in srgb, var(--stop) 12%, var(--fill-well));
 }
 
 .glance-strip__cell {
@@ -300,8 +387,8 @@
   gap: var(--space-1);
   min-width: 0;
   align-content: start;
-  justify-items: center;
-  text-align: center;
+  justify-items: start;
+  text-align: start;
 }
 
 .glance-strip__cell strong {
@@ -449,37 +536,92 @@
   display: flex;
   gap: var(--space-2);
   overflow-x: auto;
-  padding-block-end: var(--space-2);
+  padding-block-end: var(--space-1);
   margin-block-end: var(--space-4);
 }
 
 .carousel__chip {
-  flex: 0 0 auto;
-  min-width: 9rem;
-  min-height: var(--tap);
-  padding: var(--space-3);
+  display: flex;
+  flex: 1 0 min(100%, 16rem);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-width: min(100%, 16rem);
+  min-height: 6.25rem;
+  padding: var(--space-4);
   border: 1px solid var(--hairline);
-  border-radius: var(--radius);
-  background: var(--card-pastel, var(--surface));
+  border-radius: calc(var(--radius) + 2px);
+  background: var(--fill-surface);
   text-align: start;
   cursor: pointer;
 }
 
 .carousel__chip--on {
-  border-color: var(--cta);
-  box-shadow: inset 0 0 0 1px var(--cta);
+  border-color: color-mix(in srgb, var(--fuel) 55%, var(--hairline));
+  background: var(--fill-paper);
+  color: var(--paper-text);
+  box-shadow: inset 0 -3px 0 var(--fuel);
+}
+
+.plate__copy {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+  min-width: 0;
 }
 
 .carousel__name {
   display: block;
+  font-size: 1.15rem;
   font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
 }
 
-.carousel__odo {
-  display: block;
-  margin-top: var(--space-1);
+.carousel__chip--on .carousel__name,
+.carousel__chip--on .plate__odo strong {
+  color: var(--paper-text);
+}
+
+.plate__tag {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid color-mix(in srgb, currentColor 28%, transparent);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+}
+
+.carousel__chip--on .plate__tag,
+.carousel__chip--on .plate__odo span {
+  color: var(--paper-muted);
+}
+
+.plate__odo {
+  display: grid;
+  justify-items: end;
+  text-align: end;
+  flex: 0 0 auto;
+}
+
+.plate__odo strong {
+  font-size: clamp(1.7rem, 7vw, 2.15rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+
+.plate__odo span {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .license-row {
@@ -490,31 +632,45 @@
 }
 
 .license-card {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  min-height: 8rem;
   padding: var(--space-4);
   border-radius: var(--radius);
   background: var(--card-pastel, var(--surface));
   border: 1px solid var(--hairline);
+  border-inline-start: 3px solid var(--hairline);
+}
+
+.license-card--ok {
+  border-inline-start-color: color-mix(in srgb, var(--ok) 70%, var(--hairline));
 }
 
 .license-card--soon {
-  border-color: color-mix(in srgb, var(--warn) 50%, var(--hairline));
+  border-inline-start-color: var(--warn);
 }
 
 .license-card--overdue {
-  border-color: color-mix(in srgb, var(--stop) 50%, var(--hairline));
+  border-inline-start-color: var(--stop);
 }
 
 .license-card__title {
-  margin: 0 0 var(--space-2);
-  font-size: 0.85rem;
+  margin: 0;
+  font-size: 0.72rem;
   color: var(--muted);
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .license-card__days {
-  margin: 0;
-  font-size: 1.35rem;
+  margin: var(--space-2) 0 0;
+  font-size: clamp(1.55rem, 6vw, 1.9rem);
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
 }
 
 .license-card__date,
@@ -534,7 +690,9 @@
 
 .period-card__title {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
 }
 
 .period-card__range {
@@ -546,11 +704,11 @@
 .period-card__new {
   min-height: var(--tap);
   padding: 0 var(--space-3);
-  border: 1px solid var(--cta);
-  border-radius: var(--radius);
-  background: transparent;
-  color: var(--cta);
-  font-weight: 600;
+  border: 1px solid color-mix(in srgb, var(--fuel) 55%, var(--hairline));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--fuel) 10%, transparent);
+  color: var(--fuel);
+  font-weight: 700;
   cursor: pointer;
 }
 
@@ -573,9 +731,29 @@
   padding: var(--space-2) var(--space-3);
 }
 
+.period-mix {
+  margin-block-end: var(--space-3);
+}
+
 .period-metric {
+  display: grid;
+  gap: 2px;
   padding: var(--space-3);
   border-radius: calc(var(--radius) - 4px);
+}
+
+.period-metric strong {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.15rem;
+  letter-spacing: -0.03em;
+}
+
+.period-metric__share {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
 }
 
 .period-metric--fuel {
@@ -599,7 +777,10 @@
 
 .period-card__total {
   margin: var(--space-4) 0 0;
+  font-size: 1.05rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
   text-align: end;
 }
 
@@ -752,19 +933,67 @@
 
 .month-outlook {
   margin-block-end: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--fill-surface);
+}
+
+.month-outlook__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-block-end: var(--space-3);
 }
 
 .month-outlook__title,
 .rec-section__title {
-  margin: 0 0 var(--space-3);
-  font-size: 1.05rem;
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.rec-section__title {
+  margin-block-end: var(--space-3);
+}
+
+.month-outlook__pace {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.month-track {
+  height: 6px;
+  margin-block-end: var(--space-3);
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--fill-well);
+}
+
+.month-track__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--fuel);
 }
 
 .month-outlook__strip {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
-  padding: var(--space-4);
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.glance-strip--cost .glance-strip__cell {
+  justify-items: center;
+  text-align: center;
 }
 
 .month-outlook__cell {
@@ -778,10 +1007,10 @@
 
 .month-outlook__cell strong {
   font-variant-numeric: tabular-nums;
-  font-size: var(--type-metric);
+  font-size: clamp(1.45rem, 6vw, 1.85rem);
   font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
 }
 
 .rec-section {
@@ -820,31 +1049,38 @@
 .rec-card {
   scroll-snap-align: start;
   display: grid;
+  align-content: start;
   gap: var(--space-2);
-  min-height: 6.5rem;
+  min-height: 7.25rem;
   padding: var(--space-4);
+  border-inline-start: 3px solid var(--fuel);
   text-decoration: none;
   color: inherit;
 }
 
 .rec-card--overdue {
-  background: color-mix(in srgb, var(--stop) 5%, var(--surface));
+  border-inline-start-color: var(--stop);
+  background: color-mix(in srgb, var(--stop) 7%, var(--surface));
 }
 
 .rec-card--soon {
-  background: color-mix(in srgb, var(--warn) 6%, var(--surface));
+  border-inline-start-color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 8%, var(--surface));
 }
 
 .rec-card--fuel {
-  background: color-mix(in srgb, var(--fuel) 6%, var(--surface));
+  border-inline-start-color: var(--fuel);
+  background: color-mix(in srgb, var(--fuel) 8%, var(--surface));
 }
 
 .rec-card--spending {
-  background: color-mix(in srgb, var(--cta) 6%, var(--surface));
+  border-inline-start-color: var(--cta);
+  background: color-mix(in srgb, var(--cta) 8%, var(--surface));
 }
 
 .rec-card--tip {
-  background: color-mix(in srgb, var(--petrol-muted) 6%, var(--surface));
+  border-inline-start-color: var(--petrol-muted);
+  background: color-mix(in srgb, var(--petrol-muted) 8%, var(--surface));
 }
 
 .rec-card__title {
@@ -858,8 +1094,10 @@
 
 .rec-card__body {
   margin: 0;
-  font-size: 0.95rem;
-  line-height: 1.45;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.4;
 }
 
 .period-card {
@@ -885,13 +1123,24 @@
 
 .vehicle-status__head h2 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.vehicle-status__head a {
+  color: var(--fuel);
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-decoration: none;
 }
 
 .vehicle-status__count {
   margin: var(--space-2) 0 0;
-  color: var(--muted);
-  font-size: 0.9rem;
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .vehicle-status__list {

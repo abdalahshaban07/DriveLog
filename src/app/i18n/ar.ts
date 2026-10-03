@@ -503,6 +503,7 @@ export const ar: Record<MsgKey, string> = {
   'home.period.confirm': 'ابدأ الفترة',
   'home.period.total': 'الإجمالي {amount}',
   'home.monthOutlook': 'نظرة الشهر',
+  'home.monthPace': 'اليوم {day} من {days}',
   'home.whatsNext': 'الجاي',
   'home.projectedSpend': 'متوقع',
   'rec.setup.title': 'ابدأ',

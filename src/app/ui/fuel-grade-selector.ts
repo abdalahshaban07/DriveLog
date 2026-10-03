@@ -53,23 +53,20 @@ type GradeOption = { grade: FuelGrade; labelKey: MsgKey; price: number | null };
       gap: var(--space-2);
     }
     .grades__rail {
-      display: flex;
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(0, 1fr);
       gap: var(--space-2);
-      overflow-x: auto;
-      scroll-snap-type: x mandatory;
-      padding-block: 2px;
-      -webkit-overflow-scrolling: touch;
     }
     .grades__chip {
-      flex: 0 0 auto;
-      scroll-snap-align: start;
       display: grid;
+      align-content: center;
       gap: 2px;
-      min-width: 5.5rem;
-      min-height: calc(var(--tap) - 12px);
-      padding: var(--space-2) var(--space-3);
+      min-width: 0;
+      min-height: var(--tap);
+      padding: var(--space-2) var(--space-2);
       border: 1px solid var(--hairline);
-      border-radius: calc(var(--radius) - 4px);
+      border-radius: calc(var(--radius) - 2px);
       background: var(--fill-well);
       color: var(--text);
       text-align: center;
@@ -79,20 +76,31 @@ type GradeOption = { grade: FuelGrade; labelKey: MsgKey; price: number | null };
         background 80ms var(--ease-out);
     }
     .grades__chip--on {
-      border-color: color-mix(in srgb, var(--fuel) 55%, var(--hairline));
-      background: color-mix(in srgb, var(--fuel) 12%, var(--well));
+      border-color: var(--fuel);
+      background: color-mix(in srgb, var(--fuel) 14%, var(--well));
+      box-shadow: inset 0 0 0 1px var(--fuel);
     }
     .grades__chip:active {
-      transform: scale(0.97);
+      transform: scale(0.98);
     }
     .grades__name {
       font-weight: 700;
-      font-size: 0.9rem;
+      font-size: 1rem;
+      letter-spacing: -0.02em;
+    }
+    .grades__chip--on .grades__name {
+      color: var(--fuel);
     }
     .grades__price {
       font-variant-numeric: tabular-nums;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
+      font-weight: 600;
       color: var(--muted);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .grades__chip:active {
+        transform: none;
+      }
     }
   `,
 })

@@ -501,6 +501,7 @@ export const en = {
   'home.period.confirm': 'Start period',
   'home.period.total': 'Total {amount}',
   'home.monthOutlook': 'Month outlook',
+  'home.monthPace': 'Day {day} of {days}',
   'home.whatsNext': "What's next",
   'home.projectedSpend': 'Projected',
   'rec.setup.title': 'Get started',

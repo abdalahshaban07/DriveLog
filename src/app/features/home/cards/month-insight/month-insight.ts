@@ -55,7 +55,13 @@ import { I18n } from '../../../../i18n/i18n';
       text-transform: uppercase;
       color: var(--muted);
     }
-    .month-insight__text { margin: 0; font-weight: 600; }
+    .month-insight__text {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.35;
+    }
   `,
 })
 export class MonthInsight {

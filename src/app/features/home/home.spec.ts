@@ -89,6 +89,8 @@ describe('HomePage', () => {
     expect(page.recommendations().length).toBeGreaterThan(0);
     expect(page.monthOutlook().actual).toBe(0);
     expect(page.monthOutlook().projected).toBeNull();
+    expect(page.monthPace(10, 31)).toBe(32);
+    expect(page.monthPace(0, 0)).toBe(0);
   });
 
   it('renders dashboard list-reveal panel', () => {

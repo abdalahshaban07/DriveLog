@@ -1,6 +1,6 @@
 # Home
 
-Macrostructure: install → economy hero (left bias at tablet+) → snapshot metrics → due → vehicle disclosure.
+Macrostructure: vehicle plate → economy figure (start bias) → cost facts → quick log → status → month outlook → what's next → period mix → documents. Glance stays a flat hairline strip, not a paper hero.
 
 Primary CTA: Log fill-up only. Progressive disclosure for vehicle/recalls. Public-data L/E/E/S required.
 
