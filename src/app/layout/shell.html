@@ -96,5 +96,8 @@
     }
   </div>
 } @else {
-  <p class="loading" role="status">…</p>
+  <p class="loading" role="status">
+    <span class="loading__mark" aria-hidden="true"></span>
+    {{ i18n.t('app.name') }}
+  </p>
 }
