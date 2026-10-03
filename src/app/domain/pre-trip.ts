@@ -4,11 +4,13 @@ import { PRE_TRIP_ITEM_IDS } from './models';
 export type PreTripItemDef = {
   id: PreTripItemId;
   labelKey: `preTrip.item.${PreTripItemId}`;
+  hintKey: `preTrip.hint.${PreTripItemId}`;
 };
 
 export const PRE_TRIP_ITEMS: readonly PreTripItemDef[] = PRE_TRIP_ITEM_IDS.map((id) => ({
   id,
   labelKey: `preTrip.item.${id}` as PreTripItemDef['labelKey'],
+  hintKey: `preTrip.hint.${id}` as PreTripItemDef['hintKey'],
 }));
 
 export function emptyPreTripItems(): Record<PreTripItemId, boolean> {
@@ -22,6 +24,10 @@ export function emptyPreTripItems(): Record<PreTripItemId, boolean> {
   };
 }
 
+export function countPreTripChecked(items: Record<PreTripItemId, boolean>): number {
+  return PRE_TRIP_ITEM_IDS.reduce((n, id) => n + (items[id] ? 1 : 0), 0);
+}
+
 export function allPreTripChecked(items: Record<PreTripItemId, boolean>): boolean {
-  return PRE_TRIP_ITEM_IDS.every((id) => items[id]);
+  return countPreTripChecked(items) === PRE_TRIP_ITEM_IDS.length;
 }

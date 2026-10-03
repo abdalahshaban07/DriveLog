@@ -1,6 +1,7 @@
 <div class="stack pre-trip page-narrow">
   <app-page-header
     [title]="i18n.t('preTrip.title')"
+    [subtitle]="i18n.t('preTrip.lead')"
     [showBack]="true"
     (back)="router.navigateByUrl('/more')"
   />
@@ -10,53 +11,126 @@
   }
 
   <section class="card stack" [attr.aria-label]="i18n.t('preTrip.checklist')">
+    <div class="pre-trip__meter" [attr.data-ready]="allChecked()" role="status">
+      <div class="pre-trip__meter-top">
+        <p class="pre-trip__status">
+          @if (allChecked()) {
+            {{ i18n.t('preTrip.statusReady') }}
+          } @else {
+            {{ i18n.t('preTrip.statusOpen', { left: leftCount() }) }}
+          }
+        </p>
+        <p class="pre-trip__score">
+          <span class="pre-trip__score-num">{{ i18n.formatNumber(doneCount()) }}</span>
+          <span class="pre-trip__of">/ {{ i18n.formatNumber(total) }}</span>
+        </p>
+      </div>
+      <div
+        class="pre-trip__track"
+        role="progressbar"
+        [attr.aria-valuenow]="doneCount()"
+        [attr.aria-valuemin]="0"
+        [attr.aria-valuemax]="total"
+        [attr.aria-label]="i18n.t('preTrip.progress', { done: doneCount(), total: total })"
+      >
+        <span class="pre-trip__fill" [style.--done]="progressPct()"></span>
+      </div>
+    </div>
+
     <ul class="pre-trip__list">
       @for (row of checklist; track row.id) {
         <li>
-          <label class="pre-trip__item" [attr.for]="'pre-' + row.id">
+          <label
+            class="pre-trip__item"
+            [attr.data-on]="items()[row.id]"
+            [attr.for]="'pre-' + row.id"
+          >
             <input
               type="checkbox"
               [id]="'pre-' + row.id"
               [checked]="items()[row.id]"
               (change)="toggle(row.id)"
             />
-            <span>{{ itemLabel(row.labelKey) }}</span>
+            <span class="pre-trip__copy">
+              <span class="pre-trip__name">{{ itemLabel(row.labelKey) }}</span>
+              <span class="pre-trip__hint">{{ itemLabel(row.hintKey) }}</span>
+            </span>
+            <span class="pre-trip__box" aria-hidden="true"></span>
           </label>
         </li>
       }
     </ul>
 
+    <app-text-field
+      [label]="i18n.t('preTrip.note')"
+      [multiline]="true"
+      [value]="note()"
+      (valueChange)="note.set($event)"
+    />
+
     <div class="pre-trip__actions">
       <button type="button" class="ghost-btn" (click)="markReady()">
         {{ i18n.t('preTrip.ready') }}
       </button>
-      <app-primary-button
-        [label]="i18n.t('preTrip.save')"
-        [disabled]="saving()"
-        (pressed)="saveCheck()"
-      />
+      @if (doneCount() > 0) {
+        <button type="button" class="ghost" (click)="clearChecks()">
+          {{ i18n.t('preTrip.clear') }}
+        </button>
+      }
     </div>
+
+    <app-primary-button
+      [stretch]="true"
+      [label]="i18n.t('preTrip.save')"
+      [disabled]="saving()"
+      (pressed)="saveCheck()"
+    />
 
     @if (savedFlash()) {
       <p class="pre-trip__saved" role="status">{{ i18n.t('preTrip.saved') }}</p>
     }
   </section>
 
-  <h2 class="section-title">{{ i18n.t('preTrip.history') }}</h2>
-  @if (recent().length === 0) {
-    <p class="empty-state">{{ i18n.t('preTrip.empty') }}</p>
-  } @else {
-    <ul class="record-list list-reveal">
-      @for (row of recent(); track row.id) {
-        <li class="record-row">
-          <div class="record-row__main">
-            <strong>{{ i18n.formatDate(row.date) }}</strong>
-            <span class="record-row__meta">
-              {{ row.ready ? i18n.t('preTrip.readyBadge') : i18n.t('preTrip.partialBadge') }}
-            </span>
-          </div>
-        </li>
-      }
-    </ul>
-  }
+  <section class="stack" [attr.aria-label]="i18n.t('preTrip.history')">
+    <h2 class="section-title">{{ i18n.t('preTrip.history') }}</h2>
+    @if (recent().length === 0) {
+      <p class="empty-state">{{ i18n.t('preTrip.empty') }}</p>
+    } @else {
+      <ul class="pre-trip__logs list-reveal">
+        @for (row of recent(); track row.id) {
+          <li>
+            <details class="disclosure pre-trip__log">
+              <summary>
+                <span class="pre-trip__sum">
+                  <span class="pre-trip__when">{{ i18n.formatDate(row.date) }}</span>
+                  <span class="pre-trip__badge" [attr.data-ready]="row.ready">
+                    {{ row.ready ? i18n.t('preTrip.readyBadge') : i18n.t('preTrip.partialBadge') }}
+                  </span>
+                  <span class="pre-trip__frac">
+                    {{ i18n.formatNumber(doneOf(row.items)) }}/{{ i18n.formatNumber(total) }}
+                  </span>
+                </span>
+              </summary>
+              <div class="disclosure__body">
+                <ul class="pre-trip__verdicts">
+                  @for (item of checklist; track item.id) {
+                    <li [attr.data-on]="row.items[item.id]">
+                      <span class="pre-trip__tick" aria-hidden="true"></span>
+                      <span>{{ itemLabel(item.labelKey) }}</span>
+                      <span class="pre-trip__verdict">
+                        {{ row.items[item.id] ? i18n.t('preTrip.pass') : i18n.t('preTrip.miss') }}
+                      </span>
+                    </li>
+                  }
+                </ul>
+                @if (row.note) {
+                  <p class="pre-trip__note">{{ row.note }}</p>
+                }
+              </div>
+            </details>
+          </li>
+        }
+      </ul>
+    }
+  </section>
 </div>
