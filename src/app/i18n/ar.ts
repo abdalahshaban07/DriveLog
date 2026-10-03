@@ -24,6 +24,8 @@ export const ar: Record<MsgKey, string> = {
   'home.kmSince': 'كم مقطوعة',
   'home.rangeEst': 'المدى التقريبي',
   'home.nextDue': 'الجاي',
+  'home.kmLeft': 'فاضل {km} كم',
+  'home.kmOver': 'متأخر {km} كم',
   'home.nothingDue': 'مفيش حاجة مستحقة',
   'home.fuelSolar': 'سولار',
   'home.fuelDiesel': 'ديزل',

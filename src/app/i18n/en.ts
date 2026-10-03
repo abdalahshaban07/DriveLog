@@ -22,6 +22,8 @@ export const en = {
   'home.kmSince': 'Driven',
   'home.rangeEst': 'Est. range',
   'home.nextDue': 'Next due',
+  'home.kmLeft': '{km} km left',
+  'home.kmOver': '{km} km over',
   'home.nothingDue': 'Nothing due',
   'home.fuelSolar': 'Solar',
   'home.fuelDiesel': 'Diesel',
