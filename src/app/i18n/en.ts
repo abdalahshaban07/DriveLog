@@ -750,6 +750,8 @@ export const en = {
   'passport.noCar': 'Add a car first',
   'passport.maintenance': 'Maintenance history',
   'passport.maintEmpty': 'No maintenance logged yet',
+  'passport.driven': 'since setup',
+  'passport.fills': 'Fill-ups',
   'fillUp.sharedImage': 'Shared receipt',
   'fillUp.sharedImageReady': 'Shared image ready for review',
   'fillUp.clearShared': 'Clear image',

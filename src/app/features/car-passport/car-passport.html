@@ -8,44 +8,163 @@
   @if (!car()) {
     <p class="empty-state">{{ i18n.t('passport.noCar') }}</p>
   } @else if (preview(); as p) {
-    <section class="card passport-preview" [attr.aria-label]="i18n.t('passport.preview')">
-      <h2>{{ p.name }}</h2>
-      <dl class="passport-preview__grid">
-        <div>
-          <dt>{{ i18n.t('passport.odometer') }}</dt>
-          <dd>{{ i18n.formatNumber(p.odo, { maximumFractionDigits: 0 }) }} {{ i18n.t('common.km') }}</dd>
-        </div>
-        <div>
+    <div class="pass list-reveal">
+      <section class="pass__plate" [attr.aria-label]="i18n.t('passport.preview')">
+        <p class="pass__kicker">{{ i18n.t('passport.vehicle') }}</p>
+        <h2 class="pass__name">{{ p.title || i18n.t('passport.vehicle') }}</h2>
+        @if (p.spec) {
+          <p class="pass__spec" dir="auto">{{ p.spec }}</p>
+        }
+        @if (p.plate || p.showYear || p.tankLiters != null) {
+          <ul class="pass__chips">
+            @if (p.plate) {
+              <li class="pass__chip">
+                <span class="pass__chip-k">{{ i18n.t('settings.plate') }}</span>
+                <span dir="auto">{{ p.plate }}</span>
+              </li>
+            }
+            @if (p.showYear && p.year) {
+              <li class="pass__chip">
+                <span class="pass__chip-k">{{ i18n.t('date.year') }}</span>
+                <span>{{ p.year }}</span>
+              </li>
+            }
+            @if (p.tankLiters != null) {
+              <li class="pass__chip">
+                <span class="pass__chip-k">{{ i18n.t('settings.tankCapacity') }}</span>
+                <span>
+                  {{ i18n.formatNumber(p.tankLiters, { maximumFractionDigits: 0 }) }}
+                  {{ i18n.t('common.liters') }}
+                </span>
+              </li>
+            }
+          </ul>
+        }
+        <p class="pass__odo">
+          <span class="pass__odo-k">{{ i18n.t('passport.odometer') }}</span>
+          <span class="pass__odo-num">
+            {{ i18n.formatNumber(p.odo, { maximumFractionDigits: 0 }) }}
+          </span>
+          <span class="pass__odo-unit">{{ i18n.t('common.km') }}</span>
+        </p>
+        @if (p.drivenKm > 0) {
+          <p class="pass__driven">
+            {{ i18n.formatNumber(p.drivenKm, { maximumFractionDigits: 0 }) }}
+            {{ i18n.t('common.km') }}
+            {{ i18n.t('passport.driven') }}
+          </p>
+        }
+      </section>
+
+      <dl class="pass__metrics">
+        <div class="pass__metric">
           <dt>{{ i18n.t('passport.economy') }}</dt>
           <dd>
             @if (p.economy != null) {
-              {{ i18n.formatUnit(p.economy, 'common.lPer100', 1) }}
+              <span class="pass__value">
+                {{ i18n.formatNumber(p.economy, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }}
+              </span>
+              <span class="pass__unit">{{ i18n.t('common.lPer100') }}</span>
             } @else {
-              {{ i18n.t('passport.none') }}
+              <span class="pass__value">{{ i18n.t('passport.none') }}</span>
             }
           </dd>
         </div>
-        <div>
+        <div class="pass__metric">
           <dt>{{ i18n.t('passport.monthSpend') }}</dt>
-          <dd>{{ i18n.formatMoney(p.monthSpend, db.settings().currency, 2) }}</dd>
-        </div>
-        <div>
-          <dt>{{ i18n.t('passport.nextDoc') }}</dt>
           <dd>
-            @if (p.nextDoc) {
-              {{ i18n.formatDate(p.nextDoc.expiryDate) }}
+            <span class="pass__value pass__value--money">
+              {{ i18n.formatMoney(p.monthSpend, db.settings().currency, 2) }}
+            </span>
+            @if (p.monthDeltaPct != null) {
+              <span class="pass__delta" [attr.data-tone]="deltaTone(p.monthDeltaPct)">
+                {{ monthDelta(p.monthDeltaPct) }}
+              </span>
+            }
+          </dd>
+        </div>
+        <div class="pass__metric">
+          <dt>{{ i18n.t('home.costPerKm') }}</dt>
+          <dd>
+            @if (p.costPerKm != null) {
+              <span class="pass__value pass__value--money">
+                {{ i18n.formatMoney(p.costPerKm, db.settings().currency, 2) }}
+              </span>
             } @else {
-              {{ i18n.t('passport.none') }}
+              <span class="pass__value">{{ i18n.t('passport.none') }}</span>
+            }
+          </dd>
+        </div>
+        <div class="pass__metric">
+          <dt>{{ i18n.t('passport.fills') }}</dt>
+          <dd>
+            <span class="pass__value">{{ i18n.formatNumber(p.fillCount, { maximumFractionDigits: 0 }) }}</span>
+            @if (p.lastFillDate) {
+              <span class="pass__unit">
+                {{ i18n.t('home.lastFill') }}
+                ·
+                {{ i18n.formatDate(p.lastFillDate) }}
+              </span>
             }
           </dd>
         </div>
       </dl>
-    </section>
 
-    <div class="passport-actions">
+      <div class="pass__sheet">
+        <a
+          class="pass__row"
+          routerLink="/vault"
+          [attr.data-urgency]="p.urgency ?? 'none'"
+        >
+          <span class="pass__copy">
+            <span class="pass__label">{{ i18n.t('passport.nextDoc') }}</span>
+            @if (p.nextDoc) {
+              <strong class="pass__title">{{ docKind(p.nextDoc) }}</strong>
+              <span class="pass__meta">
+                {{ i18n.formatDate(p.nextDoc.expiryDate) }}
+                @if (p.docDays != null && p.docDays >= 0) {
+                  · {{ i18n.t('home.license.days', { days: p.docDays }) }}
+                }
+              </span>
+            } @else {
+              <strong class="pass__title">{{ i18n.t('passport.none') }}</strong>
+            }
+          </span>
+          @if (p.urgency; as urgency) {
+            <span class="pass__pill">{{ urgencyLabel(urgency) }}</span>
+          }
+          <svg class="pass__go" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 6l6 6-6 6" />
+          </svg>
+        </a>
+
+        <a class="pass__row" routerLink="/maintenance" data-urgency="none">
+          <span class="pass__copy">
+            <span class="pass__label">{{ i18n.t('health.detail.lastService') }}</span>
+            @if (p.lastService; as svc) {
+              <strong class="pass__title">{{ serviceLabel(svc) }}</strong>
+              <span class="pass__meta">
+                {{ i18n.formatDate(svc.date) }}
+                ·
+                {{ i18n.formatNumber(svc.odometer, { maximumFractionDigits: 0 }) }}
+                {{ i18n.t('common.km') }}
+              </span>
+            } @else {
+              <strong class="pass__title">{{ i18n.t('passport.maintEmpty') }}</strong>
+            }
+          </span>
+          <svg class="pass__go" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 6l6 6-6 6" />
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="pass__actions">
       <app-primary-button
         [label]="i18n.t('passport.download')"
         [disabled]="busy()"
+        [stretch]="true"
         (pressed)="exportPdf(false)"
       />
       <button type="button" class="ghost-btn" [disabled]="busy()" (click)="exportPdf(true)">

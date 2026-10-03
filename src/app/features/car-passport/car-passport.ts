@@ -1,14 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
 import {
+  buildPassportView,
   carPassportToPdf,
   downloadFile,
   sharePassportPdf,
 } from '../../domain/car-passport';
-import { latestEconomy, monthFuelSpend } from '../../domain/economy';
+import type { Maintenance, VehicleDocument } from '../../domain/models';
 import { maintenanceRecordLabel } from '../../domain/part-name';
-import { nextExpiringDoc } from '../../domain/vehicle-docs';
+import { nextExpiringDoc, type DocUrgency } from '../../domain/vehicle-docs';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { PageHeader } from '../../ui/page-header';
@@ -25,7 +26,7 @@ function pdfCurrencyLabel(code: string, lang: string): string {
 @Component({
   selector: 'app-car-passport',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, PrimaryButton],
+  imports: [PageHeader, PrimaryButton, RouterLink],
   templateUrl: './car-passport.html',
   styleUrl: './car-passport.scss',
 })
@@ -44,17 +45,62 @@ export class CarPassportPage {
     if (!car) {
       return null;
     }
-    const eco = latestEconomy(this.db.fillUps());
-    const month = monthFuelSpend(this.db.fillUps());
-    const nextDoc = nextExpiringDoc(this.db.vehicleDocuments());
-    return {
-      name: [car.nickname, car.make, car.model, car.year].filter(Boolean).join(' · '),
-      odo: car.currentOdometer,
-      economy: eco?.litersPer100Km ?? null,
-      monthSpend: month,
-      nextDoc,
-    };
+    return buildPassportView({
+      car,
+      fillUps: this.db.fillUps(),
+      documents: this.db.vehicleDocuments(),
+      maintenance: this.db.maintenance(),
+    });
   });
+
+  urgencyLabel(urgency: DocUrgency): string {
+    switch (urgency) {
+      case 'expired':
+        return this.i18n.t('vault.urgency.expired');
+      case 'd1':
+        return this.i18n.t('vault.urgency.d1');
+      case 'd7':
+        return this.i18n.t('vault.urgency.d7');
+      case 'd30':
+        return this.i18n.t('vault.urgency.d30');
+      case 'ok':
+        return this.i18n.t('vault.urgency.ok');
+      default: {
+        const _never: never = urgency;
+        return _never;
+      }
+    }
+  }
+
+  docKind(doc: VehicleDocument): string {
+    if (doc.kind === 'other' && doc.label?.trim()) {
+      return doc.label.trim();
+    }
+    return this.i18n.t(`vault.kind.${doc.kind}` as MsgKey);
+  }
+
+  serviceLabel(row: Maintenance): string {
+    return maintenanceRecordLabel(row, this.db.catalog(), (key) =>
+      this.i18n.t(key as MsgKey),
+    );
+  }
+
+  monthDelta(pct: number): string {
+    if (Math.abs(pct) < 3) {
+      return this.i18n.t('home.monthFuelDelta.same');
+    }
+    const abs = this.i18n.formatNumber(Math.abs(pct), { maximumFractionDigits: 0 });
+    return pct > 0
+      ? this.i18n.t('home.monthFuelDelta.up', { pct: abs })
+      : this.i18n.t('home.monthFuelDelta.down', { pct: `-${abs}` });
+  }
+
+  deltaTone(pct: number): 'up' | 'down' | 'flat' {
+    if (Math.abs(pct) < 3) {
+      return 'flat';
+    }
+    return pct > 0 ? 'up' : 'down';
+  }
 
   async exportPdf(share: boolean): Promise<void> {
     const car = this.car();
