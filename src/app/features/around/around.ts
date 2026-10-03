@@ -4,7 +4,12 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { getCoords, nearbyAround, type NearbyPoi } from '../../data/remote';
+import {
+  geocodePlace,
+  getCoords,
+  nearbyAround,
+  type NearbyPoi,
+} from '../../data/remote';
 import {
   AROUND_RADIUS_DEFAULT_KM,
   AROUND_RADIUS_MAX_KM,
@@ -15,13 +20,21 @@ import { I18n } from '../../i18n/i18n';
 import { NumericField } from '../../ui/numeric-field';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
+import { TextField } from '../../ui/text-field';
 import { FUEL_TABS, SectionTabs } from '../../ui/section-tabs/section-tabs';
 import { AroundResults } from './around-results';
 
 @Component({
   selector: 'app-around-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, AroundResults, PrimaryButton, NumericField, SectionTabs],
+  imports: [
+    PageHeader,
+    AroundResults,
+    PrimaryButton,
+    NumericField,
+    TextField,
+    SectionTabs,
+  ],
   templateUrl: './around.html',
   styleUrl: './around.scss',
 })
@@ -37,6 +50,9 @@ export class AroundPage {
   readonly rangeText = signal(String(AROUND_RADIUS_DEFAULT_KM));
   readonly rangeKm = signal(AROUND_RADIUS_DEFAULT_KM);
   readonly rangeError = signal('');
+  readonly areaText = signal('');
+  readonly areaError = signal('');
+  private readonly locateMode = signal<'gps' | 'area'>('gps');
 
   setNearbyKind(kind: 'fuel' | 'charge'): void {
     this.nearbyKind.set(kind);
@@ -60,15 +76,51 @@ export class AroundPage {
   onRangeCommit(): void {
     this.onRange(this.rangeText());
     if (!this.rangeError() && this.requested()) {
-      void this.useMyLocation();
+      if (this.locateMode() === 'area') {
+        void this.searchArea();
+      } else {
+        void this.useMyLocation();
+      }
+    }
+  }
+
+  async searchArea(): Promise<void> {
+    this.onRange(this.rangeText());
+    if (this.rangeError() || this.nearbyLoading()) {
+      return;
+    }
+    const query = this.areaText().trim();
+    if (!query) {
+      this.areaError.set(this.i18n.t('around.areaError'));
+      return;
+    }
+    this.areaError.set('');
+    this.locateMode.set('area');
+    this.requested.set(true);
+    this.nearbyLoading.set(true);
+    this.nearbyError.set(null);
+    try {
+      const coords = await geocodePlace(query, this.i18n.language());
+      if (!coords) {
+        this.nearbyError.set(this.i18n.t('around.areaMiss'));
+        this.nearbyItems.set([]);
+        return;
+      }
+      this.nearbyItems.set(await nearbyAround(coords, this.rangeKm()));
+    } catch {
+      this.nearbyError.set(this.i18n.t('home.nearbyUnavailable'));
+      this.nearbyItems.set([]);
+    } finally {
+      this.nearbyLoading.set(false);
     }
   }
 
   async useMyLocation(): Promise<void> {
     this.onRange(this.rangeText());
-    if (this.rangeError()) {
+    if (this.rangeError() || this.nearbyLoading()) {
       return;
     }
+    this.locateMode.set('gps');
     this.requested.set(true);
     this.nearbyLoading.set(true);
     this.nearbyError.set(null);
