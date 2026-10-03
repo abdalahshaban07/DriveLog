@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parsePhotonPoint, readCoords } from './remote';
+import { parsePhotonPoint, photonSearchUrl, readCoords } from './remote';
 
 function position(lat: number, lon: number): GeolocationPosition {
   return {
@@ -96,5 +96,13 @@ describe('parsePhotonPoint', () => {
   it('returns null when the payload has no point', () => {
     expect(parsePhotonPoint({ features: [] })).toBeNull();
     expect(parsePhotonPoint(null)).toBeNull();
+  });
+});
+
+describe('photonSearchUrl', () => {
+  it('does not send lang=ar', () => {
+    const url = photonSearchUrl('القاهره', 'ar');
+    expect(url).toContain('lang=default');
+    expect(url).not.toContain('lang=ar');
   });
 });

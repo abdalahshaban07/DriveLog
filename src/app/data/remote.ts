@@ -156,6 +156,15 @@ export function parsePhotonPoint(raw: unknown): Coords | null {
   return { lat, lon };
 }
 
+/** Photon rejects lang=ar (400). Arabic queries still match with default. */
+export function photonSearchUrl(query: string, lang: 'en' | 'ar'): string {
+  return `https://photon.komoot.io/api/?${new URLSearchParams({
+    q: query.trim(),
+    limit: '1',
+    lang: lang === 'en' ? 'en' : 'default',
+  })}`;
+}
+
 export async function geocodePlace(
   query: string,
   lang: 'en' | 'ar' = 'en',
@@ -164,12 +173,7 @@ export async function geocodePlace(
   if (!q) {
     return null;
   }
-  const url = `https://photon.komoot.io/api/?${new URLSearchParams({
-    q,
-    limit: '1',
-    lang,
-  })}`;
-  return parsePhotonPoint(await fetchJson(url));
+  return parsePhotonPoint(await fetchJson(photonSearchUrl(q, lang)));
 }
 
 export function getCoords(): Promise<Coords | null> {
