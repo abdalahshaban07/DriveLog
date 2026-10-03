@@ -1,29 +1,25 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { fetchChatReply, isAssistantOnline, usableCoachText } from '../../data/assistant';
 import { Db } from '../../data/db';
+import { TANK_ECONOMY_FLAT_PCT } from '../../domain/economy';
 import { todayDateOnly } from '../../domain/dues';
-import { fuelDashboardMetrics } from '../../domain/fuel-dashboard';
+import { fuelBoard, sparklineGeometry } from '../../domain/fuel-dashboard';
 import { contextualFuelTipKey, nextFuelTipKey } from '../../domain/fuel-tips';
 import type { FuelGrade } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { PageHeader } from '../../ui/page-header';
 import { FUEL_TABS, SectionTabs } from '../../ui/section-tabs/section-tabs';
-import { SelectField, type SelectOption } from '../../ui/select-field';
 
 type GradeFilter = FuelGrade | 'all';
+type SpendTone = 'none' | 'flat' | 'up' | 'down';
+type EconomyTone = 'none' | 'flat' | 'better' | 'worse';
 
 @Component({
   selector: 'app-fuel',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, RouterLink, SectionTabs, SelectField],
+  imports: [PageHeader, RouterLink, SectionTabs],
   templateUrl: './fuel.html',
   styleUrl: './fuel.scss',
 })
@@ -56,33 +52,34 @@ export class FuelPage {
     return 'fuel.tip.source';
   });
 
-  private readonly gradeOptions: { id: GradeFilter; labelKey: MsgKey }[] = [
+  readonly gradeChoices: { id: GradeFilter; labelKey: MsgKey }[] = [
     { id: 'all', labelKey: 'fuel.gradeAll' },
     { id: 'gasoline92', labelKey: 'fillUp.grade.gasoline92' },
     { id: 'gasoline95', labelKey: 'fillUp.grade.gasoline95' },
     { id: 'solar', labelKey: 'fillUp.grade.solar' },
   ];
 
-  readonly gradeSelectOptions = computed<SelectOption[]>(() =>
-    this.gradeOptions.map((opt) => ({
-      value: opt.id,
-      label: this.i18n.t(opt.labelKey),
-    })),
-  );
+  readonly board = computed(() => fuelBoard(this.db.fillUps(), this.grade()));
 
-  readonly metrics = computed(() =>
-    fuelDashboardMetrics(this.db.fillUps(), this.grade()),
-  );
+  readonly spark = computed(() => sparklineGeometry(this.board().series));
 
-  readonly lastFill = computed(() => {
-    const sorted = [...this.db.fillUps()].sort(
+  readonly filtered = computed(() => {
+    const grade = this.grade();
+    const fills = this.db.fillUps();
+    const list = grade === 'all' ? fills : fills.filter((f) => f.fuelGrade === grade);
+    return [...list].sort(
       (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
     );
-    return sorted[0] ?? null;
   });
 
-  onGrade(value: string): void {
-    this.grade.set(value as GradeFilter);
+  readonly hasFills = computed(() => this.filtered().length > 0);
+
+  readonly lastFill = computed(() => this.filtered()[0] ?? null);
+
+  readonly recent = computed(() => this.filtered().slice(0, 4));
+
+  onGrade(value: GradeFilter): void {
+    this.grade.set(value);
   }
 
   gradeLabel(grade: FuelGrade): string {
@@ -111,6 +108,64 @@ export class FuelPage {
     return this.i18n.formatUnit(value, unitKey, 1);
   }
 
+  rowL100(id: string): number | null {
+    return this.board().l100ByFillId.get(id) ?? null;
+  }
+
+  spendTone(): SpendTone {
+    const pct = this.board().deltaPct;
+    if (pct == null) {
+      return 'none';
+    }
+    if (Math.abs(pct) < TANK_ECONOMY_FLAT_PCT) {
+      return 'flat';
+    }
+    return pct > 0 ? 'up' : 'down';
+  }
+
+  spendDeltaLabel(): string {
+    const tone = this.spendTone();
+    if (tone === 'none') {
+      return this.i18n.t('home.monthFuelDelta.none');
+    }
+    if (tone === 'flat') {
+      return this.i18n.t('home.monthFuelDelta.same');
+    }
+    const abs = this.i18n.formatNumber(Math.abs(this.board().deltaPct ?? 0), {
+      maximumFractionDigits: 0,
+    });
+    return tone === 'up'
+      ? this.i18n.t('home.monthFuelDelta.up', { pct: abs })
+      : this.i18n.t('home.monthFuelDelta.down', { pct: `-${abs}` });
+  }
+
+  economyTone(): EconomyTone {
+    const pct = this.board().economyDeltaPct;
+    if (pct == null) {
+      return 'none';
+    }
+    if (Math.abs(pct) < TANK_ECONOMY_FLAT_PCT) {
+      return 'flat';
+    }
+    return pct > 0 ? 'worse' : 'better';
+  }
+
+  economyCaption(): string | null {
+    const tone = this.economyTone();
+    if (tone === 'none') {
+      return null;
+    }
+    if (tone === 'flat') {
+      return this.i18n.t('fuel.vsUsualFlat');
+    }
+    const abs = this.i18n.formatNumber(Math.abs(this.board().economyDeltaPct ?? 0), {
+      maximumFractionDigits: 0,
+    });
+    return tone === 'worse'
+      ? this.i18n.t('fuel.vsUsualWorse', { pct: abs })
+      : this.i18n.t('fuel.vsUsualBetter', { pct: abs });
+  }
+
   async loadTip(force = true): Promise<void> {
     this.tipBusy.set(true);
     const prevKey = this.tipKey();
@@ -130,19 +185,14 @@ export class FuelPage {
         return;
       }
 
-      const nextKey = prevKey
-        ? nextFuelTipKey(prevKey, this.db)
-        : contextualFuelTipKey(this.db);
+      const nextKey = prevKey ? nextFuelTipKey(prevKey, this.db) : contextualFuelTipKey(this.db);
       let text = this.i18n.t(nextKey);
       let source: 'local' | 'ai' = 'local';
 
       if (this.online()) {
         const question = this.i18n.t('fuel.tip.prompt');
-        const reply = await fetchChatReply(
-          this.db,
-          question,
-          this.i18n.language(),
-          (key, params) => this.i18n.t(key as MsgKey, params),
+        const reply = await fetchChatReply(this.db, question, this.i18n.language(), (key, params) =>
+          this.i18n.t(key as MsgKey, params),
         );
         if (reply.source === 'remote' && reply.text.trim()) {
           text = reply.text.trim();

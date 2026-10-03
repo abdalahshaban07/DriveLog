@@ -9,12 +9,19 @@ import { Router, RouterLink } from '@angular/router';
 import { fetchChatReply, isAssistantOnline, usableCoachText } from '../../data/assistant';
 import { Db } from '../../data/db';
 import { todayDateOnly } from '../../domain/dues';
+import { partDefinitionLabel } from '../../domain/part-name';
 import { homeHealthSummary } from '../../domain/vehicle-facts';
-import { sectionForStatus } from '../../domain/vehicle-health';
+import {
+  healthScore,
+  sectionForStatus,
+  type HealthItem,
+} from '../../domain/vehicle-health';
 import type { MsgKey } from '../../i18n/en';
 import { I18n } from '../../i18n/i18n';
 import { PageHeader } from '../../ui/page-header';
 import { HealthRow } from '../../ui/health-row/health-row';
+
+type HealthSectionKey = 'attention' | 'upcoming' | 'healthy' | 'tracking';
 
 @Component({
   selector: 'app-health',
@@ -34,8 +41,10 @@ export class HealthPage {
 
   readonly online = computed(() => isAssistantOnline(this.db));
 
+  readonly focus = signal<HealthSectionKey | null>(null);
+
   readonly sections: {
-    key: 'attention' | 'upcoming' | 'healthy' | 'tracking';
+    key: HealthSectionKey;
     title: MsgKey;
     glance: MsgKey;
   }[] = [
@@ -74,6 +83,33 @@ export class HealthPage {
 
   readonly attentionCount = computed(() => this.grouped().attention.length);
 
+  readonly score = computed(() => {
+    const g = this.grouped();
+    return healthScore(
+      [...g.attention, ...g.upcoming, ...g.healthy, ...g.tracking].map((item) => item.status),
+    );
+  });
+
+  readonly tone = computed((): 'ok' | 'warn' | 'stop' => {
+    const score = this.score();
+    if (score == null || score >= 80) return 'ok';
+    if (score >= 50) return 'warn';
+    return 'stop';
+  });
+
+  readonly nextUp = computed(() => {
+    const g = this.grouped();
+    if (g.attention[0]) return g.attention[0];
+    const pool = [...g.upcoming, ...g.healthy].filter((item) => item.remainingKm != null);
+    pool.sort((a, b) => a.remainingKm! - b.remainingKm!);
+    return pool[0] ?? g.upcoming[0] ?? null;
+  });
+
+  readonly visibleSections = computed(() => {
+    const focus = this.focus();
+    return focus ? this.sections.filter((sec) => sec.key === focus) : this.sections;
+  });
+
   readonly isEmpty = computed(() => {
     const g = this.grouped();
     return (
@@ -86,6 +122,14 @@ export class HealthPage {
 
   constructor() {
     void this.loadInsight(false);
+  }
+
+  toggleFocus(key: HealthSectionKey): void {
+    this.focus.update((cur) => (cur === key ? null : key));
+  }
+
+  partLabel(item: HealthItem): string {
+    return partDefinitionLabel(item.part, (key) => this.i18n.t(key as MsgKey));
   }
 
   async loadInsight(force = true): Promise<void> {

@@ -1,34 +1,306 @@
-.passport-preview h2 {
-  margin: 0 0 var(--space-3);
-  font-size: 1.2rem;
-}
-
-.passport-preview__grid {
-  margin: 0;
+.pass {
   display: grid;
   gap: var(--space-3);
 }
 
-.passport-preview__grid dt {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.85rem;
+.pass__plate {
+  position: relative;
+  overflow: hidden;
+  padding: var(--space-5);
+  border-radius: calc(var(--radius) + 8px);
+  background:
+    radial-gradient(
+      70% 48% at 100% 0%,
+      color-mix(in srgb, var(--fuel) 22%, transparent),
+      transparent 62%
+    ),
+    var(--card-dark);
+  color: var(--card-dark-text);
+  border: 1px solid color-mix(in srgb, var(--card-dark-text) 14%, transparent);
+  box-shadow: var(--shadow-soft);
 }
 
-.passport-preview__grid dd {
-  margin: var(--space-1) 0 0;
+.pass__plate::before,
+.pass__plate::after {
+  content: '';
+  position: absolute;
+  inline-size: 16px;
+  block-size: 16px;
+  border-color: color-mix(in srgb, var(--fuel) 75%, transparent);
+  pointer-events: none;
+}
+
+.pass__plate::before {
+  inset-block-start: 12px;
+  inset-inline-start: 12px;
+  border-block-start: 1.5px solid;
+  border-inline-start: 1.5px solid;
+}
+
+.pass__plate::after {
+  inset-block-end: 12px;
+  inset-inline-end: 12px;
+  border-block-end: 1.5px solid;
+  border-inline-end: 1.5px solid;
+}
+
+.pass__kicker,
+.pass__odo-k,
+.pass__chip-k,
+.pass__label {
+  margin: 0;
+  font-size: var(--type-label);
   font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.pass__kicker,
+.pass__odo-k {
+  color: color-mix(in srgb, var(--fuel) 82%, var(--card-dark-text));
+}
+
+.pass__name {
+  margin: var(--space-2) 0 0;
+  font-size: clamp(1.65rem, 7vw, 2.05rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.pass__spec,
+.pass__driven {
+  margin: var(--space-2) 0 0;
+  color: color-mix(in srgb, var(--card-dark-text) 68%, transparent);
   font-variant-numeric: tabular-nums;
 }
 
-.passport-actions {
+.pass__chips {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-3);
+  gap: var(--space-2);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pass__chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  max-inline-size: 100%;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--card-dark-text) 16%, transparent);
+  background: color-mix(in srgb, var(--card-dark-text) 8%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+
+.pass__chip-k {
+  color: color-mix(in srgb, var(--card-dark-text) 58%, transparent);
+}
+
+.pass__odo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: var(--space-5) 0 0;
+}
+
+.pass__odo-k {
+  flex-basis: 100%;
+}
+
+.pass__odo-num {
+  font-size: var(--type-hero);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums;
+  line-height: 0.9;
+}
+
+.pass__odo-unit {
+  font-weight: 600;
+  color: color-mix(in srgb, var(--card-dark-text) 70%, transparent);
+}
+
+.pass__metrics {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  padding: 1px;
+  border-radius: calc(var(--radius) + 4px);
+  overflow: hidden;
+  background: var(--hairline);
+}
+
+.pass__metric {
+  min-inline-size: 0;
+  padding: var(--space-4);
+  background: var(--fill-surface);
+}
+
+.pass__metric dt {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--type-label);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.pass__metric dd {
+  margin: var(--space-2) 0 0;
+}
+
+.pass__value {
+  display: block;
+  font-weight: 700;
+  font-size: 1.45rem;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.pass__value--money {
+  font-size: 1.15rem;
+}
+
+.pass__unit,
+.pass__delta,
+.pass__meta {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.pass__delta[data-tone='up'] {
+  color: var(--warn);
+}
+
+.pass__delta[data-tone='down'] {
+  color: var(--ok);
+}
+
+.pass__sheet {
+  display: grid;
+  gap: 1px;
+  padding: 1px;
+  border-radius: calc(var(--radius) + 4px);
+  overflow: hidden;
+  background: var(--hairline);
+}
+
+.pass__row {
+  display: flex;
   align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--fill-surface);
+  color: inherit;
+  text-decoration: none;
+  border-inline-start: 3px solid var(--accent, var(--muted));
+}
+
+.pass__row[data-urgency='ok'] {
+  --accent: var(--ok);
+}
+
+.pass__row[data-urgency='d30'] {
+  --accent: var(--fuel);
+}
+
+.pass__row[data-urgency='d7'],
+.pass__row[data-urgency='d1'] {
+  --accent: var(--warn);
+}
+
+.pass__row[data-urgency='expired'] {
+  --accent: var(--stop);
+}
+
+.pass__row[data-urgency='none'] {
+  --accent: var(--muted);
+}
+
+.pass__copy {
+  display: grid;
+  gap: 2px;
+  min-inline-size: 0;
+  flex: 1;
+}
+
+.pass__label {
+  color: var(--muted);
+}
+
+.pass__title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.pass__meta {
+  margin-top: 0;
+}
+
+.pass__pill {
+  flex: none;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent, var(--ok)) 18%, transparent);
+  color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.pass__go {
+  flex: none;
+  inline-size: 18px;
+  block-size: 18px;
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+:host-context([dir='rtl']) .pass__go {
+  transform: scaleX(-1);
+}
+
+.pass__actions {
+  display: grid;
+  grid-template-columns: 1.4fr 0.9fr;
+  gap: var(--space-3);
+  align-items: stretch;
+}
+
+.pass__actions app-primary-button {
+  display: block;
+  min-inline-size: 0;
+}
+
+.pass__actions .ghost-btn {
+  inline-size: 100%;
 }
 
 .passport-status {
   margin: 0;
   color: var(--ok);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pass.list-reveal > * {
+    animation: none;
+  }
 }
