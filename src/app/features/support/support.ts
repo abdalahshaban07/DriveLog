@@ -25,21 +25,124 @@ export const CONTACT_EMAIL = 'abdalahshaban129@gmail.com';
 export const CONTACT_TOPICS: readonly {
   value: ContactTopic;
   labelKey: MsgKey;
+  bodyKey: MsgKey;
 }[] = [
-  { value: 'feature', labelKey: 'contact.topic.feature' },
-  { value: 'issue', labelKey: 'contact.topic.issue' },
-  { value: 'other', labelKey: 'contact.topic.other' },
+  { value: 'feature', labelKey: 'contact.topic.feature', bodyKey: 'contact.topic.feature.body' },
+  { value: 'issue', labelKey: 'contact.topic.issue', bodyKey: 'contact.topic.issue.body' },
+  { value: 'other', labelKey: 'contact.topic.other', bodyKey: 'contact.topic.other.body' },
 ];
 
-export const HELP_FAQ: readonly { q: MsgKey; a: MsgKey }[] = [
-  { q: 'help.q.data', a: 'help.a.data' },
-  { q: 'help.q.fillUp', a: 'help.a.fillUp' },
-  { q: 'help.q.tank', a: 'help.a.tank' },
-  { q: 'help.q.backup', a: 'help.a.backup' },
-  { q: 'help.q.reminders', a: 'help.a.reminders' },
-  { q: 'help.q.appearance', a: 'help.a.appearance' },
-  { q: 'help.q.around', a: 'help.a.around' },
-  { q: 'help.q.reset', a: 'help.a.reset' },
+export type FaqGroupId = 'data' | 'log' | 'care' | 'look';
+export type FaqGo = 'settings' | 'fillUp' | 'maint' | 'around' | 'assistant' | 'vault';
+
+export type FaqItem = {
+  q: MsgKey;
+  a: MsgKey;
+  group: FaqGroupId;
+  steps?: readonly MsgKey[];
+  go?: FaqGo;
+};
+
+export const FAQ_GROUPS: readonly { id: FaqGroupId; labelKey: MsgKey }[] = [
+  { id: 'data', labelKey: 'help.group.data' },
+  { id: 'log', labelKey: 'help.group.log' },
+  { id: 'care', labelKey: 'help.group.care' },
+  { id: 'look', labelKey: 'help.group.look' },
+];
+
+export const FAQ_GO: Record<FaqGo, { labelKey: MsgKey; link: string }> = {
+  settings: { labelKey: 'help.go.settings', link: '/settings' },
+  fillUp: { labelKey: 'help.go.fillUp', link: '/fill-up' },
+  maint: { labelKey: 'help.go.maint', link: '/maintenance' },
+  around: { labelKey: 'help.go.around', link: '/around' },
+  assistant: { labelKey: 'help.go.assistant', link: '/assistant' },
+  vault: { labelKey: 'help.go.vault', link: '/vault' },
+};
+
+export const HELP_FAQ: readonly FaqItem[] = [
+  {
+    q: 'help.q.data',
+    a: 'help.a.data',
+    group: 'data',
+    steps: ['help.s.data.1', 'help.s.data.2'],
+    go: 'settings',
+  },
+  {
+    q: 'help.q.backup',
+    a: 'help.a.backup',
+    group: 'data',
+    steps: ['help.s.backup.1', 'help.s.backup.2'],
+    go: 'settings',
+  },
+  {
+    q: 'help.q.reset',
+    a: 'help.a.reset',
+    group: 'data',
+    steps: ['help.s.reset.1', 'help.s.reset.2'],
+    go: 'settings',
+  },
+  {
+    q: 'help.q.fillUp',
+    a: 'help.a.fillUp',
+    group: 'log',
+    steps: ['help.s.fill.1', 'help.s.fill.2', 'help.s.fill.3'],
+    go: 'fillUp',
+  },
+  {
+    q: 'help.q.tank',
+    a: 'help.a.tank',
+    group: 'log',
+    steps: ['help.s.tank.1', 'help.s.tank.2'],
+    go: 'settings',
+  },
+  {
+    q: 'help.q.maint',
+    a: 'help.a.maint',
+    group: 'log',
+    steps: ['help.s.maint.1', 'help.s.maint.2', 'help.s.maint.3'],
+    go: 'maint',
+  },
+  {
+    q: 'help.q.reminders',
+    a: 'help.a.reminders',
+    group: 'care',
+    steps: ['help.s.remind.1', 'help.s.remind.2'],
+    go: 'settings',
+  },
+  {
+    q: 'help.q.vault',
+    a: 'help.a.vault',
+    group: 'care',
+    steps: ['help.s.vault.1', 'help.s.vault.2'],
+    go: 'vault',
+  },
+  {
+    q: 'help.q.advisor',
+    a: 'help.a.advisor',
+    group: 'care',
+    steps: ['help.s.advisor.1', 'help.s.advisor.2'],
+    go: 'assistant',
+  },
+  {
+    q: 'help.q.appearance',
+    a: 'help.a.appearance',
+    group: 'look',
+    steps: ['help.s.look.1', 'help.s.look.2'],
+    go: 'settings',
+  },
+  {
+    q: 'help.q.around',
+    a: 'help.a.around',
+    group: 'look',
+    steps: ['help.s.around.1', 'help.s.around.2'],
+    go: 'around',
+  },
+  {
+    q: 'help.q.install',
+    a: 'help.a.install',
+    group: 'look',
+    steps: ['help.s.install.1', 'help.s.install.2'],
+  },
 ];
 
 export const LEGAL_SECTIONS: readonly {
@@ -93,7 +196,27 @@ export class SupportPage {
   readonly openFaq = signal<MsgKey | null>(null);
   readonly reachedEnd = signal(false);
   readonly contactTopic = signal<ContactTopic>('feature');
+  readonly query = signal('');
+  readonly faqDest = FAQ_GO;
   private readonly legalEnd = viewChild<ElementRef<HTMLElement>>('legalEnd');
+
+  readonly faqGroups = computed(() => {
+    const q = this.query().trim().toLowerCase();
+    const items = this.faq.filter((item) => {
+      if (!q) {
+        return true;
+      }
+      const blob = [item.q, item.a, ...(item.steps ?? [])]
+        .map((key) => this.i18n.t(key))
+        .join(' ')
+        .toLowerCase();
+      return blob.includes(q);
+    });
+    return FAQ_GROUPS.map((group) => ({
+      ...group,
+      items: items.filter((item) => item.group === group.id),
+    })).filter((group) => group.items.length > 0);
+  });
 
   readonly faqStatus = computed(() => {
     const q = this.openFaq();
@@ -167,6 +290,27 @@ export class SupportPage {
 
   onContactTopic(value: ContactTopic): void {
     this.contactTopic.set(value);
+  }
+
+  onQuery(event: Event): void {
+    this.query.set((event.target as HTMLInputElement).value);
+  }
+
+  countLabel(): string {
+    return this.padIndex(this.i18n.formatNumber(this.faq.length));
+  }
+
+  faqIndex(q: MsgKey): string {
+    const n = this.faq.findIndex((item) => item.q === q) + 1;
+    return this.padIndex(this.i18n.formatNumber(n));
+  }
+
+  private padIndex(formatted: string): string {
+    if (formatted.length >= 2) {
+      return formatted;
+    }
+    const zero = /[0-9]/.test(formatted) ? '0' : '٠';
+    return `${zero}${formatted}`;
   }
 
   contactMailto(): string {
