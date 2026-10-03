@@ -351,21 +351,21 @@
 
           @if (totals().total > 0) {
             <div class="report-mix" role="img" [attr.aria-label]="i18n.t('charts.mix')">
-              <div class="report-mix__track">
+              <div class="stack-bar__track">
                 @for (slice of reportBrief().mix; track slice.key) {
-                  @if (slice.amount > 0) {
-                    <span
-                      class="report-mix__seg"
-                      [attr.data-tone]="slice.key"
-                      [style.flex]="slice.pct || 1"
-                    ></span>
-                  }
+                  <span
+                    class="stack-bar__seg stack-bar__seg--{{ mixSeg(slice.key) }}"
+                    [style.flex]="slice.pct || 1"
+                  ></span>
                 }
               </div>
               <ul class="report-mix__rows">
                 @for (slice of reportBrief().mix; track slice.key) {
                   <li>
-                    <span class="report-mix__swatch" [attr.data-tone]="slice.key" aria-hidden="true"></span>
+                    <span
+                      class="report-mix__swatch stack-bar__seg--{{ mixSeg(slice.key) }}"
+                      aria-hidden="true"
+                    ></span>
                     <span class="report-mix__name">{{ categoryLabel(slice.key) }}</span>
                     <span class="report-mix__amt">{{ formatMoney(slice.amount) }}</span>
                     <span class="report-mix__pct">{{ mixPct(slice.pct) }}</span>

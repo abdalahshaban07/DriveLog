@@ -690,6 +690,23 @@ export class HomePage {
     return this.i18n.t(key as MsgKey);
   }
 
+  mixSeg(key: ExpenseCategory): 'fuel' | 'maint' | 'break' | 'other' {
+    switch (key) {
+      case 'fuel':
+        return 'fuel';
+      case 'maintenance':
+        return 'maint';
+      case 'breakdown':
+        return 'break';
+      case 'other':
+        return 'other';
+      default: {
+        const _exhaustive: never = key;
+        return _exhaustive;
+      }
+    }
+  }
+
   mixPct(pct: number): string {
     return this.i18n.t('reports.pct', {
       pct: this.i18n.formatNumber(pct, { maximumFractionDigits: 0 }),
