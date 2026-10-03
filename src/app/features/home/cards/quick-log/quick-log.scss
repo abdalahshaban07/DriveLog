@@ -3,6 +3,10 @@
   margin-block-end: var(--space-4);
 }
 
+:host .quick-log {
+  border-block-start: 3px solid var(--fuel);
+}
+
 .quick-log__head {
   display: flex;
   justify-content: space-between;
@@ -13,7 +17,9 @@
 
 .quick-log__title {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
 }
 
 .quick-log__full {
@@ -36,11 +42,32 @@
   gap: var(--space-3);
   align-items: center;
   margin-block: var(--space-3);
+  padding: var(--space-3);
+  border-radius: calc(var(--radius) - 4px);
+  background: var(--fill-paper);
+  color: var(--paper-text);
 }
 
 .quick-log__cost {
+  display: grid;
+  gap: 2px;
   margin: 0;
+}
+
+.quick-log__cost-label {
+  color: var(--paper-muted);
+  font-size: 0.72rem;
   font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.quick-log__cost strong {
+  font-size: 1.55rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
 }
 
 .err {

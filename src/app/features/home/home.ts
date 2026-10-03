@@ -533,11 +533,6 @@ export class HomePage {
     }
   }
 
-  carLabel(car: { nickname: string; plate?: string }): string {
-    const plate = car.plate?.trim();
-    return plate ? `${car.nickname} · ${plate}` : car.nickname;
-  }
-
   licenseDays(expiry?: string): number | null {
     if (!expiry) {
       return null;
@@ -611,6 +606,13 @@ export class HomePage {
     }
     const body = formatAbs(abs);
     return value > 0 ? `+${body}` : `−${body}`;
+  }
+
+  monthPace(elapsedDays: number, daysInMonth: number): number {
+    if (daysInMonth <= 0) {
+      return 0;
+    }
+    return Math.min(100, Math.max(0, Math.round((elapsedDays / daysInMonth) * 100)));
   }
 
   monthFuelDeltaLabel(): string {

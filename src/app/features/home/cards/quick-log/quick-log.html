@@ -55,9 +55,11 @@
         [tankCapacityLiters]="tankCapacity()"
       />
       <p class="quick-log__cost">
-        {{ i18n.t('fillUp.receipt') }}:
-        {{ i18n.formatNumber(cost(), { maximumFractionDigits: 2 }) }}
-        {{ db.settings().currency }}
+        <span class="quick-log__cost-label">{{ i18n.t('fillUp.receipt') }}</span>
+        <strong>
+          {{ i18n.formatNumber(cost(), { maximumFractionDigits: 2 }) }}
+          {{ db.settings().currency }}
+        </strong>
       </p>
     </div>
   }

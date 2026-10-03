@@ -91,7 +91,9 @@ import type { MsgKey } from '../../../../i18n/en';
       font-variant-numeric: tabular-nums;
     }
     .weather-tip__temp {
+      font-size: 1.35rem;
       font-weight: 700;
+      letter-spacing: -0.03em;
       color: var(--text);
     }
     .weather-tip__kind {
