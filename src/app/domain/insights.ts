@@ -144,3 +144,75 @@ export function fuelGradeCostShare(
     .map(([grade, cost]) => ({ grade, cost: Math.round(cost) }))
     .sort((a, b) => b.cost - a.cost);
 }
+
+/** Kilometres driven per month. A full tank is not required. */
+export function distanceByMonth(
+  fills: readonly FillUp[],
+  period: LedgerPeriodFilter,
+): MonthSpend[] {
+  const { segments, byId } = trendSegments(fills, period);
+  const map = new Map<string, number>();
+  for (const segment of segments) {
+    const date = byId.get(segment.endId)?.date ?? '';
+    if (date.length < 7) {
+      continue;
+    }
+    const key = date.slice(0, 7);
+    map.set(key, (map.get(key) ?? 0) + segment.distanceKm);
+  }
+  return [...map.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([month, value]) => ({ month, value: Math.round(value) }));
+}
+
+/** Price per litre. Uses the logged unit price, otherwise cost ÷ litres. */
+export function unitPriceTrend(
+  fills: readonly FillUp[],
+  period: LedgerPeriodFilter,
+): TrendPoint[] {
+  return [...fills]
+    .filter((f) => inPeriod(f, period) && f.liters > 0)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt))
+    .flatMap((f) => {
+      const raw =
+        f.unitPrice != null && Number.isFinite(f.unitPrice) && f.unitPrice > 0
+          ? f.unitPrice
+          : f.cost / f.liters;
+      if (!Number.isFinite(raw) || raw <= 0) {
+        return [];
+      }
+      return [{ value: Math.round(raw * 100) / 100, date: f.date }];
+    });
+}
+
+export interface NamedShare {
+  label: string;
+  cost: number;
+}
+
+/** Fuel spend by station name. Unlabeled fills are skipped. Extra names fold into an empty label. */
+export function placeSpendShare(
+  fills: readonly FillUp[],
+  period: LedgerPeriodFilter,
+  limit = 4,
+): NamedShare[] {
+  const map = new Map<string, number>();
+  for (const f of fills) {
+    if (!inPeriod(f, period)) {
+      continue;
+    }
+    const label = f.placeLabel?.trim() ?? '';
+    if (!label) {
+      continue;
+    }
+    map.set(label, (map.get(label) ?? 0) + f.cost);
+  }
+  const ranked = [...map.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const top = ranked.slice(0, Math.max(1, limit));
+  const rest = ranked.slice(top.length).reduce((sum, [, cost]) => sum + cost, 0);
+  const out = top.map(([label, cost]) => ({ label, cost: Math.round(cost) }));
+  if (rest > 0) {
+    out.push({ label: '', cost: Math.round(rest) });
+  }
+  return out;
+}

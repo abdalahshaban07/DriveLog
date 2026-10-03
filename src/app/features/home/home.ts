@@ -36,10 +36,13 @@ import { isStoredMessageKey } from '../../domain/part-name';
 import { buildFuelCostGlance } from '../../domain/economy';
 import {
   costPerKmTrend,
+  distanceByMonth,
   economyTrend,
   fuelGradeCostShare,
+  placeSpendShare,
   spendByMonth,
   spendByMonthEntries,
+  unitPriceTrend,
   type TrendPoint,
 } from '../../domain/insights';
 import type { ExpenseCategory } from '../../domain/models';
@@ -339,6 +342,33 @@ export class HomePage {
       detail: this.formatMoney(s.cost),
     })),
   );
+  readonly distanceEntries = computed(() =>
+    distanceByMonth(this.db.fillUps(), this.chartPeriod()),
+  );
+  readonly distanceValues = computed(() => this.distanceEntries().map((e) => e.value));
+  readonly distanceLabels = computed(() =>
+    this.distanceEntries().map((e) =>
+      this.i18n.formatDate(`${e.month}-01`, { month: 'short' }),
+    ),
+  );
+  readonly distanceTotal = computed(() => this.distanceValues().reduce((sum, v) => sum + v, 0));
+  readonly distanceDelta = computed(() => monthDelta(this.distanceValues()));
+  readonly priceSeries = computed(() => unitPriceTrend(this.db.fillUps(), this.chartPeriod()));
+  readonly priceValues = computed(() => this.priceSeries().map((p) => p.value));
+  readonly priceLabels = computed(() => this.priceSeries().map((p) => this.shortDate(p.date)));
+  readonly priceLatest = computed(() => this.priceSeries().at(-1)?.value ?? null);
+  readonly priceDelta = computed(() => seriesDelta(this.priceSeries()));
+  readonly priceAvg = computed(() => seriesMean(this.priceSeries()));
+  readonly placeShare = computed(() => placeSpendShare(this.db.fillUps(), this.chartPeriod()));
+  readonly placeSlices = computed((): DonutSlice[] =>
+    this.placeShare().map((s) => ({
+      label: s.label || this.i18n.t('charts.otherPlaces'),
+      value: s.cost,
+      detail: this.formatMoney(s.cost),
+    })),
+  );
+  readonly economyBest = computed(() => seriesMin(this.economySeries()));
+  readonly costBest = computed(() => seriesMin(this.costSeries()));
   readonly monthOutlook = computed(() =>
     buildMonthOutlook(
       this.db.fillUps(),
@@ -527,6 +557,22 @@ export class HomePage {
     return this.i18n.formatMoney(value, this.db.settings().currency, 2);
   }
 
+  perMonth(total: number, count: number): string {
+    if (count <= 0) {
+      return '';
+    }
+    return this.i18n.t('charts.perMonth', { amount: this.formatMoney(total / count) });
+  }
+
+  sharePct(part: number, total: number): string {
+    if (total <= 0) {
+      return this.i18n.formatNumber(0, { maximumFractionDigits: 0 });
+    }
+    return this.i18n.formatNumber(Math.round((part / total) * 100), {
+      maximumFractionDigits: 0,
+    });
+  }
+
   formatSigned(value: number, digits: number): string {
     return this.formatDelta(value, digits, (abs) =>
       this.i18n.formatNumber(abs, {
@@ -713,4 +759,18 @@ function seriesMean(points: readonly TrendPoint[]): number | null {
     return null;
   }
   return points.reduce((sum, point) => sum + point.value, 0) / points.length;
+}
+
+function seriesMin(points: readonly TrendPoint[]): number | null {
+  if (!points.length) {
+    return null;
+  }
+  return Math.min(...points.map((point) => point.value));
+}
+
+function monthDelta(values: readonly number[]): number | null {
+  if (values.length < 2) {
+    return null;
+  }
+  return values.at(-1)! - values.at(-2)!;
 }
