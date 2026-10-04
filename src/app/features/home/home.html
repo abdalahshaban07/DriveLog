@@ -23,28 +23,79 @@
       [attr.aria-label]="i18n.t('home.tab.dashboard')"
     >
       @if (db.cars().length) {
-        <div class="carousel" [attr.aria-label]="i18n.t('home.carousel.label')">
-          @for (car of db.cars(); track car.id) {
-            <button
-              type="button"
-              class="carousel__chip"
-              [class.carousel__chip--on]="car.id === activeCarId()"
-              (click)="switchCar(car.id)"
-            >
-              <span class="plate__copy">
-                <span class="carousel__name">{{ car.nickname }}</span>
-                @if (vehicleLine(car); as spec) {
-                  <span class="carousel__spec">{{ spec }}</span>
-                }
-                @if (car.plate?.trim()) {
-                  <span class="plate__tag">{{ car.plate }}</span>
-                }
-              </span>
-              <span class="plate__odo">
-                <strong>{{ i18n.formatNumber(car.currentOdometer, { maximumFractionDigits: 0 }) }}</strong>
-                <span>{{ i18n.t('common.km') }}</span>
-              </span>
-            </button>
+        <div class="identity">
+          <div class="carousel" [attr.aria-label]="i18n.t('home.carousel.label')">
+            @for (car of db.cars(); track car.id) {
+              <button
+                type="button"
+                class="carousel__chip"
+                [class.carousel__chip--on]="car.id === activeCarId()"
+                (click)="switchCar(car.id)"
+              >
+                <span class="plate__copy">
+                  <span class="carousel__name">{{ car.nickname }}</span>
+                  @if (vehicleLine(car) || car.tankCapacityLiters) {
+                    <span class="carousel__spec">
+                      @if (vehicleLine(car); as spec) {
+                        {{ spec }}
+                      }
+                      @if (car.tankCapacityLiters) {
+                        @if (vehicleLine(car)) {
+                          ·
+                        }
+                        {{ i18n.formatUnit(car.tankCapacityLiters, 'common.liters', 0) }}
+                      }
+                    </span>
+                  }
+                  @if (car.plate?.trim()) {
+                    <span class="plate__tag">{{ car.plate }}</span>
+                  }
+                </span>
+                <span class="plate__odo">
+                  <strong>{{ i18n.formatNumber(car.currentOdometer, { maximumFractionDigits: 0 }) }}</strong>
+                  <span>{{ i18n.t('common.km') }}</span>
+                </span>
+              </button>
+            }
+          </div>
+
+          @if (operatingFacts(); as facts) {
+            <section class="ops" role="status" [attr.aria-label]="i18n.t('home.ops')">
+              <p class="ops__kicker">{{ i18n.t('home.ops') }}</p>
+              <div class="ops__grid">
+                <div>
+                  <span class="ops__label">{{ i18n.t('home.daysSince') }}</span>
+                  <strong>{{
+                    i18n.formatNumber(facts.daysSinceFill, { maximumFractionDigits: 0 })
+                  }}</strong>
+                </div>
+                <div>
+                  <span class="ops__label">{{ i18n.t('home.kmSince') }}</span>
+                  <strong [class.metric--ghost]="facts.kmSinceFill == null">
+                    @if (facts.kmSinceFill != null) {
+                      {{ i18n.formatNumber(facts.kmSinceFill, { maximumFractionDigits: 0 }) }}
+                      <span class="ops__unit">{{ i18n.t('common.km') }}</span>
+                    } @else {
+                      —.—
+                    }
+                  </strong>
+                </div>
+                <div>
+                  <span class="ops__label">{{ i18n.t('home.rangeEst') }}</span>
+                  <strong [class.metric--ghost]="facts.rangeKm == null">
+                    @if (facts.rangeKm != null) {
+                      {{ i18n.formatNumber(facts.rangeKm, { maximumFractionDigits: 0 }) }}
+                      <span class="ops__unit">{{ i18n.t('common.km') }}</span>
+                    } @else {
+                      —.—
+                    }
+                  </strong>
+                </div>
+              </div>
+              @if (facts.place) {
+                <p class="ops__place">{{ facts.place }}</p>
+              }
+            </section>
           }
         </div>
 
@@ -156,7 +207,14 @@
                   @if (fill.fuelGrade) {
                     · {{ gradeLabel(fill.fuelGrade) }}
                   }
+                  @if (fill.odometer) {
+                    · {{ i18n.formatNumber(fill.odometer, { maximumFractionDigits: 0 }) }}
+                    {{ i18n.t('common.km') }}
+                  }
                 </span>
+                @if (fill.placeLabel) {
+                  <span class="pulse__meta">{{ fill.placeLabel }}</span>
+                }
               </a>
             } @else {
               <a class="pulse__fact" routerLink="/fill-up">
@@ -182,16 +240,6 @@
           </div>
 
           <div class="pulse__spend" [attr.aria-label]="i18n.t('home.costGlance')">
-            <div class="pulse__cell">
-              <span class="pulse__kicker">{{ i18n.t('home.costPerKm') }}</span>
-              <strong [class.metric--ghost]="fuelCostGlance().costPerKm == null">
-                @if (fuelCostGlance().costPerKm != null) {
-                  {{ formatCostPerKm(fuelCostGlance().costPerKm!) }}
-                } @else {
-                  —.—
-                }
-              </strong>
-            </div>
             <div class="pulse__cell pulse__cell--now">
               <span class="pulse__kicker">{{ i18n.t('home.monthSpend') }}</span>
               <strong [class.metric--ghost]="!hasRealFills() && fuelCostGlance().currentMonth === 0">
@@ -203,6 +251,16 @@
                   · {{ i18n.t('reports.fills', { count: i18n.formatNumber(fuelPulse().monthCount, { maximumFractionDigits: 0 }) }) }}
                 </span>
               }
+            </div>
+            <div class="pulse__cell">
+              <span class="pulse__kicker">{{ i18n.t('home.costPerKm') }}</span>
+              <strong [class.metric--ghost]="fuelCostGlance().costPerKm == null">
+                @if (fuelCostGlance().costPerKm != null) {
+                  {{ formatCostPerKm(fuelCostGlance().costPerKm!) }}
+                } @else {
+                  —.—
+                }
+              </strong>
             </div>
             <div class="pulse__cell">
               <span class="pulse__kicker">{{ i18n.t('home.lastMonthSpend') }}</span>
@@ -223,56 +281,19 @@
               }
             </div>
             @if (fuelCostGlance().currentMonth > 0 || fuelCostGlance().previousMonth > 0) {
-              <div class="pulse__bars" aria-hidden="true">
-                <span class="pulse__track">
-                  <span class="pulse__fill" [style.inline-size.%]="spendShare('current')"></span>
-                </span>
-                <span class="pulse__track pulse__track--prev">
-                  <span class="pulse__fill" [style.inline-size.%]="spendShare('previous')"></span>
-                </span>
+              <div class="pulse__compare" aria-hidden="true">
+                <span
+                  class="pulse__compare-now"
+                  [style.flex]="fuelCostGlance().currentMonth"
+                ></span>
+                <span
+                  class="pulse__compare-prev"
+                  [style.flex]="fuelCostGlance().previousMonth"
+                ></span>
               </div>
             }
           </div>
         </section>
-
-        @if (operatingFacts(); as facts) {
-          <section class="ops" role="status" [attr.aria-label]="i18n.t('home.ops')">
-            <p class="ops__kicker">{{ i18n.t('home.ops') }}</p>
-            <div class="ops__grid">
-              <div>
-                <span class="ops__label">{{ i18n.t('home.daysSince') }}</span>
-                <strong>{{
-                  i18n.formatNumber(facts.daysSinceFill, { maximumFractionDigits: 0 })
-                }}</strong>
-              </div>
-              <div>
-                <span class="ops__label">{{ i18n.t('home.kmSince') }}</span>
-                <strong [class.metric--ghost]="facts.kmSinceFill == null">
-                  @if (facts.kmSinceFill != null) {
-                    {{ i18n.formatNumber(facts.kmSinceFill, { maximumFractionDigits: 0 }) }}
-                    <span class="ops__unit">{{ i18n.t('common.km') }}</span>
-                  } @else {
-                    —.—
-                  }
-                </strong>
-              </div>
-              <div>
-                <span class="ops__label">{{ i18n.t('home.rangeEst') }}</span>
-                <strong [class.metric--ghost]="facts.rangeKm == null">
-                  @if (facts.rangeKm != null) {
-                    {{ i18n.formatNumber(facts.rangeKm, { maximumFractionDigits: 0 }) }}
-                    <span class="ops__unit">{{ i18n.t('common.km') }}</span>
-                  } @else {
-                    —.—
-                  }
-                </strong>
-              </div>
-            </div>
-            @if (facts.place) {
-              <p class="ops__place">{{ facts.place }}</p>
-            }
-          </section>
-        }
 
         @if (!hasRealFills() && !sampleMode()) {
           <a routerLink="/fill-up" class="ghost-cta">{{ i18n.t('home.ghost.cta') }}</a>
@@ -317,19 +338,6 @@
                 {{ i18n.t('home.monthPace', { day: outlook.elapsedDays, days: outlook.daysInMonth }) }}
               </span>
             </header>
-            <div
-              class="month-track"
-              role="meter"
-              [attr.aria-valuenow]="monthPace(outlook.elapsedDays, outlook.daysInMonth)"
-              aria-valuemin="0"
-              aria-valuemax="100"
-              [attr.aria-label]="i18n.t('home.monthPace', { day: outlook.elapsedDays, days: outlook.daysInMonth })"
-            >
-              <span
-                class="month-track__fill"
-                [style.inline-size.%]="monthPace(outlook.elapsedDays, outlook.daysInMonth)"
-              ></span>
-            </div>
             <div class="month-outlook__strip">
               <div class="month-outlook__cell">
                 <span class="month-outlook__label">{{ i18n.t('home.monthSpend') }}</span>
@@ -345,6 +353,19 @@
                   }
                 </strong>
               </div>
+            </div>
+            <div
+              class="month-track"
+              role="meter"
+              [attr.aria-valuenow]="monthPace(outlook.elapsedDays, outlook.daysInMonth)"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              [attr.aria-label]="i18n.t('home.monthPace', { day: outlook.elapsedDays, days: outlook.daysInMonth })"
+            >
+              <span
+                class="month-track__fill"
+                [style.inline-size.%]="monthPace(outlook.elapsedDays, outlook.daysInMonth)"
+              ></span>
             </div>
           </section>
 
