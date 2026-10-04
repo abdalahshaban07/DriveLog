@@ -446,12 +446,8 @@
 
 .pulse__spark-usual {
   position: absolute;
-  z-index: 1;
   left: 0;
   transform: translateY(-120%);
-  padding-inline: 0.2rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--card-dark) 78%, transparent);
   color: color-mix(in srgb, var(--card-dark-text) 72%, transparent);
   font-size: 0.65rem;
   font-weight: 700;
@@ -526,10 +522,6 @@
   color: var(--warn);
   font-size: 0.72rem;
   font-weight: 700;
-}
-
-.pulse__wait--soon {
-  background: color-mix(in srgb, var(--warn) 18%, var(--fill-surface));
 }
 
 .pulse__wait--overdue {

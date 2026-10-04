@@ -166,7 +166,6 @@
               @if (dueCountdown(); as left) {
                 <span
                   class="pulse__wait"
-                  [class.pulse__wait--soon]="dueTone() === 'soon'"
                   [class.pulse__wait--overdue]="dueTone() === 'overdue'"
                 >{{ left }}</span>
               }
