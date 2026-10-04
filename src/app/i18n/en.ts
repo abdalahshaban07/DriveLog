@@ -6,6 +6,7 @@ export const en = {
   'nav.primary': 'Primary',
   'home.logFillUp': 'Log fill-up',
   'home.economy': 'Avg L/100 km',
+  'home.usual': 'Usual',
   'home.costPerKm': 'Cost / km',
   'home.monthSpend': 'This month',
   'home.costGlance': 'Fuel cost at a glance',

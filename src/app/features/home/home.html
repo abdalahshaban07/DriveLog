@@ -98,32 +98,47 @@
                 }
               </p>
               <p class="pulse__sub">
-                @if (fuelMetrics().lastKmPerL != null) {
-                  <span>{{ i18n.formatUnit(fuelMetrics().lastKmPerL!, 'common.kmPerL', 1) }}</span>
-                }
                 @if (economyCaption(); as caption) {
                   <span
                     class="pulse__chip"
                     [class.pulse__chip--better]="economyTone() === 'better'"
                     [class.pulse__chip--worse]="economyTone() === 'worse'"
                   >{{ caption }}</span>
-                } @else if (fuelPulse().overallL100 != null) {
+                } @else if (!pulseSpark() && fuelPulse().overallL100 != null) {
                   <span>
                     {{ i18n.t('fuel.overall') }}
                     {{ i18n.formatUnit(fuelPulse().overallL100!, 'common.lPer100', 1) }}
                   </span>
                 }
+                @if (fuelMetrics().lastKmPerL != null) {
+                  <span>{{ i18n.formatUnit(fuelMetrics().lastKmPerL!, 'common.kmPerL', 1) }}</span>
+                }
               </p>
             </div>
             @if (pulseSpark(); as spark) {
               <div class="pulse__spark">
+                @if (spark.referenceY != null) {
+                  <span
+                    class="pulse__spark-usual"
+                    [style.top.%]="(spark.referenceY / spark.height) * 100"
+                  >{{ i18n.t('home.usual') }}</span>
+                }
                 <svg
                   class="pulse__spark-svg"
-                  viewBox="0 0 168 64"
+                  [attr.viewBox]="'0 0 ' + spark.width + ' ' + spark.height"
                   preserveAspectRatio="none"
                   role="img"
                   [attr.aria-label]="i18n.t('fuel.trend')"
                 >
+                  @if (spark.referenceY != null) {
+                    <line
+                      class="pulse__spark-ref"
+                      x1="0"
+                      [attr.x2]="spark.width"
+                      [attr.y1]="spark.referenceY"
+                      [attr.y2]="spark.referenceY"
+                    />
+                  }
                   <path class="pulse__spark-area" [attr.d]="spark.area" />
                   <path
                     class="pulse__spark-line"
@@ -142,6 +157,20 @@
           </a>
 
           <div class="pulse__facts">
+            <a class="pulse__fact" [routerLink]="dueRoute()">
+              <span class="pulse__kicker">{{ i18n.t('home.nextDue') }}</span>
+              <strong [class.metric--ghost]="!nextDue()">{{ dueLabel() }}</strong>
+              @if (nextDue()?.dueDate; as due) {
+                <span class="pulse__meta">{{ i18n.formatDate(due) }}</span>
+              }
+              @if (dueCountdown(); as left) {
+                <span
+                  class="pulse__wait"
+                  [class.pulse__wait--soon]="dueTone() === 'soon'"
+                  [class.pulse__wait--overdue]="dueTone() === 'overdue'"
+                >{{ left }}</span>
+              }
+            </a>
             @if (lastFill(); as fill) {
               <a
                 class="pulse__fact"
@@ -150,12 +179,19 @@
               >
                 <span class="pulse__kicker">{{ i18n.t('home.lastFill') }}</span>
                 <strong>{{ i18n.formatDate(fill.date) }}</strong>
-                <span class="pulse__meta">
-                  {{ i18n.formatUnit(fill.liters, 'common.liters', 1) }}
-                  · {{ formatMoney(fill.cost) }}
-                  @if (fill.fuelGrade) {
-                    · {{ gradeLabel(fill.fuelGrade) }}
-                  }
+                <span class="pulse__mini">
+                  <span>
+                    <b>{{ i18n.formatNumber(fill.liters, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }}</b>
+                    <span>{{ i18n.t('common.liters') }}</span>
+                  </span>
+                  <span>
+                    <b>{{ i18n.formatNumber(fill.cost, { maximumFractionDigits: 0 }) }}</b>
+                    <span>{{ currencyUnit() }}</span>
+                  </span>
+                  <span>
+                    <b>{{ i18n.formatNumber(fill.odometer, { maximumFractionDigits: 0 }) }}</b>
+                    <span>{{ i18n.t('common.km') }}</span>
+                  </span>
                 </span>
               </a>
             } @else {
@@ -164,21 +200,6 @@
                 <strong class="metric--ghost">—.—</strong>
               </a>
             }
-            <a
-              class="pulse__fact"
-              [class.pulse__fact--soon]="dueTone() === 'soon'"
-              [class.pulse__fact--overdue]="dueTone() === 'overdue'"
-              [routerLink]="dueRoute()"
-            >
-              <span class="pulse__kicker">{{ i18n.t('home.nextDue') }}</span>
-              <strong [class.metric--ghost]="!nextDue()">{{ dueLabel() }}</strong>
-              @if (nextDue()?.dueDate; as due) {
-                <span class="pulse__meta">{{ i18n.formatDate(due) }}</span>
-              }
-              @if (dueCountdown(); as left) {
-                <span class="pulse__meta">{{ left }}</span>
-              }
-            </a>
           </div>
 
           <div class="pulse__spend" [attr.aria-label]="i18n.t('home.costGlance')">
@@ -223,13 +244,21 @@
               }
             </div>
             @if (fuelCostGlance().currentMonth > 0 || fuelCostGlance().previousMonth > 0) {
-              <div class="pulse__bars" aria-hidden="true">
-                <span class="pulse__track">
-                  <span class="pulse__fill" [style.inline-size.%]="spendShare('current')"></span>
-                </span>
-                <span class="pulse__track pulse__track--prev">
-                  <span class="pulse__fill" [style.inline-size.%]="spendShare('previous')"></span>
-                </span>
+              <div class="pulse__bars">
+                <div class="pulse__bar">
+                  <span>{{ i18n.t('home.monthSpend') }}</span>
+                  <span class="pulse__track">
+                    <span class="pulse__fill" [style.inline-size.%]="spendShare('current')"></span>
+                  </span>
+                  <span class="pulse__bar-amt">{{ formatMoney(fuelCostGlance().currentMonth) }}</span>
+                </div>
+                <div class="pulse__bar">
+                  <span>{{ i18n.t('home.lastMonthSpend') }}</span>
+                  <span class="pulse__track pulse__track--prev">
+                    <span class="pulse__fill" [style.inline-size.%]="spendShare('previous')"></span>
+                  </span>
+                  <span class="pulse__bar-amt">{{ formatMoney(fuelCostGlance().previousMonth) }}</span>
+                </div>
               </div>
             }
           </div>
