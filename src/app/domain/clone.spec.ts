@@ -231,6 +231,9 @@ describe('fuel-dashboard', () => {
     expect(flat).not.toBeNull();
     expect(rising).not.toBeNull();
     expect(flat!.y).toBeGreaterThan(rising!.y);
+    expect(flat!.referenceY).toBeNull();
     expect(sparklineGeometry([8])).toBeNull();
+    const marked = sparklineGeometry([8, 10], 100, 40, 12);
+    expect(marked!.referenceY).toBeLessThan(marked!.y);
   });
 });

@@ -8,6 +8,7 @@ export const ar: Record<MsgKey, string> = {
   'nav.primary': 'القائمة الرئيسية',
   'home.logFillUp': 'سجّل تعبئة',
   'home.economy': 'متوسط لتر/١٠٠ كم',
+  'home.usual': 'المعتاد',
   'home.costPerKm': 'التكلفة / كم',
   'home.monthSpend': 'الشهر ده',
   'home.costGlance': 'تكلفة الوقود نظرة سريعة',
