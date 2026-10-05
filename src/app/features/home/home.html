@@ -23,79 +23,38 @@
       [attr.aria-label]="i18n.t('home.tab.dashboard')"
     >
       @if (db.cars().length) {
-        <div class="identity">
-          <div class="carousel" [attr.aria-label]="i18n.t('home.carousel.label')">
-            @for (car of db.cars(); track car.id) {
-              <button
-                type="button"
-                class="carousel__chip"
-                [class.carousel__chip--on]="car.id === activeCarId()"
-                (click)="switchCar(car.id)"
-              >
-                <span class="plate__copy">
-                  <span class="carousel__name">{{ car.nickname }}</span>
-                  @if (vehicleLine(car) || car.tankCapacityLiters) {
-                    <span class="carousel__spec">
-                      @if (vehicleLine(car); as spec) {
-                        {{ spec }}
-                      }
-                      @if (car.tankCapacityLiters) {
-                        @if (vehicleLine(car)) {
-                          ·
-                        }
-                        {{ i18n.formatUnit(car.tankCapacityLiters, 'common.liters', 0) }}
-                      }
-                    </span>
-                  }
-                  @if (car.plate?.trim()) {
-                    <span class="plate__tag">{{ car.plate }}</span>
-                  }
-                </span>
-                <span class="plate__odo">
-                  <strong>{{ i18n.formatNumber(car.currentOdometer, { maximumFractionDigits: 0 }) }}</strong>
-                  <span>{{ i18n.t('common.km') }}</span>
-                </span>
-              </button>
-            }
-          </div>
-
-          @if (operatingFacts(); as facts) {
-            <section class="ops" role="status" [attr.aria-label]="i18n.t('home.ops')">
-              <p class="ops__kicker">{{ i18n.t('home.ops') }}</p>
-              <div class="ops__grid">
-                <div>
-                  <span class="ops__label">{{ i18n.t('home.daysSince') }}</span>
-                  <strong>{{
-                    i18n.formatNumber(facts.daysSinceFill, { maximumFractionDigits: 0 })
-                  }}</strong>
-                </div>
-                <div>
-                  <span class="ops__label">{{ i18n.t('home.kmSince') }}</span>
-                  <strong [class.metric--ghost]="facts.kmSinceFill == null">
-                    @if (facts.kmSinceFill != null) {
-                      {{ i18n.formatNumber(facts.kmSinceFill, { maximumFractionDigits: 0 }) }}
-                      <span class="ops__unit">{{ i18n.t('common.km') }}</span>
-                    } @else {
-                      —.—
+        <div class="carousel" [attr.aria-label]="i18n.t('home.carousel.label')">
+          @for (car of db.cars(); track car.id) {
+            <button
+              type="button"
+              class="carousel__chip"
+              [class.carousel__chip--on]="car.id === activeCarId()"
+              (click)="switchCar(car.id)"
+            >
+              <span class="plate__copy">
+                <span class="carousel__name">{{ car.nickname }}</span>
+                @if (vehicleLine(car) || car.tankCapacityLiters) {
+                  <span class="carousel__spec">
+                    @if (vehicleLine(car); as spec) {
+                      {{ spec }}
                     }
-                  </strong>
-                </div>
-                <div>
-                  <span class="ops__label">{{ i18n.t('home.rangeEst') }}</span>
-                  <strong [class.metric--ghost]="facts.rangeKm == null">
-                    @if (facts.rangeKm != null) {
-                      {{ i18n.formatNumber(facts.rangeKm, { maximumFractionDigits: 0 }) }}
-                      <span class="ops__unit">{{ i18n.t('common.km') }}</span>
-                    } @else {
-                      —.—
+                    @if (car.tankCapacityLiters) {
+                      @if (vehicleLine(car)) {
+                        ·
+                      }
+                      {{ i18n.formatUnit(car.tankCapacityLiters, 'common.liters', 0) }}
                     }
-                  </strong>
-                </div>
-              </div>
-              @if (facts.place) {
-                <p class="ops__place">{{ facts.place }}</p>
-              }
-            </section>
+                  </span>
+                }
+                @if (car.plate?.trim()) {
+                  <span class="plate__tag">{{ car.plate }}</span>
+                }
+              </span>
+              <span class="plate__odo">
+                <strong>{{ i18n.formatNumber(car.currentOdometer, { maximumFractionDigits: 0 }) }}</strong>
+                <span>{{ i18n.t('common.km') }}</span>
+              </span>
+            </button>
           }
         </div>
 
@@ -149,32 +108,47 @@
                 }
               </p>
               <p class="pulse__sub">
-                @if (fuelMetrics().lastKmPerL != null) {
-                  <span>{{ i18n.formatUnit(fuelMetrics().lastKmPerL!, 'common.kmPerL', 1) }}</span>
-                }
                 @if (economyCaption(); as caption) {
                   <span
                     class="pulse__chip"
                     [class.pulse__chip--better]="economyTone() === 'better'"
                     [class.pulse__chip--worse]="economyTone() === 'worse'"
                   >{{ caption }}</span>
-                } @else if (fuelPulse().overallL100 != null) {
+                } @else if (!pulseSpark() && fuelPulse().overallL100 != null) {
                   <span>
                     {{ i18n.t('fuel.overall') }}
                     {{ i18n.formatUnit(fuelPulse().overallL100!, 'common.lPer100', 1) }}
                   </span>
                 }
+                @if (fuelMetrics().lastKmPerL != null) {
+                  <span>{{ i18n.formatUnit(fuelMetrics().lastKmPerL!, 'common.kmPerL', 1) }}</span>
+                }
               </p>
             </div>
             @if (pulseSpark(); as spark) {
               <div class="pulse__spark">
+                @if (spark.referenceY != null) {
+                  <span
+                    class="pulse__spark-usual"
+                    [style.top.%]="(spark.referenceY / spark.height) * 100"
+                  >{{ i18n.t('home.usual') }}</span>
+                }
                 <svg
                   class="pulse__spark-svg"
-                  viewBox="0 0 168 64"
+                  [attr.viewBox]="'0 0 ' + spark.width + ' ' + spark.height"
                   preserveAspectRatio="none"
                   role="img"
                   [attr.aria-label]="i18n.t('fuel.trend')"
                 >
+                  @if (spark.referenceY != null) {
+                    <line
+                      class="pulse__spark-ref"
+                      x1="0"
+                      [attr.x2]="spark.width"
+                      [attr.y1]="spark.referenceY"
+                      [attr.y2]="spark.referenceY"
+                    />
+                  }
                   <path class="pulse__spark-area" [attr.d]="spark.area" />
                   <path
                     class="pulse__spark-line"
@@ -193,6 +167,19 @@
           </a>
 
           <div class="pulse__facts">
+            <a class="pulse__fact" [routerLink]="dueRoute()">
+              <span class="pulse__kicker">{{ i18n.t('home.nextDue') }}</span>
+              <strong [class.metric--ghost]="!nextDue()">{{ dueLabel() }}</strong>
+              @if (nextDue()?.dueDate; as due) {
+                <span class="pulse__meta">{{ i18n.formatDate(due) }}</span>
+              }
+              @if (dueCountdown(); as left) {
+                <span
+                  class="pulse__wait"
+                  [class.pulse__wait--overdue]="dueTone() === 'overdue'"
+                >{{ left }}</span>
+              }
+            </a>
             @if (lastFill(); as fill) {
               <a
                 class="pulse__fact"
@@ -201,20 +188,20 @@
               >
                 <span class="pulse__kicker">{{ i18n.t('home.lastFill') }}</span>
                 <strong>{{ i18n.formatDate(fill.date) }}</strong>
-                <span class="pulse__meta">
-                  {{ i18n.formatUnit(fill.liters, 'common.liters', 1) }}
-                  · {{ formatMoney(fill.cost) }}
-                  @if (fill.fuelGrade) {
-                    · {{ gradeLabel(fill.fuelGrade) }}
-                  }
-                  @if (fill.odometer) {
-                    · {{ i18n.formatNumber(fill.odometer, { maximumFractionDigits: 0 }) }}
-                    {{ i18n.t('common.km') }}
-                  }
+                <span class="pulse__mini">
+                  <span>
+                    <b>{{ i18n.formatNumber(fill.liters, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }}</b>
+                    <span>{{ i18n.t('common.liters') }}</span>
+                  </span>
+                  <span>
+                    <b>{{ i18n.formatNumber(fill.cost, { maximumFractionDigits: 0 }) }}</b>
+                    <span>{{ currencyUnit() }}</span>
+                  </span>
+                  <span>
+                    <b>{{ i18n.formatNumber(fill.odometer, { maximumFractionDigits: 0 }) }}</b>
+                    <span>{{ i18n.t('common.km') }}</span>
+                  </span>
                 </span>
-                @if (fill.placeLabel) {
-                  <span class="pulse__meta">{{ fill.placeLabel }}</span>
-                }
               </a>
             } @else {
               <a class="pulse__fact" routerLink="/fill-up">
@@ -222,24 +209,19 @@
                 <strong class="metric--ghost">—.—</strong>
               </a>
             }
-            <a
-              class="pulse__fact"
-              [class.pulse__fact--soon]="dueTone() === 'soon'"
-              [class.pulse__fact--overdue]="dueTone() === 'overdue'"
-              [routerLink]="dueRoute()"
-            >
-              <span class="pulse__kicker">{{ i18n.t('home.nextDue') }}</span>
-              <strong [class.metric--ghost]="!nextDue()">{{ dueLabel() }}</strong>
-              @if (nextDue()?.dueDate; as due) {
-                <span class="pulse__meta">{{ i18n.formatDate(due) }}</span>
-              }
-              @if (dueCountdown(); as left) {
-                <span class="pulse__meta">{{ left }}</span>
-              }
-            </a>
           </div>
 
           <div class="pulse__spend" [attr.aria-label]="i18n.t('home.costGlance')">
+            <div class="pulse__cell">
+              <span class="pulse__kicker">{{ i18n.t('home.costPerKm') }}</span>
+              <strong [class.metric--ghost]="fuelCostGlance().costPerKm == null">
+                @if (fuelCostGlance().costPerKm != null) {
+                  {{ formatCostPerKm(fuelCostGlance().costPerKm!) }}
+                } @else {
+                  —.—
+                }
+              </strong>
+            </div>
             <div class="pulse__cell pulse__cell--now">
               <span class="pulse__kicker">{{ i18n.t('home.monthSpend') }}</span>
               <strong [class.metric--ghost]="!hasRealFills() && fuelCostGlance().currentMonth === 0">
@@ -251,16 +233,6 @@
                   · {{ i18n.t('reports.fills', { count: i18n.formatNumber(fuelPulse().monthCount, { maximumFractionDigits: 0 }) }) }}
                 </span>
               }
-            </div>
-            <div class="pulse__cell">
-              <span class="pulse__kicker">{{ i18n.t('home.costPerKm') }}</span>
-              <strong [class.metric--ghost]="fuelCostGlance().costPerKm == null">
-                @if (fuelCostGlance().costPerKm != null) {
-                  {{ formatCostPerKm(fuelCostGlance().costPerKm!) }}
-                } @else {
-                  —.—
-                }
-              </strong>
             </div>
             <div class="pulse__cell">
               <span class="pulse__kicker">{{ i18n.t('home.lastMonthSpend') }}</span>
@@ -281,15 +253,21 @@
               }
             </div>
             @if (fuelCostGlance().currentMonth > 0 || fuelCostGlance().previousMonth > 0) {
-              <div class="pulse__compare" aria-hidden="true">
-                <span
-                  class="pulse__compare-now"
-                  [style.flex]="fuelCostGlance().currentMonth"
-                ></span>
-                <span
-                  class="pulse__compare-prev"
-                  [style.flex]="fuelCostGlance().previousMonth"
-                ></span>
+              <div class="pulse__bars">
+                <div class="pulse__bar">
+                  <span>{{ i18n.t('home.monthSpend') }}</span>
+                  <span class="pulse__track">
+                    <span class="pulse__fill" [style.inline-size.%]="spendShare('current')"></span>
+                  </span>
+                  <span class="pulse__bar-amt">{{ formatMoney(fuelCostGlance().currentMonth) }}</span>
+                </div>
+                <div class="pulse__bar">
+                  <span>{{ i18n.t('home.lastMonthSpend') }}</span>
+                  <span class="pulse__track pulse__track--prev">
+                    <span class="pulse__fill" [style.inline-size.%]="spendShare('previous')"></span>
+                  </span>
+                  <span class="pulse__bar-amt">{{ formatMoney(fuelCostGlance().previousMonth) }}</span>
+                </div>
               </div>
             }
           </div>
@@ -338,6 +316,19 @@
                 {{ i18n.t('home.monthPace', { day: outlook.elapsedDays, days: outlook.daysInMonth }) }}
               </span>
             </header>
+            <div
+              class="month-track"
+              role="meter"
+              [attr.aria-valuenow]="monthPace(outlook.elapsedDays, outlook.daysInMonth)"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              [attr.aria-label]="i18n.t('home.monthPace', { day: outlook.elapsedDays, days: outlook.daysInMonth })"
+            >
+              <span
+                class="month-track__fill"
+                [style.inline-size.%]="monthPace(outlook.elapsedDays, outlook.daysInMonth)"
+              ></span>
+            </div>
             <div class="month-outlook__strip">
               <div class="month-outlook__cell">
                 <span class="month-outlook__label">{{ i18n.t('home.monthSpend') }}</span>
@@ -353,19 +344,6 @@
                   }
                 </strong>
               </div>
-            </div>
-            <div
-              class="month-track"
-              role="meter"
-              [attr.aria-valuenow]="monthPace(outlook.elapsedDays, outlook.daysInMonth)"
-              aria-valuemin="0"
-              aria-valuemax="100"
-              [attr.aria-label]="i18n.t('home.monthPace', { day: outlook.elapsedDays, days: outlook.daysInMonth })"
-            >
-              <span
-                class="month-track__fill"
-                [style.inline-size.%]="monthPace(outlook.elapsedDays, outlook.daysInMonth)"
-              ></span>
             </div>
           </section>
 

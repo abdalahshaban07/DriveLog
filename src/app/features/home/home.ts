@@ -32,7 +32,6 @@ import {
   type LedgerRow,
 } from '../../domain/expense-ledger';
 import { fuelBoard, fuelDashboardMetrics, sparklineGeometry } from '../../domain/fuel-dashboard';
-import { operatingSnapshot } from '../../domain/operating-snapshot';
 import { isStoredMessageKey } from '../../domain/part-name';
 import { buildFuelCostGlance, tankEconomyVsAvg, TANK_ECONOMY_FLAT_PCT } from '../../domain/economy';
 import {
@@ -213,7 +212,9 @@ export class HomePage {
   readonly fuelMetrics = computed(() => fuelDashboardMetrics(this.db.fillUps()));
   readonly fuelCostGlance = computed(() => buildFuelCostGlance(this.db.fillUps()));
   readonly fuelPulse = computed(() => fuelBoard(this.db.fillUps()));
-  readonly pulseSpark = computed(() => sparklineGeometry(this.fuelPulse().series, 168, 64));
+  readonly pulseSpark = computed(() =>
+    sparklineGeometry(this.fuelPulse().series, 360, 84, this.fuelPulse().overallL100),
+  );
   readonly sampleMode = computed(() => this.db.settings().sampleMode === true);
   readonly hasRealFills = computed(() => this.db.fillUps().some(isRealFillUp));
   /** ponytail: empty when no logs at all — domain always returns 4 placeholder cards */
@@ -286,22 +287,6 @@ export class HomePage {
       }
     }
     return bestPast ?? best ?? null;
-  });
-  readonly operatingFacts = computed(() => {
-    const car = this.db.car();
-    const fill = this.lastFill();
-    if (!car || !fill) {
-      return null;
-    }
-    return operatingSnapshot({
-      today: todayDateOnly(),
-      fillDate: fill.date,
-      fillOdometer: fill.odometer,
-      currentOdometer: car.currentOdometer,
-      place: fill.placeLabel,
-      tankLiters: car.tankCapacityLiters,
-      litersPer100: this.fuelMetrics().lastL100,
-    });
   });
   readonly headerLine = computed(() => {
     const car = this.db.car();
@@ -718,6 +703,25 @@ export class HomePage {
 
   formatMoney(value: number): string {
     return this.i18n.formatMoney(value, this.db.settings().currency, 0);
+  }
+
+  /** Short currency mark under a bare amount. */
+  currencyUnit(): string {
+    const currency = this.db.settings().currency;
+    const locale = this.i18n.language() === 'ar' ? 'ar-EG' : 'en-GB';
+    try {
+      const symbol = new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency,
+        currencyDisplay: 'symbol',
+        maximumFractionDigits: 0,
+      })
+        .formatToParts(0)
+        .find((part) => part.type === 'currency')?.value;
+      return symbol?.replace(/[\u200e\u200f]/g, '').replace(/\.$/, '').trim() || currency;
+    } catch {
+      return currency;
+    }
   }
 
   formatCostPerKm(value: number): string {

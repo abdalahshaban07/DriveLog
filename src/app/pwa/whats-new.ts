@@ -9,9 +9,13 @@ export type WhatsNewCard = {
   icon: WhatsNewIcon;
   title: string;
   body: string;
+  /** Short section label, e.g. Health. Empty when the note has none. */
+  kicker: string;
+  /** Fact lines. Empty falls back to body. */
+  points: string[];
 };
 
-export type WhatsNewEntry = string | Partial<WhatsNewCard> & { title: string; body: string };
+export type WhatsNewEntry = string | (Partial<WhatsNewCard> & { title: string; body: string });
 
 export type WhatsNewFile = {
   id: string;
@@ -25,20 +29,32 @@ export function whatsNewDisplayVersion(version = APP_VERSION): string {
   return `v${version}`;
 }
 
+function notePoints(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.map((point) => String(point).trim()).filter(Boolean);
+}
+
 /** ponytail: legacy strings become body-only cards with sparkle icon */
 export function normalizeWhatsNewEntry(entry: WhatsNewEntry): WhatsNewCard {
   if (typeof entry === 'string') {
-    return { icon: 'sparkle', title: '', body: entry };
+    return { icon: 'sparkle', title: '', body: entry, kicker: '', points: [] };
   }
   const icon = entry.icon && ICONS.has(entry.icon) ? entry.icon : 'sparkle';
   return {
     icon,
     title: String(entry.title ?? ''),
     body: String(entry.body ?? ''),
+    kicker: String(entry.kicker ?? '').trim(),
+    points: notePoints(entry.points),
   };
 }
 
-function normalizeList(entries: WhatsNewEntry[] | undefined, fallback: WhatsNewEntry[]): WhatsNewCard[] {
+function normalizeList(
+  entries: WhatsNewEntry[] | undefined,
+  fallback: WhatsNewEntry[],
+): WhatsNewCard[] {
   const list = Array.isArray(entries) && entries.length ? entries : fallback;
   return list.map(normalizeWhatsNewEntry);
 }
@@ -78,7 +94,7 @@ export class WhatsNew {
 
   readonly summary = computed(() => {
     const first = this.cards()[0];
-    return first ? (first.title || first.body) : '';
+    return first ? first.title || first.body : '';
   });
 
   async load(): Promise<void> {

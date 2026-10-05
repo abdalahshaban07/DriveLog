@@ -79,6 +79,8 @@ export interface SparklineGeometry {
   y: number;
   width: number;
   height: number;
+  /** Y of `reference` on the same scale. Null when no reference was passed. */
+  referenceY: number | null;
 }
 
 function segmentsFor(fills: readonly FillUp[]): EconomySegment[] {
@@ -148,24 +150,30 @@ export function sparklineGeometry(
   values: readonly number[],
   width = SPARK_W,
   height = SPARK_H,
+  reference?: number | null,
 ): SparklineGeometry | null {
   if (values.length < 2) {
     return null;
   }
-  const padX = 2;
-  const padY = 8;
+  const padX = 10;
+  const padY = 12;
   let min = Infinity;
   let max = -Infinity;
   for (const v of values) {
     if (v < min) min = v;
     if (v > max) max = v;
   }
+  if (reference != null && Number.isFinite(reference)) {
+    if (reference < min) min = reference;
+    if (reference > max) max = reference;
+  }
   const span = max - min;
   const plotH = height - padY * 2;
+  const yFor = (v: number): number =>
+    span === 0 ? padY + plotH / 2 : padY + (1 - (v - min) / span) * plotH;
   const coords = values.map((v, i) => {
     const x = padX + (i / (values.length - 1)) * (width - padX * 2);
-    const y = span === 0 ? padY + plotH / 2 : padY + (1 - (v - min) / span) * plotH;
-    return [x, y] as const;
+    return [x, yFor(v)] as const;
   });
   const line = coords
     .map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`)
@@ -173,5 +181,7 @@ export function sparklineGeometry(
   const first = coords[0]!;
   const last = coords[coords.length - 1]!;
   const area = `${line} L${last[0].toFixed(1)} ${height} L${first[0].toFixed(1)} ${height} Z`;
-  return { line, area, x: last[0], y: last[1], width, height };
+  const referenceY =
+    reference != null && Number.isFinite(reference) ? yFor(reference) : null;
+  return { line, area, x: last[0], y: last[1], width, height, referenceY };
 }
