@@ -91,7 +91,6 @@ describe('HomePage', () => {
     expect(page.monthOutlook().projected).toBeNull();
     expect(page.monthPace(10, 31)).toBe(32);
     expect(page.monthPace(0, 0)).toBe(0);
-    expect(page.operatingFacts()).toBeNull();
     expect(page.headerLine()).toBe('Car · 1000 common.km');
   });
 

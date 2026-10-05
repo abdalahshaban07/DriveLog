@@ -32,7 +32,6 @@ import {
   type LedgerRow,
 } from '../../domain/expense-ledger';
 import { fuelBoard, fuelDashboardMetrics, sparklineGeometry } from '../../domain/fuel-dashboard';
-import { operatingSnapshot } from '../../domain/operating-snapshot';
 import { isStoredMessageKey } from '../../domain/part-name';
 import { buildFuelCostGlance, tankEconomyVsAvg, TANK_ECONOMY_FLAT_PCT } from '../../domain/economy';
 import {
@@ -288,22 +287,6 @@ export class HomePage {
       }
     }
     return bestPast ?? best ?? null;
-  });
-  readonly operatingFacts = computed(() => {
-    const car = this.db.car();
-    const fill = this.lastFill();
-    if (!car || !fill) {
-      return null;
-    }
-    return operatingSnapshot({
-      today: todayDateOnly(),
-      fillDate: fill.date,
-      fillOdometer: fill.odometer,
-      currentOdometer: car.currentOdometer,
-      place: fill.placeLabel,
-      tankLiters: car.tankCapacityLiters,
-      litersPer100: this.fuelMetrics().lastL100,
-    });
   });
   readonly headerLine = computed(() => {
     const car = this.db.car();

@@ -263,45 +263,6 @@
           </div>
         </section>
 
-        @if (operatingFacts(); as facts) {
-          <section class="ops" role="status" [attr.aria-label]="i18n.t('home.ops')">
-            <p class="ops__kicker">{{ i18n.t('home.ops') }}</p>
-            <div class="ops__grid">
-              <div>
-                <span class="ops__label">{{ i18n.t('home.daysSince') }}</span>
-                <strong>{{
-                  i18n.formatNumber(facts.daysSinceFill, { maximumFractionDigits: 0 })
-                }}</strong>
-              </div>
-              <div>
-                <span class="ops__label">{{ i18n.t('home.kmSince') }}</span>
-                <strong [class.metric--ghost]="facts.kmSinceFill == null">
-                  @if (facts.kmSinceFill != null) {
-                    {{ i18n.formatNumber(facts.kmSinceFill, { maximumFractionDigits: 0 }) }}
-                    <span class="ops__unit">{{ i18n.t('common.km') }}</span>
-                  } @else {
-                    —.—
-                  }
-                </strong>
-              </div>
-              <div>
-                <span class="ops__label">{{ i18n.t('home.rangeEst') }}</span>
-                <strong [class.metric--ghost]="facts.rangeKm == null">
-                  @if (facts.rangeKm != null) {
-                    {{ i18n.formatNumber(facts.rangeKm, { maximumFractionDigits: 0 }) }}
-                    <span class="ops__unit">{{ i18n.t('common.km') }}</span>
-                  } @else {
-                    —.—
-                  }
-                </strong>
-              </div>
-            </div>
-            @if (facts.place) {
-              <p class="ops__place">{{ facts.place }}</p>
-            }
-          </section>
-        }
-
         @if (!hasRealFills() && !sampleMode()) {
           <a routerLink="/fill-up" class="ghost-cta">{{ i18n.t('home.ghost.cta') }}</a>
         }
