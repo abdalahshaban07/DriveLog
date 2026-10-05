@@ -339,7 +339,7 @@ export class FillUpHistoryPage {
       const range = this.activeRange();
       const rangeLabel =
         range.from || range.to
-          ? `${range.from ?? '…'} → ${range.to ?? '…'}`
+          ? `${range.from ?? '…'} - ${range.to ?? '…'}`
           : undefined;
       let totalKm: number | null = null;
       let hasKm = false;
