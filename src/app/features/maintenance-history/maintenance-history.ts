@@ -214,7 +214,7 @@ export class MaintenanceHistoryPage {
       const range = this.activeRange();
       const rangeLabel =
         range.from || range.to
-          ? `${range.from ?? '…'} → ${range.to ?? '…'}`
+          ? `${range.from ?? '…'} - ${range.to ?? '…'}`
           : undefined;
       const blob = await maintenanceToPdf(
         rows,
@@ -245,7 +245,12 @@ export class MaintenanceHistoryPage {
             this.i18n.t('history.pdf.col.laborCost'),
           ],
         },
-        { rtl: this.i18n.dir() === 'rtl' },
+        {
+          rtl: this.i18n.dir() === 'rtl',
+          km: this.i18n.t('common.km'),
+          labelFor: (row) =>
+            maintenanceRecordLabel(row, this.db.catalog(), (key) => this.i18n.t(key as MsgKey)),
+        },
       );
       const file = new File(
         [blob],

@@ -477,6 +477,63 @@ describe('export history', () => {
       to: '2026-09-03',
     });
   }, 30_000);
+
+  it('maintenance pdf lists the part name and keeps dates in order', async () => {
+    const { maintenancePdfDoc } = await import('./export-history');
+    const doc = maintenancePdfDoc(
+      [
+        {
+          id: 'm1',
+          type: 'other' as const,
+          otherLabel: 'parts.exhaustComponents',
+          odometer: 335349,
+          cost: 20000,
+          dueKm: 20000,
+          dueDate: '2030-07-29',
+          note: 'علبة البيئة',
+          date: '2026-09-02',
+          createdAt: '2026-09-02T00:00:00.000Z',
+          updatedAt: '2026-09-02T00:00:00.000Z',
+        },
+      ],
+      {
+        title: 'تقرير الصيانة',
+        generated: 'اتعمل 2026-10-05',
+        summary: 'الملخص',
+        entries: 'السجلات',
+        totalCost: 'إجمالي التكلفة',
+        rangeLabel: 'الفترة: 2026-01-01 - 2026-10-05',
+        columnHeaders: [
+          'التاريخ',
+          'النوع',
+          'وصف آخر',
+          'العداد',
+          'التكلفة',
+          'استحقاق كم',
+          'تاريخ الاستحقاق',
+          'ملاحظة',
+          'المركز',
+          'الفني',
+          'ماركة القطعة',
+          'سعر القطعة',
+          'أجر العمالة',
+        ],
+      },
+      { rtl: true, km: 'كم', labelFor: () => 'العادم' },
+    );
+    const json = JSON.stringify(doc);
+    expect(json).not.toContain('"rtl":true');
+    expect(json).toContain('العادم');
+    expect(json).toContain('علبة البيئة');
+    expect(json).toContain('02/09/2026');
+    expect(json).toContain('29/07/2030');
+    expect(json).toContain('05/10/2026');
+    expect(json).toContain('01/01/2026');
+    expect(json).not.toContain('parts.exhaustComponents');
+    expect(json).not.toContain('2026-09-02');
+    expect(json).not.toContain('2030/07/29');
+    expect(doc['pageOrientation']).toBe('portrait');
+  });
 });
 
 describe('holidays', () => {
