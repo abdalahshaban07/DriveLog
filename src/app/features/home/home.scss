@@ -514,8 +514,7 @@
 
 .pulse__spend {
   display: grid;
-  grid-template-columns: 0.85fr 1.15fr 1fr;
-  gap: var(--space-3) var(--space-2);
+  gap: var(--space-3);
   padding: var(--space-3) var(--space-4) var(--space-4);
 }
 
@@ -535,18 +534,13 @@
   overflow-wrap: anywhere;
 }
 
-.pulse__cell--now strong {
-  font-size: clamp(1.28rem, 5.6vw, 1.7rem);
-}
-
 .pulse__delta {
   display: inline-flex;
   width: fit-content;
-  margin-block-start: 2px;
-  padding: 0.12rem 0.45rem;
+  padding: 0.08rem 0.4rem;
   border-radius: 999px;
   background: var(--fill-well);
-  font-size: var(--type-label);
+  font-size: 0.68rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--muted);
@@ -576,7 +570,11 @@
   align-items: center;
 }
 
-.pulse__bar > span:first-child {
+.pulse__bar-name {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
   color: var(--muted);
   font-size: 0.72rem;
   font-weight: 700;
@@ -869,60 +867,53 @@
   text-transform: uppercase;
 }
 
-.license-row {
+.papers {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-3);
-  margin-block-end: var(--space-4);
+  gap: var(--space-2);
 }
 
-.license-card {
-  display: grid;
-  align-content: start;
-  gap: var(--space-1);
-  min-height: 8rem;
-  padding: var(--space-4);
+.paper {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0.55rem 0.75rem;
   border-radius: var(--radius);
-  background: var(--card-pastel, var(--surface));
+  background: var(--surface);
   border: 1px solid var(--hairline);
   border-inline-start: 3px solid var(--hairline);
+  color: inherit;
+  text-decoration: none;
 }
 
-.license-card--ok {
+.paper--ok {
   border-inline-start-color: color-mix(in srgb, var(--ok) 70%, var(--hairline));
 }
 
-.license-card--soon {
+.paper--soon {
   border-inline-start-color: var(--warn);
 }
 
-.license-card--overdue {
+.paper--overdue {
   border-inline-start-color: var(--stop);
 }
 
-.license-card__title {
-  margin: 0;
-  font-size: 0.72rem;
+.paper__name {
   color: var(--muted);
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
-.license-card__days {
-  margin: var(--space-2) 0 0;
-  font-size: clamp(1.55rem, 6vw, 1.9rem);
+.paper strong {
+  font-size: 0.82rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.03em;
-  line-height: 1.05;
-}
-
-.license-card__date,
-.license-card__body {
-  margin: var(--space-1) 0 0;
-  color: var(--muted);
-  font-size: 0.85rem;
+  text-align: end;
+  white-space: nowrap;
 }
 
 .period-card__head {

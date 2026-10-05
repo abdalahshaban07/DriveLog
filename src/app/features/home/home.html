@@ -222,47 +222,27 @@
                 }
               </strong>
             </div>
-            <div class="pulse__cell pulse__cell--now">
-              <span class="pulse__kicker">{{ i18n.t('home.monthSpend') }}</span>
-              <strong [class.metric--ghost]="!hasRealFills() && fuelCostGlance().currentMonth === 0">
-                {{ formatMoney(fuelCostGlance().currentMonth) }}
-              </strong>
-              @if (fuelPulse().monthCount > 0) {
-                <span class="pulse__meta">
-                  {{ i18n.formatUnit(fuelPulse().monthLiters, 'common.liters', 1) }}
-                  · {{ i18n.t('reports.fills', { count: i18n.formatNumber(fuelPulse().monthCount, { maximumFractionDigits: 0 }) }) }}
-                </span>
-              }
-            </div>
-            <div class="pulse__cell">
-              <span class="pulse__kicker">{{ i18n.t('home.lastMonthSpend') }}</span>
-              <strong
-                [class.metric--ghost]="
-                  fuelCostGlance().previousMonth === 0 && fuelCostGlance().deltaPct == null
-                "
-              >
-                {{ formatMoney(fuelCostGlance().previousMonth) }}
-              </strong>
-              @if (fuelCostGlance().deltaPct != null) {
-                <span
-                  class="pulse__delta"
-                  dir="ltr"
-                  [class.pulse__delta--down]="(fuelCostGlance().deltaPct ?? 0) < -3"
-                  [class.pulse__delta--up]="(fuelCostGlance().deltaPct ?? 0) > 3"
-                >{{ monthFuelDeltaLabel() }}</span>
-              }
-            </div>
             @if (fuelCostGlance().currentMonth > 0 || fuelCostGlance().previousMonth > 0) {
               <div class="pulse__bars">
                 <div class="pulse__bar">
-                  <span>{{ i18n.t('home.monthSpend') }}</span>
+                  <span class="pulse__bar-name">{{ i18n.t('home.monthSpend') }}</span>
                   <span class="pulse__track">
                     <span class="pulse__fill" [style.inline-size.%]="spendShare('current')"></span>
                   </span>
                   <span class="pulse__bar-amt">{{ formatMoney(fuelCostGlance().currentMonth) }}</span>
                 </div>
                 <div class="pulse__bar">
-                  <span>{{ i18n.t('home.lastMonthSpend') }}</span>
+                  <span class="pulse__bar-name">
+                    {{ i18n.t('home.lastMonthSpend') }}
+                    @if (fuelCostGlance().deltaPct != null) {
+                      <span
+                        class="pulse__delta"
+                        dir="ltr"
+                        [class.pulse__delta--down]="(fuelCostGlance().deltaPct ?? 0) < -3"
+                        [class.pulse__delta--up]="(fuelCostGlance().deltaPct ?? 0) > 3"
+                      >{{ monthFuelDeltaLabel() }}</span>
+                    }
+                  </span>
                   <span class="pulse__track pulse__track--prev">
                     <span class="pulse__fill" [style.inline-size.%]="spendShare('previous')"></span>
                   </span>
@@ -272,6 +252,43 @@
             }
           </div>
         </section>
+
+        @let licDays = licenseDays(db.car()?.licenseExpiry);
+        @let regDays = licenseDays(db.car()?.registrationExpiry);
+        <div class="papers">
+          <a
+            class="paper"
+            routerLink="/vault"
+            [class.paper--ok]="licenseStatus(licDays) === 'ok'"
+            [class.paper--soon]="licenseStatus(licDays) === 'soon'"
+            [class.paper--overdue]="licenseStatus(licDays) === 'overdue'"
+          >
+            <span class="paper__name">{{ i18n.t('due.license') }}</span>
+            <strong>
+              @if (licDays == null) {
+                {{ i18n.t('home.license.missing') }}
+              } @else {
+                {{ i18n.t('home.license.days', { days: i18n.formatNumber(licDays, { maximumFractionDigits: 0 }) }) }}
+              }
+            </strong>
+          </a>
+          <a
+            class="paper"
+            routerLink="/vault"
+            [class.paper--ok]="licenseStatus(regDays) === 'ok'"
+            [class.paper--soon]="licenseStatus(regDays) === 'soon'"
+            [class.paper--overdue]="licenseStatus(regDays) === 'overdue'"
+          >
+            <span class="paper__name">{{ i18n.t('due.registration') }}</span>
+            <strong>
+              @if (regDays == null) {
+                {{ i18n.t('home.license.missing') }}
+              } @else {
+                {{ i18n.t('home.license.days', { days: i18n.formatNumber(regDays, { maximumFractionDigits: 0 }) }) }}
+              }
+            </strong>
+          </a>
+        </div>
 
         @if (!hasRealFills() && !sampleMode()) {
           <a routerLink="/fill-up" class="ghost-cta">{{ i18n.t('home.ghost.cta') }}</a>
@@ -467,39 +484,6 @@
           {{ i18n.t('home.period.total', { amount: formatMoney(totals().total) }) }}
         </p>
       </section>
-
-      <div class="license-row">
-        @let licDays = licenseDays(db.car()?.licenseExpiry);
-        @let regDays = licenseDays(db.car()?.registrationExpiry);
-        <article
-          class="license-card"
-          [class.license-card--ok]="licenseStatus(licDays) === 'ok'"
-          [class.license-card--overdue]="licenseStatus(licDays) === 'overdue'"
-          [class.license-card--soon]="licenseStatus(licDays) === 'soon'"
-        >
-          <h2 class="license-card__title">{{ i18n.t('due.license') }}</h2>
-          @if (licDays == null) {
-            <p class="license-card__body">{{ i18n.t('home.license.missing') }}</p>
-          } @else {
-            <p class="license-card__days">{{ i18n.t('home.license.days', { days: i18n.formatNumber(licDays, { maximumFractionDigits: 0 }) }) }}</p>
-            <p class="license-card__date">{{ i18n.formatDate(db.car()!.licenseExpiry!) }}</p>
-          }
-        </article>
-        <article
-          class="license-card"
-          [class.license-card--ok]="licenseStatus(regDays) === 'ok'"
-          [class.license-card--overdue]="licenseStatus(regDays) === 'overdue'"
-          [class.license-card--soon]="licenseStatus(regDays) === 'soon'"
-        >
-          <h2 class="license-card__title">{{ i18n.t('due.registration') }}</h2>
-          @if (regDays == null) {
-            <p class="license-card__body">{{ i18n.t('home.license.missing') }}</p>
-          } @else {
-            <p class="license-card__days">{{ i18n.t('home.license.days', { days: i18n.formatNumber(regDays, { maximumFractionDigits: 0 }) }) }}</p>
-            <p class="license-card__date">{{ i18n.formatDate(db.car()!.registrationExpiry!) }}</p>
-          }
-        </article>
-      </div>
 
     </section>
   }

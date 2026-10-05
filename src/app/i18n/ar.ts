@@ -565,7 +565,7 @@ export const ar: Record<MsgKey, string> = {
   'home.tab.reports': 'التقارير',
   'home.tab.charts': 'الرسوم',
   'home.carousel.label': 'عربياتك',
-  'home.license.missing': 'مش محدد — ضيفه من الإعدادات',
+  'home.license.missing': 'مش محدد',
   'home.license.days': 'باقي {days} يوم',
   'home.period.title': 'فترة المصاريف',
   'home.period.since': 'من {date}',

@@ -575,7 +575,7 @@ export const en = {
   'home.tab.reports': 'Reports',
   'home.tab.charts': 'Charts',
   'home.carousel.label': 'Your vehicles',
-  'home.license.missing': 'Not set — add in Settings',
+  'home.license.missing': 'Not set',
   'home.license.days': '{days} days left',
   'home.period.title': 'Expense period',
   'home.period.since': 'Since {date}',
