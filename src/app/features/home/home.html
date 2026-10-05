@@ -33,8 +33,18 @@
             >
               <span class="plate__copy">
                 <span class="carousel__name">{{ car.nickname }}</span>
-                @if (vehicleLine(car); as spec) {
-                  <span class="carousel__spec">{{ spec }}</span>
+                @if (vehicleLine(car) || car.tankCapacityLiters) {
+                  <span class="carousel__spec">
+                    @if (vehicleLine(car); as spec) {
+                      {{ spec }}
+                    }
+                    @if (car.tankCapacityLiters) {
+                      @if (vehicleLine(car)) {
+                        ·
+                      }
+                      {{ i18n.formatUnit(car.tankCapacityLiters, 'common.liters', 0) }}
+                    }
+                  </span>
                 }
                 @if (car.plate?.trim()) {
                   <span class="plate__tag">{{ car.plate }}</span>
