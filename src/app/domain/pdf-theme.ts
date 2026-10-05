@@ -143,6 +143,15 @@ function styledSpan(
   return span;
 }
 
+/** Latin letters must leave the Arabic run or pdfmake reorders them (حساس O2 → Oحساس). */
+function pushPlain(text: string, rtl: boolean, extra: SpanStyle | undefined, out: PdfSpan[]): void {
+  for (const bit of text.split(/([A-Za-z]+)/)) {
+    if (bit) {
+      out.push(textSpan(bit, rtl, extra));
+    }
+  }
+}
+
 function textSpan(text: string, rtl: boolean, extra?: SpanStyle): PdfSpan {
   const arabic = rtl && hasArabic(text);
   return styledSpan(text, arabic ? 'Cairo' : 'Roboto', arabic ? 'rtl' : 'ltr', extra);
@@ -184,7 +193,7 @@ export function lineSpans(text: string, rtl: boolean, extra?: SpanStyle): PdfSpa
   for (const match of text.matchAll(token)) {
     const index = match.index ?? 0;
     if (index > last) {
-      out.push(textSpan(text.slice(last, index), rtl, extra));
+      pushPlain(text.slice(last, index), rtl, extra, out);
     }
     const raw = match[1] ?? '';
     const shown = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? pdfDate(raw) : raw;
@@ -192,7 +201,7 @@ export function lineSpans(text: string, rtl: boolean, extra?: SpanStyle): PdfSpa
     last = index + raw.length;
   }
   if (last < text.length) {
-    out.push(textSpan(text.slice(last), rtl, extra));
+    pushPlain(text.slice(last), rtl, extra, out);
   }
   if (!out.length) {
     out.push(textSpan(text, rtl, extra));
@@ -377,7 +386,9 @@ function metricStrip(items: PdfMetric[], rtl: boolean): Record<string, unknown> 
       body: [ordered],
     },
     layout: {
-      hLineWidth: () => 0,
+      hLineWidth: (i: number, node: { table: { body: unknown[] } }) =>
+        i === node.table.body.length ? 2 : 0,
+      hLineColor: () => PDF.amber,
       vLineWidth: (i: number) => (i === 0 || i === ordered.length ? 0 : 6),
       vLineColor: () => PDF.paper,
       paddingLeft: () => 0,
@@ -560,4 +571,196 @@ export function ledgerCard(opts: {
     },
     margin: [0, 0, 0, 8],
   };
+}
+
+export type MonthFooter = {
+  itemsLabel: string;
+  count: string;
+  costLabel: string;
+  cost: string;
+  /** Cost column in reading order, before an RTL table is flipped. */
+  costIndex: number;
+};
+
+function fitWidths(ratios: number[], costIndex: number): number[] {
+  const total = contentWidth() - 8;
+  const widths = ratios.map((ratio) => Math.floor(total * ratio));
+  const used = widths.reduce((sum, width) => sum + width, 0);
+  const cost = widths[costIndex] ?? 0;
+  widths[costIndex] = cost + (total - used);
+  return widths;
+}
+
+function paintCell(
+  text: string,
+  rtl: boolean,
+  fill: string,
+  header: boolean,
+): Record<string, unknown> {
+  const size = header ? 6.5 : 7;
+  const arabic = hasArabic(text);
+  const digits = /\d/.test(text);
+  const color = text === '—' ? PDF.muted : header ? PDF.ink : PDF.text;
+  if (arabic && digits) {
+    const flowed = flowText(text, rtl, { fontSize: size, bold: header, color });
+    delete flowed['margin'];
+    return { ...flowed, fillColor: fill };
+  }
+  return {
+    text,
+    font: arabic ? 'Cairo' : 'Roboto',
+    fontSize: size,
+    bold: header,
+    color,
+    fillColor: fill,
+    alignment: alignOf(rtl),
+    noWrap: !header && !arabic && (digits || text === '—'),
+    margin: [0, 1, 0, 1],
+  };
+}
+
+function footerStat(
+  label: string,
+  value: string,
+  rtl: boolean,
+  fill: string,
+): Record<string, unknown> {
+  const align = alignOf(rtl);
+  const arabic = hasArabic(label);
+  return {
+    stack: [
+      {
+        text: label,
+        font: arabic ? 'Cairo' : 'Roboto',
+        fontSize: 6.5,
+        color: PDF.muted,
+        alignment: align,
+      },
+      {
+        text: value,
+        font: 'Roboto',
+        fontSize: 10,
+        bold: true,
+        color: PDF.text,
+        alignment: align,
+        noWrap: true,
+        margin: [0, 1, 0, 0],
+      },
+    ],
+    fillColor: fill,
+  };
+}
+
+function spanCells(cell: Record<string, unknown>, count: number): Record<string, unknown>[] {
+  if (count <= 0) {
+    return [];
+  }
+  if (count === 1) {
+    return [cell];
+  }
+  const fill = cell['fillColor'];
+  const blanks = Array.from({ length: count - 1 }, () => ({ text: '', fillColor: fill }));
+  return [{ ...cell, colSpan: count }, ...blanks];
+}
+
+function monthFooterRow(
+  columnCount: number,
+  footer: MonthFooter,
+  rtl: boolean,
+): Record<string, unknown>[] {
+  const items = footerStat(footer.itemsLabel, footer.count, rtl, PDF.card);
+  const cost = footerStat(footer.costLabel, footer.cost, rtl, PDF.well);
+  const empty = { text: '', fillColor: PDF.card };
+  const before = footer.costIndex;
+  const after = columnCount - footer.costIndex - 1;
+  // Logical order. pdfmake-rtl flips an `rtl` table once, colSpan groups included.
+  return [...spanCells(items, before), cost, ...spanCells(empty, after)];
+}
+
+function monthBand(month: string, year: string, rtl: boolean): Record<string, unknown> {
+  const name = {
+    width: 'auto',
+    text: [
+      {
+        text: month,
+        font: hasArabic(month) ? 'Cairo' : 'Roboto',
+        fontSize: 10,
+        bold: true,
+        color: PDF.white,
+      },
+    ],
+    noWrap: true,
+  };
+  const y = {
+    width: 'auto',
+    text: [{ text: year, font: 'Roboto', fontSize: 10, bold: true, color: PDF.amber }],
+    noWrap: true,
+  };
+  const cols = rtl
+    ? [{ width: '*', text: '' }, y, { width: 6, text: '' }, name]
+    : [name, { width: 6, text: '' }, y];
+  return {
+    table: {
+      widths: ['*'],
+      body: [[{ columns: cols, columnGap: 0, fillColor: PDF.ink, margin: [6, 4, 6, 3] }]],
+    },
+    layout: 'noBorders',
+    margin: [0, 8, 0, 0],
+  };
+}
+
+/** One month: ink title, then a table whose last row closes the cost column. */
+export function monthSection(opts: {
+  rtl: boolean;
+  month: string;
+  year: string;
+  headers: string[];
+  ratios: number[];
+  rows: string[][];
+  footer: MonthFooter;
+}): Record<string, unknown>[] {
+  const count = opts.headers.length;
+  const headerFill = PDF.well;
+  const header = opts.headers.map((label) => paintCell(label, opts.rtl, headerFill, true));
+  const body = opts.rows.map((row, index) => {
+    const fill = index % 2 === 0 ? PDF.card : '#fbf7f1';
+    return row.map((value) => paintCell(value || '—', opts.rtl, fill, false));
+  });
+  const footer = monthFooterRow(count, opts.footer, opts.rtl);
+  const table: Record<string, unknown> = {
+    headerRows: 1,
+    widths: fitWidths(opts.ratios, opts.footer.costIndex),
+    dontBreakRows: true,
+    body: [header, ...body, footer],
+  };
+  // One flip inside pdfmake, including colSpan. A hand-flipped body gets
+  // flipped again when enough cells are Arabic, and months disagree.
+  if (opts.rtl) {
+    table['rtl'] = true;
+  }
+  return [
+    monthBand(opts.month, opts.year, opts.rtl),
+    {
+      table,
+      layout: {
+        hLineWidth: (i: number, node: { table: { body: unknown[] } }) => {
+          if (i === 0 || i === node.table.body.length) {
+            return 0;
+          }
+          if (i === 1 || i === node.table.body.length - 1) {
+            return 1.25;
+          }
+          return 0.4;
+        },
+        hLineColor: (i: number, node: { table: { body: unknown[] } }) =>
+          i === 1 || i === node.table.body.length - 1 ? PDF.amber : PDF.hair,
+        vLineWidth: () => 0,
+        paddingLeft: () => 2,
+        paddingRight: () => 2,
+        paddingTop: () => 2,
+        paddingBottom: () => 2,
+      },
+      margin: [0, 0, 0, 2],
+    },
+  ];
 }

@@ -395,6 +395,7 @@ describe('pdf lines', () => {
       '01/01/2026 - 05/10/2026',
     ]);
     expect(lineSpans('زيت 5W-30', true).map((s) => s.text)).toEqual(['زيت ', '5W-30']);
+    expect(lineSpans('حساس O2', true).map((s) => s.text)).toEqual(['حساس ', 'O2']);
     expect(lineSpans('0.00 ج.م  -100%', true).map((s) => s.text)).toEqual([
       '0.00',
       ' ج.م  ',
@@ -531,8 +532,12 @@ describe('export history', () => {
         title: 'تقرير الصيانة',
         generated: 'اتعمل 2026-10-05',
         summary: 'الملخص',
-        entries: 'السجلات',
-        totalCost: 'إجمالي التكلفة',
+        entries: 'إجمالي السجلات',
+        totalCost: 'إجمالي التكلفة لكل الشهور',
+        avgCost: 'المتوسط',
+        monthItems: 'إجمالي البنود',
+        monthCost: 'إجمالي التكلفة',
+        itemHeader: 'البند',
         rangeLabel: 'الفترة: 2026-01-01 - 2026-10-05',
         columnHeaders: [
           'التاريخ',
@@ -550,12 +555,17 @@ describe('export history', () => {
           'أجر العمالة',
         ],
       },
-      { rtl: true, km: 'كم', labelFor: () => 'العادم' },
+      { rtl: true, labelFor: () => 'العادم' },
     );
     const json = JSON.stringify(doc);
-    expect(json).not.toContain('"rtl":true');
+    expect(doc['rtl']).toBeUndefined();
     expect(json).toContain('العادم');
     expect(json).toContain('علبة البيئة');
+    expect(json).toContain('البند');
+    expect(json).toContain('إجمالي السجلات');
+    expect(json).toContain('إجمالي التكلفة لكل الشهور');
+    expect(json).toContain('إجمالي البنود');
+    expect(json).toContain('سبتمبر');
     expect(json).toContain('02/09/2026');
     expect(json).toContain('29/07/2030');
     expect(json).toContain('05/10/2026');
@@ -567,6 +577,19 @@ describe('export history', () => {
     expect(json).toContain('#1c1a17');
     expect(json).not.toContain('#0b3d4a');
     expect(doc['pageOrientation']).toBe('portrait');
+    const table = tablesWithColumns(doc, 10)[0];
+    expect(table).toBeTruthy();
+    const header = table?.body[0] ?? [];
+    const data = table?.body[1] ?? [];
+    const footer = table?.body[table.body.length - 1] ?? [];
+    expect(JSON.stringify(header[0])).toContain('التاريخ');
+    expect(JSON.stringify(header[1])).toContain('البند');
+    expect(JSON.stringify(data[1])).toContain('العادم');
+    expect(JSON.stringify(data[3])).toContain('20,000.00');
+    expect(JSON.stringify(footer[3])).toContain('إجمالي التكلفة');
+    expect(JSON.stringify(footer[3])).toContain('20,000.00');
+    expect(JSON.stringify(footer[0])).toContain('إجمالي البنود');
+    expect(table?.rtl).toBe(true);
   });
 
   it('fill-up and maintenance pdfs share a portrait report and keep shop detail', async () => {
@@ -596,9 +619,6 @@ describe('export history', () => {
         totalLiters: 'Total liters',
         totalKm: 'Total km',
         avgPrice: 'Avg / L',
-        fullTank: 'Full tank',
-        yes: 'Yes',
-        distance: 'Distance',
         columnHeaders: [
           'Date',
           'Odometer',
@@ -652,10 +672,6 @@ describe('export history', () => {
         entries: 'Entries',
         totalCost: 'Total cost',
         avgCost: 'Average',
-        partModel: 'Model',
-        partNumber: 'Part no.',
-        recordType: 'Record',
-        condition: 'Condition',
         columnHeaders: [
           'date',
           'type',
@@ -672,29 +688,47 @@ describe('export history', () => {
           'Labor',
         ],
       },
-      {
-        km: 'km',
-        formatRecordType: () => 'Replacement',
-        formatCondition: () => 'Fair',
-        measurementLabel: () => 'Brake pad',
-      },
     );
     const maintJson = JSON.stringify(maint);
     expect(maintJson).toContain('El Nasr');
     expect(maintJson).toContain('Omar');
     expect(maintJson).toContain('Bosch');
-    expect(maintJson).toContain('Quiet');
-    expect(maintJson).toContain('HX-QUIET');
-    expect(maintJson).toContain('Replacement');
-    expect(maintJson).toContain('Fair');
-    expect(maintJson).toContain('Brake pad');
-    expect(maintJson).toContain('4');
+    expect(maintJson).not.toContain('Quiet');
+    expect(maintJson).not.toContain('HX-QUIET');
+    expect(maintJson).not.toContain('Replacement');
     expect(maintJson).toContain('front axle');
     expect(maintJson).toContain('EGP');
     expect(maintJson).toContain('900.00');
     expect(maint['pageOrientation']).toBe('portrait');
   });
 });
+
+function tablesWithColumns(
+  node: unknown,
+  columns: number,
+  found: { rtl?: boolean; body: unknown[][] }[] = [],
+): { rtl?: boolean; body: unknown[][] }[] {
+  if (!node || typeof node !== 'object') {
+    return found;
+  }
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      tablesWithColumns(item, columns, found);
+    }
+    return found;
+  }
+  const record = node as { table?: { rtl?: boolean; body?: unknown[][] } };
+  const body = record.table?.body;
+  if (body?.[0]?.length === columns && record.table) {
+    found.push({ rtl: record.table.rtl, body });
+  }
+  for (const value of Object.values(record)) {
+    if (value && typeof value === 'object') {
+      tablesWithColumns(value, columns, found);
+    }
+  }
+  return found;
+}
 
 describe('holidays', () => {
   it('nudges when due soon overlaps holiday window', async () => {
