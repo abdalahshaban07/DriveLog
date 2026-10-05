@@ -1,0 +1,911 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>DriveLog · What's new — pick a direction</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      @font-face {
+        font-family: Outfit;
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url("../../src/assets/fonts/outfit-latin-400.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: Outfit;
+        font-style: normal;
+        font-weight: 500;
+        font-display: swap;
+        src: url("../../src/assets/fonts/outfit-latin-500.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: Outfit;
+        font-style: normal;
+        font-weight: 600;
+        font-display: swap;
+        src: url("../../src/assets/fonts/outfit-latin-600.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: Outfit;
+        font-style: normal;
+        font-weight: 700;
+        font-display: swap;
+        src: url("../../src/assets/fonts/outfit-latin-700.woff2") format("woff2");
+      }
+
+      :root {
+        --bg: #e6dfd2;
+        --surface: #f7f1e6;
+        --well: #ddd4c4;
+        --ink: #1a1814;
+        --muted: #6b6358;
+        --line: rgba(90, 82, 72, 0.22);
+        --amber: #e8a317;
+        --ink-card: #1c1a17;
+        --cream: #f3eee4;
+        --cream-dim: #a39a8c;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        background: #d4cbbd;
+        color: var(--ink);
+        font-family: Outfit, "Avenir Next", "Segoe UI", sans-serif;
+      }
+
+      .board-head {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 28px 28px 8px;
+      }
+
+      .board-head p {
+        margin: 0;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--muted);
+      }
+
+      .board-head h1 {
+        margin: 6px 0 8px;
+        font-size: 1.8rem;
+        letter-spacing: -0.03em;
+      }
+
+      .board-head .note {
+        margin: 0;
+        max-width: 42rem;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .board {
+        display: flex;
+        gap: 28px;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 20px 24px 40px;
+        flex-wrap: wrap;
+      }
+
+      figure {
+        margin: 0;
+        width: 390px;
+      }
+
+      figcaption {
+        padding: 14px 4px 0;
+      }
+
+      figcaption strong {
+        display: block;
+        font-size: 1rem;
+        letter-spacing: -0.02em;
+      }
+
+      figcaption span {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 0.88rem;
+        line-height: 1.4;
+      }
+
+      .phone {
+        width: 390px;
+        height: 844px;
+        position: relative;
+        overflow: hidden;
+        border-radius: 36px;
+        background:
+          radial-gradient(120% 80% at 100% 0%, rgba(220, 201, 160, 0.7), transparent 55%),
+          radial-gradient(90% 70% at 0% 100%, rgba(196, 184, 164, 0.55), transparent 50%),
+          var(--bg);
+        box-shadow: 0 22px 50px rgba(26, 24, 20, 0.22);
+        border: 1px solid rgba(26, 24, 20, 0.16);
+      }
+
+      .ghost {
+        position: absolute;
+        left: 20px;
+        right: 20px;
+        border-radius: 14px;
+        background: rgba(26, 24, 20, 0.06);
+      }
+      .ghost.a { top: 28px; height: 18px; width: 92px; }
+      .ghost.b { top: 58px; height: 46px; width: 180px; }
+      .ghost.c { top: 124px; height: 88px; }
+      .ghost.d { top: 224px; height: 72px; }
+
+      .scrim {
+        position: absolute;
+        inset: 0;
+        background: rgba(26, 24, 20, 0.38);
+      }
+
+      .app-name {
+        position: absolute;
+        top: 22px;
+        left: 20px;
+        margin: 0;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        font-size: 1.05rem;
+        color: rgba(26, 24, 20, 0.55);
+      }
+
+      .sheet {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: auto;
+        max-height: 92%;
+        display: flex;
+        flex-direction: column;
+        padding: 10px 20px 22px;
+        background: var(--surface);
+        color: var(--ink);
+        border-radius: 22px 22px 0 0;
+        border: 1px solid var(--line);
+        border-bottom: 0;
+        box-shadow: 0 -16px 40px rgba(26, 24, 20, 0.18);
+      }
+
+      .grab {
+        width: 36px;
+        height: 4px;
+        margin: 0 auto 12px;
+        border-radius: 99px;
+        background: rgba(26, 24, 20, 0.18);
+        flex-shrink: 0;
+      }
+
+      .sheet-body {
+        min-height: 0;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .kicker {
+        margin: 0;
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .title {
+        margin: 0;
+        font-size: 1.7rem;
+        line-height: 1.05;
+        letter-spacing: -0.035em;
+        font-weight: 700;
+      }
+
+      .lead {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.95rem;
+        line-height: 1.45;
+      }
+
+      .cta {
+        margin-top: 14px;
+        flex-shrink: 0;
+        width: 100%;
+        min-height: 56px;
+        border: 0;
+        border-radius: 14px;
+        background: var(--amber);
+        color: var(--ink);
+        font: inherit;
+        font-size: 1.05rem;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .x {
+        width: 40px;
+        height: 40px;
+        border: 0;
+        border-radius: 12px;
+        background: var(--well);
+        color: var(--muted);
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      .row-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        border-radius: 99px;
+        background: rgba(232, 163, 23, 0.16);
+        color: var(--ink);
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+
+      /* ——— A Ledger ——— */
+      .ledger-list {
+        margin: 4px 0 0;
+        padding: 0;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .ledger-list li {
+        display: grid;
+        grid-template-columns: 46px 1fr;
+        gap: 10px;
+        padding: 14px 0;
+        border-top: 1px solid var(--line);
+      }
+
+      .num {
+        font-size: 1.35rem;
+        font-weight: 600;
+        letter-spacing: -0.04em;
+        color: #b3a794;
+        font-variant-numeric: tabular-nums;
+        padding-top: 1px;
+      }
+
+      .ledger-list li:first-child .num { color: var(--amber); }
+
+      .item-kicker {
+        margin: 0 0 3px;
+        font-size: 0.66rem;
+        font-weight: 600;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .item-title {
+        margin: 0;
+        font-size: 1.02rem;
+        letter-spacing: -0.02em;
+        line-height: 1.25;
+      }
+
+      .facts {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 4px;
+      }
+
+      .facts li {
+        display: block;
+        padding: 0;
+        border: 0;
+        color: var(--muted);
+        font-size: 0.86rem;
+        line-height: 1.35;
+      }
+
+      .dots .facts li::before {
+        content: "";
+        display: inline-block;
+        width: 5px;
+        height: 5px;
+        margin-right: 8px;
+        border-radius: 50%;
+        background: var(--amber);
+        transform: translateY(-1px);
+      }
+
+      /* ——— B Rail ——— */
+      .sheet--rail { padding: 0 0 22px; background: var(--surface); }
+      .sheet--rail .grab { margin-top: 10px; }
+
+      .ink-cap {
+        margin: 0 12px;
+        padding: 16px 16px 18px;
+        border-radius: 16px;
+        background: var(--ink-card);
+        color: var(--cream);
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .ink-cap .kicker { color: var(--amber); }
+      .ink-cap .title { font-size: 1.55rem; color: var(--cream); }
+      .ink-cap .lead { color: var(--cream-dim); margin-top: 6px; }
+      .ink-cap .x { background: rgba(243, 238, 228, 0.08); color: var(--cream); }
+
+      .rail {
+        margin: 18px 20px 0;
+        padding: 0;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .rail li {
+        position: relative;
+        padding-left: 28px;
+      }
+
+      .rail li::before {
+        content: "";
+        position: absolute;
+        left: 5px;
+        top: 16px;
+        bottom: -16px;
+        width: 2px;
+        background: var(--amber);
+      }
+
+      .rail li:last-child::before { display: none; }
+
+      .rail li::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 16px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--amber);
+        box-shadow: 0 0 0 4px var(--surface);
+      }
+
+      .station {
+        padding: 12px 12px 12px 14px;
+        border-radius: 14px;
+        background: var(--well);
+        border: 1px solid var(--line);
+      }
+
+      .station .item-title { font-size: 0.98rem; }
+      .where {
+        margin-top: 8px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .sheet--rail .cta { margin: 16px 20px 0; width: auto; }
+
+      /* ——— C Spotlight ——— */
+      .hero {
+        padding: 16px;
+        border-radius: 16px;
+        background:
+          radial-gradient(80% 80% at 100% 0%, rgba(232, 163, 23, 0.22), transparent 60%),
+          var(--well);
+        border: 1px solid var(--line);
+      }
+
+      .medallion {
+        width: 52px;
+        height: 52px;
+        border-radius: 16px;
+        display: grid;
+        place-items: center;
+        background: rgba(232, 163, 23, 0.18);
+        color: #8a5d08;
+        margin-bottom: 12px;
+      }
+
+      .hero .item-title {
+        font-size: 1.35rem;
+        letter-spacing: -0.03em;
+      }
+
+      .hero p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+        line-height: 1.45;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 12px;
+      }
+
+      .chips span {
+        padding: 5px 8px;
+        border-radius: 99px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+
+      .also {
+        display: grid;
+        gap: 8px;
+      }
+
+      .slim {
+        display: grid;
+        grid-template-columns: 36px 1fr;
+        gap: 10px;
+        align-items: center;
+        padding: 10px 12px;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        background: transparent;
+      }
+
+      .slim svg { color: #8a5d08; }
+      .slim strong { display: block; font-size: 0.92rem; letter-spacing: -0.02em; }
+      .slim em {
+        display: block;
+        margin-top: 2px;
+        font-style: normal;
+        color: var(--muted);
+        font-size: 0.8rem;
+        line-height: 1.35;
+      }
+
+      /* ——— D Bento ——— */
+      .bento {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        align-items: stretch;
+      }
+
+      .row-tools {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+
+      .cell {
+        border-radius: 16px;
+        padding: 14px;
+        border: 1px solid var(--line);
+        background: var(--well);
+        min-height: 0;
+      }
+
+      .cell--ink {
+        grid-column: 1 / -1;
+        background: var(--ink-card);
+        color: var(--cream);
+        border-color: transparent;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px 12px;
+      }
+
+      .cell--ink .item-kicker { color: var(--amber); }
+      .cell--ink .item-title { font-size: 1.25rem; color: var(--cream); }
+      .cell--ink .facts li { color: var(--cream-dim); }
+      .cell .facts { margin-top: 10px; }
+
+      .glyph-lg {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        background: rgba(232, 163, 23, 0.16);
+        color: var(--amber);
+      }
+
+      .percents {
+        display: flex;
+        gap: 6px;
+        margin-top: 10px;
+      }
+
+      .percents b {
+        flex: 1;
+        text-align: center;
+        padding: 8px 0;
+        border-radius: 10px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        font-size: 0.85rem;
+      }
+
+      .percents b.on {
+        background: var(--ink);
+        color: var(--cream);
+        border-color: transparent;
+      }
+
+      .cell p.fine {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 0.8rem;
+        line-height: 1.35;
+      }
+
+      body.single {
+        background: var(--bg);
+        overflow: hidden;
+      }
+
+      body.single .board-head,
+      body.single figcaption { display: none; }
+
+      body.single .board { padding: 0; }
+      body.single figure { width: 100vw; }
+      body.single .phone {
+        width: 100vw;
+        height: 100vh;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+      }
+
+      body.board { background: #d4cbbd; width: 1280px; }
+      body.board .board-head { max-width: none; padding: 22px 28px 0; }
+      body.board .board-head h1 { font-size: 1.4rem; }
+      body.board .board {
+        flex-wrap: nowrap;
+        gap: 18px;
+        padding: 16px 24px 28px;
+        justify-content: center;
+      }
+      body.board figure { width: 292px; }
+      body.board .scaler {
+        width: 292px;
+        height: 632px;
+        overflow: hidden;
+        border-radius: 28px;
+      }
+      body.board .phone {
+        transform: scale(0.7487);
+        transform-origin: top left;
+        border-radius: 36px;
+      }
+      body.board figcaption { padding-top: 10px; }
+      body.board figcaption span { font-size: 0.78rem; }
+    </style>
+  </head>
+  <body>
+    <header class="board-head">
+      <p>DriveLog · release notes</p>
+      <h1>What's new — four directions</h1>
+      <p class="note">
+        Same three notes from v1.6, drawn as a sheet. Reply with A, B, C, or D and that one gets built.
+      </p>
+    </header>
+
+    <div class="board">
+      <figure data-v="a">
+        <div class="scaler">
+          <div class="phone" aria-label="Variant A Ledger">
+            <p class="app-name">DriveLog</p>
+            <div class="ghost b"></div>
+            <div class="ghost c"></div>
+            <div class="scrim"></div>
+            <section class="sheet sheet--ledger">
+              <div class="grab"></div>
+              <div class="sheet-body">
+                <div class="row-head">
+                  <div>
+                    <p class="kicker">Release · v1.6</p>
+                    <h2 class="title">What's new</h2>
+                  </div>
+                  <button class="x" type="button" aria-label="Close">
+                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                      <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                  </button>
+                </div>
+                <p class="lead">Three changes. Scan the index, then keep driving.</p>
+                <ol class="ledger-list dots">
+                  <li>
+                    <span class="num">01</span>
+                    <div>
+                      <p class="item-kicker">Health</p>
+                      <h3 class="item-title">Vehicle Health, clearer</h3>
+                      <ul class="facts">
+                        <li>Glance counts up top</li>
+                        <li>Richer part rows</li>
+                        <li>Sources in your language</li>
+                      </ul>
+                    </div>
+                  </li>
+                  <li>
+                    <span class="num">02</span>
+                    <div>
+                      <p class="item-kicker">Soon</p>
+                      <h3 class="item-title">Window presets</h3>
+                      <ul class="facts">
+                        <li>Pick 10%, 20% (default), or 30%</li>
+                        <li>Hint shows when a part flips to Soon</li>
+                      </ul>
+                    </div>
+                  </li>
+                  <li>
+                    <span class="num">03</span>
+                    <div>
+                      <p class="item-kicker">Privacy</p>
+                      <h3 class="item-title">Private Contact</h3>
+                      <ul class="facts">
+                        <li>Opens in your email app</li>
+                        <li>Address stays off-screen</li>
+                        <li>Clearer Other topic in Arabic</li>
+                      </ul>
+                    </div>
+                  </li>
+                </ol>
+              </div>
+              <button class="cta" type="button">Got it</button>
+            </section>
+          </div>
+        </div>
+        <figcaption>
+          <strong>A · Ledger</strong>
+          <span>Editorial index. Numbers, a section label, then the facts. Quiet and easy to scan.</span>
+        </figcaption>
+      </figure>
+
+      <figure data-v="b">
+        <div class="scaler">
+          <div class="phone" aria-label="Variant B Rail">
+            <p class="app-name">DriveLog</p>
+            <div class="ghost b"></div>
+            <div class="ghost c"></div>
+            <div class="scrim"></div>
+            <section class="sheet sheet--rail">
+              <div class="grab"></div>
+              <div class="ink-cap">
+                <div>
+                  <p class="kicker">v1.6 · 3 changes</p>
+                  <h2 class="title">What's new</h2>
+                  <p class="lead">This release, in order.</p>
+                </div>
+                <button class="x" type="button" aria-label="Close">
+                  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                    <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </div>
+              <ol class="rail">
+                <li>
+                  <article class="station">
+                    <p class="item-kicker">Health</p>
+                    <h3 class="item-title">Vehicle Health, clearer</h3>
+                    <ul class="facts">
+                      <li>Glance counts</li>
+                      <li>Richer part rows</li>
+                      <li>Localized sources</li>
+                    </ul>
+                    <p class="where">In Vehicle Health</p>
+                  </article>
+                </li>
+                <li>
+                  <article class="station">
+                    <p class="item-kicker">Soon</p>
+                    <h3 class="item-title">Window presets</h3>
+                    <ul class="facts">
+                      <li>10%, 20% (default), or 30%</li>
+                      <li>Hint when a part flips to Soon</li>
+                    </ul>
+                    <p class="where">In Settings</p>
+                  </article>
+                </li>
+                <li>
+                  <article class="station">
+                    <p class="item-kicker">Privacy</p>
+                    <h3 class="item-title">Private Contact</h3>
+                    <ul class="facts">
+                      <li>Email app, address hidden</li>
+                      <li>Clearer Other topic in Arabic</li>
+                    </ul>
+                    <p class="where">In Support</p>
+                  </article>
+                </li>
+              </ol>
+              <button class="cta" type="button">Got it</button>
+            </section>
+          </div>
+        </div>
+        <figcaption>
+          <strong>B · Rail</strong>
+          <span>Ink header and an amber timeline. Each change is a station with where it lives.</span>
+        </figcaption>
+      </figure>
+
+      <figure data-v="c">
+        <div class="scaler">
+          <div class="phone" aria-label="Variant C Spotlight">
+            <p class="app-name">DriveLog</p>
+            <div class="ghost b"></div>
+            <div class="ghost c"></div>
+            <div class="scrim"></div>
+            <section class="sheet">
+              <div class="grab"></div>
+              <div class="sheet-body">
+                <div class="row-head">
+                  <div>
+                    <p class="kicker">Release · v1.6</p>
+                    <h2 class="title">What's new</h2>
+                  </div>
+                  <button class="x" type="button" aria-label="Close">
+                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                      <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                  </button>
+                </div>
+                <article class="hero">
+                  <div class="medallion" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="26" height="26">
+                      <path d="M14.7 6.3a4 4 0 0 0-5.6 5.6L4 17l3 3 5.1-5.1a4 4 0 0 0 5.6-5.6L15 12l-2.3-2.3z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </div>
+                  <p class="item-kicker">Lead change · Health</p>
+                  <h3 class="item-title">Vehicle Health, clearer</h3>
+                  <p>Glance counts, richer part rows, and sources in your language — see what needs attention faster.</p>
+                  <div class="chips">
+                    <span>Glance counts</span>
+                    <span>Richer rows</span>
+                    <span>Localized</span>
+                  </div>
+                </article>
+                <div>
+                  <p class="kicker">Also in this release</p>
+                  <div class="also" style="margin-top: 8px">
+                    <article class="slim">
+                      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                        <path d="M5 19V9M10 19V5M15 19v-7M20 19V11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                      </svg>
+                      <div>
+                        <strong>Soon window presets</strong>
+                        <em>10%, 20%, or 30%. The hint shows when a part flips to Soon.</em>
+                      </div>
+                    </article>
+                    <article class="slim">
+                      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                        <path d="M12 3l1.2 4.8L18 9l-4.8 1.2L12 15l-1.2-4.8L6 9l4.8-1.2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                      </svg>
+                      <div>
+                        <strong>Private Contact</strong>
+                        <em>Opens in your email app. Address stays off-screen. Clearer Other topic in Arabic.</em>
+                      </div>
+                    </article>
+                  </div>
+                </div>
+              </div>
+              <button class="cta" type="button">Got it</button>
+            </section>
+          </div>
+        </div>
+        <figcaption>
+          <strong>C · Spotlight</strong>
+          <span>One lead change gets the room. The other two stay one line away, under Also.</span>
+        </figcaption>
+      </figure>
+
+      <figure data-v="d">
+        <div class="scaler">
+          <div class="phone" aria-label="Variant D Bento">
+            <p class="app-name">DriveLog</p>
+            <div class="ghost b"></div>
+            <div class="ghost c"></div>
+            <div class="scrim"></div>
+            <section class="sheet">
+              <div class="grab"></div>
+              <div class="sheet-body">
+                <div class="row-head">
+                  <div>
+                    <p class="kicker">This release</p>
+                    <h2 class="title">What's new</h2>
+                  </div>
+                  <div class="row-tools">
+                  <span class="pill">v1.6</span>
+                  <button class="x" type="button" aria-label="Close">
+                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                      <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                  </button>
+                  </div>
+                </div>
+                <div class="bento">
+                  <article class="cell cell--ink dots">
+                    <div>
+                      <p class="item-kicker">Health</p>
+                      <h3 class="item-title">Vehicle Health, clearer</h3>
+                      <ul class="facts">
+                        <li>Glance counts</li>
+                        <li>Richer part rows</li>
+                        <li>Sources in your language</li>
+                      </ul>
+                    </div>
+                    <div class="glyph-lg" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" width="22" height="22">
+                        <path d="M14.7 6.3a4 4 0 0 0-5.6 5.6L4 17l3 3 5.1-5.1a4 4 0 0 0 5.6-5.6L15 12l-2.3-2.3z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </div>
+                  </article>
+                  <article class="cell">
+                    <p class="item-kicker">Soon</p>
+                    <h3 class="item-title">Window presets</h3>
+                    <div class="percents" aria-label="10 percent, 20 percent default, or 30 percent">
+                      <b>10%</b><b class="on">20%</b><b>30%</b>
+                    </div>
+                    <p class="fine">20% is the default. The hint shows when a part flips to Soon.</p>
+                  </article>
+                  <article class="cell dots">
+                    <p class="item-kicker">Privacy</p>
+                    <h3 class="item-title">Private Contact</h3>
+                    <ul class="facts">
+                      <li>Email app</li>
+                      <li>Address hidden</li>
+                      <li>Clearer Other topic in Arabic</li>
+                    </ul>
+                  </article>
+                </div>
+              </div>
+              <button class="cta" type="button">Got it</button>
+            </section>
+          </div>
+        </div>
+        <figcaption>
+          <strong>D · Bento</strong>
+          <span>Asymmetric grid. Health is an ink panel. Soon and Privacy sit side by side.</span>
+        </figcaption>
+      </figure>
+    </div>
+    <script>
+      const v = new URLSearchParams(location.search).get("v");
+      if (v === "board") document.body.classList.add("board");
+      else if (v) {
+        document.body.classList.add("single");
+        document.querySelectorAll("[data-v]").forEach((el) => {
+          if (el.dataset.v !== v) el.remove();
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -16,12 +16,24 @@ describe('UpdateModal', () => {
     }).compileComponents();
   });
 
-  it('renders release pill and feature rows', () => {
+  it('renders a numbered ledger with facts, and body when a note has none', () => {
     const fixture = TestBed.createComponent(UpdateModal);
     fixture.componentRef.setInput('title', 'You are on v1');
     fixture.componentRef.setInput('cards', [
-      { icon: 'fuel' as const, title: 'Fuel', body: 'Feature one' },
-      { icon: 'chart' as const, title: 'Charts', body: 'Feature two' },
+      {
+        icon: 'fuel' as const,
+        kicker: 'Health',
+        title: 'Fuel',
+        body: 'Feature one',
+        points: ['Glance counts', 'Richer rows'],
+      },
+      {
+        icon: 'chart' as const,
+        kicker: '',
+        title: 'Charts',
+        body: 'Feature two',
+        points: [],
+      },
     ]);
     fixture.componentRef.setInput('releaseId', '2026-08-31');
     fixture.componentRef.setInput('isUpdate', false);
@@ -29,10 +41,16 @@ describe('UpdateModal', () => {
 
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('.update-sheet__title')?.textContent).toContain('You are on v1');
-    expect(el.querySelector('.update-sheet__release')?.textContent).toContain('2026-08-31');
+    expect(el.querySelector('.update-sheet__kicker')?.textContent).toContain('2026-08-31');
     expect(el.querySelector('.update-sheet__lead')?.textContent).toContain('update.notesLead');
-    expect(el.querySelectorAll('.update-row').length).toBe(2);
-    expect(el.querySelectorAll('.update-row__icon').length).toBe(2);
+    const items = el.querySelectorAll('.ledger__item');
+    expect(items.length).toBe(2);
+    expect(items[0]?.querySelector('.ledger__num')?.textContent).toBe('01');
+    expect(items[0]?.querySelector('.ledger__kicker')?.textContent).toBe('Health');
+    expect(items[0]?.querySelectorAll('.ledger__facts li').length).toBe(2);
+    expect(items[0]?.querySelector('.ledger__body')).toBeNull();
+    expect(items[1]?.querySelector('.ledger__num')?.textContent).toBe('02');
+    expect(items[1]?.querySelector('.ledger__body')?.textContent).toContain('Feature two');
     expect(el.querySelector('app-primary-button')).toBeTruthy();
   });
 

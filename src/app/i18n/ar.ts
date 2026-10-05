@@ -299,7 +299,7 @@ export const ar: Record<MsgKey, string> = {
   'update.whatsNew': 'إيه الجديد',
   'update.release': 'إصدار',
   'update.dismiss': 'تمام',
-  'update.notesLead': 'أبرز التغييرات في الإصدار ده — امسح بسرعة وكمل قيادتك.',
+  'update.notesLead': 'امسح الفهرس، وبعدين كمّل قيادتك.',
   'common.back': 'رجوع',
   'common.confirm': 'تأكيد',
   'common.saved': 'اتحفظ',
