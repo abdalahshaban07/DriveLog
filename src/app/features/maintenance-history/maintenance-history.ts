@@ -215,12 +215,11 @@ export class MaintenanceHistoryPage {
           }),
           summary: this.i18n.t('history.pdfSummary'),
           entries: this.i18n.t('history.pdfEntries'),
-          totalCost: this.i18n.t('history.pdfTotalCost'),
+          totalCost: this.i18n.t('history.pdf.costAllMonths'),
           avgCost: this.i18n.t('history.pdf.avgCost'),
-          partModel: this.i18n.t('history.pdf.partModel'),
-          partNumber: this.i18n.t('history.pdf.partNumber'),
-          recordType: this.i18n.t('history.pdf.recordType'),
-          condition: this.i18n.t('history.pdf.condition'),
+          monthItems: this.i18n.t('history.pdf.itemTotal'),
+          monthCost: this.i18n.t('history.pdfTotalCost'),
+          itemHeader: this.i18n.t('history.pdf.col.item'),
           rangeLabel: rangeLabel ? `${this.i18n.t('history.pdfRange')}: ${rangeLabel}` : undefined,
           columnHeaders: [
             this.i18n.t('history.pdf.col.date'),
@@ -240,55 +239,8 @@ export class MaintenanceHistoryPage {
         },
         {
           rtl: this.i18n.dir() === 'rtl',
-          km: this.i18n.t('common.km'),
           labelFor: (row) =>
             maintenanceRecordLabel(row, this.db.catalog(), (key) => this.i18n.t(key as MsgKey)),
-          formatRecordType: (type) => {
-            switch (type) {
-              case 'replacement':
-                return this.i18n.t('maint.record.replacement');
-              case 'service':
-                return this.i18n.t('maint.record.service');
-              case 'inspection':
-                return this.i18n.t('maint.record.inspection');
-              case 'repair':
-                return this.i18n.t('maint.record.repair');
-              case 'measurement':
-                return this.i18n.t('maint.record.measurement');
-              default: {
-                const _never: never = type;
-                return _never;
-              }
-            }
-          },
-          formatCondition: (condition) => {
-            switch (condition) {
-              case 'good':
-                return this.i18n.t('maint.condition.good');
-              case 'fair':
-                return this.i18n.t('maint.condition.fair');
-              case 'poor':
-                return this.i18n.t('maint.condition.poor');
-              case 'critical':
-                return this.i18n.t('maint.condition.critical');
-              default: {
-                const _never: never = condition;
-                return _never;
-              }
-            }
-          },
-          measurementLabel: (reading) => {
-            switch (reading.type) {
-              case 'tireTreadMm':
-                return this.i18n.t('history.pdf.measure.tire');
-              case 'brakePadMm':
-                return this.i18n.t('history.pdf.measure.pad');
-              case 'batteryVoltageV':
-                return this.i18n.t('history.pdf.measure.battery');
-              default:
-                return reading.type;
-            }
-          },
         },
       );
       const file = new File(

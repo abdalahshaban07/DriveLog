@@ -1,22 +1,13 @@
 import { todayDateOnly } from './dues';
-import type {
-  DateOnly,
-  FillUp,
-  FuelGrade,
-  Maintenance,
-  MaintenanceRecordType,
-  Measurement,
-  PartCondition,
-} from './models';
+import type { DateOnly, FillUp, FuelGrade, Maintenance } from './models';
 import {
-  ledgerCard,
   metricBand,
   masthead,
+  monthSection,
   pdfBlob,
   pdfDate,
   pdfNum,
   reportShell,
-  sectionLabel,
   type PdfFact,
 } from './pdf-theme';
 
@@ -33,13 +24,11 @@ export type ExportPdfCopy = {
   rangeLabel?: string;
   avgCost?: string;
   avgPrice?: string;
-  fullTank?: string;
-  yes?: string;
-  distance?: string;
-  partModel?: string;
-  partNumber?: string;
-  recordType?: string;
-  condition?: string;
+  /** Month-table footer: row count, and the label above the cost-column total. */
+  monthItems?: string;
+  monthCost?: string;
+  /** البند. Falls back to the type column header. */
+  itemHeader?: string;
   /** Localized column headers (CSV stays English keys). */
   columnHeaders: string[];
 };
@@ -241,11 +230,11 @@ const MONTHS_AR = [
   'ديسمبر',
 ] as const;
 
-function monthTitle(iso: string, rtl: boolean): string {
-  const [y, m] = iso.split('-');
+function monthParts(isoMonth: string, rtl: boolean): { name: string; year: string } {
+  const [year, m] = isoMonth.split('-');
   const index = Number(m) - 1;
-  const name = (rtl ? MONTHS_AR : MONTHS_EN)[index] ?? m;
-  return `${name} ${y ?? ''}`.trim();
+  const name = (rtl ? MONTHS_AR : MONTHS_EN)[index] ?? m ?? '';
+  return { name, year: year ?? '' };
 }
 
 function money(n: number | undefined, currency?: string): string | null {
@@ -265,10 +254,6 @@ export type MaintenancePdfOptions = {
   rtl?: boolean;
   /** Shown name (part or type). Defaults to a non-key otherLabel, else type. */
   labelFor?: (row: Maintenance) => string;
-  km?: string;
-  formatRecordType?: (type: MaintenanceRecordType) => string;
-  formatCondition?: (condition: PartCondition) => string;
-  measurementLabel?: (measurement: Measurement) => string;
 };
 
 export type FillUpPdfOptions = {
@@ -292,59 +277,6 @@ function maintenanceLabel(row: Maintenance, labelFor?: (row: Maintenance) => str
   return row.type;
 }
 
-function pushFact(
-  facts: PdfFact[],
-  label: string | undefined,
-  value: string | null | undefined,
-): void {
-  if (label && value) {
-    facts.push({ label, value });
-  }
-}
-
-function maintenanceFacts(
-  row: Maintenance,
-  headers: string[],
-  copy: ExportPdfCopy,
-  opts: MaintenancePdfOptions | undefined,
-  km: string,
-): PdfFact[] {
-  const facts: PdfFact[] = [];
-  const dueKm = headers[5];
-  const dueDate = headers[6];
-  if (row.dueKm != null && Number.isFinite(row.dueKm)) {
-    pushFact(facts, dueKm, withUnit(row.dueKm, km));
-  }
-  if (row.dueDate) {
-    pushFact(facts, dueDate, pdfDate(row.dueDate));
-  }
-  pushFact(facts, headers[8], row.centerName);
-  pushFact(facts, headers[9], row.technicianName);
-  pushFact(facts, headers[10], row.partBrand);
-  pushFact(facts, copy.partModel, row.partModel);
-  pushFact(facts, copy.partNumber, row.partNumber);
-  if (row.recordType && opts?.formatRecordType) {
-    pushFact(facts, copy.recordType, opts.formatRecordType(row.recordType));
-  }
-  if (row.condition && opts?.formatCondition) {
-    pushFact(facts, copy.condition, opts.formatCondition(row.condition));
-  }
-  for (const reading of row.measurements ?? []) {
-    const label = opts?.measurementLabel?.(reading) ?? reading.type;
-    const digits = Number.isInteger(reading.value) ? 0 : 2;
-    const value = [pdfNum(reading.value, digits), reading.unit].filter(Boolean).join(' ');
-    pushFact(facts, label, value);
-  }
-  pushFact(facts, headers[11], money(row.partCost, row.currency));
-  pushFact(facts, headers[12], money(row.laborCost, row.currency));
-  for (const observation of row.observations ?? []) {
-    const raw = observation.value == null ? '' : String(observation.value);
-    const value = observation.unit ? `${raw} ${observation.unit}` : raw;
-    pushFact(facts, observation.type, value);
-  }
-  return facts;
-}
-
 function groupByMonth<T extends { date: string }>(
   rows: readonly T[],
 ): { month: string; items: T[] }[] {
@@ -361,26 +293,52 @@ function groupByMonth<T extends { date: string }>(
   return groups;
 }
 
-function maintenanceCard(
-  row: Maintenance,
-  label: string,
-  copy: ExportPdfCopy,
-  opts: MaintenancePdfOptions | undefined,
-  km: string,
-  rtl: boolean,
-): Record<string, unknown> {
-  const cost = money(row.cost, row.currency);
-  const headers = copy.columnHeaders;
-  return ledgerCard({
-    rtl,
-    kicker: pdfDate(row.date),
-    title: label,
-    amount: cost ?? '—',
-    amountColor: cost ? '#e8a317' : '#6b6358',
-    subtitle: withUnit(row.odometer, km),
-    facts: maintenanceFacts(row, headers, copy, opts, km),
-    note: row.note ? { label: headers[7], text: row.note } : undefined,
-  });
+function cell(value: string | null | undefined): string {
+  const shown = value?.trim() ?? '';
+  return shown || '—';
+}
+
+function monthLabels(copy: ExportPdfCopy): { items: string; cost: string } {
+  return {
+    items: copy.monthItems ?? copy.entries,
+    cost: copy.monthCost ?? copy.totalCost,
+  };
+}
+
+const MAINT_RATIOS = [0.13, 0.12, 0.09, 0.14, 0.1, 0.13, 0.08, 0.07, 0.08, 0.06];
+const FILL_RATIOS = [0.12, 0.16, 0.12, 0.1, 0.12, 0.14, 0.1, 0.14];
+
+function maintenanceHeaders(copy: ExportPdfCopy): string[] {
+  const h = copy.columnHeaders;
+  return [
+    h[0] ?? '',
+    copy.itemHeader ?? h[1] ?? '',
+    h[3] ?? '',
+    h[4] ?? '',
+    h[5] ?? '',
+    h[6] ?? '',
+    h[8] ?? '',
+    h[9] ?? '',
+    h[10] ?? '',
+    h[7] ?? '',
+  ];
+}
+
+function maintenanceRow(row: Maintenance, opts?: MaintenancePdfOptions): string[] {
+  const dueKm = row.dueKm != null && Number.isFinite(row.dueKm) ? pdfNum(row.dueKm) : '—';
+  const brand = row.partBrand?.trim() || row.partModel?.trim() || '';
+  return [
+    pdfDate(row.date),
+    cell(maintenanceLabel(row, opts?.labelFor)),
+    pdfNum(row.odometer),
+    money(row.cost, row.currency) ?? '—',
+    dueKm,
+    row.dueDate ? pdfDate(row.dueDate) : '—',
+    cell(row.centerName),
+    cell(row.technicianName),
+    cell(brand),
+    cell(row.note),
+  ];
 }
 
 /** Doc definition for the maintenance PDF. Exported so tests can check layout. */
@@ -390,7 +348,6 @@ export function maintenancePdfDoc(
   opts?: MaintenancePdfOptions,
 ): Record<string, unknown> {
   const rtl = opts?.rtl === true;
-  const km = opts?.km ?? '';
   const ordered = [...rows].sort(
     (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
   );
@@ -403,58 +360,66 @@ export function maintenancePdfDoc(
   if (copy.avgCost && priced.length) {
     metrics.push({ label: copy.avgCost, value: pdfNum(totalCost / priced.length, 2) });
   }
+  const labels = monthLabels(copy);
   const meta = [copy.generated, copy.rangeLabel ?? ''].filter(Boolean);
   const content: Record<string, unknown>[] = [
     ...masthead(copy.title, meta, rtl),
     ...metricBand(metrics, rtl, 3),
   ];
   for (const group of groupByMonth(ordered)) {
-    const monthCost = group.items.reduce((sum, row) => sum + (row.cost != null ? row.cost : 0), 0);
-    const heading = monthTitle(`${group.month}-01`, rtl);
-    content.push(sectionLabel(monthCost ? `${heading}   ${pdfNum(monthCost, 2)}` : heading, rtl));
-    for (const row of group.items) {
-      content.push(
-        maintenanceCard(row, maintenanceLabel(row, opts?.labelFor), copy, opts, km, rtl),
-      );
-    }
+    const monthCost = group.items.reduce(
+      (sum, row) => sum + (row.cost != null && Number.isFinite(row.cost) ? row.cost : 0),
+      0,
+    );
+    const { name, year } = monthParts(group.month, rtl);
+    content.push(
+      ...monthSection({
+        rtl,
+        month: name,
+        year,
+        headers: maintenanceHeaders(copy),
+        ratios: MAINT_RATIOS,
+        rows: group.items.map((row) => maintenanceRow(row, opts)),
+        footer: {
+          itemsLabel: labels.items,
+          count: pdfNum(group.items.length),
+          costLabel: labels.cost,
+          cost: pdfNum(monthCost, 2),
+          costIndex: 3,
+        },
+      }),
+    );
   }
   return reportShell(content, rtl);
 }
 
-function fillUpCard(
-  row: FillUp,
-  copy: ExportPdfCopy,
-  opts: FillUpPdfOptions | undefined,
-  rtl: boolean,
-): Record<string, unknown> {
-  const headers = copy.columnHeaders;
-  const grade = formatFuelGradeLabel(row.fuelGrade);
-  const place = row.placeLabel?.trim() ?? '';
-  const facts: PdfFact[] = [];
-  pushFact(facts, headers[2], withUnit(row.liters, opts?.liters ?? '', 1));
-  if (row.unitPrice != null && Number.isFinite(row.unitPrice)) {
-    pushFact(facts, headers[4], money(row.unitPrice, row.currency));
-  }
-  if (place && grade) {
-    pushFact(facts, headers[5], grade);
-  }
-  if (row.distanceKm != null && Number.isFinite(row.distanceKm)) {
-    pushFact(facts, copy.distance, withUnit(row.distanceKm, opts?.km ?? ''));
-  }
-  if (row.tankFull && copy.fullTank && copy.yes) {
-    pushFact(facts, copy.fullTank, copy.yes);
-  }
-  const cost = money(row.cost, row.currency);
-  return ledgerCard({
-    rtl,
-    kicker: pdfDate(row.date),
-    title: place || grade || '—',
-    amount: cost ?? '—',
-    amountColor: cost ? '#e8a317' : '#6b6358',
-    subtitle: withUnit(row.odometer, opts?.km ?? ''),
-    facts,
-    note: row.note ? { label: headers[7], text: row.note } : undefined,
-  });
+function fillHeaders(copy: ExportPdfCopy): string[] {
+  const h = copy.columnHeaders;
+  return [
+    h[0] ?? '',
+    h[6] ?? '',
+    h[1] ?? '',
+    h[2] ?? '',
+    h[4] ?? '',
+    h[3] ?? '',
+    h[5] ?? '',
+    h[7] ?? '',
+  ];
+}
+
+function fillRow(row: FillUp): string[] {
+  return [
+    pdfDate(row.date),
+    cell(row.placeLabel),
+    pdfNum(row.odometer),
+    pdfNum(row.liters, 1),
+    row.unitPrice != null && Number.isFinite(row.unitPrice)
+      ? (money(row.unitPrice, row.currency) ?? '—')
+      : '—',
+    money(row.cost, row.currency) ?? '—',
+    cell(formatFuelGradeLabel(row.fuelGrade)),
+    cell(row.note),
+  ];
 }
 
 /** Doc definition for the fill-up PDF. Exported so tests can check layout. */
@@ -488,6 +453,7 @@ export function fillUpsPdfDoc(
   if (copy.avgPrice && totalLiters > 0) {
     metrics.push({ label: copy.avgPrice, value: pdfNum(totalCost / totalLiters, 2) });
   }
+  const labels = monthLabels(copy);
   const meta = [copy.generated, copy.rangeLabel ?? ''].filter(Boolean);
   const content: Record<string, unknown>[] = [
     ...masthead(copy.title, meta, rtl),
@@ -495,11 +461,24 @@ export function fillUpsPdfDoc(
   ];
   for (const group of groupByMonth(ordered)) {
     const monthCost = group.items.reduce((sum, row) => sum + row.cost, 0);
-    const heading = monthTitle(`${group.month}-01`, rtl);
-    content.push(sectionLabel(`${heading}   ${pdfNum(monthCost, 2)}`, rtl));
-    for (const row of group.items) {
-      content.push(fillUpCard(row, copy, opts, rtl));
-    }
+    const { name, year } = monthParts(group.month, rtl);
+    content.push(
+      ...monthSection({
+        rtl,
+        month: name,
+        year,
+        headers: fillHeaders(copy),
+        ratios: FILL_RATIOS,
+        rows: group.items.map((row) => fillRow(row)),
+        footer: {
+          itemsLabel: labels.items,
+          count: pdfNum(group.items.length),
+          costLabel: labels.cost,
+          cost: pdfNum(monthCost, 2),
+          costIndex: 5,
+        },
+      }),
+    );
   }
   return reportShell(content, rtl);
 }
