@@ -1,10 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
 import {
@@ -338,9 +332,7 @@ export class FillUpHistoryPage {
     try {
       const range = this.activeRange();
       const rangeLabel =
-        range.from || range.to
-          ? `${range.from ?? '…'} - ${range.to ?? '…'}`
-          : undefined;
+        range.from || range.to ? `${range.from ?? '…'} - ${range.to ?? '…'}` : undefined;
       let totalKm: number | null = null;
       let hasKm = false;
       let kmSum = 0;
@@ -366,9 +358,11 @@ export class FillUpHistoryPage {
           totalCost: this.i18n.t('history.pdfTotalCost'),
           totalLiters: this.i18n.t('history.pdfTotalLiters'),
           totalKm: this.i18n.t('history.pdfTotalKm'),
-          rangeLabel: rangeLabel
-            ? `${this.i18n.t('history.pdfRange')}: ${rangeLabel}`
-            : undefined,
+          avgPrice: this.i18n.t('history.pdf.avgPrice'),
+          fullTank: this.i18n.t('history.pdf.fullTank'),
+          yes: this.i18n.t('history.pdf.yes'),
+          distance: this.i18n.t('history.pdf.distance'),
+          rangeLabel: rangeLabel ? `${this.i18n.t('history.pdfRange')}: ${rangeLabel}` : undefined,
           columnHeaders: [
             this.i18n.t('history.pdf.col.date'),
             this.i18n.t('history.pdf.col.odometer'),
@@ -380,7 +374,12 @@ export class FillUpHistoryPage {
             this.i18n.t('history.pdf.col.note'),
           ],
         },
-        { rtl: this.i18n.dir() === 'rtl', totalKm },
+        {
+          rtl: this.i18n.dir() === 'rtl',
+          totalKm,
+          km: this.i18n.t('common.km'),
+          liters: this.i18n.t('common.liters'),
+        },
       );
       const file = new File(
         [blob],

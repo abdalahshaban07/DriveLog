@@ -1,5 +1,24 @@
 import { todayDateOnly } from './dues';
-import type { DateOnly, FillUp, FuelGrade, Maintenance } from './models';
+import type {
+  DateOnly,
+  FillUp,
+  FuelGrade,
+  Maintenance,
+  MaintenanceRecordType,
+  Measurement,
+  PartCondition,
+} from './models';
+import {
+  ledgerCard,
+  metricBand,
+  masthead,
+  pdfBlob,
+  pdfDate,
+  pdfNum,
+  reportShell,
+  sectionLabel,
+  type PdfFact,
+} from './pdf-theme';
 
 export type HistoryRangePreset = 'thisMonth' | '3months' | 'year' | 'custom';
 
@@ -12,53 +31,18 @@ export type ExportPdfCopy = {
   totalLiters?: string;
   totalKm?: string;
   rangeLabel?: string;
-  /** Localized column headers for the PDF table (CSV stays English keys). */
+  avgCost?: string;
+  avgPrice?: string;
+  fullTank?: string;
+  yes?: string;
+  distance?: string;
+  partModel?: string;
+  partNumber?: string;
+  recordType?: string;
+  condition?: string;
+  /** Localized column headers (CSV stays English keys). */
   columnHeaders: string[];
 };
-
-type PdfMakeApi = {
-  addVirtualFileSystem?: (vfs: unknown) => void;
-  vfs?: unknown;
-  fonts?: Record<string, unknown>;
-  createPdf: (doc: unknown) => {
-    getBlob: () => Promise<Blob>;
-    getBuffer?: () => Promise<Uint8Array | ArrayBuffer>;
-  };
-};
-
-let pdfApi: PdfMakeApi | null = null;
-
-async function getPdfMake(): Promise<PdfMakeApi> {
-  if (pdfApi) {
-    return pdfApi;
-  }
-  const [{ default: pdfMake }, { default: pdfVfs }] = await Promise.all([
-    import('pdfmake-rtl/build/pdfmake'),
-    import('pdfmake-rtl/build/vfs_fonts'),
-  ]);
-  const pdf = pdfMake as unknown as PdfMakeApi;
-  if (typeof pdf.addVirtualFileSystem === 'function') {
-    pdf.addVirtualFileSystem(pdfVfs);
-  } else {
-    pdf.vfs = pdfVfs;
-  }
-  pdf.fonts = {
-    Roboto: {
-      normal: 'Roboto-Regular.ttf',
-      bold: 'Roboto-Medium.ttf',
-      italics: 'Roboto-Italic.ttf',
-      bolditalics: 'Roboto-MediumItalic.ttf',
-    },
-    Cairo: {
-      normal: 'Cairo-Regular.ttf',
-      bold: 'Cairo-Bold.ttf',
-      italics: 'Cairo-Regular.ttf',
-      bolditalics: 'Cairo-Bold.ttf',
-    },
-  };
-  pdfApi = pdf;
-  return pdf;
-}
 
 const FILL_HEADERS = [
   'date',
@@ -86,11 +70,6 @@ const MAINT_HEADERS = [
   'partCost',
   'laborCost',
 ] as const;
-
-const PDF_HEADER = '#0b3d4a';
-const PDF_ACCENT = '#f5a623';
-const PDF_ZEBRA = '#f3f6f8';
-const PDF_TEXT = '#1a1f24';
 
 function toDateOnly(dt: Date): DateOnly {
   const y = dt.getFullYear();
@@ -189,19 +168,6 @@ export function filterMaintenance(
   });
 }
 
-function fillUpRows(rows: readonly FillUp[]): (string | number)[][] {
-  return rows.map((f) => [
-    f.date,
-    f.odometer,
-    f.liters,
-    f.cost,
-    f.unitPrice ?? '',
-    formatFuelGradeLabel(f.fuelGrade),
-    f.placeLabel ?? '',
-    f.note ?? '',
-  ]);
-}
-
 export function fillUpsToCsv(rows: readonly FillUp[]): string {
   const lines = [FILL_HEADERS.join(',')];
   for (const f of rows) {
@@ -245,226 +211,54 @@ export function maintenanceToCsv(rows: readonly Maintenance[]): string {
   return lines.join('\n');
 }
 
-type PdfSpan = {
-  text: string;
-  font: 'Roboto' | 'Cairo';
-  direction: 'ltr' | 'rtl';
-  bold?: boolean;
-  color?: string;
-  fontSize?: number;
-};
+const MONTHS_EN = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+] as const;
 
-type SpanStyle = { bold?: boolean; color?: string; fontSize?: number };
+const MONTHS_AR = [
+  'يناير',
+  'فبراير',
+  'مارس',
+  'أبريل',
+  'مايو',
+  'يونيو',
+  'يوليو',
+  'أغسطس',
+  'سبتمبر',
+  'أكتوبر',
+  'نوفمبر',
+  'ديسمبر',
+] as const;
 
-/**
- * ponytail: never set doc-level `rtl: true`. pdfmake-rtl then runs Cairo's
- * digit substitution and reverses number groups (2026 → 6202), and a 13-column
- * maintenance table overflows the page so date/cost/name are clipped off.
- * Arabic letters are Cairo; digits and dates stay Roboto + direction ltr.
- * Upgrade path: a bidi engine that shapes logical Arabic without reversing digits.
- */
-const PDF_TOKEN =
-  /(\d{4}-\d{2}-\d{2}|\d{2}\/\d{2}\/\d{4}|\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)/g;
-
-function pdfNum(n: number, fractionDigits = 0): string {
-  return n.toLocaleString('en-GB', {
-    minimumFractionDigits: fractionDigits,
-    maximumFractionDigits: fractionDigits,
-    useGrouping: true,
-  });
+function monthTitle(iso: string, rtl: boolean): string {
+  const [y, m] = iso.split('-');
+  const index = Number(m) - 1;
+  const name = (rtl ? MONTHS_AR : MONTHS_EN)[index] ?? m;
+  return `${name} ${y ?? ''}`.trim();
 }
 
-function pdfDate(iso: string): string {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
-    return iso;
+function money(n: number | undefined, currency?: string): string | null {
+  if (n == null || !Number.isFinite(n)) {
+    return null;
   }
-  const [y, m, d] = iso.split('-');
-  return `${d}/${m}/${y}`;
+  const base = pdfNum(n, 2);
+  return currency ? `${base} ${currency}` : base;
 }
 
-function hasArabic(text: string): boolean {
-  return /[\u0600-\u06FF]/.test(text);
-}
-
-function styledSpan(
-  text: string,
-  font: 'Roboto' | 'Cairo',
-  direction: 'ltr' | 'rtl',
-  extra?: SpanStyle,
-): PdfSpan {
-  const span: PdfSpan = { text, font, direction };
-  if (extra?.bold === true) {
-    span.bold = true;
-  }
-  if (extra?.color) {
-    span.color = extra.color;
-  }
-  if (extra?.fontSize != null) {
-    span.fontSize = extra.fontSize;
-  }
-  return span;
-}
-
-function textSpan(text: string, rtl: boolean, extra?: SpanStyle): PdfSpan {
-  const arabic = rtl && hasArabic(text);
-  return styledSpan(text, arabic ? 'Cairo' : 'Roboto', arabic ? 'rtl' : 'ltr', extra);
-}
-
-/** Split a mixed line so digits never share a Cairo run with Arabic letters. */
-function lineSpans(text: string, rtl: boolean, extra?: SpanStyle): PdfSpan[] {
-  const out: PdfSpan[] = [];
-  const token = new RegExp(PDF_TOKEN.source, 'g');
-  let last = 0;
-  for (const match of text.matchAll(token)) {
-    const index = match.index ?? 0;
-    if (index > last) {
-      out.push(textSpan(text.slice(last, index), rtl, extra));
-    }
-    const raw = match[1] ?? '';
-    const shown = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? pdfDate(raw) : raw;
-    out.push(styledSpan(shown, 'Roboto', 'ltr', extra));
-    last = index + raw.length;
-  }
-  if (last < text.length) {
-    out.push(textSpan(text.slice(last), rtl, extra));
-  }
-  if (!out.length) {
-    out.push(textSpan(text, rtl, extra));
-  }
-  return out;
-}
-
-function alignOf(rtl: boolean): 'right' | 'left' {
-  return rtl ? 'right' : 'left';
-}
-
-function richLine(text: string, rtl: boolean, extra?: SpanStyle & { margin?: number[] }): Record<string, unknown> {
-  return {
-    text: lineSpans(text, rtl, extra),
-    alignment: alignOf(rtl),
-    margin: extra?.margin,
-  };
-}
-
-function banner(copy: ExportPdfCopy, rtl: boolean): Record<string, unknown> {
-  const align = alignOf(rtl);
-  return {
-    table: {
-      widths: ['*'],
-      body: [
-        [
-          {
-            stack: [
-              {
-                text: lineSpans(copy.title, rtl, { fontSize: 18, bold: true, color: '#ffffff' }),
-                alignment: align,
-                margin: [0, 0, 0, 4],
-              },
-              {
-                text: lineSpans(copy.generated, rtl, { fontSize: 10, color: '#ffffff' }),
-                alignment: align,
-              },
-            ],
-            fillColor: PDF_HEADER,
-            margin: [12, 10, 12, 10],
-          },
-        ],
-      ],
-    },
-    layout: 'noBorders',
-  };
-}
-
-function accentBar(width: number): Record<string, unknown> {
-  return {
-    canvas: [{ type: 'rect', x: 0, y: 0, w: width, h: 3, color: PDF_ACCENT }],
-    margin: [0, 0, 0, 12],
-  };
-}
-
-function summaryBlocks(copy: ExportPdfCopy, lines: string[], rtl: boolean): Record<string, unknown>[] {
-  return [
-    richLine(copy.summary, rtl, { fontSize: 13, bold: true, margin: [0, 0, 0, 6] }),
-    ...lines.map((line) => richLine(line, rtl, { fontSize: 10, margin: [0, 0, 0, 2] })),
-  ];
-}
-
-function dataCell(
-  value: string | number,
-  rtl: boolean,
-  opts?: SpanStyle,
-): Record<string, unknown> {
-  const raw = typeof value === 'number' ? String(value) : value;
-  const shown = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? pdfDate(raw) : raw;
-  return {
-    text: lineSpans(shown, rtl, opts),
-    alignment: alignOf(rtl),
-  };
-}
-
-function buildDocDefinition(
-  copy: ExportPdfCopy,
-  summaryLines: string[],
-  headers: string[],
-  body: (string | number)[][],
-  rtl: boolean,
-): Record<string, unknown> {
-  const align = alignOf(rtl);
-  const colCount = Math.max(headers.length, 1);
-  const headersOut = rtl ? [...headers].reverse() : headers;
-  const bodyOut = body.map((row) => (rtl ? [...row].reverse() : row));
-  const tableBody = [
-    headersOut.map((h) => dataCell(h, rtl, { bold: true, color: '#ffffff' })),
-    ...bodyOut.map((row) => row.map((c) => dataCell(c, rtl))),
-  ];
-
-  return {
-    pageSize: 'A4',
-    pageOrientation: 'landscape',
-    pageMargins: [28, 28, 28, 36],
-    defaultStyle: {
-      font: 'Roboto',
-      fontSize: 9,
-      color: PDF_TEXT,
-      alignment: align,
-    },
-    content: [
-      banner(copy, rtl),
-      accentBar(786),
-      ...summaryBlocks(copy, summaryLines, rtl),
-      {
-        table: {
-          headerRows: 1,
-          widths: Array.from({ length: colCount }, () => '*'),
-          body: tableBody,
-        },
-        layout: {
-          fillColor: (rowIndex: number) => {
-            if (rowIndex === 0) {
-              return PDF_HEADER;
-            }
-            return rowIndex % 2 === 0 ? PDF_ZEBRA : null;
-          },
-          hLineWidth: () => 0.4,
-          vLineWidth: () => 0,
-          hLineColor: () => '#e2e8ee',
-          paddingLeft: () => 6,
-          paddingRight: () => 6,
-          paddingTop: () => 5,
-          paddingBottom: () => 5,
-        },
-        margin: [0, 12, 0, 0],
-      },
-    ],
-    footer: (currentPage: number, pageCount: number) => ({
-      text: `${currentPage} / ${pageCount}`,
-      alignment: 'center',
-      fontSize: 8,
-      color: '#888888',
-      margin: [0, 8, 0, 0],
-      font: 'Roboto',
-    }),
-  };
+function withUnit(n: number, unit: string, digits = 0): string {
+  const shown = pdfNum(n, digits);
+  return unit ? `${shown} ${unit}` : shown;
 }
 
 export type MaintenancePdfOptions = {
@@ -472,6 +266,16 @@ export type MaintenancePdfOptions = {
   /** Shown name (part or type). Defaults to a non-key otherLabel, else type. */
   labelFor?: (row: Maintenance) => string;
   km?: string;
+  formatRecordType?: (type: MaintenanceRecordType) => string;
+  formatCondition?: (condition: PartCondition) => string;
+  measurementLabel?: (measurement: Measurement) => string;
+};
+
+export type FillUpPdfOptions = {
+  rtl?: boolean;
+  totalKm?: number | null;
+  km?: string;
+  liters?: string;
 };
 
 function maintenanceLabel(row: Maintenance, labelFor?: (row: Maintenance) => string): string {
@@ -488,130 +292,95 @@ function maintenanceLabel(row: Maintenance, labelFor?: (row: Maintenance) => str
   return row.type;
 }
 
-function factSpans(label: string, value: string, rtl: boolean): PdfSpan[] {
-  return [
-    textSpan(`${label}: `, rtl, { fontSize: 9, color: '#667788' }),
-    ...lineSpans(value, rtl, { fontSize: 9, color: '#334155' }),
-  ];
+function pushFact(
+  facts: PdfFact[],
+  label: string | undefined,
+  value: string | null | undefined,
+): void {
+  if (label && value) {
+    facts.push({ label, value });
+  }
 }
 
-function joinSpanGroups(groups: PdfSpan[][]): PdfSpan[] {
-  const out: PdfSpan[] = [];
-  for (const group of groups) {
-    if (!group.length) {
-      continue;
-    }
-    if (out.length) {
-      out.push(styledSpan('  ·  ', 'Roboto', 'ltr', { fontSize: 9, color: '#99a3ad' }));
-    }
-    out.push(...group);
+function maintenanceFacts(
+  row: Maintenance,
+  headers: string[],
+  copy: ExportPdfCopy,
+  opts: MaintenancePdfOptions | undefined,
+  km: string,
+): PdfFact[] {
+  const facts: PdfFact[] = [];
+  const dueKm = headers[5];
+  const dueDate = headers[6];
+  if (row.dueKm != null && Number.isFinite(row.dueKm)) {
+    pushFact(facts, dueKm, withUnit(row.dueKm, km));
   }
-  return out;
+  if (row.dueDate) {
+    pushFact(facts, dueDate, pdfDate(row.dueDate));
+  }
+  pushFact(facts, headers[8], row.centerName);
+  pushFact(facts, headers[9], row.technicianName);
+  pushFact(facts, headers[10], row.partBrand);
+  pushFact(facts, copy.partModel, row.partModel);
+  pushFact(facts, copy.partNumber, row.partNumber);
+  if (row.recordType && opts?.formatRecordType) {
+    pushFact(facts, copy.recordType, opts.formatRecordType(row.recordType));
+  }
+  if (row.condition && opts?.formatCondition) {
+    pushFact(facts, copy.condition, opts.formatCondition(row.condition));
+  }
+  for (const reading of row.measurements ?? []) {
+    const label = opts?.measurementLabel?.(reading) ?? reading.type;
+    const digits = Number.isInteger(reading.value) ? 0 : 2;
+    const value = [pdfNum(reading.value, digits), reading.unit].filter(Boolean).join(' ');
+    pushFact(facts, label, value);
+  }
+  pushFact(facts, headers[11], money(row.partCost, row.currency));
+  pushFact(facts, headers[12], money(row.laborCost, row.currency));
+  for (const observation of row.observations ?? []) {
+    const raw = observation.value == null ? '' : String(observation.value);
+    const value = observation.unit ? `${raw} ${observation.unit}` : raw;
+    pushFact(facts, observation.type, value);
+  }
+  return facts;
+}
+
+function groupByMonth<T extends { date: string }>(
+  rows: readonly T[],
+): { month: string; items: T[] }[] {
+  const groups: { month: string; items: T[] }[] = [];
+  for (const row of rows) {
+    const month = row.date.slice(0, 7);
+    const last = groups[groups.length - 1];
+    if (last?.month === month) {
+      last.items.push(row);
+    } else {
+      groups.push({ month, items: [row] });
+    }
+  }
+  return groups;
 }
 
 function maintenanceCard(
   row: Maintenance,
   label: string,
-  headers: string[],
-  rtl: boolean,
+  copy: ExportPdfCopy,
+  opts: MaintenancePdfOptions | undefined,
   km: string,
-  zebra: boolean,
+  rtl: boolean,
 ): Record<string, unknown> {
-  const date = pdfDate(row.date);
-  const cost =
-    row.cost != null && Number.isFinite(row.cost) ? pdfNum(row.cost, 2) : '—';
-  const unit = km ? ` ${km}` : '';
-  const align = alignOf(rtl);
-  const muted = { fontSize: 9, color: '#334155' };
-
-  const dateCol = {
-    width: 78,
-    text: [styledSpan(date, 'Roboto', 'ltr', muted)],
-    alignment: rtl ? 'right' : 'left',
-  };
-  const titleCol = {
-    width: '*',
-    text: [textSpan(label, rtl, { fontSize: 11, bold: true })],
-    alignment: align,
-  };
-  const costCol = {
-    width: 92,
-    text: [styledSpan(cost, 'Roboto', 'ltr', { fontSize: 11, bold: true })],
-    alignment: rtl ? 'left' : 'right',
-  };
-
-  const lines: Record<string, unknown>[] = [
-    {
-      columns: rtl ? [costCol, titleCol, dateCol] : [dateCol, titleCol, costCol],
-      columnGap: 8,
-    },
-    {
-      text: lineSpans(`${pdfNum(row.odometer)}${unit}`, rtl, muted),
-      alignment: align,
-      margin: [0, 2, 0, 0],
-    },
-  ];
-
-  const due: PdfSpan[][] = [];
-  const dueKm = headers[5];
-  const dueDate = headers[6];
-  if (row.dueKm != null && Number.isFinite(row.dueKm) && dueKm) {
-    due.push(factSpans(dueKm, `${pdfNum(row.dueKm)}${unit}`, rtl));
-  }
-  if (row.dueDate && dueDate) {
-    due.push(factSpans(dueDate, pdfDate(row.dueDate), rtl));
-  }
-  const dueLine = joinSpanGroups(due);
-  if (dueLine.length) {
-    lines.push({ text: dueLine, alignment: align, margin: [0, 1, 0, 0] });
-  }
-  if (row.note) {
-    lines.push({
-      text: lineSpans(row.note, rtl, muted),
-      alignment: align,
-      margin: [0, 1, 0, 0],
-    });
-  }
-
-  const shop: PdfSpan[][] = [];
-  const shopFields: [string | undefined, string][] = [
-    [headers[8], row.centerName ?? ''],
-    [headers[9], row.technicianName ?? ''],
-    [headers[10], row.partBrand ?? ''],
-  ];
-  for (const [header, value] of shopFields) {
-    if (header && value) {
-      shop.push(factSpans(header, value, rtl));
-    }
-  }
-  if (headers[11] && row.partCost != null && Number.isFinite(row.partCost)) {
-    shop.push(factSpans(headers[11], pdfNum(row.partCost, 2), rtl));
-  }
-  if (headers[12] && row.laborCost != null && Number.isFinite(row.laborCost)) {
-    shop.push(factSpans(headers[12], pdfNum(row.laborCost, 2), rtl));
-  }
-  const shopLine = joinSpanGroups(shop);
-  if (shopLine.length) {
-    lines.push({ text: shopLine, alignment: align, margin: [0, 1, 0, 0] });
-  }
-
-  return {
-    unbreakable: true,
-    table: {
-      widths: ['*'],
-      body: [
-        [
-          {
-            stack: lines,
-            fillColor: zebra ? PDF_ZEBRA : '#ffffff',
-            margin: [8, 6, 8, 6],
-          },
-        ],
-      ],
-    },
-    layout: 'noBorders',
-    margin: [0, 0, 0, 6],
-  };
+  const cost = money(row.cost, row.currency);
+  const headers = copy.columnHeaders;
+  return ledgerCard({
+    rtl,
+    kicker: pdfDate(row.date),
+    title: label,
+    amount: cost ?? '—',
+    amountColor: cost ? '#e8a317' : '#6b6358',
+    subtitle: withUnit(row.odometer, km),
+    facts: maintenanceFacts(row, headers, copy, opts, km),
+    note: row.note ? { label: headers[7], text: row.note } : undefined,
+  });
 }
 
 /** Doc definition for the maintenance PDF. Exported so tests can check layout. */
@@ -622,80 +391,125 @@ export function maintenancePdfDoc(
 ): Record<string, unknown> {
   const rtl = opts?.rtl === true;
   const km = opts?.km ?? '';
-  const align = alignOf(rtl);
-  const totalCost = rows.reduce((s, m) => s + (m.cost != null ? m.cost : 0), 0);
-  const summary = [
-    copy.rangeLabel
-      ? `${copy.entries}: ${rows.length} · ${copy.rangeLabel}`
-      : `${copy.entries}: ${rows.length}`,
-    `${copy.totalCost}: ${pdfNum(totalCost, 2)}`,
-  ];
-  const cards = rows.map((row, index) =>
-    maintenanceCard(
-      row,
-      maintenanceLabel(row, opts?.labelFor),
-      copy.columnHeaders,
-      rtl,
-      km,
-      index % 2 === 1,
-    ),
+  const ordered = [...rows].sort(
+    (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
   );
-
-  return {
-    pageSize: 'A4',
-    pageOrientation: 'portrait',
-    pageMargins: [28, 28, 28, 36],
-    defaultStyle: {
-      font: 'Roboto',
-      fontSize: 10,
-      color: PDF_TEXT,
-      alignment: align,
-    },
-    content: [banner(copy, rtl), accentBar(539), ...summaryBlocks(copy, summary, rtl), ...cards],
-    footer: (currentPage: number, pageCount: number) => ({
-      text: `${currentPage} / ${pageCount}`,
-      alignment: 'center',
-      fontSize: 8,
-      color: '#888888',
-      margin: [0, 8, 0, 0],
-      font: 'Roboto',
-    }),
-  };
+  const priced = ordered.filter((row) => row.cost != null && Number.isFinite(row.cost));
+  const totalCost = priced.reduce((sum, row) => sum + (row.cost ?? 0), 0);
+  const metrics = [
+    { label: copy.entries, value: pdfNum(ordered.length) },
+    { label: copy.totalCost, value: pdfNum(totalCost, 2) },
+  ];
+  if (copy.avgCost && priced.length) {
+    metrics.push({ label: copy.avgCost, value: pdfNum(totalCost / priced.length, 2) });
+  }
+  const meta = [copy.generated, copy.rangeLabel ?? ''].filter(Boolean);
+  const content: Record<string, unknown>[] = [
+    ...masthead(copy.title, meta, rtl),
+    ...metricBand(metrics, rtl, 3),
+  ];
+  for (const group of groupByMonth(ordered)) {
+    const monthCost = group.items.reduce((sum, row) => sum + (row.cost != null ? row.cost : 0), 0);
+    const heading = monthTitle(`${group.month}-01`, rtl);
+    content.push(sectionLabel(monthCost ? `${heading}   ${pdfNum(monthCost, 2)}` : heading, rtl));
+    for (const row of group.items) {
+      content.push(
+        maintenanceCard(row, maintenanceLabel(row, opts?.labelFor), copy, opts, km, rtl),
+      );
+    }
+  }
+  return reportShell(content, rtl);
 }
 
-async function createPdfBlob(docDefinition: Record<string, unknown>): Promise<Blob> {
-  const pdf = await getPdfMake();
-  const doc = pdf.createPdf(docDefinition);
-  if (typeof doc.getBlob === 'function') {
-    return doc.getBlob();
+function fillUpCard(
+  row: FillUp,
+  copy: ExportPdfCopy,
+  opts: FillUpPdfOptions | undefined,
+  rtl: boolean,
+): Record<string, unknown> {
+  const headers = copy.columnHeaders;
+  const grade = formatFuelGradeLabel(row.fuelGrade);
+  const place = row.placeLabel?.trim() ?? '';
+  const facts: PdfFact[] = [];
+  pushFact(facts, headers[2], withUnit(row.liters, opts?.liters ?? '', 1));
+  if (row.unitPrice != null && Number.isFinite(row.unitPrice)) {
+    pushFact(facts, headers[4], money(row.unitPrice, row.currency));
   }
-  // Node/test fallback
-  const buffer = await doc.getBuffer!();
-  return new Blob([buffer as BlobPart], { type: 'application/pdf' });
+  if (place && grade) {
+    pushFact(facts, headers[5], grade);
+  }
+  if (row.distanceKm != null && Number.isFinite(row.distanceKm)) {
+    pushFact(facts, copy.distance, withUnit(row.distanceKm, opts?.km ?? ''));
+  }
+  if (row.tankFull && copy.fullTank && copy.yes) {
+    pushFact(facts, copy.fullTank, copy.yes);
+  }
+  const cost = money(row.cost, row.currency);
+  return ledgerCard({
+    rtl,
+    kicker: pdfDate(row.date),
+    title: place || grade || '—',
+    amount: cost ?? '—',
+    amountColor: cost ? '#e8a317' : '#6b6358',
+    subtitle: withUnit(row.odometer, opts?.km ?? ''),
+    facts,
+    note: row.note ? { label: headers[7], text: row.note } : undefined,
+  });
+}
+
+/** Doc definition for the fill-up PDF. Exported so tests can check layout. */
+export function fillUpsPdfDoc(
+  rows: readonly FillUp[],
+  copy: ExportPdfCopy,
+  opts?: FillUpPdfOptions,
+): Record<string, unknown> {
+  const rtl = opts?.rtl === true;
+  const ordered = [...rows].sort(
+    (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
+  );
+  const totalCost = ordered.reduce((sum, row) => sum + row.cost, 0);
+  const totalLiters = ordered.reduce((sum, row) => sum + row.liters, 0);
+  const metrics: PdfFact[] = [
+    { label: copy.entries, value: pdfNum(ordered.length) },
+    { label: copy.totalCost, value: pdfNum(totalCost, 2) },
+  ];
+  if (copy.totalLiters) {
+    metrics.push({
+      label: copy.totalLiters,
+      value: withUnit(totalLiters, opts?.liters ?? '', 1),
+    });
+  }
+  if (opts?.totalKm != null && copy.totalKm) {
+    metrics.push({
+      label: copy.totalKm,
+      value: withUnit(Math.round(opts.totalKm), opts?.km ?? ''),
+    });
+  }
+  if (copy.avgPrice && totalLiters > 0) {
+    metrics.push({ label: copy.avgPrice, value: pdfNum(totalCost / totalLiters, 2) });
+  }
+  const meta = [copy.generated, copy.rangeLabel ?? ''].filter(Boolean);
+  const content: Record<string, unknown>[] = [
+    ...masthead(copy.title, meta, rtl),
+    ...metricBand(metrics, rtl, 3),
+  ];
+  for (const group of groupByMonth(ordered)) {
+    const monthCost = group.items.reduce((sum, row) => sum + row.cost, 0);
+    const heading = monthTitle(`${group.month}-01`, rtl);
+    content.push(sectionLabel(`${heading}   ${pdfNum(monthCost, 2)}`, rtl));
+    for (const row of group.items) {
+      content.push(fillUpCard(row, copy, opts, rtl));
+    }
+  }
+  return reportShell(content, rtl);
 }
 
 export async function fillUpsToPdf(
   rows: readonly FillUp[],
   copy: ExportPdfCopy,
-  opts?: { rtl?: boolean; totalKm?: number | null },
+  opts?: FillUpPdfOptions,
 ): Promise<Blob> {
-  const rtl = opts?.rtl === true;
-  const totalCost = rows.reduce((s, f) => s + f.cost, 0);
-  const totalLiters = rows.reduce((s, f) => s + f.liters, 0);
-  const summary = [
-    copy.rangeLabel
-      ? `${copy.entries}: ${rows.length} · ${copy.rangeLabel}`
-      : `${copy.entries}: ${rows.length}`,
-    `${copy.totalCost}: ${pdfNum(totalCost, 2)}`,
-    copy.totalLiters ? `${copy.totalLiters}: ${pdfNum(totalLiters, 1)}` : '',
-    opts?.totalKm != null && copy.totalKm
-      ? `${copy.totalKm}: ${pdfNum(Math.round(opts.totalKm))}`
-      : '',
-  ].filter(Boolean);
-
-  return createPdfBlob(
-    buildDocDefinition(copy, summary, copy.columnHeaders, fillUpRows(rows), rtl),
-  );
+  return pdfBlob(fillUpsPdfDoc(rows, copy, opts));
 }
 
 export async function maintenanceToPdf(
@@ -703,7 +517,7 @@ export async function maintenanceToPdf(
   copy: ExportPdfCopy,
   opts?: MaintenancePdfOptions,
 ): Promise<Blob> {
-  return createPdfBlob(maintenancePdfDoc(rows, copy, opts));
+  return pdfBlob(maintenancePdfDoc(rows, copy, opts));
 }
 
 /** Always download — user shares from their file manager if they want. */

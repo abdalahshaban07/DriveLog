@@ -21,7 +21,22 @@ describe('fill-up cost', () => {
   it('computes cost from liters and unit price', async () => {
     const { computeFillUpCost, pickUnitPrice } = await import('./fill-up-cost');
     expect(computeFillUpCost(42.5, 1.6)).toBe(68);
-    expect(pickUnitPrice('gasoline92', { countryCode: 'EG', countryName: 'Egypt', currency: 'EGP', solar: null, diesel: 1.4, gasoline92: 1.58, gasoline95: 1.62, gasoline: null }, null)).toBe(1.58);
+    expect(
+      pickUnitPrice(
+        'gasoline92',
+        {
+          countryCode: 'EG',
+          countryName: 'Egypt',
+          currency: 'EGP',
+          solar: null,
+          diesel: 1.4,
+          gasoline92: 1.58,
+          gasoline95: 1.62,
+          gasoline: null,
+        },
+        null,
+      ),
+    ).toBe(1.58);
   });
 });
 
@@ -372,6 +387,22 @@ describe('currencies', () => {
   });
 });
 
+describe('pdf lines', () => {
+  it('keeps dates, signs, and latin codes in one left-to-right run', async () => {
+    const { lineSpans } = await import('./pdf-theme');
+    expect(lineSpans('الفترة: 2026-01-01 - 2026-10-05', true).map((s) => s.text)).toEqual([
+      'الفترة: ',
+      '01/01/2026 - 05/10/2026',
+    ]);
+    expect(lineSpans('زيت 5W-30', true).map((s) => s.text)).toEqual(['زيت ', '5W-30']);
+    expect(lineSpans('0.00 ج.م  -100%', true).map((s) => s.text)).toEqual([
+      '0.00',
+      ' ج.م  ',
+      '-100%',
+    ]);
+  });
+});
+
 describe('export history', () => {
   it('filters by grade and date range and builds csv/pdf', async () => {
     const { filterFillUps, fillUpsToCsv, fillUpsToPdf, formatFuelGradeLabel } =
@@ -529,28 +560,153 @@ describe('export history', () => {
     expect(json).toContain('29/07/2030');
     expect(json).toContain('05/10/2026');
     expect(json).toContain('01/01/2026');
+    expect(json).toContain('01/01/2026 - 05/10/2026');
     expect(json).not.toContain('parts.exhaustComponents');
     expect(json).not.toContain('2026-09-02');
     expect(json).not.toContain('2030/07/29');
+    expect(json).toContain('#1c1a17');
+    expect(json).not.toContain('#0b3d4a');
     expect(doc['pageOrientation']).toBe('portrait');
+  });
+
+  it('fill-up and maintenance pdfs share a portrait report and keep shop detail', async () => {
+    const { fillUpsPdfDoc, maintenancePdfDoc } = await import('./export-history');
+    const fillDoc = fillUpsPdfDoc(
+      [
+        fill({
+          id: 'a',
+          odometer: 1200,
+          liters: 40,
+          cost: 80,
+          tankFull: true,
+          fuelGrade: 'gasoline95',
+          date: '2026-03-02',
+          placeLabel: 'Nasr City',
+          note: 'morning',
+          unitPrice: 2,
+          distanceKm: 180,
+        }),
+      ],
+      {
+        title: 'Fill-up report',
+        generated: 'Generated 2026-09-12',
+        summary: 'Summary',
+        entries: 'Entries',
+        totalCost: 'Total cost',
+        totalLiters: 'Total liters',
+        totalKm: 'Total km',
+        avgPrice: 'Avg / L',
+        fullTank: 'Full tank',
+        yes: 'Yes',
+        distance: 'Distance',
+        columnHeaders: [
+          'Date',
+          'Odometer',
+          'Liters',
+          'Cost',
+          'Unit price',
+          'Fuel grade',
+          'Place',
+          'Note',
+        ],
+      },
+      { totalKm: 180, km: 'km', liters: 'L' },
+    );
+    const fillJson = JSON.stringify(fillDoc);
+    expect(fillDoc['pageOrientation']).toBe('portrait');
+    expect(fillJson).toContain('Nasr City');
+    expect(fillJson).toContain('morning');
+    expect(fillJson).toContain('02/03/2026');
+    expect(fillJson).toContain('95');
+    expect(fillJson).not.toContain('2026-03-02');
+
+    const maint = maintenancePdfDoc(
+      [
+        {
+          id: 'm1',
+          type: 'other' as const,
+          otherLabel: 'pads',
+          odometer: 5000,
+          cost: 900,
+          date: '2026-04-01',
+          createdAt: '2026-04-01T00:00:00.000Z',
+          updatedAt: '2026-04-01T00:00:00.000Z',
+          centerName: 'El Nasr',
+          technicianName: 'Omar',
+          partBrand: 'Bosch',
+          partModel: 'Quiet',
+          partNumber: 'HX-QUIET',
+          partCost: 600,
+          laborCost: 300,
+          recordType: 'replacement',
+          condition: 'fair',
+          currency: 'EGP',
+          measurements: [{ type: 'brakePadMm', value: 4, unit: 'mm' }],
+          note: 'front axle',
+        },
+      ],
+      {
+        title: 'Maintenance report',
+        generated: 'Generated 2026-09-12',
+        summary: 'Summary',
+        entries: 'Entries',
+        totalCost: 'Total cost',
+        avgCost: 'Average',
+        partModel: 'Model',
+        partNumber: 'Part no.',
+        recordType: 'Record',
+        condition: 'Condition',
+        columnHeaders: [
+          'date',
+          'type',
+          'other',
+          'odo',
+          'cost',
+          'Due km',
+          'Due date',
+          'Note',
+          'Center',
+          'Technician',
+          'Brand',
+          'Part cost',
+          'Labor',
+        ],
+      },
+      {
+        km: 'km',
+        formatRecordType: () => 'Replacement',
+        formatCondition: () => 'Fair',
+        measurementLabel: () => 'Brake pad',
+      },
+    );
+    const maintJson = JSON.stringify(maint);
+    expect(maintJson).toContain('El Nasr');
+    expect(maintJson).toContain('Omar');
+    expect(maintJson).toContain('Bosch');
+    expect(maintJson).toContain('Quiet');
+    expect(maintJson).toContain('HX-QUIET');
+    expect(maintJson).toContain('Replacement');
+    expect(maintJson).toContain('Fair');
+    expect(maintJson).toContain('Brake pad');
+    expect(maintJson).toContain('4');
+    expect(maintJson).toContain('front axle');
+    expect(maintJson).toContain('EGP');
+    expect(maintJson).toContain('900.00');
+    expect(maint['pageOrientation']).toBe('portrait');
   });
 });
 
 describe('holidays', () => {
   it('nudges when due soon overlaps holiday window', async () => {
     const { dueHolidayNudge, parsePublicHolidays } = await import('./holidays');
-    const holidays = parsePublicHolidays([
-      { date: '2026-06-07', localName: 'Eid' },
-    ]);
+    const holidays = parsePublicHolidays([{ date: '2026-06-07', localName: 'Eid' }]);
     expect(dueHolidayNudge('2026-06-10', holidays, '2026-06-01')?.localName).toBe('Eid');
     expect(dueHolidayNudge('2026-08-01', holidays, '2026-06-01')).toBeNull();
   }, 15_000);
 
   it('picks first overlapping due date', async () => {
     const { firstDueHolidayNudge, parsePublicHolidays } = await import('./holidays');
-    const holidays = parsePublicHolidays([
-      { date: '2026-06-07', localName: 'Eid' },
-    ]);
+    const holidays = parsePublicHolidays([{ date: '2026-06-07', localName: 'Eid' }]);
     expect(
       firstDueHolidayNudge(['2026-08-01', '2026-06-10'], holidays, '2026-06-01')?.localName,
     ).toBe('Eid');
@@ -651,9 +807,7 @@ describe('insights series', () => {
         placeLabel: 'Shell',
       }),
     ];
-    expect(distanceByMonth(fills, 'all')).toEqual([
-      { month: '2026-02', value: 500 },
-    ]);
+    expect(distanceByMonth(fills, 'all')).toEqual([{ month: '2026-02', value: 500 }]);
     expect(unitPriceTrend(fills, 'all')).toEqual([
       { value: 2, date: '2026-01-02' },
       { value: 3, date: '2026-02-02' },
@@ -669,8 +823,23 @@ describe('insights series', () => {
     const { fuelGradeCostShare } = await import('./insights');
     const share = fuelGradeCostShare(
       [
-        fill({ id: 'a', odometer: 1000, liters: 40, cost: 80, tankFull: true, fuelGrade: 'diesel' }),
-        fill({ id: 'b', odometer: 1100, liters: 40, cost: 40, tankFull: true, fuelGrade: 'gasoline92', date: '2026-02-01' }),
+        fill({
+          id: 'a',
+          odometer: 1000,
+          liters: 40,
+          cost: 80,
+          tankFull: true,
+          fuelGrade: 'diesel',
+        }),
+        fill({
+          id: 'b',
+          odometer: 1100,
+          liters: 40,
+          cost: 40,
+          tankFull: true,
+          fuelGrade: 'gasoline92',
+          date: '2026-02-01',
+        }),
         fill({ id: 'c', odometer: 1200, liters: 40, cost: 20, tankFull: true, date: '2026-02-15' }),
       ],
       'all',
@@ -739,9 +908,9 @@ describe('part labels', () => {
         t,
       ),
     ).toBe('المساعد');
-    expect(
-      maintenanceRecordLabel({ type: 'other', otherLabel: 'كاوتش ميزان' }, [], t),
-    ).toBe('كاوتش ميزان');
+    expect(maintenanceRecordLabel({ type: 'other', otherLabel: 'كاوتش ميزان' }, [], t)).toBe(
+      'كاوتش ميزان',
+    );
     const { dueItemLabel } = await import('./part-name');
     expect(
       dueItemLabel(
