@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { RouterLink } from '@angular/router';
 import { fetchChatReply, isAssistantOnline, usableCoachText } from '../../data/assistant';
 import { Db } from '../../data/db';
-import { TANK_ECONOMY_FLAT_PCT } from '../../domain/economy';
+import { fuelBillWhy, TANK_ECONOMY_FLAT_PCT, type FuelBillReason } from '../../domain/economy';
 import { todayDateOnly } from '../../domain/dues';
 import { fuelBoard, sparklineGeometry } from '../../domain/fuel-dashboard';
 import { contextualFuelTipKey, nextFuelTipKey } from '../../domain/fuel-tips';
@@ -70,6 +70,14 @@ export class FuelPage {
     return [...list].sort(
       (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
     );
+  });
+
+  readonly billWhyKey = computed((): MsgKey | null => {
+    const why = fuelBillWhy(this.filtered());
+    if (!why) {
+      return null;
+    }
+    return billWhyMessageKey(why.direction, why.reason);
   });
 
   readonly hasFills = computed(() => this.filtered().length > 0);
@@ -214,6 +222,42 @@ export class FuelPage {
       }
     } finally {
       this.tipBusy.set(false);
+    }
+  }
+}
+
+function billWhyMessageKey(
+  direction: 'up' | 'down',
+  reason: FuelBillReason,
+): MsgKey {
+  if (direction === 'up') {
+    switch (reason) {
+      case 'price':
+        return 'fuel.billWhy.up.price';
+      case 'distance':
+        return 'fuel.billWhy.up.distance';
+      case 'consumption':
+        return 'fuel.billWhy.up.consumption';
+      case 'liters':
+        return 'fuel.billWhy.up.liters';
+      default: {
+        const exhaustive: never = reason;
+        return exhaustive;
+      }
+    }
+  }
+  switch (reason) {
+    case 'price':
+      return 'fuel.billWhy.down.price';
+    case 'distance':
+      return 'fuel.billWhy.down.distance';
+    case 'consumption':
+      return 'fuel.billWhy.down.consumption';
+    case 'liters':
+      return 'fuel.billWhy.down.liters';
+    default: {
+      const exhaustive: never = reason;
+      return exhaustive;
     }
   }
 }

@@ -46,6 +46,9 @@
         {{ i18n.t('home.lastMonthSpend') }} {{ formatMoney(b.previousSpend) }}
       </p>
     }
+    @if (billWhyKey(); as whyKey) {
+      <p class="ledger__why">{{ i18n.t(whyKey) }}</p>
+    }
     <div class="ledger__stats">
       <div>
         <span class="ledger__label">{{ i18n.t('fuel.monthLiters') }}</span>

@@ -194,6 +194,110 @@ export function fuelMonthCompare(
   return { current, previous, deltaAbs, deltaPct };
 }
 
+export type FuelBillReason = 'price' | 'distance' | 'consumption' | 'liters';
+
+export type FuelBillWhy = {
+  direction: 'up' | 'down';
+  reason: FuelBillReason;
+};
+
+type MonthFuelParts = {
+  cost: number;
+  liters: number;
+  km: number;
+  /** Every liter in the month has a distance, so L/100 is the whole bill. */
+  distanceComplete: boolean;
+};
+
+function monthKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function monthFuelParts(fills: readonly FillUp[], prefix: string): MonthFuelParts {
+  let cost = 0;
+  let liters = 0;
+  let km = 0;
+  let distanceComplete = true;
+  let any = false;
+  for (const f of fills) {
+    if (!f.date.startsWith(prefix)) {
+      continue;
+    }
+    any = true;
+    cost += f.cost;
+    liters += f.liters;
+    const distance = f.distanceKm;
+    if (distance != null && Number.isFinite(distance) && distance > 0) {
+      km += distance;
+    } else if (f.liters > 0) {
+      distanceComplete = false;
+    }
+  }
+  if (!any) {
+    distanceComplete = false;
+  }
+  return { cost, liters, km, distanceComplete };
+}
+
+/**
+ * Why this month's fuel bill moved vs last month.
+ * Names the largest same-sign driver. Price × liters always.
+ * Distance vs consumption only when every liter in both months has a distance.
+ * ponytail: one cause. A close second stays hidden — emit it if the gap should show.
+ */
+export function fuelBillWhy(
+  fillUps: readonly FillUp[],
+  now: Date = new Date(),
+  flatPct: number = TANK_ECONOMY_FLAT_PCT,
+): FuelBillWhy | null {
+  const current = monthFuelParts(fillUps, monthKey(now));
+  const previous = monthFuelParts(
+    fillUps,
+    monthKey(new Date(now.getFullYear(), now.getMonth() - 1, 1)),
+  );
+  if (current.cost <= 0 || previous.cost <= 0 || current.liters <= 0 || previous.liters <= 0) {
+    return null;
+  }
+  const delta = current.cost - previous.cost;
+  if (Math.abs((delta / previous.cost) * 100) < flatPct) {
+    return null;
+  }
+  const priceThen = previous.cost / previous.liters;
+  const priceNow = current.cost / current.liters;
+  const effects: { reason: FuelBillReason; value: number }[] = [];
+  const canSplit =
+    previous.distanceComplete &&
+    current.distanceComplete &&
+    previous.km > 0 &&
+    current.km > 0;
+  if (canSplit) {
+    const useThen = (previous.liters / previous.km) * 100;
+    const useNow = (current.liters / current.km) * 100;
+    effects.push({
+      reason: 'price',
+      value: ((priceNow - priceThen) * useThen * previous.km) / 100,
+    });
+    effects.push({
+      reason: 'consumption',
+      value: (priceNow * (useNow - useThen) * previous.km) / 100,
+    });
+    effects.push({
+      reason: 'distance',
+      value: (priceNow * useNow * (current.km - previous.km)) / 100,
+    });
+  } else {
+    effects.push({ reason: 'price', value: (priceNow - priceThen) * previous.liters });
+    effects.push({ reason: 'liters', value: priceNow * (current.liters - previous.liters) });
+  }
+  const sign = Math.sign(delta);
+  const same = effects.filter((e) => e.value !== 0 && Math.sign(e.value) === sign);
+  if (same.length === 0) {
+    return null;
+  }
+  same.sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+  return { direction: delta > 0 ? 'up' : 'down', reason: same[0]!.reason };
+}
+
 export type FuelCostGlance = {
   costPerKm: number | null;
   currentMonth: number;

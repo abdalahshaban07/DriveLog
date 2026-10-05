@@ -126,6 +126,14 @@
   font-variant-numeric: tabular-nums;
 }
 
+.ledger__why {
+  margin: var(--space-2) 0 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--paper-text);
+}
+
 .ledger__stats,
 .slip__meta {
   display: grid;

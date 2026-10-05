@@ -103,6 +103,57 @@ describe('economy', () => {
     expect(fuelMonthCompare([], new Date(2026, 2, 1))).toBeNull();
   });
 
+  it('fuelBillWhy names the largest reason the bill moved', async () => {
+    const { fuelBillWhy } = await import('./economy');
+    const now = new Date(2026, 2, 20);
+    const priced = (
+      id: string,
+      date: string,
+      liters: number,
+      cost: number,
+      distanceKm: number,
+    ) => fill({ id, odometer: 1000, liters, cost, tankFull: true, date, distanceKm });
+
+    expect(
+      fuelBillWhy(
+        [priced('a', '2026-02-10', 10, 100, 100), priced('b', '2026-03-10', 10, 150, 100)],
+        now,
+      ),
+    ).toEqual({ direction: 'up', reason: 'price' });
+
+    expect(
+      fuelBillWhy(
+        [priced('a', '2026-02-10', 10, 100, 100), priced('b', '2026-03-10', 20, 200, 200)],
+        now,
+      ),
+    ).toEqual({ direction: 'up', reason: 'distance' });
+
+    expect(
+      fuelBillWhy(
+        [priced('a', '2026-02-10', 10, 100, 100), priced('b', '2026-03-10', 15, 150, 100)],
+        now,
+      ),
+    ).toEqual({ direction: 'up', reason: 'consumption' });
+
+    expect(
+      fuelBillWhy(
+        [
+          fill({ id: 'a', odometer: 1, liters: 10, cost: 100, tankFull: true, date: '2026-02-10' }),
+          fill({ id: 'b', odometer: 2, liters: 20, cost: 200, tankFull: true, date: '2026-03-10' }),
+        ],
+        now,
+      ),
+    ).toEqual({ direction: 'up', reason: 'liters' });
+
+    expect(
+      fuelBillWhy(
+        [priced('a', '2026-02-10', 10, 100, 100), priced('b', '2026-03-10', 10, 102, 100)],
+        now,
+      ),
+    ).toBeNull();
+    expect(fuelBillWhy([priced('a', '2026-03-10', 10, 100, 100)], now)).toBeNull();
+  });
+
   it('tankEconomyVsAvg compares latest to prior average', async () => {
     const { tankEconomyVsAvg } = await import('./economy');
     const fills = [
