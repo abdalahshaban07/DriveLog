@@ -27,6 +27,8 @@ export const PDF = {
 
 const PAGE_W = 595.28;
 const MARGIN_X = 32;
+/** Space on each side of a month-table cell. Counted in the column budget. */
+const CELL_PAD = 5;
 
 export function contentWidth(): number {
   return PAGE_W - MARGIN_X * 2;
@@ -99,7 +101,34 @@ type SpanStyle = {
 };
 
 const PDF_TOKEN =
-  /([+-]?\d{4}-\d{2}-\d{2}|[+-]?\d{2}\/\d{2}\/\d{4}|[+-]?\d{1,3}(?:,\d{3})+(?:\.\d+)?%?|[+-]?\d+(?:\.\d+)?%?)/g;
+  /([+-]?\d{4}-\d{2}-\d{2}|[+-]?\d{1,2}\/\d{1,2}\/\d{4}|[+-]?\d{1,3}(?:,\d{3})+(?:\.\d+)?%?|[+-]?\d+(?:\.\d+)?%?)/g;
+
+const BIDI_MARKS = /[\u200E\u200F\u061C\u202A-\u202E\u2066-\u2069]/g;
+
+/** ar-EG dates arrive as ٥‏/١٠‏/٢٠٢٦. Cairo + pdfmake then reverse the groups. */
+function westernDigits(text: string): string {
+  return text
+    .replace(BIDI_MARKS, '')
+    .replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 0x06f0))
+    .replace(/\u066B/g, '.')
+    .replace(/\u066C/g, ',')
+    .replace(/\u066A/g, '%');
+}
+
+function shownToken(raw: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    return pdfDate(raw);
+  }
+  const dmy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(raw);
+  if (!dmy) {
+    return raw;
+  }
+  const day = dmy[1] ?? '';
+  const month = dmy[2] ?? '';
+  const year = dmy[3] ?? '';
+  return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+}
 
 export function pdfNum(n: number, fractionDigits = 0): string {
   return n.toLocaleString('en-GB', {
@@ -187,24 +216,24 @@ function mergeRuns(spans: PdfSpan[]): PdfSpan[] {
 
 /** Split a mixed line so digits never share a Cairo run with Arabic letters. */
 export function lineSpans(text: string, rtl: boolean, extra?: SpanStyle): PdfSpan[] {
+  const source = westernDigits(text);
   const out: PdfSpan[] = [];
   const token = new RegExp(PDF_TOKEN.source, 'g');
   let last = 0;
-  for (const match of text.matchAll(token)) {
+  for (const match of source.matchAll(token)) {
     const index = match.index ?? 0;
     if (index > last) {
-      pushPlain(text.slice(last, index), rtl, extra, out);
+      pushPlain(source.slice(last, index), rtl, extra, out);
     }
     const raw = match[1] ?? '';
-    const shown = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? pdfDate(raw) : raw;
-    out.push(styledSpan(shown, 'Roboto', 'ltr', extra));
+    out.push(styledSpan(shownToken(raw), 'Roboto', 'ltr', extra));
     last = index + raw.length;
   }
-  if (last < text.length) {
-    pushPlain(text.slice(last), rtl, extra, out);
+  if (last < source.length) {
+    pushPlain(source.slice(last), rtl, extra, out);
   }
   if (!out.length) {
-    out.push(textSpan(text, rtl, extra));
+    out.push(textSpan(source, rtl, extra));
   }
   return mergeRuns(out);
 }
@@ -582,8 +611,10 @@ export type MonthFooter = {
   costIndex: number;
 };
 
-function fitWidths(ratios: number[], costIndex: number): number[] {
-  const total = contentWidth() - 8;
+function fitWidths(ratios: number[], costIndex: number, columns: number): number[] {
+  // pdfmake adds cell padding outside these widths. Leave that room, or the
+  // RTL table slides onto the page edge and Arabic sits on the trim.
+  const total = contentWidth() - columns * CELL_PAD * 2;
   const widths = ratios.map((ratio) => Math.floor(total * ratio));
   const used = widths.reduce((sum, width) => sum + width, 0);
   const cost = widths[costIndex] ?? 0;
@@ -702,7 +733,16 @@ function monthBand(month: string, year: string, rtl: boolean): Record<string, un
   return {
     table: {
       widths: ['*'],
-      body: [[{ columns: cols, columnGap: 0, fillColor: PDF.ink, margin: [6, 4, 6, 3] }]],
+      body: [
+        [
+          {
+            columns: cols,
+            columnGap: 0,
+            fillColor: PDF.ink,
+            margin: [CELL_PAD, 4, CELL_PAD, 3],
+          },
+        ],
+      ],
     },
     layout: 'noBorders',
     margin: [0, 8, 0, 0],
@@ -729,7 +769,7 @@ export function monthSection(opts: {
   const footer = monthFooterRow(count, opts.footer, opts.rtl);
   const table: Record<string, unknown> = {
     headerRows: 1,
-    widths: fitWidths(opts.ratios, opts.footer.costIndex),
+    widths: fitWidths(opts.ratios, opts.footer.costIndex, count),
     dontBreakRows: true,
     body: [header, ...body, footer],
   };
@@ -755,8 +795,8 @@ export function monthSection(opts: {
         hLineColor: (i: number, node: { table: { body: unknown[] } }) =>
           i === 1 || i === node.table.body.length - 1 ? PDF.amber : PDF.hair,
         vLineWidth: () => 0,
-        paddingLeft: () => 2,
-        paddingRight: () => 2,
+        paddingLeft: () => CELL_PAD,
+        paddingRight: () => CELL_PAD,
         paddingTop: () => 2,
         paddingBottom: () => 2,
       },

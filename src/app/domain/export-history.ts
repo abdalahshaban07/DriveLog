@@ -305,7 +305,7 @@ function monthLabels(copy: ExportPdfCopy): { items: string; cost: string } {
   };
 }
 
-const MAINT_RATIOS = [0.13, 0.12, 0.09, 0.14, 0.1, 0.13, 0.08, 0.07, 0.08, 0.06];
+const MAINT_RATIOS = [0.11, 0.12, 0.09, 0.14, 0.1, 0.12, 0.08, 0.07, 0.08, 0.09];
 const FILL_RATIOS = [0.12, 0.16, 0.12, 0.1, 0.12, 0.14, 0.1, 0.14];
 
 function maintenanceHeaders(copy: ExportPdfCopy): string[] {

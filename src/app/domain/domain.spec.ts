@@ -401,6 +401,10 @@ describe('pdf lines', () => {
       ' ج.م  ',
       '-100%',
     ]);
+    expect(lineSpans('اتعمل ٥\u200f/١٠\u200f/٢٠٢٦', true).map((s) => s.text)).toEqual([
+      'اتعمل ',
+      '05/10/2026',
+    ]);
   });
 });
 
@@ -590,6 +594,12 @@ describe('export history', () => {
     expect(JSON.stringify(footer[3])).toContain('20,000.00');
     expect(JSON.stringify(footer[0])).toContain('إجمالي البنود');
     expect(table?.rtl).toBe(true);
+    const { contentWidth } = await import('./pdf-theme');
+    const widths = table?.widths ?? [];
+    const pad = (table?.paddingLeft?.(0) ?? 0) + (table?.paddingRight?.(0) ?? 0);
+    const sum = widths.reduce((total, width) => total + width, 0);
+    expect(pad).toBeGreaterThanOrEqual(8);
+    expect(Math.abs(sum + widths.length * pad - contentWidth())).toBeLessThan(0.2);
   });
 
   it('fill-up and maintenance pdfs share a portrait report and keep shop detail', async () => {
@@ -706,8 +716,20 @@ describe('export history', () => {
 function tablesWithColumns(
   node: unknown,
   columns: number,
-  found: { rtl?: boolean; body: unknown[][] }[] = [],
-): { rtl?: boolean; body: unknown[][] }[] {
+  found: {
+    rtl?: boolean;
+    body: unknown[][];
+    widths?: number[];
+    paddingLeft?: (i: number) => number;
+    paddingRight?: (i: number) => number;
+  }[] = [],
+): {
+  rtl?: boolean;
+  body: unknown[][];
+  widths?: number[];
+  paddingLeft?: (i: number) => number;
+  paddingRight?: (i: number) => number;
+}[] {
   if (!node || typeof node !== 'object') {
     return found;
   }
@@ -717,10 +739,22 @@ function tablesWithColumns(
     }
     return found;
   }
-  const record = node as { table?: { rtl?: boolean; body?: unknown[][] } };
+  const record = node as {
+    table?: { rtl?: boolean; body?: unknown[][]; widths?: number[] };
+    layout?: {
+      paddingLeft?: (i: number) => number;
+      paddingRight?: (i: number) => number;
+    };
+  };
   const body = record.table?.body;
   if (body?.[0]?.length === columns && record.table) {
-    found.push({ rtl: record.table.rtl, body });
+    found.push({
+      rtl: record.table.rtl,
+      body,
+      widths: record.table.widths,
+      paddingLeft: record.layout?.paddingLeft,
+      paddingRight: record.layout?.paddingRight,
+    });
   }
   for (const value of Object.values(record)) {
     if (value && typeof value === 'object') {
