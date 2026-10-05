@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildPassportView,
+  carPassportDoc,
   carPassportToPdf,
   pdfDate,
   pdfNum,
@@ -73,6 +74,36 @@ describe('carPassportToPdf Arabic', () => {
     );
     expect(blob.size).toBeGreaterThan(1000);
     expect(blob.type).toMatch(/pdf/);
+
+    const doc = carPassportDoc(
+      { car, fillUps: [], documents: [], maintenance },
+      {
+        title: 'جواز سفر السيارة',
+        generatedPrefix: 'تاريخ الإنشاء',
+        vehicle: 'العربية',
+        odometer: 'العداد',
+        economy: 'الاستهلاك',
+        monthSpend: 'مصروف الشهر',
+        nextDoc: 'أقرب مستند',
+        none: '—',
+        km: 'كم',
+        lPer100: 'ل/١٠٠ كم',
+        currencyLabel: 'ج.م',
+        maintenance: 'سجل الصيانة',
+        maintEmpty: 'فارغ',
+        costPerKm: 'تكلفة / كم',
+        typeLabel: (t) => t,
+      },
+      { rtl: true },
+    );
+    const json = JSON.stringify(doc);
+    expect(json).toContain('Demo Hatch');
+    expect(json).toContain('15/09/2026');
+    expect(json).toContain('49,040');
+    expect(json).toContain('#1c1a17');
+    expect(json).not.toContain('"rtl":true');
+    expect(json).not.toContain('2026-09-15');
+    expect(doc['pageOrientation']).toBe('portrait');
   }, 30_000);
 });
 
@@ -90,14 +121,8 @@ describe('buildPassportView', () => {
           tankCapacityLiters: 50,
         }),
         fillUps: [],
-        documents: [
-          doc('license', '2027-01-01'),
-          doc('registration', '2028-02-13'),
-        ],
-        maintenance: [
-          service('m1', 'oil', '2026-01-02'),
-          service('m2', 'filter', '2026-06-01'),
-        ],
+        documents: [doc('license', '2027-01-01'), doc('registration', '2028-02-13')],
+        maintenance: [service('m1', 'oil', '2026-01-02'), service('m2', 'filter', '2026-06-01')],
       },
       now,
     );

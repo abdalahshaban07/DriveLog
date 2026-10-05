@@ -80,9 +80,7 @@ export class CarPassportPage {
   }
 
   serviceLabel(row: Maintenance): string {
-    return maintenanceRecordLabel(row, this.db.catalog(), (key) =>
-      this.i18n.t(key as MsgKey),
-    );
+    return maintenanceRecordLabel(row, this.db.catalog(), (key) => this.i18n.t(key as MsgKey));
   }
 
   monthDelta(pct: number): string {
@@ -134,23 +132,26 @@ export class CarPassportPage {
           currencyLabel: pdfCurrencyLabel(currency, this.i18n.language()),
           maintenance: this.i18n.t('passport.maintenance'),
           maintEmpty: this.i18n.t('passport.maintEmpty'),
-          nextDocKind: next
-            ? this.i18n.t(`vault.kind.${next.kind}` as MsgKey)
-            : undefined,
+          plate: this.i18n.t('settings.plate'),
+          year: this.i18n.t('date.year'),
+          tank: this.i18n.t('settings.tankCapacity'),
+          liters: this.i18n.t('common.liters'),
+          driven: this.i18n.t('passport.driven'),
+          fills: this.i18n.t('passport.fills'),
+          lastFill: this.i18n.t('home.lastFill'),
+          costPerKm: this.i18n.t('home.costPerKm'),
+          daysLeft: this.i18n.t('home.license.days'),
+          nextDocKind: next ? this.i18n.t(`vault.kind.${next.kind}` as MsgKey) : undefined,
           typeLabel: (type, otherLabel) =>
-            maintenanceRecordLabel(
-              { type, otherLabel },
-              this.db.catalog(),
-              (key) => this.i18n.t(key as MsgKey),
+            maintenanceRecordLabel({ type, otherLabel }, this.db.catalog(), (key) =>
+              this.i18n.t(key as MsgKey),
             ),
         },
         { rtl: this.i18n.dir() === 'rtl' },
       );
-      const file = new File(
-        [blob],
-        `drivelog-passport-${car.nickname.replace(/\s+/g, '-')}.pdf`,
-        { type: 'application/pdf' },
-      );
+      const file = new File([blob], `drivelog-passport-${car.nickname.replace(/\s+/g, '-')}.pdf`, {
+        type: 'application/pdf',
+      });
       if (share) {
         const shared = await sharePassportPdf(file, this.i18n.t('passport.shareTitle'));
         this.status.set(

@@ -1,10 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
 import {
@@ -101,9 +95,7 @@ export class MaintenanceHistoryPage {
     filterMaintenance(this.db.maintenance(), {
       type: this.typeFilter(),
       ...this.activeRange(),
-    }).sort(
-      (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
-    ),
+    }).sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt)),
   );
 
   readonly groupedRows = computed(() => {
@@ -213,9 +205,7 @@ export class MaintenanceHistoryPage {
     try {
       const range = this.activeRange();
       const rangeLabel =
-        range.from || range.to
-          ? `${range.from ?? '…'} - ${range.to ?? '…'}`
-          : undefined;
+        range.from || range.to ? `${range.from ?? '…'} - ${range.to ?? '…'}` : undefined;
       const blob = await maintenanceToPdf(
         rows,
         {
@@ -226,9 +216,12 @@ export class MaintenanceHistoryPage {
           summary: this.i18n.t('history.pdfSummary'),
           entries: this.i18n.t('history.pdfEntries'),
           totalCost: this.i18n.t('history.pdfTotalCost'),
-          rangeLabel: rangeLabel
-            ? `${this.i18n.t('history.pdfRange')}: ${rangeLabel}`
-            : undefined,
+          avgCost: this.i18n.t('history.pdf.avgCost'),
+          partModel: this.i18n.t('history.pdf.partModel'),
+          partNumber: this.i18n.t('history.pdf.partNumber'),
+          recordType: this.i18n.t('history.pdf.recordType'),
+          condition: this.i18n.t('history.pdf.condition'),
+          rangeLabel: rangeLabel ? `${this.i18n.t('history.pdfRange')}: ${rangeLabel}` : undefined,
           columnHeaders: [
             this.i18n.t('history.pdf.col.date'),
             this.i18n.t('history.pdf.col.type'),
@@ -250,6 +243,52 @@ export class MaintenanceHistoryPage {
           km: this.i18n.t('common.km'),
           labelFor: (row) =>
             maintenanceRecordLabel(row, this.db.catalog(), (key) => this.i18n.t(key as MsgKey)),
+          formatRecordType: (type) => {
+            switch (type) {
+              case 'replacement':
+                return this.i18n.t('maint.record.replacement');
+              case 'service':
+                return this.i18n.t('maint.record.service');
+              case 'inspection':
+                return this.i18n.t('maint.record.inspection');
+              case 'repair':
+                return this.i18n.t('maint.record.repair');
+              case 'measurement':
+                return this.i18n.t('maint.record.measurement');
+              default: {
+                const _never: never = type;
+                return _never;
+              }
+            }
+          },
+          formatCondition: (condition) => {
+            switch (condition) {
+              case 'good':
+                return this.i18n.t('maint.condition.good');
+              case 'fair':
+                return this.i18n.t('maint.condition.fair');
+              case 'poor':
+                return this.i18n.t('maint.condition.poor');
+              case 'critical':
+                return this.i18n.t('maint.condition.critical');
+              default: {
+                const _never: never = condition;
+                return _never;
+              }
+            }
+          },
+          measurementLabel: (reading) => {
+            switch (reading.type) {
+              case 'tireTreadMm':
+                return this.i18n.t('history.pdf.measure.tire');
+              case 'brakePadMm':
+                return this.i18n.t('history.pdf.measure.pad');
+              case 'batteryVoltageV':
+                return this.i18n.t('history.pdf.measure.battery');
+              default:
+                return reading.type;
+            }
+          },
         },
       );
       const file = new File(
