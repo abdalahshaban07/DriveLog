@@ -42,7 +42,6 @@ import { NumericField } from '../../ui/numeric-field';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
 import { ReceiptPreview } from '../../ui/receipt-preview';
-import { SectionTabs, type SectionTab } from '../../ui/section-tabs/section-tabs';
 import { TextField } from '../../ui/text-field';
 
 const GRADE_KEYS: Record<FuelGrade, MsgKey> = {
@@ -60,7 +59,6 @@ type LogMode = 'fuel' | 'charge';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     PageHeader,
-    SectionTabs,
     NumericField,
     FuelGradeSelector,
     ReceiptPreview,
@@ -78,11 +76,6 @@ export class FillUpPage {
   readonly db = inject(Db);
   readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-
-  readonly sectionTabs: SectionTab[] = [
-    { labelKey: 'fillUp.title', link: '/fill-up' },
-    { labelKey: 'section.history', link: '/history/fill-ups' },
-  ];
 
   readonly distanceKm = signal('');
   readonly liters = signal('');

@@ -24,7 +24,7 @@ import type { MsgKey } from '../../i18n/en';
 import { ConfirmBar } from '../../ui/confirm-bar';
 import { DateField } from '../../ui/date-field';
 import { PageHeader } from '../../ui/page-header';
-import { SectionTabs, type SectionTab } from '../../ui/section-tabs/section-tabs';
+import { FUEL_TABS, SectionTabs } from '../../ui/section-tabs/section-tabs';
 import { SelectField } from '../../ui/select-field';
 
 type GradeFilter = FuelGrade | 'all';
@@ -41,11 +41,7 @@ export class FillUpHistoryPage {
   readonly i18n = inject(I18n);
   readonly db = inject(Db);
   readonly router = inject(Router);
-
-  readonly sectionTabs: SectionTab[] = [
-    { labelKey: 'fillUp.title', link: '/fill-up' },
-    { labelKey: 'section.history', link: '/history/fill-ups' },
-  ];
+  readonly tabs = FUEL_TABS;
 
   readonly gradeFilter = signal<GradeFilter>('all');
   readonly typeFilter = signal<TypeFilter>('all');

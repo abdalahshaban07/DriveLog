@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import { I18n } from '../../i18n/i18n';
-import { SectionTabs, type SectionTab } from './section-tabs';
+import { FUEL_TABS, SectionTabs, type SectionTab } from './section-tabs';
 
 describe('SectionTabs', () => {
   it('renders router links for each tab', async () => {
@@ -36,5 +36,13 @@ describe('SectionTabs', () => {
     expect(links[1]?.getAttribute('href')).toContain('/history/fill-ups');
     expect(links[0]?.textContent?.trim()).toBe(i18n.t('fillUp.title'));
     expect(links[1]?.textContent?.trim()).toBe(i18n.t('section.history'));
+  });
+
+  it('puts fill-up history beside Around', () => {
+    expect(FUEL_TABS.map((tab) => tab.link)).toEqual([
+      '/fuel',
+      '/around',
+      '/history/fill-ups',
+    ]);
   });
 });

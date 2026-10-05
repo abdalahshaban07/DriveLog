@@ -12,6 +12,7 @@ export type SectionTab = {
 export const FUEL_TABS: SectionTab[] = [
   { labelKey: 'fuel.title', link: '/fuel' },
   { labelKey: 'nav.around', link: '/around' },
+  { labelKey: 'section.history', link: '/history/fill-ups' },
 ];
 
 @Component({
