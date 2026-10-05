@@ -74,7 +74,6 @@ import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
 import { SelectField } from '../../ui/select-field';
 import { InstallCard } from './cards/install-card/install-card';
-import { MonthInsight } from './cards/month-insight/month-insight';
 import { QuickLog } from './cards/quick-log/quick-log';
 import { SampleBanner } from './cards/sample-banner/sample-banner';
 import {
@@ -102,7 +101,6 @@ type ChartCategory = ExpenseCategory | 'all';
     SetupChecklist,
     InstallCard,
     QuickLog,
-    MonthInsight,
     WeatherTipCard,
     HealthRow,
   ],
