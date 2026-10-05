@@ -21,10 +21,13 @@ function i18nStub() {
       return k;
     },
     language: () => 'en' as const,
+    formatNumber: (n: number) => String(n),
   };
 }
 
-async function render(doc: SupportDoc): Promise<{ el: HTMLElement; cmp: SupportPage }> {
+async function render(
+  doc: SupportDoc,
+): Promise<{ el: HTMLElement; cmp: SupportPage; detect: () => void }> {
   TestBed.resetTestingModule();
   await TestBed.configureTestingModule({
     imports: [SupportPage],
@@ -41,12 +44,16 @@ async function render(doc: SupportDoc): Promise<{ el: HTMLElement; cmp: SupportP
   }).compileComponents();
   const fixture = TestBed.createComponent(SupportPage);
   fixture.detectChanges();
-  return { el: fixture.nativeElement as HTMLElement, cmp: fixture.componentInstance };
+  return {
+    el: fixture.nativeElement as HTMLElement,
+    cmp: fixture.componentInstance,
+    detect: () => fixture.detectChanges(),
+  };
 }
 
 describe('SupportPage', () => {
   it('shows FAQ details, hint, and support tabs on help', async () => {
-    const { el, cmp } = await render('help');
+    const { el, cmp, detect } = await render('help');
     expect(el.textContent).toContain('help.title');
     expect(el.textContent).toContain('help.hint');
     expect(el.querySelectorAll('details').length).toBeGreaterThan(3);
@@ -57,6 +64,14 @@ describe('SupportPage', () => {
     first.open = true;
     first.dispatchEvent(new Event('toggle'));
     expect(cmp.openFaq()).toBe('help.q.data');
+    expect(el.textContent).toContain('help.s.data.1');
+    expect(el.textContent).toContain('help.group.log');
+    expect(cmp.faqGroups().flatMap((group) => group.items).length).toBe(cmp.faq.length);
+
+    cmp.query.set('nomatch-zzz');
+    detect();
+    expect(el.textContent).toContain('help.empty');
+    expect(el.querySelectorAll('details').length).toBe(0);
   });
 
   it('shows privacy paper, jump links, and terms headings on legal', async () => {
