@@ -6,25 +6,15 @@
   (click)="onBackdropClick($event)"
 >
   <div class="update-sheet__panel" role="document">
+    <div class="update-sheet__grab" aria-hidden="true"></div>
     <header class="update-sheet__head">
-      <div class="update-sheet__brand">
-        <img
-          class="update-sheet__icon"
-          src="icons/icon-192x192.png"
-          width="44"
-          height="44"
-          alt=""
-        />
-        <div class="update-sheet__titles">
-          <h2 [id]="titleId" class="update-sheet__title">
-            {{ title() || i18n.t('update.available') }}
-          </h2>
-          @if (releaseId()) {
-            <span class="update-sheet__release pill">
-              {{ i18n.t('update.release') }} · {{ releaseId() }}
-            </span>
-          }
-        </div>
+      <div class="update-sheet__titles">
+        @if (releaseId()) {
+          <p class="update-sheet__kicker">{{ i18n.t('update.release') }} · {{ releaseId() }}</p>
+        }
+        <h2 [id]="titleId" class="update-sheet__title">
+          {{ title() || i18n.t('update.available') }}
+        </h2>
       </div>
       <button
         type="button"
@@ -47,40 +37,41 @@
     @if (cards().length) {
       <p class="update-sheet__lead">{{ i18n.t('update.notesLead') }}</p>
       <section class="update-sheet__features" [attr.aria-label]="i18n.t('update.whatsNew')">
-        <ul class="update-sheet__list list-reveal">
+        <ol class="ledger list-reveal">
           @for (card of cards(); track $index) {
-            <li class="update-row">
-              <span class="update-row__glyph" aria-hidden="true">
-                <svg class="update-row__icon" viewBox="0 0 24 24">
-                  <path
-                    [attr.d]="iconPath(card.icon)"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.6"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </span>
-              <div class="update-row__copy">
-                @if (card.title) {
-                  <strong class="update-row__title">{{ card.title }}</strong>
+            <li class="ledger__item" [class.ledger__item--lead]="$first">
+              <span class="ledger__num" aria-hidden="true">{{ ledgerIndex($index) }}</span>
+              <div class="ledger__copy">
+                @if (card.kicker) {
+                  <p class="ledger__kicker">{{ card.kicker }}</p>
                 }
-                <p class="update-row__body">{{ card.body }}</p>
+                @if (card.title) {
+                  <h3 class="ledger__title">{{ card.title }}</h3>
+                }
+                @if (card.points.length) {
+                  <ul class="ledger__facts">
+                    @for (point of card.points; track $index) {
+                      <li>{{ point }}</li>
+                    }
+                  </ul>
+                } @else if (card.body) {
+                  <p class="ledger__body">{{ card.body }}</p>
+                }
               </div>
             </li>
           }
-        </ul>
+        </ol>
       </section>
     } @else if (lines().length) {
       <section class="update-sheet__features" [attr.aria-label]="i18n.t('update.whatsNew')">
-        <ul class="update-sheet__list list-reveal">
+        <ol class="ledger list-reveal">
           @for (line of lines(); track line) {
-            <li class="update-row update-row--plain">
-              <p class="update-row__body">{{ line }}</p>
+            <li class="ledger__item" [class.ledger__item--lead]="$first">
+              <span class="ledger__num" aria-hidden="true">{{ ledgerIndex($index) }}</span>
+              <p class="ledger__body">{{ line }}</p>
             </li>
           }
-        </ul>
+        </ol>
       </section>
     } @else {
       <p class="update-sheet__body">{{ i18n.t('update.notifyBody') }}</p>

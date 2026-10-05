@@ -3,35 +3,51 @@
   "en": [
     {
       "icon": "wrench",
+      "kicker": "Health",
       "title": "Vehicle Health, clearer",
-      "body": "Glance counts, richer part rows, and localized sources — see what needs attention faster."
+      "body": "Glance counts, richer part rows, and localized sources — see what needs attention faster.",
+      "points": ["Glance counts", "Richer part rows", "Localized sources"]
     },
     {
       "icon": "chart",
+      "kicker": "Soon",
       "title": "Soon window presets",
-      "body": "Pick 10%, 20%, or 30%. The hint shows when a part flips to Soon."
+      "body": "Pick 10%, 20%, or 30%. The hint shows when a part flips to Soon.",
+      "points": ["10%, 20% (default), or 30%", "Hint shows when a part flips to Soon"]
     },
     {
       "icon": "sparkle",
+      "kicker": "Privacy",
       "title": "Private Contact",
-      "body": "Feedback opens in your email app — address stays off-screen. Clearer Other topic in Arabic."
+      "body": "Feedback opens in your email app — address stays off-screen. Clearer Other topic in Arabic.",
+      "points": [
+        "Opens in your email app",
+        "Address stays off-screen",
+        "Clearer Other topic in Arabic"
+      ]
     }
   ],
   "ar": [
     {
       "icon": "wrench",
+      "kicker": "الصحة",
       "title": "صحة المركبة أوضح",
-      "body": "عدادات سريعة وصفوف أغنى ومصادر مترجمة — تشوف اللي محتاج اهتمام أسرع."
+      "body": "عدادات سريعة وصفوف أغنى ومصادر مترجمة — تشوف اللي محتاج اهتمام أسرع.",
+      "points": ["عدادات سريعة", "صفوف أغنى", "مصادر مترجمة"]
     },
     {
       "icon": "chart",
+      "kicker": "قريب",
       "title": "إعدادات نافذة «قريب»",
-      "body": "اختار ١٠٪ أو ٢٠٪ أو ٣٠٪. التلميح بيوضح امتى القطعة تتحول لقريب."
+      "body": "اختار ١٠٪ أو ٢٠٪ أو ٣٠٪. التلميح بيوضح امتى القطعة تتحول لقريب.",
+      "points": ["اختار ١٠٪ أو ٢٠٪ (الافتراضي) أو ٣٠٪", "التلميح بيوضح امتى القطعة تتحول لقريب"]
     },
     {
       "icon": "sparkle",
+      "kicker": "الخصوصية",
       "title": "تواصل بخصوصية",
-      "body": "الملاحظات بتفتح من تطبيق الإيميل من غير ما يظهر العنوان. موضوع «حاجه تانيه» أوضح بالعربي."
+      "body": "الملاحظات بتفتح من تطبيق الإيميل من غير ما يظهر العنوان. موضوع «حاجه تانيه» أوضح بالعربي.",
+      "points": ["بتفتح من تطبيق الإيميل", "العنوان مش بيظهر", "موضوع «حاجه تانيه» أوضح"]
     }
   ]
 }

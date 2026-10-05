@@ -300,7 +300,7 @@ export const en = {
   'update.whatsNew': "What's new",
   'update.release': 'Release',
   'update.dismiss': 'Got it',
-  'update.notesLead': 'Highlights in this release — quick scan, then keep driving.',
+  'update.notesLead': 'Scan the index, then keep driving.',
   'common.back': 'Back',
   'common.confirm': 'Confirm',
   'common.saved': 'Saved',
