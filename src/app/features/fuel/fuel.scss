@@ -315,13 +315,19 @@ a.slip {
 }
 
 .compare__unit,
-.recent__unit {
-  display: block;
+.recent__liters,
+.recent__eco {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25em;
+  unicode-bidi: isolate;
+}
+
+.compare__unit {
   margin-block-start: 2px;
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 700;
-  unicode-bidi: isolate;
 }
 
 .recent__list {
@@ -360,12 +366,16 @@ a.slip {
 }
 
 .recent__mid {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
+  display: grid;
+  justify-items: start;
+  gap: 2px;
   min-width: 0;
   font-variant-numeric: tabular-nums;
+}
+
+.recent__eco {
+  color: var(--muted);
+  font-size: 0.75rem;
 }
 
 .recent__cost {

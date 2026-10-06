@@ -91,7 +91,11 @@ export class FuelPage {
   /** A tip that only restates the economy line stays off the page. */
   readonly tipKey = computed((): MsgKey | null => {
     const key = contextualFuelTipKey(this.db);
-    if (key === 'fuel.tip.betterThanUsual' || key === 'fuel.tip.worseThanUsual') {
+    if (
+      key === 'fuel.tip.betterThanUsual' ||
+      key === 'fuel.tip.worseThanUsual' ||
+      key === 'fuel.tip.highConsumption'
+    ) {
       return null;
     }
     return key;

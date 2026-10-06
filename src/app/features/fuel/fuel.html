@@ -110,14 +110,22 @@
         <strong class="compare__value" [class.metric--ghost]="b.lastL100 == null">
           <bdi dir="ltr">{{ formatL100(b.lastL100) }}</bdi>
         </strong>
-        <span class="compare__unit">{{ i18n.t('common.lPer100') }}</span>
+        <span class="compare__unit">
+          <span>{{ i18n.t('fuel.per100Lead') }}</span>
+          <bdi dir="ltr">{{ i18n.formatNumber(100, { maximumFractionDigits: 0 }) }}</bdi>
+          <span>{{ i18n.t('common.km') }}</span>
+        </span>
       </div>
       <div class="compare__col">
         <span class="kicker">{{ i18n.t('fuel.overall') }}</span>
         <strong class="compare__value" [class.metric--ghost]="b.overallL100 == null">
           <bdi dir="ltr">{{ formatL100(b.overallL100) }}</bdi>
         </strong>
-        <span class="compare__unit">{{ i18n.t('common.lPer100') }}</span>
+        <span class="compare__unit">
+          <span>{{ i18n.t('fuel.per100Lead') }}</span>
+          <bdi dir="ltr">{{ i18n.formatNumber(100, { maximumFractionDigits: 0 }) }}</bdi>
+          <span>{{ i18n.t('common.km') }}</span>
+        </span>
       </div>
     </div>
   </section>
@@ -183,15 +191,17 @@
                 <span>{{ i18n.formatDate(row.date, { month: 'short' }) }}</span>
               </span>
               <span class="recent__mid">
-                <span>
+                <span class="recent__liters">
                   <bdi dir="ltr">{{ i18n.formatNumber(row.liters, { maximumFractionDigits: 1 }) }}</bdi>
-                  {{ i18n.t('common.liters') }}
+                  <span>{{ i18n.t('common.liters') }}</span>
                 </span>
                 @if (rowL100(row.id); as l100) {
                   <span class="recent__eco">
                     <bdi dir="ltr">{{ formatL100(l100) }}</bdi>
+                    <span>{{ i18n.t('fuel.per100Lead') }}</span>
+                    <bdi dir="ltr">{{ i18n.formatNumber(100, { maximumFractionDigits: 0 }) }}</bdi>
+                    <span>{{ i18n.t('common.km') }}</span>
                   </span>
-                  <span class="recent__unit">{{ i18n.t('common.lPer100') }}</span>
                 }
               </span>
               <strong class="recent__cost">{{ formatMoney(row.cost) }}</strong>

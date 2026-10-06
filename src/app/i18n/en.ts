@@ -753,6 +753,7 @@ export const en = {
   'fuel.billWhy.down.liters': 'Fewer liters than last month',
   'fuel.monthLiters': 'Liters',
   'fuel.monthDistance': 'Distance',
+  'fuel.per100Lead': 'per',
   'fuel.monthFills': 'Fill-ups',
   'fuel.economy': 'Economy',
   'fuel.trend': 'Recent consumption',
