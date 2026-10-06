@@ -848,6 +848,14 @@ export class HomePage {
     return this.i18n.t(fuelUseWhyKey(use.direction, use.reason));
   }
 
+  fuelUseKm(value: number): string {
+    return this.i18n.formatNumber(Math.round(value), { maximumFractionDigits: 0 });
+  }
+
+  fuelUseLiters(value: number): string {
+    return this.i18n.formatNumber(value, { maximumFractionDigits: 1 });
+  }
+
   monthVsLastLabel(): string | null {
     const vs = this.monthVsLast();
     if (!vs) {

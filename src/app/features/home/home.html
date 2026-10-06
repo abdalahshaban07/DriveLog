@@ -273,6 +273,26 @@
             </div>
             @if (fuelUseWhy(); as why) {
               <p class="fuel-use__why">{{ why }}</p>
+              @if (fuelUse(); as use) {
+                <p class="fuel-use__facts">
+                  @if (use.km > 0 && use.previousKm > 0) {
+                    <span class="fuel-use__fact">
+                      {{ i18n.t('home.useDistance') }}
+                      <bdi>{{ fuelUseKm(use.km) }}</bdi>
+                      {{ i18n.t('common.km') }}
+                      {{ i18n.t('home.useVersus') }}
+                      <bdi>{{ fuelUseKm(use.previousKm) }}</bdi>
+                      {{ i18n.t('common.km') }}
+                    </span>
+                  }
+                  <span class="fuel-use__fact">
+                    {{ i18n.t('home.useLiters') }}
+                    <bdi>{{ fuelUseLiters(use.liters) }}</bdi>
+                    {{ i18n.t('home.useVersus') }}
+                    <bdi>{{ fuelUseLiters(use.previousLiters) }}</bdi>
+                  </span>
+                </p>
+              }
             }
           </section>
         }

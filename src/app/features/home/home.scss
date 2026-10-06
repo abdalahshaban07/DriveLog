@@ -1168,6 +1168,21 @@
   line-height: 1.55;
 }
 
+.fuel-use__facts {
+  display: grid;
+  gap: 0.15rem;
+  margin: var(--space-2) 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.fuel-use__fact {
+  display: block;
+  unicode-bidi: isolate;
+}
+
 .vehicle-status {
   margin-block-end: var(--space-5);
 }

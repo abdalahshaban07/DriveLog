@@ -187,6 +187,9 @@ describe('HomePage', () => {
     expect(fixture.nativeElement.querySelector('.month-outlook .fuel-use__why')?.textContent).toBe(
       'home.useWhy.down.distance',
     );
+    const facts = fixture.nativeElement.querySelector('.fuel-use__facts')?.textContent ?? '';
+    expect(facts).toContain('home.useDistance');
+    expect(facts).toContain('home.useLiters');
     const order = [...fixture.nativeElement.querySelectorAll(
       '.pulse, app-weather-tip, app-quick-log, .needs, .coming, .month-outlook, .vehicle-status',
     )].map((node: Element) => node.tagName === 'APP-WEATHER-TIP' || node.tagName === 'APP-QUICK-LOG'
