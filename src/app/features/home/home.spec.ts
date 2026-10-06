@@ -183,6 +183,8 @@ describe('HomePage', () => {
     expect(fixture.nativeElement.querySelector('.fuel-use__why')?.textContent).toBe(
       'home.useWhy.down.distance',
     );
-    expect(fixture.nativeElement.querySelector('.fuel-use__facts')?.textContent).toBe('home.useFacts');
+    const facts = fixture.nativeElement.querySelector('.fuel-use__facts')?.textContent ?? '';
+    expect(facts).toContain('home.useDistance');
+    expect(facts).toContain('home.usePer');
   });
 });

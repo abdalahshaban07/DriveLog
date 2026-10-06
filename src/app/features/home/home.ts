@@ -823,23 +823,12 @@ export class HomePage {
     return this.i18n.t(fuelUseWhyKey(use.direction, use.reason));
   }
 
-  fuelUseFacts(): string | null {
-    const use = this.fuelUse();
-    if (!use || use.km <= 0 || use.previousKm <= 0) {
-      return null;
-    }
-    const km = this.i18n.formatNumber(Math.round(use.km), { maximumFractionDigits: 0 });
-    const prevKm = this.i18n.formatNumber(Math.round(use.previousKm), { maximumFractionDigits: 0 });
-    if (use.l100 == null || use.previousL100 == null) {
-      return this.i18n.t('home.useFactsKm', { km, prevKm });
-    }
-    const digits = { minimumFractionDigits: 1, maximumFractionDigits: 1 };
-    return this.i18n.t('home.useFacts', {
-      km,
-      prevKm,
-      l100: this.i18n.formatNumber(use.l100, digits),
-      prevL100: this.i18n.formatNumber(use.previousL100, digits),
-    });
+  fuelUseKm(value: number): string {
+    return this.i18n.formatNumber(Math.round(value), { maximumFractionDigits: 0 });
+  }
+
+  fuelUseRate(value: number): string {
+    return this.i18n.formatNumber(value, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   }
 
   monthVsLastLabel(): string | null {
