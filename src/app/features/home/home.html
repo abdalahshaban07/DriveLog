@@ -469,15 +469,28 @@
       [attr.aria-label]="i18n.t('home.tab.charts')"
     >
       <section class="tab-block" [attr.aria-label]="i18n.t('charts.trends')">
-        <div class="trends-head">
+        <div class="reports-range">
+          <h2 class="reports-range__title">{{ i18n.t('home.period.title') }}</h2>
           <app-select-field
-            class="filter-select trends-period"
-            [compact]="true"
-            [label]="i18n.t('charts.period')"
-            [options]="chartPeriodSelectOptions()"
-            [value]="chartPeriod()"
-            (valueChange)="chartPeriod.set($any($event))"
+            [label]="i18n.t('history.range')"
+            [options]="reportRangeOptions()"
+            [value]="chartRangePreset()"
+            (valueChange)="setChartRange($event)"
           />
+          @if (chartRangePreset() === 'custom') {
+            <div class="reports-range__dates">
+              <app-date-field
+                [label]="i18n.t('history.from')"
+                [value]="chartFrom()"
+                (valueChange)="chartFrom.set($event)"
+              />
+              <app-date-field
+                [label]="i18n.t('history.to')"
+                [value]="chartTo()"
+                (valueChange)="chartTo.set($event)"
+              />
+            </div>
+          }
         </div>
         <div class="chart-grid">
           <div class="chart-card">

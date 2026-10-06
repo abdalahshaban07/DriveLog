@@ -1,13 +1,19 @@
 import { compareDateOnly } from './dues';
-import { periodFilterStart, type LedgerPeriodFilter } from './expense-ledger';
 import type { EconomySegment, FillUp, FuelGrade } from './models';
 
-function inPeriod(f: FillUp, period: LedgerPeriodFilter): boolean {
-  const start = periodFilterStart(period);
-  if (!start) {
-    return true;
+export interface DateWindow {
+  from?: string;
+  to?: string;
+}
+
+function inWindow(date: string, window: DateWindow): boolean {
+  if (window.from && compareDateOnly(date, window.from) < 0) {
+    return false;
   }
-  return compareDateOnly(f.date, start) >= 0;
+  if (window.to && compareDateOnly(date, window.to) > 0) {
+    return false;
+  }
+  return true;
 }
 
 export interface TrendPoint {
@@ -38,7 +44,7 @@ function fillDistance(end: FillUp, prev: FillUp | undefined): number {
 /** One point per fill. A full tank is not required. */
 function trendSegments(
   fills: readonly FillUp[],
-  period: LedgerPeriodFilter,
+  window: DateWindow,
 ): { segments: EconomySegment[]; byId: Map<string, FillUp> } {
   const sorted = [...fills].sort(byOdometer);
   const segments: EconomySegment[] = [];
@@ -46,7 +52,7 @@ function trendSegments(
     const end = sorted[i]!;
     const prev = i > 0 ? sorted[i - 1] : undefined;
     const distance = fillDistance(end, prev);
-    if (distance <= 0 || !inPeriod(end, period)) {
+    if (distance <= 0 || !inWindow(end.date, window)) {
       continue;
     }
     segments.push({
@@ -63,11 +69,11 @@ function trendSegments(
 
 function toTrendPoints(
   fills: readonly FillUp[],
-  period: LedgerPeriodFilter,
+  window: DateWindow,
   pick: (segment: EconomySegment) => number,
   digits: number,
 ): TrendPoint[] {
-  const { segments, byId } = trendSegments(fills, period);
+  const { segments, byId } = trendSegments(fills, window);
   const factor = 10 ** digits;
   return segments.map((segment) => ({
     value: Math.round(pick(segment) * factor) / factor,
@@ -78,9 +84,9 @@ function toTrendPoints(
 /** Cost/km per fill. Distance or odometer gap; a full tank is not required. */
 export function costPerKmTrend(
   fills: readonly FillUp[],
-  period: LedgerPeriodFilter,
+  window: DateWindow,
 ): TrendPoint[] {
-  return toTrendPoints(fills, period, (segment) => segment.costPerKm, 2);
+  return toTrendPoints(fills, window, (segment) => segment.costPerKm, 2);
 }
 
 export interface MonthSpend {
@@ -90,11 +96,11 @@ export interface MonthSpend {
 
 export function spendByMonthEntries(
   fills: readonly FillUp[],
-  period: LedgerPeriodFilter,
+  window: DateWindow,
 ): MonthSpend[] {
   const map = new Map<string, number>();
   for (const f of fills) {
-    if (!inPeriod(f, period)) {
+    if (!inWindow(f.date, window)) {
       continue;
     }
     const key = f.date.slice(0, 7);
@@ -107,17 +113,17 @@ export function spendByMonthEntries(
 
 export function spendByMonth(
   fills: readonly FillUp[],
-  period: LedgerPeriodFilter,
+  window: DateWindow,
 ): number[] {
-  return spendByMonthEntries(fills, period).map((e) => e.value);
+  return spendByMonthEntries(fills, window).map((e) => e.value);
 }
 
 /** L/100 km per fill. Distance or odometer gap; a full tank is not required. */
 export function economyTrend(
   fills: readonly FillUp[],
-  period: LedgerPeriodFilter,
+  window: DateWindow,
 ): TrendPoint[] {
-  return toTrendPoints(fills, period, (segment) => segment.litersPer100Km, 1);
+  return toTrendPoints(fills, window, (segment) => segment.litersPer100Km, 1);
 }
 
 export type FuelGradeShareGrade = FuelGrade | 'unknown';
@@ -127,14 +133,14 @@ export interface FuelGradeShare {
   cost: number;
 }
 
-/** Sum fill cost grouped by fuel grade for the selected ledger period. */
+/** Sum fill cost grouped by fuel grade inside the date window. */
 export function fuelGradeCostShare(
   fills: readonly FillUp[],
-  period: LedgerPeriodFilter,
+  window: DateWindow,
 ): FuelGradeShare[] {
   const map = new Map<FuelGradeShareGrade, number>();
   for (const f of fills) {
-    if (!inPeriod(f, period)) {
+    if (!inWindow(f.date, window)) {
       continue;
     }
     const grade: FuelGradeShareGrade = f.fuelGrade ?? 'unknown';
@@ -148,9 +154,9 @@ export function fuelGradeCostShare(
 /** Kilometres driven per month. A full tank is not required. */
 export function distanceByMonth(
   fills: readonly FillUp[],
-  period: LedgerPeriodFilter,
+  window: DateWindow,
 ): MonthSpend[] {
-  const { segments, byId } = trendSegments(fills, period);
+  const { segments, byId } = trendSegments(fills, window);
   const map = new Map<string, number>();
   for (const segment of segments) {
     const date = byId.get(segment.endId)?.date ?? '';
@@ -168,10 +174,10 @@ export function distanceByMonth(
 /** Price per litre. Uses the logged unit price, otherwise cost ÷ litres. */
 export function unitPriceTrend(
   fills: readonly FillUp[],
-  period: LedgerPeriodFilter,
+  window: DateWindow,
 ): TrendPoint[] {
   return [...fills]
-    .filter((f) => inPeriod(f, period) && f.liters > 0)
+    .filter((f) => inWindow(f.date, window) && f.liters > 0)
     .sort((a, b) => a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt))
     .flatMap((f) => {
       const raw =
@@ -193,12 +199,12 @@ export interface NamedShare {
 /** Fuel spend by station name. Unlabeled fills are skipped. Extra names fold into an empty label. */
 export function placeSpendShare(
   fills: readonly FillUp[],
-  period: LedgerPeriodFilter,
+  window: DateWindow,
   limit = 4,
 ): NamedShare[] {
   const map = new Map<string, number>();
   for (const f of fills) {
-    if (!inPeriod(f, period)) {
+    if (!inWindow(f.date, window)) {
       continue;
     }
     const label = f.placeLabel?.trim() ?? '';

@@ -164,7 +164,56 @@ describe('HomePage', () => {
       node.textContent?.trim(),
     );
     expect(labels).toEqual(['charts.periodSpend', 'reports.glance.economy', 'charts.kmDriven']);
+    expect(fixture.componentInstance.chartRangePreset()).toBe('3months');
+    expect(panel.querySelector('.reports-range__title')?.textContent?.trim()).toBe(
+      'home.period.title',
+    );
+    expect(panel.querySelector('.reports-range__dates')).toBeFalsy();
     expect(fixture.componentInstance.priceMoved()).toBe(false);
+  });
+
+  it('filters chart spend with the same range windows as reports', () => {
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const today = `${now.getFullYear()}-${month}-${day}`;
+    const stamp = (date: string) => ({
+      createdAt: `${date}T00:00:00.000Z`,
+      updatedAt: `${date}T00:00:00.000Z`,
+    });
+    fuelUseFills.push(
+      {
+        id: 'in',
+        date: today,
+        liters: 28.1,
+        cost: 914,
+        odometer: 1514,
+        distanceKm: 514,
+        tankFull: true,
+        ...stamp(today),
+      },
+      {
+        id: 'out',
+        date: '2020-01-01',
+        liters: 40,
+        cost: 5000,
+        odometer: 100,
+        distanceKm: 400,
+        tankFull: true,
+        ...stamp('2020-01-01'),
+      },
+    );
+    const fixture = TestBed.createComponent(HomePage);
+    const page = fixture.componentInstance;
+    page.view.set('charts');
+    fixture.detectChanges();
+    expect(page.spendTotal()).toBe(914);
+    page.setChartRange('custom');
+    page.chartFrom.set('2020-01-01');
+    page.chartTo.set('2020-01-31');
+    fixture.detectChanges();
+    expect(page.spendTotal()).toBe(5000);
+    expect(fixture.nativeElement.querySelector('.charts-panel .reports-range__dates')).toBeTruthy();
   });
 
   it('sums the reports sheet inside the selected range', () => {

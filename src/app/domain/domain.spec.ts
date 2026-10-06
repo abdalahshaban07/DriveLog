@@ -935,11 +935,11 @@ describe('insights series', () => {
       fill({ id: 'b', odometer: 1200, liters: 30, cost: 60, tankFull: false, date: '2026-02-02' }),
       fill({ id: 'c', odometer: 1500, liters: 36, cost: 90, tankFull: false, date: '2026-03-02' }),
     ];
-    expect(economyTrend(fills, 'all')).toEqual([
+    expect(economyTrend(fills, {})).toEqual([
       { value: 15, date: '2026-02-02' },
       { value: 12, date: '2026-03-02' },
     ]);
-    expect(costPerKmTrend(fills, 'all')).toEqual([
+    expect(costPerKmTrend(fills, {})).toEqual([
       { value: 0.3, date: '2026-02-02' },
       { value: 0.3, date: '2026-03-02' },
     ]);
@@ -952,7 +952,7 @@ describe('insights series', () => {
         fill({ id: 'a', odometer: 1000, liters: 50, cost: 70, tankFull: true }),
         fill({ id: 'b', odometer: 1200, liters: 45, cost: 65, tankFull: true }),
       ],
-      'all',
+      {},
     );
     expect(trend).toEqual([{ value: 22.5, date: '2026-01-01' }]);
   });
@@ -979,11 +979,11 @@ describe('insights series', () => {
         date: '2026-02-04',
       }),
     ];
-    expect(economyTrend(fills, 'all')).toEqual([
+    expect(economyTrend(fills, {})).toEqual([
       { value: 20, date: '2026-01-04' },
       { value: 12, date: '2026-02-04' },
     ]);
-    expect(costPerKmTrend(fills, 'all')).toEqual([
+    expect(costPerKmTrend(fills, {})).toEqual([
       { value: 0.5, date: '2026-01-04' },
       { value: 0.36, date: '2026-02-04' },
     ]);
@@ -1021,13 +1021,13 @@ describe('insights series', () => {
         placeLabel: 'Shell',
       }),
     ];
-    expect(distanceByMonth(fills, 'all')).toEqual([{ month: '2026-02', value: 500 }]);
-    expect(unitPriceTrend(fills, 'all')).toEqual([
+    expect(distanceByMonth(fills, {})).toEqual([{ month: '2026-02', value: 500 }]);
+    expect(unitPriceTrend(fills, {})).toEqual([
       { value: 2, date: '2026-01-02' },
       { value: 3, date: '2026-02-02' },
       { value: 2, date: '2026-02-20' },
     ]);
-    expect(placeSpendShare(fills, 'all')).toEqual([
+    expect(placeSpendShare(fills, {})).toEqual([
       { label: 'Shell', cost: 120 },
       { label: 'Total', cost: 90 },
     ]);
@@ -1056,13 +1056,22 @@ describe('insights series', () => {
         }),
         fill({ id: 'c', odometer: 1200, liters: 40, cost: 20, tankFull: true, date: '2026-02-15' }),
       ],
-      'all',
+      {},
     );
     expect(share).toEqual([
       { grade: 'diesel', cost: 80 },
       { grade: 'gasoline92', cost: 40 },
       { grade: 'unknown', cost: 20 },
     ]);
+    expect(
+      fuelGradeCostShare(
+        [
+          fill({ id: 'a', odometer: 1000, liters: 10, cost: 80, tankFull: true, date: '2026-01-02' }),
+          fill({ id: 'b', odometer: 1100, liters: 10, cost: 40, tankFull: true, date: '2026-03-02' }),
+        ],
+        { from: '2026-02-01', to: '2026-03-31' },
+      ),
+    ).toEqual([{ grade: 'unknown', cost: 40 }]);
   });
 });
 

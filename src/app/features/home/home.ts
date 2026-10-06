@@ -14,7 +14,6 @@ import { currentWeather, getCoords, type WeatherNow } from '../../data/remote';
 import { buildDueItems, nextDueItem, todayDateOnly } from '../../domain/dues';
 import { nextExpiringDoc, vaultExpiryForKind } from '../../domain/vehicle-docs';
 import { daysUntil, inActivePeriod, periodTotals } from '../../domain/expense-period';
-import { type LedgerPeriodFilter } from '../../domain/expense-ledger';
 import { fuelBoard, fuelDashboardMetrics, sparklineGeometry } from '../../domain/fuel-dashboard';
 import { dueItemLabel, partDefinitionLabel } from '../../domain/part-name';
 import {
@@ -31,6 +30,7 @@ import {
   spendByMonth,
   spendByMonthEntries,
   unitPriceTrend,
+  type DateWindow,
   type TrendPoint,
 } from '../../domain/insights';
 import type {
@@ -119,7 +119,9 @@ export class HomePage {
   private readonly glanceStrip = viewChild<ElementRef<HTMLElement>>('glanceStrip');
 
   readonly view = signal<HomeView>('dashboard');
-  readonly chartPeriod = signal<LedgerPeriodFilter>('3m');
+  readonly chartRangePreset = signal<HistoryRangePreset>('3months');
+  readonly chartFrom = signal('');
+  readonly chartTo = signal('');
   readonly reportRangePreset = signal<HistoryRangePreset>('3months');
   readonly reportFrom = signal('');
   readonly reportTo = signal('');
@@ -132,20 +134,6 @@ export class HomePage {
     { id: 'reports', labelKey: 'home.tab.reports' },
     { id: 'charts', labelKey: 'home.tab.charts' },
   ];
-
-  readonly chartPeriodOptions: { id: LedgerPeriodFilter; labelKey: MsgKey }[] = [
-    { id: '30d', labelKey: 'charts.period30d' },
-    { id: '3m', labelKey: 'charts.period3m' },
-    { id: '6m', labelKey: 'charts.period6m' },
-    { id: 'all', labelKey: 'charts.periodAll' },
-  ];
-
-  readonly chartPeriodSelectOptions = computed(() =>
-    this.chartPeriodOptions.map((opt) => ({
-      value: opt.id,
-      label: this.i18n.t(opt.labelKey),
-    })),
-  );
 
   readonly reportRangePresets: { id: HistoryRangePreset; labelKey: MsgKey }[] = [
     { id: 'thisMonth', labelKey: 'history.rangeThisMonth' },
@@ -310,7 +298,10 @@ export class HomePage {
     if (this.showInstallCard()) return 'install';
     return null;
   });
-  readonly economySeries = computed(() => economyTrend(this.db.fillUps(), this.chartPeriod()));
+  readonly chartWindow = computed((): DateWindow =>
+    historyWindow(this.chartRangePreset(), this.chartFrom(), this.chartTo()),
+  );
+  readonly economySeries = computed(() => economyTrend(this.db.fillUps(), this.chartWindow()));
   readonly economyValues = computed(() => this.economySeries().map((p) => p.value));
   readonly economyLabels = computed(() =>
     this.economySeries().map((p) => this.shortDate(p.date)),
@@ -319,9 +310,9 @@ export class HomePage {
   readonly economyDelta = computed(() => seriesDelta(this.economySeries()));
   readonly economyAvg = computed(() => seriesMean(this.economySeries()));
   readonly spendTrendEntries = computed(() =>
-    spendByMonthEntries(this.db.fillUps(), this.chartPeriod()),
+    spendByMonthEntries(this.db.fillUps(), this.chartWindow()),
   );
-  readonly spendTrend = computed(() => spendByMonth(this.db.fillUps(), this.chartPeriod()));
+  readonly spendTrend = computed(() => spendByMonth(this.db.fillUps(), this.chartWindow()));
   readonly spendTotal = computed(() => this.spendTrend().reduce((sum, v) => sum + v, 0));
   readonly spendDelta = computed(() => {
     const values = this.spendTrend();
@@ -336,7 +327,7 @@ export class HomePage {
     ),
   );
   readonly fuelGradeShare = computed(() =>
-    fuelGradeCostShare(this.db.fillUps(), this.chartPeriod()),
+    fuelGradeCostShare(this.db.fillUps(), this.chartWindow()),
   );
   readonly fuelGradeTotal = computed(() =>
     this.fuelGradeShare().reduce((sum, s) => sum + s.cost, 0),
@@ -352,7 +343,7 @@ export class HomePage {
     })),
   );
   readonly distanceEntries = computed(() =>
-    distanceByMonth(this.db.fillUps(), this.chartPeriod()),
+    distanceByMonth(this.db.fillUps(), this.chartWindow()),
   );
   readonly distanceValues = computed(() => this.distanceEntries().map((e) => e.value));
   readonly distanceLabels = computed(() =>
@@ -362,14 +353,14 @@ export class HomePage {
   );
   readonly distanceTotal = computed(() => this.distanceValues().reduce((sum, v) => sum + v, 0));
   readonly distanceDelta = computed(() => monthDelta(this.distanceValues()));
-  readonly priceSeries = computed(() => unitPriceTrend(this.db.fillUps(), this.chartPeriod()));
+  readonly priceSeries = computed(() => unitPriceTrend(this.db.fillUps(), this.chartWindow()));
   readonly priceValues = computed(() => this.priceSeries().map((p) => p.value));
   readonly priceLabels = computed(() => this.priceSeries().map((p) => this.shortDate(p.date)));
   readonly priceLatest = computed(() => this.priceSeries().at(-1)?.value ?? null);
   readonly priceDelta = computed(() => seriesDelta(this.priceSeries()));
   readonly priceAvg = computed(() => seriesMean(this.priceSeries()));
   readonly priceMoved = computed(() => priceSpread(this.priceValues()));
-  readonly placeShare = computed(() => placeSpendShare(this.db.fillUps(), this.chartPeriod()));
+  readonly placeShare = computed(() => placeSpendShare(this.db.fillUps(), this.chartWindow()));
   readonly placeSlices = computed((): DonutSlice[] =>
     this.placeShare().map((s) => ({
       label: s.label || this.i18n.t('charts.otherPlaces'),
@@ -905,6 +896,13 @@ export class HomePage {
     this.reportRangePreset.set(id);
   }
 
+  setChartRange(id: string): void {
+    if (!isHistoryRangePreset(id)) {
+      return;
+    }
+    this.chartRangePreset.set(id);
+  }
+
   setView(next: HomeView): void {
     this.view.set(next);
     void this.router.navigate([], {
@@ -920,6 +918,14 @@ export class HomePage {
     }
   }
 
+}
+
+function historyWindow(preset: HistoryRangePreset, from: string, to: string): DateWindow {
+  if (preset === 'custom') {
+    return { from: from || undefined, to: to || undefined };
+  }
+  const bounds = rangeBoundsForPreset(preset, todayDateOnly());
+  return { from: bounds.from, to: bounds.to };
 }
 
 function isHistoryRangePreset(id: string): id is HistoryRangePreset {
