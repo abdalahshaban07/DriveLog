@@ -400,6 +400,8 @@ export const ar: Record<MsgKey, string> = {
   'history.monthLiters': '{liters} لتر',
   'history.monthKm': '{km} كم',
   'history.monthCount': '{count} سجلات',
+  'history.oneRecord': 'سجل',
+  'history.recordCount': 'عدد السجلات',
   'history.edit': 'تعديل',
   'history.delete': 'حذف',
   'history.deleteConfirmFill': 'تمسح تعبئة البنزين دي؟',

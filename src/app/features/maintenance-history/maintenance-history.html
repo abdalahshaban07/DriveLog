@@ -32,26 +32,43 @@
       </div>
     }
 
-    <app-select-field
-      [label]="i18n.t('history.filterType')"
-      [options]="typeOptions()"
-      [value]="typeFilter()"
-      (valueChange)="setType($event)"
-    />
+    @if (showTypeFilter()) {
+      <app-select-field
+        [label]="i18n.t('history.filterType')"
+        [options]="typeOptions()"
+        [value]="activeType()"
+        (valueChange)="setType($event)"
+      />
+    }
   </div>
 
   @if (rows().length === 0) {
     <p class="empty-state">{{ i18n.t('maint.empty') }}</p>
     <a routerLink="/maintenance" class="cta">{{ i18n.t('maint.add') }}</a>
   } @else {
-    <div class="history-actions">
-      <button type="button" class="ghost-btn" [disabled]="shareBusy()" (click)="shareCsv()">
-        {{ shareBusy() ? i18n.t('common.loading') : i18n.t('history.share') }}
-      </button>
-      <button type="button" class="ghost-btn" [disabled]="shareBusy()" (click)="exportPdf()">
-        {{ shareBusy() ? i18n.t('common.loading') : i18n.t('history.exportPdf') }}
-      </button>
-    </div>
+    @let totals = periodTotals();
+    <section class="history-sheet" [attr.aria-label]="i18n.t('history.range')">
+      <div class="history-sheet__facts">
+        <div>
+          <span class="history-sheet__label">{{ i18n.t('history.amount') }}</span>
+          <strong><bdi dir="ltr">{{ formatMoney(totals.total) }}</bdi></strong>
+        </div>
+        <div>
+          <span class="history-sheet__label">{{ i18n.t('history.recordCount') }}</span>
+          <strong>
+            <bdi dir="ltr">{{ i18n.formatNumber(totals.count, { maximumFractionDigits: 0 }) }}</bdi>
+          </strong>
+        </div>
+      </div>
+      <div class="history-exports">
+        <button type="button" [disabled]="shareBusy()" (click)="exportPdf()">
+          {{ shareBusy() ? i18n.t('common.loading') : i18n.t('history.exportPdf') }}
+        </button>
+        <button type="button" [disabled]="shareBusy()" (click)="shareCsv()">
+          {{ shareBusy() ? i18n.t('common.loading') : i18n.t('history.share') }}
+        </button>
+      </div>
+    </section>
     @if (shareError()) {
       <p class="error-state" role="alert">{{ shareError() }}</p>
     }
@@ -63,11 +80,15 @@
             <div class="history-month__totals">
               <p class="history-month__total">{{ formatMoney(group.total) }}</p>
               <p class="history-month__secondary">
-                {{
-                  i18n.t('history.monthCount', {
-                    count: i18n.formatNumber(group.items.length, { maximumFractionDigits: 0 }),
-                  })
-                }}
+                @if (group.items.length === 1) {
+                  {{ i18n.t('history.oneRecord') }}
+                } @else {
+                  {{
+                    i18n.t('history.monthCount', {
+                      count: i18n.formatNumber(group.items.length, { maximumFractionDigits: 0 }),
+                    })
+                  }}
+                }
               </p>
             </div>
           </div>
@@ -75,32 +96,27 @@
             @for (m of group.items; track m.id) {
               <li class="history-ledger__row">
                 <div class="history-ledger__card">
-                  <a
-                    [routerLink]="['/maintenance']"
-                    [queryParams]="{ id: m.id }"
-                    class="history-ledger__link"
-                  >
-                    <div class="history-ledger__head">
-                      <strong class="history-ledger__title">{{ rowLabel(m) }}</strong>
-                      @if (m.cost != null) {
-                        <strong class="history-ledger__cost">{{ formatMoney(m.cost) }}</strong>
-                      } @else {
-                        <span class="history-ledger__status">{{
-                          i18n.t('budget.notEnoughData')
-                        }}</span>
-                      }
-                    </div>
-                    <div class="history-ledger__meta">
-                      <span class="pill">{{ datePill(m.date) }}</span>
-                      <span>
-                        {{ i18n.formatNumber(m.odometer, { maximumFractionDigits: 0 }) }}
+                  <button type="button" class="history-ledger__link" (click)="editRow(m.id)">
+                    <span class="history-day">
+                      <strong>{{ dayNumber(m.date) }}</strong>
+                      <span>{{ monthShort(m.date) }}</span>
+                    </span>
+                    <span class="history-ledger__body">
+                      <strong>{{ rowLabel(m) }}</strong>
+                      <span class="history-km">
+                        <bdi dir="ltr">{{
+                          i18n.formatNumber(m.odometer, { maximumFractionDigits: 0 })
+                        }}</bdi>
                         {{ i18n.t('common.km') }}
                       </span>
-                    </div>
-                    @if (m.note) {
-                      <span class="history-ledger__place">{{ m.note }}</span>
+                      @if (m.note) {
+                        <span class="history-note">{{ m.note }}</span>
+                      }
+                    </span>
+                    @if (m.cost != null) {
+                      <strong class="history-ledger__cost">{{ formatMoney(m.cost) }}</strong>
                     }
-                  </a>
+                  </button>
                   <div class="history-ledger__icon-actions">
                     <button
                       type="button"

@@ -405,6 +405,8 @@ export const en = {
   'history.monthLiters': '{liters} L',
   'history.monthKm': '{km} km',
   'history.monthCount': '{count} entries',
+  'history.oneRecord': '1 entry',
+  'history.recordCount': 'Records',
   'history.edit': 'Edit',
   'history.delete': 'Delete',
   'history.deleteConfirmFill': 'Delete this fill-up?',
