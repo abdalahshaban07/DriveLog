@@ -17,6 +17,28 @@ export const ar: Record<MsgKey, string> = {
   'home.monthFuelDelta.up': '+{pct}%',
   'home.monthFuelDelta.down': '{pct}%',
   'home.monthFuelDelta.same': '~0%',
+  'home.useTitle': 'الاستهلاك',
+  'home.useUnit': 'لتر',
+  'home.useSameDays': 'نفس عدد الأيام',
+  'home.useDelta.up': 'أعلى {pct}٪',
+  'home.useDelta.down': 'أقل {pct}٪',
+  'home.useDelta.same': 'شبه الشهر اللي فات',
+  'home.useFacts': '{km} كم مقابل {prevKm} كم. لتر/١٠٠: {l100} مقابل {prevL100}.',
+  'home.useFactsKm': '{km} كم مقابل {prevKm} كم.',
+  'home.useWhy.down.distance': 'الاستهلاك قل لأنك مشيت مسافة أقصر.',
+  'home.useWhy.up.distance': 'الاستهلاك زاد لأنك مشيت مسافة أطول.',
+  'home.useWhy.down.rate': 'الاستهلاك قل لأن كل ١٠٠ كم أخدت بنزين أقل.',
+  'home.useWhy.up.rate': 'الاستهلاك زاد لأن كل ١٠٠ كم أخدت بنزين أكتر.',
+  'home.useWhy.down.both': 'الاستهلاك قل لأنك مشيت مسافة أقصر، وكل ١٠٠ كم أخدت بنزين أقل.',
+  'home.useWhy.up.both': 'الاستهلاك زاد لأنك مشيت مسافة أطول، وكل ١٠٠ كم أخدت بنزين أكتر.',
+  'home.useWhy.down.distanceDespiteRate':
+    'الاستهلاك قل لأنك مشيت مسافة أقصر، رغم إن كل ١٠٠ كم أخدت بنزين أكتر.',
+  'home.useWhy.up.distanceDespiteRate':
+    'الاستهلاك زاد لأنك مشيت مسافة أطول، رغم إن كل ١٠٠ كم أخدت بنزين أقل.',
+  'home.useWhy.down.rateDespiteDistance':
+    'الاستهلاك قل لأن كل ١٠٠ كم أخدت بنزين أقل، رغم إنك مشيت مسافة أطول.',
+  'home.useWhy.up.rateDespiteDistance':
+    'الاستهلاك زاد لأن كل ١٠٠ كم أخدت بنزين أكتر، رغم إنك مشيت مسافة أقصر.',
   'home.logFirst': 'سجّل أول تعبئة',
   'home.lastFill': 'آخر تعبئة',
   'home.glanceStrip': 'نظرة سريعة',

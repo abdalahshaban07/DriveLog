@@ -154,6 +154,101 @@ describe('economy', () => {
     expect(fuelBillWhy([priced('a', '2026-03-10', 10, 100, 100)], now)).toBeNull();
   });
 
+  it('fuelUseCompare explains liters with distance and the same days last month', async () => {
+    const { fuelUseCompare } = await import('./economy');
+    const now = new Date(2026, 2, 10);
+    const trip = (id: string, date: string, liters: number, distanceKm: number, odometer: number) =>
+      fill({ id, odometer, liters, cost: liters, tankFull: true, date, distanceKm });
+
+    const shorter = fuelUseCompare(
+      [trip('a', '2026-02-05', 39, 510, 1510), trip('b', '2026-03-05', 24, 320, 1830)],
+      now,
+    );
+    expect(shorter).toMatchObject({
+      liters: 24,
+      previousLiters: 39,
+      pct: -38,
+      tone: 'down',
+      direction: 'down',
+      reason: 'distance',
+      l100: 7.5,
+      previousL100: 7.6,
+    });
+
+    const farther = fuelUseCompare(
+      [trip('a', '2026-02-05', 39, 480, 1480), trip('b', '2026-03-05', 76, 920, 2400)],
+      now,
+    );
+    expect(farther).toMatchObject({ pct: 95, tone: 'up', reason: 'distance' });
+
+    const thirstier = fuelUseCompare(
+      [trip('a', '2026-02-05', 41, 500, 1500), trip('b', '2026-03-05', 46.4, 510, 2010)],
+      now,
+    );
+    expect(thirstier).toMatchObject({ pct: 13, tone: 'up', reason: 'rate', l100: 9.1, previousL100: 8.2 });
+
+    const both = fuelUseCompare(
+      [trip('a', '2026-02-05', 32, 400, 1400), trip('b', '2026-03-05', 60, 600, 2000)],
+      now,
+    );
+    expect(both).toMatchObject({ pct: 88, reason: 'both', direction: 'up' });
+
+    const savedByRate = fuelUseCompare(
+      [trip('a', '2026-02-05', 40, 400, 1400), trip('b', '2026-03-05', 30, 500, 1900)],
+      now,
+    );
+    expect(savedByRate).toMatchObject({ pct: -25, reason: 'rateDespiteDistance', direction: 'down' });
+
+    const flat = fuelUseCompare(
+      [trip('a', '2026-02-05', 10, 100, 1100), trip('b', '2026-03-05', 10.2, 100, 1200)],
+      now,
+    );
+    expect(flat).toMatchObject({ tone: 'same', reason: null, direction: null });
+
+    const clipped = fuelUseCompare(
+      [
+        trip('early', '2026-02-05', 39, 510, 1510),
+        trip('late', '2026-02-20', 100, 100, 1610),
+        trip('now', '2026-03-05', 24, 320, 1930),
+      ],
+      now,
+    );
+    expect(clipped).toMatchObject({ liters: 24, previousLiters: 39, reason: 'distance' });
+
+    const fromOdometer = fuelUseCompare(
+      [
+        fill({ id: 'base', odometer: 1000, liters: 5, cost: 5, tankFull: true, date: '2026-01-01', distanceKm: 50 }),
+        fill({ id: 'feb', odometer: 1400, liters: 30, cost: 30, tankFull: true, date: '2026-02-05' }),
+        fill({ id: 'mar', odometer: 1700, liters: 20, cost: 20, tankFull: true, date: '2026-03-05' }),
+      ],
+      now,
+    );
+    expect(fromOdometer).toMatchObject({
+      km: 300,
+      previousKm: 400,
+      reason: 'both',
+      direction: 'down',
+    });
+
+    const noDistance = fuelUseCompare(
+      [
+        trip('a', '2026-02-05', 39, 510, 1000),
+        fill({ id: 'b', odometer: 1000, liters: 24, cost: 24, tankFull: true, date: '2026-03-05' }),
+      ],
+      now,
+    );
+    expect(noDistance).toMatchObject({ liters: 24, previousLiters: 39, reason: null, l100: null });
+
+    expect(fuelUseCompare([trip('b', '2026-03-05', 24, 320, 1830)], now)).toBeNull();
+
+    const monthEnd = new Date(2026, 2, 31);
+    const throughFebruary = fuelUseCompare(
+      [trip('feb', '2026-02-28', 15, 100, 1100), trip('mar', '2026-03-31', 15, 100, 1200)],
+      monthEnd,
+    );
+    expect(throughFebruary).toMatchObject({ liters: 15, previousLiters: 15, tone: 'same' });
+  });
+
   it('tankEconomyVsAvg compares latest to prior average', async () => {
     const { tankEconomyVsAvg } = await import('./economy');
     const fills = [

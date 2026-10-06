@@ -8,7 +8,20 @@ import { InstallPwa } from '../../pwa/install-pwa';
 import { routes } from '../../app.routes';
 
 describe('HomePage', () => {
+  let fuelUseFills: {
+    id: string;
+    date: string;
+    liters: number;
+    cost: number;
+    odometer: number;
+    distanceKm: number;
+    tankFull: boolean;
+    createdAt: string;
+    updatedAt: string;
+  }[] = [];
+
   beforeEach(async () => {
+    fuelUseFills = [];
     await TestBed.configureTestingModule({
       imports: [HomePage],
       providers: [
@@ -43,7 +56,7 @@ describe('HomePage', () => {
               installBannerDismissed: true,
               remindersEnabled: true,
             }),
-            fillUps: () => [],
+            fillUps: () => fuelUseFills,
             maintenance: () => [],
             breakdowns: () => [],
             otherExpenses: () => [],
@@ -91,6 +104,8 @@ describe('HomePage', () => {
     expect(page.monthOutlook().previous).toBe(0);
     expect(page.monthOutlook().projected).toBeNull();
     expect(page.monthVsLast()).toBeNull();
+    expect(page.fuelUse()).toBeNull();
+    expect(fixture.nativeElement.querySelector('.fuel-use')).toBeFalsy();
     expect(page.monthPace(10, 31)).toBe(32);
     expect(page.monthPace(0, 0)).toBe(0);
     expect(page.headerLine()).toBe('Car · 1000 common.km');
@@ -139,5 +154,35 @@ describe('HomePage', () => {
     expect(fixture.nativeElement.querySelector('.vehicle-status')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('app-weather-tip')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('.rec-section')).toBeFalsy();
+  });
+
+  it('explains a liter drop by the shorter distance', () => {
+    const now = new Date();
+    const day = Math.min(now.getDate(), 28);
+    const prev = new Date(now.getFullYear(), now.getMonth() - 1, day);
+    const curr = new Date(now.getFullYear(), now.getMonth(), day);
+    const stamp = (date: Date) => {
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const dom = String(date.getDate()).padStart(2, '0');
+      return `${date.getFullYear()}-${month}-${dom}`;
+    };
+    const row = (id: string, date: string, liters: number, distanceKm: number, odometer: number) => ({
+      id,
+      date,
+      liters,
+      cost: liters,
+      odometer,
+      distanceKm,
+      tankFull: true,
+      createdAt: `${date}T00:00:00.000Z`,
+      updatedAt: `${date}T00:00:00.000Z`,
+    });
+    fuelUseFills.push(row('f-prev', stamp(prev), 39, 510, 1510), row('f-now', stamp(curr), 24, 320, 1830));
+    const fixture = TestBed.createComponent(HomePage);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.fuel-use__why')?.textContent).toBe(
+      'home.useWhy.down.distance',
+    );
+    expect(fixture.nativeElement.querySelector('.fuel-use__facts')?.textContent).toBe('home.useFacts');
   });
 });

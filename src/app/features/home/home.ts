@@ -26,7 +26,12 @@ import {
 } from '../../domain/expense-ledger';
 import { fuelBoard, fuelDashboardMetrics, sparklineGeometry } from '../../domain/fuel-dashboard';
 import { dueItemLabel, isStoredMessageKey, partDefinitionLabel } from '../../domain/part-name';
-import { tankEconomyVsAvg, TANK_ECONOMY_FLAT_PCT } from '../../domain/economy';
+import {
+  fuelUseCompare,
+  tankEconomyVsAvg,
+  TANK_ECONOMY_FLAT_PCT,
+  type FuelUseReason,
+} from '../../domain/economy';
 import {
   costPerKmTrend,
   distanceByMonth,
@@ -387,6 +392,8 @@ export class HomePage {
       this.db.otherExpenses(),
     ),
   );
+  /** Liters so far vs the same days last month, with a reason when we can name one. */
+  readonly fuelUse = computed(() => fuelUseCompare(this.db.fillUps()));
   readonly healthSummary = computed(() => homeHealthSummary(this.db));
   readonly healthAttention = computed(() => this.healthSummary().attention);
   readonly healthTop = computed(() => this.healthSummary().top);
@@ -794,6 +801,47 @@ export class HomePage {
     return { pct, tone: pct > 0 ? 'up' : 'down' };
   }
 
+  fuelUseDeltaLabel(): string | null {
+    const use = this.fuelUse();
+    if (!use) {
+      return null;
+    }
+    if (use.tone === 'same') {
+      return this.i18n.t('home.useDelta.same');
+    }
+    const pct = this.i18n.formatNumber(Math.abs(use.pct), { maximumFractionDigits: 0 });
+    return use.tone === 'up'
+      ? this.i18n.t('home.useDelta.up', { pct })
+      : this.i18n.t('home.useDelta.down', { pct });
+  }
+
+  fuelUseWhy(): string | null {
+    const use = this.fuelUse();
+    if (!use?.reason || !use.direction) {
+      return null;
+    }
+    return this.i18n.t(fuelUseWhyKey(use.direction, use.reason));
+  }
+
+  fuelUseFacts(): string | null {
+    const use = this.fuelUse();
+    if (!use || use.km <= 0 || use.previousKm <= 0) {
+      return null;
+    }
+    const km = this.i18n.formatNumber(Math.round(use.km), { maximumFractionDigits: 0 });
+    const prevKm = this.i18n.formatNumber(Math.round(use.previousKm), { maximumFractionDigits: 0 });
+    if (use.l100 == null || use.previousL100 == null) {
+      return this.i18n.t('home.useFactsKm', { km, prevKm });
+    }
+    const digits = { minimumFractionDigits: 1, maximumFractionDigits: 1 };
+    return this.i18n.t('home.useFacts', {
+      km,
+      prevKm,
+      l100: this.i18n.formatNumber(use.l100, digits),
+      prevL100: this.i18n.formatNumber(use.previousL100, digits),
+    });
+  }
+
   monthVsLastLabel(): string | null {
     const vs = this.monthVsLast();
     if (!vs) {
@@ -956,6 +1004,46 @@ function seriesMin(points: readonly TrendPoint[]): number | null {
     return null;
   }
   return Math.min(...points.map((point) => point.value));
+}
+
+function fuelUseWhyKey(
+  direction: 'up' | 'down',
+  reason: FuelUseReason,
+): MsgKey {
+  if (direction === 'up') {
+    switch (reason) {
+      case 'distance':
+        return 'home.useWhy.up.distance';
+      case 'rate':
+        return 'home.useWhy.up.rate';
+      case 'both':
+        return 'home.useWhy.up.both';
+      case 'distanceDespiteRate':
+        return 'home.useWhy.up.distanceDespiteRate';
+      case 'rateDespiteDistance':
+        return 'home.useWhy.up.rateDespiteDistance';
+      default: {
+        const exhaustive: never = reason;
+        return exhaustive;
+      }
+    }
+  }
+  switch (reason) {
+    case 'distance':
+      return 'home.useWhy.down.distance';
+    case 'rate':
+      return 'home.useWhy.down.rate';
+    case 'both':
+      return 'home.useWhy.down.both';
+    case 'distanceDespiteRate':
+      return 'home.useWhy.down.distanceDespiteRate';
+    case 'rateDespiteDistance':
+      return 'home.useWhy.down.rateDespiteDistance';
+    default: {
+      const exhaustive: never = reason;
+      return exhaustive;
+    }
+  }
 }
 
 function monthDelta(values: readonly number[]): number | null {

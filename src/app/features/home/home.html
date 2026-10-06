@@ -284,6 +284,41 @@
               }
             </div>
           </section>
+          @if (fuelUse(); as use) {
+            <section class="month-outlook fuel-use" role="status" [attr.aria-label]="i18n.t('home.useTitle')">
+              <header class="month-outlook__head">
+                <h2 class="month-outlook__title">{{ i18n.t('home.useTitle') }}</h2>
+                <span class="month-outlook__pace">{{ i18n.t('home.useSameDays') }}</span>
+              </header>
+              <div class="month-outlook__strip">
+                <div class="month-outlook__cell">
+                  <span class="month-outlook__label">{{ i18n.t('home.monthSpend') }}</span>
+                  <strong>{{ i18n.formatNumber(use.liters, { maximumFractionDigits: 1 }) }}</strong>
+                  <span class="fuel-use__unit">{{ i18n.t('home.useUnit') }}</span>
+                </div>
+                <div class="month-outlook__cell">
+                  <span class="month-outlook__label">{{ i18n.t('home.lastMonthSpend') }}</span>
+                  <strong>{{ i18n.formatNumber(use.previousLiters, { maximumFractionDigits: 1 }) }}</strong>
+                  <span class="fuel-use__unit">{{ i18n.t('home.useUnit') }}</span>
+                </div>
+              </div>
+              @if (fuelUseDeltaLabel(); as delta) {
+                <div class="fuel-use__row">
+                  <span
+                    class="month-outlook__delta"
+                    [class.month-outlook__delta--up]="use.tone === 'up'"
+                    [class.month-outlook__delta--down]="use.tone === 'down'"
+                  >{{ delta }}</span>
+                </div>
+              }
+              @if (fuelUseWhy(); as why) {
+                <p class="fuel-use__why">{{ why }}</p>
+              }
+              @if (fuelUseFacts(); as facts) {
+                <p class="fuel-use__facts">{{ facts }}</p>
+              }
+            </section>
+          }
         }
       }
 

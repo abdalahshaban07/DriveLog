@@ -15,6 +15,28 @@ export const en = {
   'home.monthFuelDelta.up': '+{pct}%',
   'home.monthFuelDelta.down': '{pct}%',
   'home.monthFuelDelta.same': '~0%',
+  'home.useTitle': 'Fuel use',
+  'home.useUnit': 'L',
+  'home.useSameDays': 'Same days',
+  'home.useDelta.up': 'Up {pct}%',
+  'home.useDelta.down': 'Down {pct}%',
+  'home.useDelta.same': 'About the same',
+  'home.useFacts': '{km} km vs {prevKm} km. L/100: {l100} vs {prevL100}.',
+  'home.useFactsKm': '{km} km vs {prevKm} km.',
+  'home.useWhy.down.distance': 'Fuel use fell because you drove a shorter distance.',
+  'home.useWhy.up.distance': 'Fuel use rose because you drove farther.',
+  'home.useWhy.down.rate': 'Fuel use fell because each 100 km took less fuel.',
+  'home.useWhy.up.rate': 'Fuel use rose because each 100 km took more fuel.',
+  'home.useWhy.down.both': 'Fuel use fell because you drove less, and each 100 km took less fuel.',
+  'home.useWhy.up.both': 'Fuel use rose because you drove farther, and each 100 km took more fuel.',
+  'home.useWhy.down.distanceDespiteRate':
+    'Fuel use fell because you drove a shorter distance, even though each 100 km took more fuel.',
+  'home.useWhy.up.distanceDespiteRate':
+    'Fuel use rose because you drove farther, even though each 100 km took less fuel.',
+  'home.useWhy.down.rateDespiteDistance':
+    'Fuel use fell because each 100 km took less fuel, even though you drove farther.',
+  'home.useWhy.up.rateDespiteDistance':
+    'Fuel use rose because each 100 km took more fuel, even though you drove a shorter distance.',
   'home.logFirst': 'Log your first fill-up',
   'home.lastFill': 'Last fill',
   'home.glanceStrip': 'At a glance',

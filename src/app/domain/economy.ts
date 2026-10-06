@@ -298,6 +298,161 @@ export function fuelBillWhy(
   return { direction: delta > 0 ? 'up' : 'down', reason: same[0]!.reason };
 }
 
+export type FuelUseReason =
+  | 'distance'
+  | 'rate'
+  | 'both'
+  | 'distanceDespiteRate'
+  | 'rateDespiteDistance';
+
+export type FuelUseCompare = {
+  liters: number;
+  previousLiters: number;
+  km: number;
+  previousKm: number;
+  l100: number | null;
+  previousL100: number | null;
+  pct: number;
+  tone: 'up' | 'down' | 'same';
+  direction: 'up' | 'down' | null;
+  reason: FuelUseReason | null;
+};
+
+function dateOnly(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+/** Day 1 through today, and the same day count in the previous month. */
+function sameDayWindows(now: Date): {
+  currentStart: string;
+  currentEnd: string;
+  previousStart: string;
+  previousEnd: string;
+} {
+  const day = now.getDate();
+  const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevDays = new Date(prev.getFullYear(), prev.getMonth() + 1, 0).getDate();
+  const prevDay = Math.min(day, prevDays);
+  return {
+    currentStart: dateOnly(new Date(now.getFullYear(), now.getMonth(), 1)),
+    currentEnd: dateOnly(now),
+    previousStart: dateOnly(prev),
+    previousEnd: dateOnly(new Date(prev.getFullYear(), prev.getMonth(), prevDay)),
+  };
+}
+
+function tripKm(end: FillUp, prev: FillUp | undefined): number {
+  const stored = end.distanceKm;
+  if (stored != null && Number.isFinite(stored) && stored > 0) {
+    return stored;
+  }
+  if (prev && end.odometer > prev.odometer) {
+    return end.odometer - prev.odometer;
+  }
+  return 0;
+}
+
+function windowFuelUse(
+  fills: readonly FillUp[],
+  start: string,
+  end: string,
+): { liters: number; km: number; complete: boolean } {
+  const sorted = [...fills].sort(byOdometer);
+  let liters = 0;
+  let km = 0;
+  let complete = true;
+  let any = false;
+  for (let i = 0; i < sorted.length; i++) {
+    const fill = sorted[i]!;
+    if (fill.date < start || fill.date > end) {
+      continue;
+    }
+    any = true;
+    liters += fill.liters;
+    const distance = tripKm(fill, i > 0 ? sorted[i - 1] : undefined);
+    if (distance > 0) {
+      km += distance;
+    } else if (fill.liters > 0) {
+      complete = false;
+    }
+  }
+  if (!any) {
+    complete = false;
+  }
+  return { liters, km, complete };
+}
+
+function l100(liters: number, km: number, complete: boolean): number | null {
+  if (!complete || km <= 0) {
+    return null;
+  }
+  return Math.round((liters / km) * 1000) / 10;
+}
+
+function relMoved(before: number, after: number): boolean {
+  if (!(before > 0)) {
+    return false;
+  }
+  return Math.abs(after - before) / before >= TANK_ECONOMY_FLAT_PCT / 100;
+}
+
+/**
+ * Liters so far this month vs the same number of days last month.
+ * The sentence names distance, L/100, or both. Hidden when either stretch has no fuel.
+ */
+export function fuelUseCompare(
+  fillUps: readonly FillUp[],
+  now: Date = new Date(),
+): FuelUseCompare | null {
+  const windows = sameDayWindows(now);
+  const current = windowFuelUse(fillUps, windows.currentStart, windows.currentEnd);
+  const previous = windowFuelUse(fillUps, windows.previousStart, windows.previousEnd);
+  if (current.liters <= 0 || previous.liters <= 0) {
+    return null;
+  }
+  const pct = Math.round(((current.liters - previous.liters) / previous.liters) * 100);
+  const tone: FuelUseCompare['tone'] =
+    Math.abs(pct) < TANK_ECONOMY_FLAT_PCT ? 'same' : pct > 0 ? 'up' : 'down';
+  const canSplit = current.complete && previous.complete && current.km > 0 && previous.km > 0;
+  let reason: FuelUseReason | null = null;
+  if (tone !== 'same' && canSplit) {
+    const kmMoved = relMoved(previous.km, current.km);
+    const rateThen = (previous.liters / previous.km) * 100;
+    const rateNow = (current.liters / current.km) * 100;
+    const rateMoved = relMoved(rateThen, rateNow);
+    if (kmMoved && rateMoved) {
+      const kmSign = Math.sign(current.km - previous.km);
+      const rateSign = Math.sign(rateNow - rateThen);
+      const literSign = Math.sign(pct);
+      if (kmSign === rateSign) {
+        reason = 'both';
+      } else if (kmSign === literSign) {
+        reason = 'distanceDespiteRate';
+      } else {
+        reason = 'rateDespiteDistance';
+      }
+    } else if (kmMoved) {
+      reason = 'distance';
+    } else if (rateMoved) {
+      reason = 'rate';
+    }
+  }
+  return {
+    liters: current.liters,
+    previousLiters: previous.liters,
+    km: current.km,
+    previousKm: previous.km,
+    l100: l100(current.liters, current.km, current.complete),
+    previousL100: l100(previous.liters, previous.km, previous.complete),
+    pct,
+    tone,
+    direction: tone === 'same' ? null : tone,
+    reason,
+  };
+}
+
 export type FuelCostGlance = {
   costPerKm: number | null;
   currentMonth: number;

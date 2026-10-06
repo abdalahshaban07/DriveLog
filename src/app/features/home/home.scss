@@ -1135,6 +1135,32 @@
   background: color-mix(in srgb, var(--ok) 14%, var(--fill-well));
 }
 
+.fuel-use__unit {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.fuel-use__row {
+  margin-block-start: var(--space-3);
+}
+
+.fuel-use__why {
+  margin: var(--space-3) 0 0;
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--hairline);
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.fuel-use__facts {
+  margin: var(--space-2) 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
 .vehicle-status {
   margin-block-end: var(--space-5);
 }
