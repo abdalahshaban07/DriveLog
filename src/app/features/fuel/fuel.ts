@@ -1,11 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { fetchChatReply, isAssistantOnline, usableCoachText } from '../../data/assistant';
 import { Db } from '../../data/db';
 import { fuelBillWhy, TANK_ECONOMY_FLAT_PCT, type FuelBillReason } from '../../domain/economy';
-import { todayDateOnly } from '../../domain/dues';
 import { fuelBoard, sparklineGeometry } from '../../domain/fuel-dashboard';
-import { contextualFuelTipKey, nextFuelTipKey } from '../../domain/fuel-tips';
+import { contextualFuelTipKey } from '../../domain/fuel-tips';
 import type { FuelGrade } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
@@ -15,6 +13,14 @@ import { FUEL_TABS, SectionTabs } from '../../ui/section-tabs/section-tabs';
 type GradeFilter = FuelGrade | 'all';
 type SpendTone = 'none' | 'flat' | 'up' | 'down';
 type EconomyTone = 'none' | 'flat' | 'better' | 'worse';
+
+const GRADE_ORDER: readonly FuelGrade[] = [
+  'gasoline92',
+  'gasoline95',
+  'solar',
+  'diesel',
+  'custom',
+];
 
 @Component({
   selector: 'app-fuel',
@@ -29,44 +35,40 @@ export class FuelPage {
   readonly tabs = FUEL_TABS;
 
   readonly grade = signal<GradeFilter>('all');
-  readonly tip = signal('');
-  readonly tipKey = signal<MsgKey | null>(null);
-  readonly tipBusy = signal(false);
-  readonly tipSource = signal<'local' | 'ai'>('local');
-  readonly tipFlash = signal(false);
-  /** Online switch is on, but this load got no usable coach reply. */
-  readonly tipRemoteMiss = signal(false);
 
-  readonly online = computed(() => isAssistantOnline(this.db));
-
-  readonly tipHintKey = computed<MsgKey>(() => {
-    if (this.tipSource() === 'ai') {
-      return 'fuel.tip.sourceRemote';
+  readonly gradeOptions = computed(() => {
+    const present = new Set<FuelGrade>();
+    for (const fill of this.db.fillUps()) {
+      if (fill.fuelGrade) {
+        present.add(fill.fuelGrade);
+      }
     }
-    if (!this.online()) {
-      return 'fuel.tip.sourceOffline';
+    const grades = GRADE_ORDER.filter((id) => present.has(id));
+    if (grades.length < 2) {
+      return [];
     }
-    if (this.tipRemoteMiss()) {
-      return 'fuel.tip.sourceUnreachable';
-    }
-    return 'fuel.tip.source';
+    return [
+      { id: 'all' as const, labelKey: 'fuel.gradeAll' as const },
+      ...grades.map((id) => ({ id, labelKey: gradeLabelKey(id) })),
+    ];
   });
 
-  readonly gradeChoices: { id: GradeFilter; labelKey: MsgKey }[] = [
-    { id: 'all', labelKey: 'fuel.gradeAll' },
-    { id: 'gasoline92', labelKey: 'fillUp.grade.gasoline92' },
-    { id: 'gasoline95', labelKey: 'fillUp.grade.gasoline95' },
-    { id: 'solar', labelKey: 'fillUp.grade.solar' },
-  ];
+  readonly activeGrade = computed((): GradeFilter => {
+    const selected = this.grade();
+    if (this.gradeOptions().some((option) => option.id === selected)) {
+      return selected;
+    }
+    return 'all';
+  });
 
-  readonly board = computed(() => fuelBoard(this.db.fillUps(), this.grade()));
+  readonly board = computed(() => fuelBoard(this.db.fillUps(), this.activeGrade()));
 
   readonly spark = computed(() => sparklineGeometry(this.board().series));
 
   readonly filtered = computed(() => {
-    const grade = this.grade();
+    const grade = this.activeGrade();
     const fills = this.db.fillUps();
-    const list = grade === 'all' ? fills : fills.filter((f) => f.fuelGrade === grade);
+    const list = grade === 'all' ? fills : fills.filter((fill) => fill.fuelGrade === grade);
     return [...list].sort(
       (a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt),
     );
@@ -84,36 +86,34 @@ export class FuelPage {
 
   readonly lastFill = computed(() => this.filtered()[0] ?? null);
 
-  readonly recent = computed(() => this.filtered().slice(0, 4));
+  readonly older = computed(() => this.filtered().slice(1, 5));
+
+  /** A tip that only restates the economy line stays off the page. */
+  readonly tipKey = computed((): MsgKey | null => {
+    const key = contextualFuelTipKey(this.db);
+    if (key === 'fuel.tip.betterThanUsual' || key === 'fuel.tip.worseThanUsual') {
+      return null;
+    }
+    return key;
+  });
 
   onGrade(value: GradeFilter): void {
     this.grade.set(value);
   }
 
   gradeLabel(grade: FuelGrade): string {
-    const keys: Record<FuelGrade, MsgKey> = {
-      gasoline92: 'fillUp.grade.gasoline92',
-      gasoline95: 'fillUp.grade.gasoline95',
-      diesel: 'fillUp.grade.diesel',
-      solar: 'fillUp.grade.solar',
-      custom: 'fillUp.grade.custom',
-    };
-    return this.i18n.t(keys[grade]);
-  }
-
-  constructor() {
-    void this.loadTip(false);
+    return this.i18n.t(gradeLabelKey(grade));
   }
 
   formatMoney(value: number): string {
     return this.i18n.formatMoney(value, this.db.settings().currency, 2);
   }
 
-  formatMetric(value: number | null, unitKey: MsgKey): string {
+  formatL100(value: number | null): string {
     if (value == null || !Number.isFinite(value)) {
       return '—.—';
     }
-    return this.i18n.formatUnit(value, unitKey, 1);
+    return this.i18n.formatNumber(value, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   }
 
   rowL100(id: string): number | null {
@@ -173,55 +173,23 @@ export class FuelPage {
       ? this.i18n.t('fuel.vsUsualWorse', { pct: abs })
       : this.i18n.t('fuel.vsUsualBetter', { pct: abs });
   }
+}
 
-  async loadTip(force = true): Promise<void> {
-    this.tipBusy.set(true);
-    const prevKey = this.tipKey();
-    const today = todayDateOnly();
-    const settings = this.db.settings();
-
-    try {
-      const cached =
-        !force && this.online() && settings.fuelTipText && settings.fuelTipDay === today
-          ? usableCoachText(settings.fuelTipText, this.i18n.language())
-          : null;
-      if (cached) {
-        this.tip.set(cached);
-        this.tipSource.set('ai');
-        this.tipKey.set(null);
-        this.tipRemoteMiss.set(false);
-        return;
-      }
-
-      const nextKey = prevKey ? nextFuelTipKey(prevKey, this.db) : contextualFuelTipKey(this.db);
-      let text = this.i18n.t(nextKey);
-      let source: 'local' | 'ai' = 'local';
-
-      if (this.online()) {
-        const question = this.i18n.t('fuel.tip.prompt');
-        const reply = await fetchChatReply(this.db, question, this.i18n.language(), (key, params) =>
-          this.i18n.t(key as MsgKey, params),
-        );
-        if (reply.source === 'remote' && reply.text.trim()) {
-          text = reply.text.trim();
-          source = 'ai';
-          await this.db.updateSettings({
-            fuelTipText: text,
-            fuelTipDay: today,
-          });
-        }
-      }
-
-      this.tipKey.set(source === 'local' ? nextKey : null);
-      this.tip.set(text);
-      this.tipSource.set(source);
-      this.tipRemoteMiss.set(this.online() && source !== 'ai');
-      if (prevKey && source === 'local' && nextKey !== prevKey) {
-        this.tipFlash.set(true);
-        window.setTimeout(() => this.tipFlash.set(false), 600);
-      }
-    } finally {
-      this.tipBusy.set(false);
+function gradeLabelKey(grade: FuelGrade): MsgKey {
+  switch (grade) {
+    case 'gasoline92':
+      return 'fillUp.grade.gasoline92';
+    case 'gasoline95':
+      return 'fillUp.grade.gasoline95';
+    case 'diesel':
+      return 'fillUp.grade.diesel';
+    case 'solar':
+      return 'fillUp.grade.solar';
+    case 'custom':
+      return 'fillUp.grade.custom';
+    default: {
+      const exhaustive: never = grade;
+      return exhaustive;
     }
   }
 }

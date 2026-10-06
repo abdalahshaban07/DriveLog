@@ -216,6 +216,7 @@ describe('fuel-dashboard', () => {
     const board = fuelBoard(fills, 'all', now);
     expect(board.monthSpend).toBe(900);
     expect(board.monthLiters).toBe(40);
+    expect(board.monthKm).toBe(500);
     expect(board.monthCount).toBe(1);
     expect(board.previousSpend).toBe(800);
     expect(board.deltaPct).toBeCloseTo(12.5, 5);

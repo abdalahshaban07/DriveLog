@@ -1,6 +1,6 @@
 .fuel {
   gap: var(--space-4);
-  padding-block-end: calc(var(--nav-height) + var(--space-4));
+  padding-block-end: calc(var(--tap) + var(--space-6));
 }
 
 .kicker {
@@ -14,7 +14,8 @@
 
 .grades {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   gap: 4px;
   padding: 4px;
   border-radius: var(--radius);
@@ -137,7 +138,7 @@
 .ledger__stats,
 .slip__meta {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
   margin-block-start: var(--space-3);
   padding-block-start: var(--space-3);
@@ -313,14 +314,19 @@ a.slip {
   letter-spacing: -0.03em;
 }
 
-.compare__sub {
+.compare__unit,
+.recent__unit {
+  display: block;
   margin-block-start: 2px;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  unicode-bidi: isolate;
 }
 
 .recent__list {
-  margin-block-start: var(--space-2);
+  margin-block-start: var(--space-3);
+  border-block-start: 1px solid var(--hairline);
 }
 
 .recent__row {
@@ -411,8 +417,21 @@ a.slip {
   cursor: pointer;
 }
 
+.fuel-dock {
+  position: fixed;
+  z-index: 90;
+  inset-inline: max(var(--space-4), calc((100% - var(--shell)) / 2 + var(--space-4)));
+  bottom: calc(var(--nav-height) + var(--space-1));
+  pointer-events: none;
+}
+
 .fuel-log {
+  pointer-events: auto;
   border-radius: 999px;
+}
+
+:host-context([data-look='receipt']) .fuel-dock {
+  bottom: calc(max(var(--space-3), env(safe-area-inset-bottom, 0px)) + var(--tap) + var(--space-4));
 }
 
 @media (hover: hover) and (pointer: fine) {

@@ -55,6 +55,7 @@ export interface FuelBoard {
   /** Positive = spent more than last month. Null when both months are empty. */
   deltaPct: number | null;
   monthLiters: number;
+  monthKm: number;
   monthCount: number;
   costPerKm: number | null;
   lastL100: number | null;
@@ -119,6 +120,7 @@ export function fuelBoard(
   const m = String(now.getMonth() + 1).padStart(2, '0');
   const prefix = `${y}-${m}`;
   let monthLiters = 0;
+  let monthKm = 0;
   let monthCount = 0;
   for (const f of filtered) {
     if (!f.date.startsWith(prefix)) {
@@ -126,12 +128,17 @@ export function fuelBoard(
     }
     monthLiters += f.liters;
     monthCount += 1;
+    const distance = f.distanceKm;
+    if (distance != null && Number.isFinite(distance) && distance > 0) {
+      monthKm += distance;
+    }
   }
   return {
     monthSpend: metrics.monthSpend,
     previousSpend: compare?.previous ?? 0,
     deltaPct: compare?.deltaPct ?? null,
     monthLiters,
+    monthKm,
     monthCount,
     costPerKm: metrics.costPerKm,
     lastL100: last,

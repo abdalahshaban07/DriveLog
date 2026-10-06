@@ -739,6 +739,7 @@ export const ar: Record<MsgKey, string> = {
   'fuel.billWhy.down.consumption': 'لترات أقل لكل ١٠٠ كم من الشهر اللي فات',
   'fuel.billWhy.down.liters': 'لترات أقل من الشهر اللي فات',
   'fuel.monthLiters': 'لترات الشهر',
+  'fuel.monthDistance': 'المسافة',
   'fuel.monthFills': 'تعبئات',
   'fuel.economy': 'الاستهلاك',
   'fuel.trend': 'استهلاك آخر المقاطع',
