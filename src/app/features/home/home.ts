@@ -43,7 +43,7 @@ import {
   unitPriceTrend,
   type TrendPoint,
 } from '../../domain/insights';
-import type { Car, DueSource, DueStatus, ExpenseCategory, HealthStatus } from '../../domain/models';
+import type { Car, DueItem, DueSource, DueStatus, ExpenseCategory, HealthStatus } from '../../domain/models';
 import { buildMonthOutlook } from '../../domain/recommendations';
 import { SAMPLE_CAR_ID } from '../../domain/sample-data';
 import {
@@ -394,6 +394,26 @@ export class HomePage {
   );
   /** Liters so far vs the same days last month, with a reason when we can name one. */
   readonly fuelUse = computed(() => fuelUseCompare(this.db.fillUps()));
+  /** Next maintenance that is not yet soon or overdue. Urgent items live in attention. */
+  readonly comingDue = computed(() => {
+    const car = this.db.car();
+    if (!car) {
+      return null;
+    }
+    const docs = this.db.vehicleDocuments();
+    const items = buildDueItems(
+      this.db.settings(),
+      this.db.maintenance(),
+      car.currentOdometer,
+      todayDateOnly(),
+      {
+        ...car,
+        licenseExpiry: vaultExpiryForKind(docs, 'license') ?? car.licenseExpiry,
+        registrationExpiry: vaultExpiryForKind(docs, 'registration') ?? car.registrationExpiry,
+      },
+    ).filter((item) => item.source === 'maintenance' && item.status === 'future');
+    return nextDueItem(items);
+  });
   readonly healthSummary = computed(() => homeHealthSummary(this.db));
   readonly healthAttention = computed(() => this.healthSummary().attention);
   readonly healthTop = computed(() => this.healthSummary().top);
@@ -534,6 +554,10 @@ export class HomePage {
     if (!due) {
       return null;
     }
+    return this.countdownFor(due);
+  }
+
+  private countdownFor(due: DueItem): string | null {
     if (due.dueDate) {
       const days = daysUntil(due.dueDate, todayDateOnly());
       if (days === 0) {
@@ -801,18 +825,19 @@ export class HomePage {
     return { pct, tone: pct > 0 ? 'up' : 'down' };
   }
 
-  fuelUseDeltaLabel(): string | null {
-    const use = this.fuelUse();
-    if (!use) {
+  comingLine(): string | null {
+    const due = this.comingDue();
+    if (!due) {
       return null;
     }
-    if (use.tone === 'same') {
-      return this.i18n.t('home.useDelta.same');
+    const name = dueItemLabel(due, this.db.maintenance(), this.db.catalog(), (key) =>
+      this.i18n.t(key as MsgKey),
+    );
+    const detail = this.countdownFor(due);
+    if (!detail) {
+      return name;
     }
-    const pct = this.i18n.formatNumber(Math.abs(use.pct), { maximumFractionDigits: 0 });
-    return use.tone === 'up'
-      ? this.i18n.t('home.useDelta.up', { pct })
-      : this.i18n.t('home.useDelta.down', { pct });
+    return this.i18n.t('home.comingLine', { name, detail });
   }
 
   fuelUseWhy(): string | null {
@@ -821,14 +846,6 @@ export class HomePage {
       return null;
     }
     return this.i18n.t(fuelUseWhyKey(use.direction, use.reason));
-  }
-
-  fuelUseKm(value: number): string {
-    return this.i18n.formatNumber(Math.round(value), { maximumFractionDigits: 0 });
-  }
-
-  fuelUseRate(value: number): string {
-    return this.i18n.formatNumber(value, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   }
 
   monthVsLastLabel(): string | null {

@@ -179,6 +179,8 @@
           </a>
         </section>
 
+        <app-weather-tip [weather]="weather()" [busy]="weatherBusy()" />
+
         @if (!hasRealFills() && !sampleMode()) {
           <a routerLink="/fill-up" class="ghost-cta">{{ i18n.t('home.ghost.cta') }}</a>
         }
@@ -213,26 +215,12 @@
           </section>
         }
 
-        <section class="vehicle-status" [attr.aria-label]="i18n.t('home.vehicleStatus')">
-          <header class="vehicle-status__head">
-            <h2>{{ i18n.t('home.vehicleStatus') }}</h2>
-            <a routerLink="/health">{{ i18n.t('health.viewAll') }}</a>
-          </header>
-          <p class="vehicle-status__count">
-            {{ i18n.t('health.attentionCount', { count: healthAttention() }) }}
-          </p>
-          @if (healthTop().length) {
-            <ul class="vehicle-status__list">
-              @for (item of healthTop(); track item.partDefinitionId) {
-                <li>
-                  <app-health-row [item]="item" />
-                </li>
-              }
-            </ul>
-          }
-        </section>
-
-        <app-weather-tip [weather]="weather()" [busy]="weatherBusy()" />
+        @if (comingDue()) {
+          <a class="coming" routerLink="/maintenance">
+            <span class="coming__label">{{ i18n.t('home.nextDue') }}</span>
+            <span class="coming__value">{{ comingLine() }}</span>
+          </a>
+        }
 
         @if (hasRealFills() || sampleMode()) {
           @let outlook = monthOutlook();
@@ -283,59 +271,31 @@
                 >{{ i18n.t('home.projectedSpend') }} {{ delta }}</span>
               }
             </div>
+            @if (fuelUseWhy(); as why) {
+              <p class="fuel-use__why">{{ why }}</p>
+            }
           </section>
-          @if (fuelUse(); as use) {
-            <section class="month-outlook fuel-use" role="status" [attr.aria-label]="i18n.t('home.useTitle')">
-              <header class="month-outlook__head">
-                <h2 class="month-outlook__title">{{ i18n.t('home.useTitle') }}</h2>
-                <span class="month-outlook__pace">{{ i18n.t('home.useSameDays') }}</span>
-              </header>
-              <div class="month-outlook__strip">
-                <div class="month-outlook__cell">
-                  <span class="month-outlook__label">{{ i18n.t('home.monthSpend') }}</span>
-                  <strong>{{ i18n.formatNumber(use.liters, { maximumFractionDigits: 1 }) }}</strong>
-                  <span class="fuel-use__unit">{{ i18n.t('home.useUnit') }}</span>
-                </div>
-                <div class="month-outlook__cell">
-                  <span class="month-outlook__label">{{ i18n.t('home.lastMonthSpend') }}</span>
-                  <strong>{{ i18n.formatNumber(use.previousLiters, { maximumFractionDigits: 1 }) }}</strong>
-                  <span class="fuel-use__unit">{{ i18n.t('home.useUnit') }}</span>
-                </div>
-              </div>
-              @if (fuelUseDeltaLabel(); as delta) {
-                <div class="fuel-use__row">
-                  <span
-                    class="month-outlook__delta"
-                    [class.month-outlook__delta--up]="use.tone === 'up'"
-                    [class.month-outlook__delta--down]="use.tone === 'down'"
-                  >{{ delta }}</span>
-                </div>
-              }
-              @if (fuelUseWhy(); as why) {
-                <p class="fuel-use__why">{{ why }}</p>
-              }
-              @if (use.km > 0 && use.previousKm > 0) {
-                <p class="fuel-use__facts">
-                  <span class="fuel-use__fact">
-                    {{ i18n.t('home.useDistance') }}
-                    <bdi>{{ fuelUseKm(use.km) }}</bdi>
-                    {{ i18n.t('common.km') }}
-                    {{ i18n.t('home.useVersus') }}
-                    <bdi>{{ fuelUseKm(use.previousKm) }}</bdi>
-                    {{ i18n.t('common.km') }}
-                  </span>
-                  @if (use.l100 != null && use.previousL100 != null) {
-                    <span class="fuel-use__fact">
-                      {{ i18n.t('home.usePer') }}
-                      <bdi>{{ fuelUseRate(use.l100) }}</bdi>
-                      {{ i18n.t('home.useVersus') }}
-                      <bdi>{{ fuelUseRate(use.previousL100) }}</bdi>
-                    </span>
-                  }
-                </p>
-              }
-            </section>
-          }
+        }
+
+        @if (healthAttention() > 0) {
+          <section class="vehicle-status" [attr.aria-label]="i18n.t('home.vehicleStatus')">
+            <header class="vehicle-status__head">
+              <h2>{{ i18n.t('home.vehicleStatus') }}</h2>
+              <a routerLink="/health">{{ i18n.t('health.viewAll') }}</a>
+            </header>
+            <p class="vehicle-status__count">
+              {{ i18n.t('health.attentionCount', { count: healthAttention() }) }}
+            </p>
+            @if (healthTop().length) {
+              <ul class="vehicle-status__list">
+                @for (item of healthTop(); track item.partDefinitionId) {
+                  <li>
+                    <app-health-row [item]="item" />
+                  </li>
+                }
+              </ul>
+            }
+          </section>
         }
       }
 

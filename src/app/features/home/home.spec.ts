@@ -8,6 +8,7 @@ import { InstallPwa } from '../../pwa/install-pwa';
 import { routes } from '../../app.routes';
 
 describe('HomePage', () => {
+  let maintenanceRows: { id: string; type: string; dueKm: number; date: string; odometer: number }[] = [];
   let fuelUseFills: {
     id: string;
     date: string;
@@ -22,6 +23,7 @@ describe('HomePage', () => {
 
   beforeEach(async () => {
     fuelUseFills = [];
+    maintenanceRows = [];
     await TestBed.configureTestingModule({
       imports: [HomePage],
       providers: [
@@ -57,7 +59,7 @@ describe('HomePage', () => {
               remindersEnabled: true,
             }),
             fillUps: () => fuelUseFills,
-            maintenance: () => [],
+            maintenance: () => maintenanceRows,
             breakdowns: () => [],
             otherExpenses: () => [],
             expensePeriods: () => [],
@@ -151,7 +153,8 @@ describe('HomePage', () => {
     const fixture = TestBed.createComponent(HomePage);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.needs')).toBeFalsy();
-    expect(fixture.nativeElement.querySelector('.vehicle-status')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.vehicle-status')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('.coming')).toBeFalsy();
     expect(fixture.nativeElement.querySelector('app-weather-tip')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('.rec-section')).toBeFalsy();
   });
@@ -180,11 +183,24 @@ describe('HomePage', () => {
     fuelUseFills.push(row('f-prev', stamp(prev), 39, 510, 1510), row('f-now', stamp(curr), 24, 320, 1830));
     const fixture = TestBed.createComponent(HomePage);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.fuel-use__why')?.textContent).toBe(
+    expect(fixture.nativeElement.querySelector('.fuel-use')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('.month-outlook .fuel-use__why')?.textContent).toBe(
       'home.useWhy.down.distance',
     );
-    const facts = fixture.nativeElement.querySelector('.fuel-use__facts')?.textContent ?? '';
-    expect(facts).toContain('home.useDistance');
-    expect(facts).toContain('home.usePer');
+    const order = [...fixture.nativeElement.querySelectorAll(
+      '.pulse, app-weather-tip, app-quick-log, .needs, .coming, .month-outlook, .vehicle-status',
+    )].map((node: Element) => node.tagName === 'APP-WEATHER-TIP' || node.tagName === 'APP-QUICK-LOG'
+      ? node.tagName.toLowerCase()
+      : [...node.classList].find((name) => name !== 'list-reveal') ?? node.tagName);
+    expect(order).toEqual(['pulse', 'app-weather-tip', 'app-quick-log', 'month-outlook']);
+  });
+
+  it('shows the next maintenance as a quiet line until it is urgent', () => {
+    maintenanceRows.push({ id: 'm1', type: 'oil', dueKm: 5000, date: '2026-01-01', odometer: 1000 });
+    const fixture = TestBed.createComponent(HomePage);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.needs')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('.coming')?.textContent).toContain('home.nextDue');
+    expect(fixture.nativeElement.querySelector('.coming__value')?.textContent).toBe('home.comingLine');
   });
 });
