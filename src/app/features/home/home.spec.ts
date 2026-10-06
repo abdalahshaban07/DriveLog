@@ -82,16 +82,23 @@ describe('HomePage', () => {
     }).compileComponents();
   });
 
-  it('builds recommendations and month outlook', () => {
+  it('builds month outlook and stays quiet when nothing is due', () => {
     const fixture = TestBed.createComponent(HomePage);
     fixture.detectChanges();
     const page = fixture.componentInstance;
-    expect(page.recommendations().length).toBeGreaterThan(0);
+    expect(page.attention()).toEqual([]);
     expect(page.monthOutlook().actual).toBe(0);
     expect(page.monthOutlook().projected).toBeNull();
     expect(page.monthPace(10, 31)).toBe(32);
     expect(page.monthPace(0, 0)).toBe(0);
     expect(page.headerLine()).toBe('Car · 1000 common.km');
+    expect(page.paperLines(page.db.car()!).map((paper) => paper.tone)).toEqual(['plain', 'plain']);
+    const flagged = page.paperLines({
+      ...page.db.car()!,
+      licenseExpiry: '2000-01-01',
+      registrationExpiry: '2099-01-01',
+    });
+    expect(flagged.map((paper) => paper.tone)).toEqual(['overdue', 'plain']);
   });
 
   it('renders dashboard list-reveal panel', () => {
@@ -101,15 +108,15 @@ describe('HomePage', () => {
     expect(panel).toBeTruthy();
   });
 
-  it('renders the pulse glance and a flat month compare', () => {
+  it('renders the pulse as economy only', () => {
     const fixture = TestBed.createComponent(HomePage);
     fixture.detectChanges();
     const page = fixture.componentInstance;
     expect(fixture.nativeElement.querySelector('.pulse')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('.pulse__hero')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('.glance-strip')).toBeFalsy();
-    expect(page.spendShare('current')).toBe(0);
-    expect(page.spendShare('previous')).toBe(0);
+    expect(fixture.nativeElement.querySelector('.pulse__facts')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('.pulse__spend')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('.period-card')).toBeFalsy();
     expect(page.dueRoute()).toBe('/maintenance');
     expect(page.dueTone()).toBe('none');
     expect(page.economyCaption()).toBeNull();
@@ -123,12 +130,11 @@ describe('HomePage', () => {
     expect(fixture.nativeElement.querySelector('.empty-state')).toBeTruthy();
   });
 
-  it('shows vehicle status block with health link', () => {
+  it('hides the needs list when nothing is urgent', () => {
     const fixture = TestBed.createComponent(HomePage);
     fixture.detectChanges();
-    const status = fixture.nativeElement.querySelector('.vehicle-status');
-    expect(status).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('a[href="/health"]')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('.advisor-card')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('.needs')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('.vehicle-status')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('.rec-section')).toBeFalsy();
   });
 });

@@ -49,6 +49,18 @@
                 @if (car.plate?.trim()) {
                   <span class="plate__tag">{{ car.plate }}</span>
                 }
+                <span class="plate__papers">
+                  @for (paper of paperLines(car); track paper.id) {
+                    <span
+                      class="plate__paper"
+                      [class.plate__paper--soon]="paper.tone === 'soon'"
+                      [class.plate__paper--overdue]="paper.tone === 'overdue'"
+                    >
+                      <span>{{ paper.name }}</span>
+                      <span>{{ paper.value }}</span>
+                    </span>
+                  }
+                </span>
               </span>
               <span class="plate__odo">
                 <strong>{{ i18n.formatNumber(car.currentOdometer, { maximumFractionDigits: 0 }) }}</strong>
@@ -165,130 +177,7 @@
               </div>
             }
           </a>
-
-          <div class="pulse__facts">
-            <a class="pulse__fact" [routerLink]="dueRoute()">
-              <span class="pulse__kicker">{{ i18n.t('home.nextDue') }}</span>
-              <strong [class.metric--ghost]="!nextDue()">{{ dueLabel() }}</strong>
-              @if (nextDue()?.dueDate; as due) {
-                <span class="pulse__meta">{{ i18n.formatDate(due) }}</span>
-              }
-              @if (dueCountdown(); as left) {
-                <span
-                  class="pulse__wait"
-                  [class.pulse__wait--overdue]="dueTone() === 'overdue'"
-                >{{ left }}</span>
-              }
-            </a>
-            @if (lastFill(); as fill) {
-              <a
-                class="pulse__fact"
-                [routerLink]="['/fill-up']"
-                [queryParams]="{ id: fill.id }"
-              >
-                <span class="pulse__kicker">{{ i18n.t('home.lastFill') }}</span>
-                <strong>{{ i18n.formatDate(fill.date) }}</strong>
-                <span class="pulse__mini">
-                  <span>
-                    <b>{{ i18n.formatNumber(fill.liters, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }}</b>
-                    <span>{{ i18n.t('common.liters') }}</span>
-                  </span>
-                  <span>
-                    <b>{{ i18n.formatNumber(fill.cost, { maximumFractionDigits: 0 }) }}</b>
-                    <span>{{ currencyUnit() }}</span>
-                  </span>
-                  <span>
-                    <b>{{ i18n.formatNumber(fill.odometer, { maximumFractionDigits: 0 }) }}</b>
-                    <span>{{ i18n.t('common.km') }}</span>
-                  </span>
-                </span>
-              </a>
-            } @else {
-              <a class="pulse__fact" routerLink="/fill-up">
-                <span class="pulse__kicker">{{ i18n.t('home.lastFill') }}</span>
-                <strong class="metric--ghost">—.—</strong>
-              </a>
-            }
-          </div>
-
-          <div class="pulse__spend" [attr.aria-label]="i18n.t('home.costGlance')">
-            <div class="pulse__cell">
-              <span class="pulse__kicker">{{ i18n.t('home.costPerKm') }}</span>
-              <strong [class.metric--ghost]="fuelCostGlance().costPerKm == null">
-                @if (fuelCostGlance().costPerKm != null) {
-                  {{ formatCostPerKm(fuelCostGlance().costPerKm!) }}
-                } @else {
-                  —.—
-                }
-              </strong>
-            </div>
-            @if (fuelCostGlance().currentMonth > 0 || fuelCostGlance().previousMonth > 0) {
-              <div class="pulse__bars">
-                <div class="pulse__bar">
-                  <span class="pulse__bar-name">{{ i18n.t('home.monthSpend') }}</span>
-                  <span class="pulse__track">
-                    <span class="pulse__fill" [style.inline-size.%]="spendShare('current')"></span>
-                  </span>
-                  <span class="pulse__bar-amt">{{ formatMoney(fuelCostGlance().currentMonth) }}</span>
-                </div>
-                <div class="pulse__bar">
-                  <span class="pulse__bar-name">
-                    {{ i18n.t('home.lastMonthSpend') }}
-                    @if (fuelCostGlance().deltaPct != null) {
-                      <span
-                        class="pulse__delta"
-                        dir="ltr"
-                        [class.pulse__delta--down]="(fuelCostGlance().deltaPct ?? 0) < -3"
-                        [class.pulse__delta--up]="(fuelCostGlance().deltaPct ?? 0) > 3"
-                      >{{ monthFuelDeltaLabel() }}</span>
-                    }
-                  </span>
-                  <span class="pulse__track pulse__track--prev">
-                    <span class="pulse__fill" [style.inline-size.%]="spendShare('previous')"></span>
-                  </span>
-                  <span class="pulse__bar-amt">{{ formatMoney(fuelCostGlance().previousMonth) }}</span>
-                </div>
-              </div>
-            }
-          </div>
         </section>
-
-        @let licDays = licenseDays(db.car()?.licenseExpiry);
-        @let regDays = licenseDays(db.car()?.registrationExpiry);
-        <div class="papers">
-          <a
-            class="paper"
-            routerLink="/vault"
-            [class.paper--ok]="licenseStatus(licDays) === 'ok'"
-            [class.paper--soon]="licenseStatus(licDays) === 'soon'"
-            [class.paper--overdue]="licenseStatus(licDays) === 'overdue'"
-          >
-            <span class="paper__name">{{ i18n.t('due.license') }}</span>
-            <strong>
-              @if (licDays == null) {
-                {{ i18n.t('home.license.missing') }}
-              } @else {
-                {{ i18n.t('home.license.days', { days: i18n.formatNumber(licDays, { maximumFractionDigits: 0 }) }) }}
-              }
-            </strong>
-          </a>
-          <a
-            class="paper"
-            routerLink="/vault"
-            [class.paper--ok]="licenseStatus(regDays) === 'ok'"
-            [class.paper--soon]="licenseStatus(regDays) === 'soon'"
-            [class.paper--overdue]="licenseStatus(regDays) === 'overdue'"
-          >
-            <span class="paper__name">{{ i18n.t('due.registration') }}</span>
-            <strong>
-              @if (regDays == null) {
-                {{ i18n.t('home.license.missing') }}
-              } @else {
-                {{ i18n.t('home.license.days', { days: i18n.formatNumber(regDays, { maximumFractionDigits: 0 }) }) }}
-              }
-            </strong>
-          </a>
-        </div>
 
         @if (!hasRealFills() && !sampleMode()) {
           <a routerLink="/fill-up" class="ghost-cta">{{ i18n.t('home.ghost.cta') }}</a>
@@ -298,31 +187,31 @@
           <app-quick-log (saved)="onQuickSaved()" />
         }
 
-        <section class="card vehicle-status" [attr.aria-label]="i18n.t('home.vehicleStatus')">
-          <div class="vehicle-status__head">
-            <h2>{{ i18n.t('home.vehicleStatus') }}</h2>
-            <a routerLink="/health">{{ i18n.t('health.viewAll') }}</a>
-          </div>
-          <p class="vehicle-status__count">
-            {{ i18n.t('health.attentionCount', { count: healthAttention() }) }}
-          </p>
-          @if (healthTop().length) {
-            <ul class="vehicle-status__list">
-              @for (item of healthTop(); track item.partDefinitionId) {
+        @if (attention().length) {
+          <section class="needs" [attr.aria-label]="i18n.t('home.needsYou')">
+            <header class="needs__head">
+              <h2 class="needs__title">{{ i18n.t('home.needsYou') }}</h2>
+              <a class="needs__all" routerLink="/health">{{ i18n.t('health.viewAll') }}</a>
+            </header>
+            <ul class="needs__list">
+              @for (item of attention(); track item.id) {
                 <li>
-                  <app-health-row [item]="item" />
+                  <a
+                    class="needs__row"
+                    [class.needs__row--soon]="item.tone === 'soon'"
+                    [class.needs__row--overdue]="item.tone === 'overdue'"
+                    [routerLink]="item.route"
+                  >
+                    <span class="needs__name">{{ item.title }}</span>
+                    @if (item.detail) {
+                      <span class="needs__detail">{{ item.detail }}</span>
+                    }
+                  </a>
                 </li>
               }
             </ul>
-          }
-          @if (topAdvisorInsight(); as tip) {
-            <p class="vehicle-status__insight muted">
-              <a [routerLink]="insightLink(tip)">
-                {{ insightTitle(tip) }} · {{ insightBody(tip) }}
-              </a>
-            </p>
-          }
-        </section>
+          </section>
+        }
 
         @if (hasRealFills() || sampleMode()) {
           @let outlook = monthOutlook();
@@ -363,42 +252,30 @@
               </div>
             </div>
           </section>
-
-          <app-weather-tip [weather]="weather()" [busy]="weatherBusy()" />
         }
       }
 
-      @if (recommendations().length) {
-        <section class="rec-section" [attr.aria-label]="i18n.t('home.whatsNext')">
-          <h2 class="rec-section__title">{{ i18n.t('home.whatsNext') }}</h2>
-          <div class="rec-row">
-            @for (rec of recommendations(); track rec.id) {
-              @if (rec.route) {
-                <a class="rec-card rec-card--{{ rec.tone }}" [routerLink]="rec.route">
-                  <h3 class="rec-card__title">{{ recTitle(rec) }}</h3>
-                  <p class="rec-card__body">{{ recBody(rec) }}</p>
-                </a>
-              } @else {
-                <article class="rec-card rec-card--{{ rec.tone }}">
-                  <h3 class="rec-card__title">{{ recTitle(rec) }}</h3>
-                  <p class="rec-card__body">{{ recBody(rec) }}</p>
-                </article>
-              }
-            }
-          </div>
-        </section>
-      }
+    </section>
+  }
 
-      <section class="card period-card">
+  @if (view() === 'reports') {
+    <section
+      class="home-panel reports-panel list-reveal"
+      role="tabpanel"
+      [attr.aria-label]="i18n.t('home.tab.reports')"
+    >
+      <section class="period-card">
         <header class="period-card__head">
           <div>
             <h2 class="period-card__title">{{ i18n.t('home.period.title') }}</h2>
-            @if (period(); as p) {
-              <p class="period-card__range">
-                {{ i18n.t('home.period.since', { date: p.startDate }) }}
-              </p>
-            } @else {
-              <p class="period-card__range">{{ i18n.t('home.period.none') }}</p>
+            @if (!reportsHasSignal()) {
+              @if (period(); as p) {
+                <p class="period-card__range">
+                  {{ i18n.t('home.period.since', { date: p.startDate }) }}
+                </p>
+              } @else {
+                <p class="period-card__range">{{ i18n.t('home.period.none') }}</p>
+              }
             }
           </div>
           <button
@@ -432,68 +309,8 @@
             </div>
           </div>
         }
-        @if (totals().total > 0) {
-          <div class="period-mix" role="img" [attr.aria-label]="i18n.t('charts.mix')">
-            <div class="stack-bar__track">
-              @if (totals().fuel > 0) {
-                <span class="stack-bar__seg stack-bar__seg--fuel" [style.flex]="totals().fuel"></span>
-              }
-              @if (totals().maintenance > 0) {
-                <span class="stack-bar__seg stack-bar__seg--maint" [style.flex]="totals().maintenance"></span>
-              }
-              @if (totals().breakdowns > 0) {
-                <span class="stack-bar__seg stack-bar__seg--break" [style.flex]="totals().breakdowns"></span>
-              }
-              @if (totals().other > 0) {
-                <span class="stack-bar__seg stack-bar__seg--other" [style.flex]="totals().other"></span>
-              }
-            </div>
-          </div>
-        }
-        <div class="period-grid period-grid--dense">
-          <div class="period-metric period-metric--fuel">
-            <span class="period-metric__label">{{ i18n.t('charts.cat.fuel') }}</span>
-            <strong>{{ formatMoney(totals().fuel) }}</strong>
-            @if (totals().total > 0) {
-              <span class="period-metric__share">{{ sharePct(totals().fuel, totals().total) }}%</span>
-            }
-          </div>
-          <div class="period-metric period-metric--maint">
-            <span class="period-metric__label">{{ i18n.t('charts.cat.maintenance') }}</span>
-            <strong>{{ formatMoney(totals().maintenance) }}</strong>
-            @if (totals().total > 0) {
-              <span class="period-metric__share">{{ sharePct(totals().maintenance, totals().total) }}%</span>
-            }
-          </div>
-          <div class="period-metric period-metric--break">
-            <span class="period-metric__label">{{ i18n.t('charts.cat.breakdown') }}</span>
-            <strong>{{ formatMoney(totals().breakdowns) }}</strong>
-            @if (totals().total > 0) {
-              <span class="period-metric__share">{{ sharePct(totals().breakdowns, totals().total) }}%</span>
-            }
-          </div>
-          <div class="period-metric period-metric--other">
-            <span class="period-metric__label">{{ i18n.t('charts.cat.other') }}</span>
-            <strong>{{ formatMoney(totals().other) }}</strong>
-            @if (totals().total > 0) {
-              <span class="period-metric__share">{{ sharePct(totals().other, totals().total) }}%</span>
-            }
-          </div>
-        </div>
-        <p class="period-card__total">
-          {{ i18n.t('home.period.total', { amount: formatMoney(totals().total) }) }}
-        </p>
       </section>
 
-    </section>
-  }
-
-  @if (view() === 'reports') {
-    <section
-      class="home-panel reports-panel list-reveal"
-      role="tabpanel"
-      [attr.aria-label]="i18n.t('home.tab.reports')"
-    >
       @if (!reportsHasSignal()) {
         <div class="empty-state">
           <p>{{ i18n.t('reports.empty') }}</p>

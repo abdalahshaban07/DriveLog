@@ -1,10 +1,6 @@
 :host {
   display: block;
-  margin-block-end: var(--space-4);
-}
-
-:host .quick-log {
-  border-block-start: 3px solid var(--fuel);
+  margin-block-end: var(--space-5);
 }
 
 .quick-log__head {
@@ -17,57 +13,23 @@
 
 .quick-log__title {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
 }
 
 .quick-log__full {
-  color: var(--cta);
-  font-weight: 600;
-  font-size: 0.9rem;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.85rem;
   text-decoration: none;
 }
 
-.quick-log__grid {
+.quick-log__row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-3);
   margin-block-end: var(--space-3);
-}
-
-.quick-log__tank {
-  display: grid;
-  grid-template-columns: 5rem 1fr;
-  gap: var(--space-3);
-  align-items: center;
-  margin-block: var(--space-3);
-  padding: var(--space-3);
-  border-radius: calc(var(--radius) - 4px);
-  background: var(--fill-paper);
-  color: var(--paper-text);
-}
-
-.quick-log__cost {
-  display: grid;
-  gap: 2px;
-  margin: 0;
-}
-
-.quick-log__cost-label {
-  color: var(--paper-muted);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.quick-log__cost strong {
-  font-size: 1.55rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.03em;
-  line-height: 1.05;
 }
 
 .err {

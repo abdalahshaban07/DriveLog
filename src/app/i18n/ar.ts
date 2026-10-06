@@ -59,6 +59,7 @@ export const ar: Record<MsgKey, string> = {
   'update.foundBody': 'في تغييرات جديدة في الإصدار ده.',
   'home.vehicle': 'العربية',
   'home.vehicleStatus': 'حالة العربية',
+  'home.needsYou': 'محتاجك',
   'home.holidayDue': 'عطلة رسمية {name} يوم {date} — رتّب المواعيد بدري',
   'home.weather.title': 'طقس القيادة',
   'home.weather.tip.rain': 'مطر قريب — خفّف السرعة وسيب مسافة أمان أكبر.',

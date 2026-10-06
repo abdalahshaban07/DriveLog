@@ -19,19 +19,13 @@ import {
   resolveUnitPrice,
 } from '../../../../domain/fill-up-cost';
 import {
-  TANK_FALLBACK,
   computeOdometerFromDistance,
   validateFillDistance,
 } from '../../../../domain/fill-up-distance';
 import type { FuelGrade } from '../../../../domain/models';
-import { distinctPlaceLabels } from '../../../../domain/place-labels';
 import { I18n } from '../../../../i18n/i18n';
 import type { MsgKey } from '../../../../i18n/en';
-import {
-  buildGradeOptions,
-  FuelGradeSelector,
-} from '../../../../ui/fuel-grade-selector';
-import { FuelTankCanvas } from '../../../../ui/fuel-tank-canvas/fuel-tank-canvas';
+import { buildGradeOptions } from '../../../../ui/fuel-grade-selector';
 import { NumericField } from '../../../../ui/numeric-field';
 import { PrimaryButton } from '../../../../ui/primary-button';
 
@@ -46,7 +40,7 @@ const GRADE_KEYS: Record<FuelGrade, MsgKey> = {
 @Component({
   selector: 'app-quick-log',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NumericField, FuelGradeSelector, FuelTankCanvas, PrimaryButton, RouterLink],
+  imports: [NumericField, PrimaryButton, RouterLink],
   templateUrl: './quick-log.html',
   styleUrl: './quick-log.scss',
 })
@@ -57,7 +51,6 @@ export class QuickLog {
 
   readonly distanceKm = signal('');
   readonly liters = signal('');
-  readonly station = signal('');
   readonly fuelGrade = signal<FuelGrade | null>(lastFuelGrade(this.db.fillUps()));
   readonly saving = signal(false);
   readonly error = signal('');
@@ -65,8 +58,6 @@ export class QuickLog {
   readonly pricesReady = signal(false);
   readonly manualUnitPrice = signal('');
 
-  readonly stationListId = `quick-station-${crypto.randomUUID().slice(0, 8)}`;
-  readonly stationSuggestions = computed(() => distinctPlaceLabels(this.db.fillUps()));
   readonly lastUnit = computed(() => lastFillUnitPriceFromHistory(this.db.fillUps()));
   readonly gradeOptions = computed(() => buildGradeOptions(this.fuelPrices(), GRADE_KEYS));
   readonly needsManualPrice = computed(() =>
@@ -90,10 +81,6 @@ export class QuickLog {
     const unit = this.unitPrice();
     return unit == null ? 0 : computeFillUpCost(this.litersNum(), unit);
   });
-  readonly tankCapacity = computed(
-    () => this.db.car()?.tankCapacityLiters ?? TANK_FALLBACK,
-  );
-  readonly showTank = computed(() => this.db.car()?.tankCapacityLiters != null);
   readonly canSave = computed(
     () =>
       this.distanceNum() > 0 &&
@@ -154,11 +141,9 @@ export class QuickLog {
         tankFull: false,
         distanceKm: this.distanceNum(),
         date: todayDateOnly(),
-        placeLabel: this.station().trim() || undefined,
       });
       this.distanceKm.set('');
       this.liters.set('');
-      this.station.set('');
       this.saved.emit();
     } catch {
       this.error.set(this.i18n.t('home.quickAdd.error'));

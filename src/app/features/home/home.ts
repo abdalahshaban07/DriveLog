@@ -10,16 +10,8 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
-import {
-  currentWeather,
-  getCoords,
-  publicHolidays,
-  type WeatherNow,
-} from '../../data/remote';
-import { countryFromCurrency } from '../../domain/country';
 import { buildDueItems, nextDueItem, todayDateOnly } from '../../domain/dues';
 import { nextExpiringDoc, vaultExpiryForKind } from '../../domain/vehicle-docs';
-import { type PublicHoliday } from '../../domain/holidays';
 import {
   activePeriod,
   daysUntil,
@@ -32,8 +24,8 @@ import {
   type LedgerRow,
 } from '../../domain/expense-ledger';
 import { fuelBoard, fuelDashboardMetrics, sparklineGeometry } from '../../domain/fuel-dashboard';
-import { isStoredMessageKey } from '../../domain/part-name';
-import { buildFuelCostGlance, tankEconomyVsAvg, TANK_ECONOMY_FLAT_PCT } from '../../domain/economy';
+import { dueItemLabel, isStoredMessageKey, partDefinitionLabel } from '../../domain/part-name';
+import { tankEconomyVsAvg, TANK_ECONOMY_FLAT_PCT } from '../../domain/economy';
 import {
   costPerKmTrend,
   distanceByMonth,
@@ -45,25 +37,18 @@ import {
   unitPriceTrend,
   type TrendPoint,
 } from '../../domain/insights';
-import type { Car, DueSource, DueStatus, ExpenseCategory, FillUp } from '../../domain/models';
-import {
-  buildMonthOutlook,
-  buildRecommendations,
-  type Recommendation,
-} from '../../domain/recommendations';
-import { SAMPLE_CAR_ID, sampleDiscoveryHoliday } from '../../domain/sample-data';
+import type { Car, DueSource, DueStatus, ExpenseCategory, HealthStatus } from '../../domain/models';
+import { buildMonthOutlook } from '../../domain/recommendations';
+import { SAMPLE_CAR_ID } from '../../domain/sample-data';
 import {
   buildSetupChecklist,
   isRealFillUp,
   shouldShowSetupChecklist,
 } from '../../domain/setup-checklist';
 import { buildReportBrief, buildSmartReports } from '../../domain/smart-reports';
-import { dueItemLabel } from '../../domain/part-name';
 import { homeHealthSummary } from '../../domain/vehicle-facts';
-import type { InsightKind } from '../../domain/insight-generator';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
-import { HealthRow } from '../../ui/health-row/health-row';
 import { InstallPwa } from '../../pwa/install-pwa';
 import { BarChart } from '../../ui/charts/bar-chart';
 import { LineChart } from '../../ui/charts/line-chart';
@@ -80,10 +65,25 @@ import {
   SetupChecklist,
   type ChecklistItem,
 } from './cards/setup-checklist/setup-checklist';
-import { WeatherTipCard } from './cards/weather-tip/weather-tip';
-
 type HomeView = 'dashboard' | 'reports' | 'charts';
 type ChartCategory = ExpenseCategory | 'all';
+type AttentionTone = 'soon' | 'overdue';
+type PaperTone = 'plain' | AttentionTone;
+
+interface AttentionRow {
+  id: string;
+  title: string;
+  detail: string;
+  tone: AttentionTone;
+  route: string;
+}
+
+interface PaperLine {
+  id: 'license' | 'registration';
+  name: string;
+  value: string;
+  tone: PaperTone;
+}
 
 @Component({
   selector: 'app-home',
@@ -101,8 +101,6 @@ type ChartCategory = ExpenseCategory | 'all';
     SetupChecklist,
     InstallCard,
     QuickLog,
-    WeatherTipCard,
-    HealthRow,
   ],
   templateUrl: './home.html',
   styleUrl: './home.scss',
@@ -126,9 +124,6 @@ export class HomePage {
   readonly periodCloseDate = signal(todayDateOnly());
   readonly periodStartDate = signal(todayDateOnly());
   readonly glanceFlash = signal(false);
-  readonly weather = signal<WeatherNow | null>(null);
-  readonly weatherBusy = signal(false);
-  readonly holidays = signal<PublicHoliday[]>([]);
 
   readonly tabOptions: { id: HomeView; labelKey: MsgKey }[] = [
     { id: 'dashboard', labelKey: 'home.tab.dashboard' },
@@ -208,7 +203,6 @@ export class HomePage {
   );
   readonly ledgerTotals = computed(() => ledgerCategoryTotals(this.ledgerRows()));
   readonly fuelMetrics = computed(() => fuelDashboardMetrics(this.db.fillUps()));
-  readonly fuelCostGlance = computed(() => buildFuelCostGlance(this.db.fillUps()));
   readonly fuelPulse = computed(() => fuelBoard(this.db.fillUps()));
   readonly pulseSpark = computed(() =>
     sparklineGeometry(this.fuelPulse().series, 360, 84, this.fuelPulse().overallL100),
@@ -264,28 +258,6 @@ export class HomePage {
       })),
     }),
   );
-  readonly lastFill = computed((): FillUp | null => {
-    const today = todayDateOnly();
-    let best: FillUp | undefined;
-    let bestPast: FillUp | undefined;
-    for (const fill of this.db.fillUps()) {
-      const newer =
-        !best ||
-        fill.date > best.date ||
-        (fill.date === best.date && fill.createdAt > best.createdAt);
-      if (newer) {
-        best = fill;
-      }
-      const newerPast =
-        !bestPast ||
-        fill.date > bestPast.date ||
-        (fill.date === bestPast.date && fill.createdAt > bestPast.createdAt);
-      if (fill.date <= today && newerPast) {
-        bestPast = fill;
-      }
-    }
-    return bestPast ?? best ?? null;
-  });
   readonly headerLine = computed(() => {
     const car = this.db.car();
     if (!car) {
@@ -320,7 +292,9 @@ export class HomePage {
   /** At most one dismissible nudge on the dashboard, highest priority first. */
   readonly nudge = computed((): 'checklist' | 'vault' | 'install' | null => {
     if (this.showChecklist()) return 'checklist';
-    if (this.nextVaultDoc()) return 'vault';
+    const nextDoc = this.nextVaultDoc();
+    const alreadyListed = nextDoc != null && this.attention().some((row) => row.id === nextDoc.kind);
+    if (nextDoc && !alreadyListed) return 'vault';
     if (this.showInstallCard()) return 'install';
     return null;
   });
@@ -406,24 +380,51 @@ export class HomePage {
       this.db.otherExpenses(),
     ),
   );
-  readonly recommendations = computed(() =>
-    buildRecommendations({
-      settings: this.db.settings(),
-      car: this.db.car() ?? null,
-      fills: this.db.fillUps(),
-      maintenance: this.db.maintenance(),
-      breakdowns: this.db.breakdowns(),
-      other: this.db.otherExpenses(),
-      periods: this.db.expensePeriods(),
-      holidays: this.holidays(),
-    }),
-  );
   readonly healthSummary = computed(() => homeHealthSummary(this.db));
-  readonly healthAttention = computed(() => this.healthSummary().attention);
-  readonly healthTop = computed(() => this.healthSummary().top);
-  readonly topAdvisorInsight = computed(
-    () => this.healthSummary().facts?.insights[0] ?? null,
-  );
+  /** Overdue service, urgent papers, then the top health item. Empty when nothing is urgent. */
+  readonly attention = computed((): AttentionRow[] => {
+    const items: AttentionRow[] = [];
+    const due = this.nextDue();
+    if (due?.source === 'maintenance' && (due.status === 'overdue' || due.status === 'dueSoon')) {
+      items.push({
+        id: due.id,
+        title: this.dueLabel(),
+        detail: this.dueCountdown() ?? '',
+        tone: due.status === 'overdue' ? 'overdue' : 'soon',
+        route: '/maintenance',
+      });
+    }
+    const car = this.db.car();
+    if (car) {
+      const urgentPapers = this.paperLines(car)
+        .filter((paper): paper is PaperLine & { tone: AttentionTone } => paper.tone !== 'plain')
+        .sort((a, b) => this.paperRank(a.tone) - this.paperRank(b.tone));
+      for (const paper of urgentPapers) {
+        if (items.length >= 3) {
+          break;
+        }
+        items.push({
+          id: paper.id,
+          title: paper.name,
+          detail: paper.value,
+          tone: paper.tone,
+          route: '/vault',
+        });
+      }
+    }
+    const health = this.healthSummary().top.find((item) => this.healthTone(item.status) != null);
+    const healthTone = health ? this.healthTone(health.status) : null;
+    if (health && healthTone && items.length < 3) {
+      items.push({
+        id: `health-${health.partDefinitionId}`,
+        title: partDefinitionLabel(health.part, (key) => this.i18n.t(key as MsgKey)),
+        detail: this.i18n.t(`health.status.${health.status}` as MsgKey),
+        tone: healthTone,
+        route: `/health/${health.partDefinitionId}`,
+      });
+    }
+    return items.slice(0, 3);
+  });
 
   constructor() {
     this.route.queryParamMap.subscribe((params) => {
@@ -436,40 +437,7 @@ export class HomePage {
       if (this.view() === 'charts') {
         void this.animateCharts();
       }
-      void this.loadWeather();
-      void this.loadHolidays();
     });
-  }
-
-  private async loadWeather(): Promise<void> {
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      return;
-    }
-    this.weatherBusy.set(true);
-    try {
-      const coords = await getCoords();
-      if (!coords) {
-        return;
-      }
-      this.weather.set(await currentWeather(coords.lat, coords.lon));
-    } finally {
-      this.weatherBusy.set(false);
-    }
-  }
-
-  private async loadHolidays(): Promise<void> {
-    const today = todayDateOnly();
-    const demo = this.db.settings().sampleMode
-      ? sampleDiscoveryHoliday(today, this.i18n.t('home.sample.holiday'))
-      : null;
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      this.holidays.set(demo ? [demo] : []);
-      return;
-    }
-    const cc = countryFromCurrency(this.db.settings().currency);
-    const year = Number(today.slice(0, 4));
-    const list = await publicHolidays(cc, year);
-    this.holidays.set(demo ? [demo, ...list] : list);
   }
 
   async clearSample(): Promise<void> {
@@ -493,21 +461,6 @@ export class HomePage {
     this.glanceFlash.set(true);
     this.glanceStrip()?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
     window.setTimeout(() => this.glanceFlash.set(false), 600);
-  }
-
-  recTitle(rec: Recommendation): string {
-    return this.i18n.t(rec.titleKey as MsgKey);
-  }
-
-  recBody(rec: Recommendation): string {
-    const params = { ...(rec.bodyParams ?? {}) };
-    if (rec.kind === 'holiday' && typeof params['date'] === 'string') {
-      params['date'] = this.i18n.formatDate(String(params['date']), {
-        day: 'numeric',
-        month: 'short',
-      });
-    }
-    return this.i18n.t(rec.bodyKey as MsgKey, params);
   }
 
   vehicleLine(car: Car): string {
@@ -570,17 +523,6 @@ export class HomePage {
       return this.i18n.t('home.kmLeft', { km });
     }
     return null;
-  }
-
-  /** This month vs last month, as a percent of the larger bar. */
-  spendShare(which: 'current' | 'previous'): number {
-    const glance = this.fuelCostGlance();
-    const value = which === 'current' ? glance.currentMonth : glance.previousMonth;
-    const max = Math.max(glance.currentMonth, glance.previousMonth);
-    if (max <= 0 || value <= 0) {
-      return 0;
-    }
-    return Math.max(8, Math.round((value / max) * 100));
   }
 
   economyTone(): 'none' | 'flat' | 'better' | 'worse' {
@@ -679,6 +621,65 @@ export class HomePage {
     }
   }
 
+  paperLines(car: Car): PaperLine[] {
+    const kinds = [
+      { id: 'license' as const, key: 'due.license' as const },
+      { id: 'registration' as const, key: 'due.registration' as const },
+    ];
+    return kinds.map((kind) => {
+      const days = this.licenseDays(this.paperExpiry(car, kind.id));
+      const status = this.licenseStatus(days);
+      const tone: PaperTone = status === 'soon' || status === 'overdue' ? status : 'plain';
+      return {
+        id: kind.id,
+        name: this.i18n.t(kind.key),
+        value: this.paperValue(days),
+        tone,
+      };
+    });
+  }
+
+  private paperExpiry(car: Car, kind: 'license' | 'registration'): string | undefined {
+    const onCar = kind === 'license' ? car.licenseExpiry : car.registrationExpiry;
+    if (car.id !== this.activeCarId()) {
+      return onCar;
+    }
+    return vaultExpiryForKind(this.db.vehicleDocuments(), kind) ?? onCar;
+  }
+
+  private paperValue(days: number | null): string {
+    if (days == null) {
+      return this.i18n.t('home.license.missing');
+    }
+    const n = this.i18n.formatNumber(Math.abs(days), { maximumFractionDigits: 0 });
+    return days < 0
+      ? this.i18n.t('vault.daysOver', { days: n })
+      : this.i18n.t('home.license.days', { days: n });
+  }
+
+  private paperRank(tone: AttentionTone): number {
+    return tone === 'overdue' ? 0 : 1;
+  }
+
+  private healthTone(status: HealthStatus): AttentionTone | null {
+    switch (status) {
+      case 'overdue':
+      case 'critical':
+      case 'due':
+        return 'overdue';
+      case 'soon':
+      case 'inspect':
+        return 'soon';
+      case 'good':
+      case 'unknown':
+        return null;
+      default: {
+        const _exhaustive: never = status;
+        return _exhaustive;
+      }
+    }
+  }
+
   licenseDays(expiry?: string): number | null {
     if (!expiry) {
       return null;
@@ -701,25 +702,6 @@ export class HomePage {
 
   formatMoney(value: number): string {
     return this.i18n.formatMoney(value, this.db.settings().currency, 0);
-  }
-
-  /** Short currency mark under a bare amount. */
-  currencyUnit(): string {
-    const currency = this.db.settings().currency;
-    const locale = this.i18n.language() === 'ar' ? 'ar-EG' : 'en-GB';
-    try {
-      const symbol = new Intl.NumberFormat(locale, {
-        style: 'currency',
-        currency,
-        currencyDisplay: 'symbol',
-        maximumFractionDigits: 0,
-      })
-        .formatToParts(0)
-        .find((part) => part.type === 'currency')?.value;
-      return symbol?.replace(/[\u200e\u200f]/g, '').replace(/\.$/, '').trim() || currency;
-    } catch {
-      return currency;
-    }
   }
 
   formatCostPerKm(value: number): string {
@@ -778,50 +760,6 @@ export class HomePage {
       return 0;
     }
     return Math.min(100, Math.max(0, Math.round((elapsedDays / daysInMonth) * 100)));
-  }
-
-  monthFuelDeltaLabel(): string {
-    const pct = this.fuelCostGlance().deltaPct;
-    if (pct == null) {
-      return this.i18n.t('home.monthFuelDelta.none');
-    }
-    if (Math.abs(pct) < 3) {
-      return this.i18n.t('home.monthFuelDelta.same');
-    }
-    const abs = this.i18n.formatNumber(Math.abs(pct), { maximumFractionDigits: 0 });
-    if (pct > 0) {
-      return this.i18n.t('home.monthFuelDelta.up', { pct: abs });
-    }
-    return this.i18n.t('home.monthFuelDelta.down', { pct: `-${abs}` });
-  }
-
-  insightTitle(tip: { titleKey: string }): string {
-    return this.i18n.t(tip.titleKey as MsgKey);
-  }
-
-  insightBody(tip: { bodyKey: string }): string {
-    return this.i18n.t(tip.bodyKey as MsgKey);
-  }
-
-  insightLink(tip: { kind: InsightKind }): string {
-    switch (tip.kind) {
-      case 'BUDGET_HEALTH':
-      case 'BUDGET_WARNING':
-      case 'UPCOMING_EXPENSE':
-      case 'SAVING_RECOMMENDATION':
-      case 'MAINTENANCE_FORECAST':
-        return '/budget';
-      case 'FUEL_SPENDING':
-        return '/fuel';
-      case 'MAINTENANCE_PRIORITY':
-      case 'COST_ANOMALY':
-      case 'MISSING_DATA':
-        return '/health';
-      default: {
-        const _exhaustive: never = tip.kind;
-        return _exhaustive;
-      }
-    }
   }
 
   gradeLabel(grade?: string): string {

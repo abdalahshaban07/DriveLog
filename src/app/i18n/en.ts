@@ -57,6 +57,7 @@ export const en = {
   'update.foundBody': 'New changes are ready in this version.',
   'home.vehicle': 'Vehicle',
   'home.vehicleStatus': 'Vehicle status',
+  'home.needsYou': 'Needs you',
   'home.holidayDue': 'Public holiday {name} on {date} — plan dues early',
   'home.weather.title': 'Driving weather',
   'home.weather.tip.rain': 'Rain nearby — ease off and leave extra follow distance.',
