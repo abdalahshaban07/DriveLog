@@ -5,59 +5,37 @@
     [ariaLabel]="i18n.t('maint.title')"
   />
 
-  <section class="card stack maint-dues" [attr.aria-label]="i18n.t('maint.duesTitle')">
-    <h2 class="section-title">{{ i18n.t('maint.duesTitle') }}</h2>
-    @if (holidayNudge(); as h) {
-      <p class="maint-holiday" role="status" aria-live="polite">
-        {{
-          i18n.t('maint.holidayDue', {
-            name: h.localName,
-            date: i18n.formatDate(h.date, { day: 'numeric', month: 'short' }),
-          })
-        }}
-      </p>
-    }
-    @if (dues().length === 0) {
-      <p class="empty-state maint-dues__ok">{{ i18n.t('maint.duesOk') }}</p>
-    } @else {
-      <p class="maint-dues__summary" role="status">
-        @if (duesSummary().overdue) {
-          <span>{{ i18n.t('maint.duesOverdue', { count: duesSummary().overdue }) }}</span>
-        }
-        @if (duesSummary().soon) {
-          <span>{{ i18n.t('maint.duesSoon', { count: duesSummary().soon }) }}</span>
-        }
-      </p>
-      <ul class="maint-dues__list">
-        @for (d of dues(); track d.id) {
-          <li>
-            <app-due-row
-              [title]="dueLabel(d)"
-              [status]="d.status"
-              [statusLabel]="
-                d.status === 'overdue'
-                  ? i18n.t('due.overdue')
-                  : d.status === 'dueSoon'
-                    ? i18n.t('due.dueSoon')
-                    : ''
-              "
-              [meta]="
-                d.dueKm != null
-                  ? i18n.formatNumber(d.dueKm, { maximumFractionDigits: 0 }) +
-                    ' ' +
-                    i18n.t('common.km')
-                  : d.dueDate
-                    ? i18n.formatDate(d.dueDate, { day: 'numeric', month: 'short' })
-                    : ''
-              "
-            />
-          </li>
-        }
-      </ul>
-    }
-  </section>
+  @if (holidayNudge(); as h) {
+    <p class="maint-holiday" role="status" aria-live="polite">
+      {{
+        i18n.t('maint.holidayDue', {
+          name: h.localName,
+          date: i18n.formatDate(h.date, { day: 'numeric', month: 'short' }),
+        })
+      }}
+    </p>
+  }
+  @if (dues().length === 0) {
+    <p class="maint-ok">{{ i18n.t('maint.duesOk') }}</p>
+  } @else {
+    <section class="card card--paper maint-dues" [attr.aria-label]="i18n.t('maint.duesTitle')">
+      @for (d of dues(); track d.id) {
+        <div
+          class="maint-due"
+          [class.maint-due--late]="d.status === 'overdue'"
+          [class.maint-due--soon]="d.status === 'dueSoon'"
+        >
+          <div>
+            <strong>{{ dueLabel(d) }}</strong>
+            <span class="maint-due__meta">{{ dueMeta(d) }}</span>
+          </div>
+          <span class="maint-due__state">{{ dueStateLabel(d.status) }}</span>
+        </div>
+      }
+    </section>
+  }
 
-  <section class="card stack maint-form" [attr.aria-label]="i18n.t('maint.add')">
+  <section class="card card--paper stack maint-form" [attr.aria-label]="i18n.t('maint.add')">
     @if (editId()) {
       <div class="maint-form__edit" role="status">
         <p class="maint-form__edit-label">{{ i18n.t('maint.editing') }}</p>
@@ -68,8 +46,6 @@
     }
 
     <div class="maint-form__essentials">
-      <h2 class="section-title">{{ i18n.t('maint.essentials') }}</h2>
-
       <app-select-field
         [label]="i18n.t('maint.step.part')"
         [options]="partOptions()"
@@ -89,6 +65,11 @@
         />
         <app-date-field [label]="i18n.t('maint.step.date')" [(value)]="date" />
       </div>
+      <app-numeric-field
+        [label]="i18n.t('maint.step.cost')"
+        [(value)]="cost"
+        [error]="costError()"
+      />
     </div>
 
     <details
@@ -98,11 +79,6 @@
     >
       <summary>{{ i18n.t('maint.advanced') }}</summary>
       <div class="disclosure__body">
-        <app-numeric-field
-          [label]="i18n.t('maint.step.cost')"
-          [(value)]="cost"
-          [error]="costError()"
-        />
         <app-text-field [label]="i18n.t('maint.step.brand')" [(value)]="partModel" />
         <app-select-field
           [label]="i18n.t('maint.step.condition')"
@@ -135,47 +111,30 @@
     </div>
   </section>
 
-  <div class="maint-list-head">
-    <h2 class="section-title">{{ i18n.t('maint.list') }}</h2>
-    @if (hasMoreHistory()) {
-      <a routerLink="/history/maintenance" class="maint-see-all">{{ i18n.t('maint.seeAll') }}</a>
-    }
-  </div>
+  <h2 class="section-title">{{ i18n.t('maint.list') }}</h2>
   @if (history().length === 0) {
     <p class="empty-state">{{ i18n.t('maint.empty') }}</p>
   } @else {
     <ul class="maint-list list-reveal">
       @for (m of recentHistory(); track m.id) {
-        @let status = dueStatus(m);
-        <li class="due-card due-card--history">
-          <div class="due-card__body">
-            <div class="due-card__head">
-              <strong class="due-card__title">
-                @if (status) {
-                  <span
-                    class="due-dot"
-                    [class.due-dot--overdue]="status === 'overdue'"
-                    [class.due-dot--soon]="status === 'dueSoon'"
-                    aria-hidden="true"
-                  ></span>
-                }
-                {{ rowLabel(m) }}
-              </strong>
-              @if (m.cost != null) {
-                <strong class="due-card__cost">{{ formatMoney(m.cost) }}</strong>
-              } @else {
-                <span class="due-card__status">{{ i18n.t('budget.notEnoughData') }}</span>
-              }
-            </div>
-            <p class="meta">
-              <span class="pill">{{ i18n.formatDate(m.date, { day: 'numeric', month: 'short' }) }}</span>
-              <span>
-                {{ i18n.formatNumber(m.odometer, { maximumFractionDigits: 0 }) }}
+        <li class="maint-row">
+          <button type="button" class="maint-row__link" (click)="startEdit(m)">
+            <span class="maint-day">
+              <strong>{{ dayNumber(m.date) }}</strong>
+              <span>{{ monthShort(m.date) }}</span>
+            </span>
+            <span class="maint-row__body">
+              <strong>{{ rowLabel(m) }}</strong>
+              <span class="maint-km">
+                <bdi dir="ltr">{{ i18n.formatNumber(m.odometer, { maximumFractionDigits: 0 }) }}</bdi>
                 {{ i18n.t('common.km') }}
               </span>
-            </p>
-          </div>
-          <div class="due-card__actions">
+            </span>
+            @if (m.cost != null) {
+              <strong class="maint-row__cost">{{ formatMoney(m.cost) }}</strong>
+            }
+          </button>
+          <div class="maint-row__icons">
             <button
               type="button"
               class="icon-action"
@@ -203,6 +162,9 @@
         </li>
       }
     </ul>
+    @if (hasMoreHistory()) {
+      <a routerLink="/history/maintenance" class="maint-see-all">{{ i18n.t('maint.seeAll') }}</a>
+    }
   }
 
   @if (pendingDelete()) {

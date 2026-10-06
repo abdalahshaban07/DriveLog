@@ -28,7 +28,6 @@ import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { ConfirmBar } from '../../ui/confirm-bar';
 import { DateField } from '../../ui/date-field';
-import { DueRow } from '../../ui/due-row';
 import { NumericField } from '../../ui/numeric-field';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
@@ -48,7 +47,6 @@ import { TextField } from '../../ui/text-field';
     SelectField,
     PrimaryButton,
     ConfirmBar,
-    DueRow,
     RouterLink,
   ],
   templateUrl: './maintenance.html',
@@ -112,22 +110,16 @@ export class MaintenancePage {
   readonly dues = computed((): DueItem[] => {
     const car = this.db.car();
     if (!car) return [];
+    const rank: Record<DueStatus, number> = { overdue: 0, dueSoon: 1, future: 2 };
     return buildDueItems(
       this.db.settings(),
       this.db.maintenance(),
       car.currentOdometer,
       todayDateOnly(),
       car,
-    ).filter((d) => d.status === 'overdue' || d.status === 'dueSoon');
-  });
-
-  readonly duesSummary = computed(() => {
-    const items = this.dues();
-    return {
-      overdue: items.filter((d) => d.status === 'overdue').length,
-      soon: items.filter((d) => d.status === 'dueSoon').length,
-      total: items.length,
-    };
+    )
+      .filter((d) => d.status === 'overdue' || d.status === 'dueSoon')
+      .sort((a, b) => rank[a.status] - rank[b.status]);
   });
 
   readonly holidayNudge = computed(() => {
@@ -184,17 +176,37 @@ export class MaintenancePage {
     );
   }
 
-  dueStatus(m: Maintenance): DueStatus | null {
-    const car = this.db.car();
-    if (!car) return null;
-    const items = buildDueItems(
-      this.db.settings(),
-      [m],
-      car.currentOdometer,
-      todayDateOnly(),
-      car,
-    );
-    return items.find((i) => i.maintenanceId === m.id)?.status ?? null;
+  dueStateLabel(status: DueStatus): string {
+    switch (status) {
+      case 'overdue':
+        return this.i18n.t('due.overdue');
+      case 'dueSoon':
+        return this.i18n.t('due.dueSoon');
+      case 'future':
+        return '';
+      default: {
+        const neverStatus: never = status;
+        return neverStatus;
+      }
+    }
+  }
+
+  dueMeta(d: DueItem): string {
+    if (d.dueKm != null) {
+      return `${this.i18n.formatNumber(d.dueKm, { maximumFractionDigits: 0 })} ${this.i18n.t('common.km')}`;
+    }
+    if (d.dueDate) {
+      return this.i18n.formatDate(d.dueDate, { day: 'numeric', month: 'short' });
+    }
+    return '';
+  }
+
+  dayNumber(date: string): string {
+    return this.i18n.formatDate(date, { day: 'numeric' });
+  }
+
+  monthShort(date: string): string {
+    return this.i18n.formatDate(date, { month: 'short' });
   }
 
   onAdvancedToggle(event: Event): void {
@@ -234,10 +246,9 @@ export class MaintenancePage {
     this.advancedOpen.set(this.rowHasAdvanced(row));
   }
 
-  /** ponytail: open Costs & due when the row already has optional fields. */
+  /** Open details when the row already has something besides the cost. */
   private rowHasAdvanced(row: Maintenance): boolean {
     return (
-      row.cost != null ||
       !!row.partModel ||
       !!row.condition ||
       row.dueKm != null ||
