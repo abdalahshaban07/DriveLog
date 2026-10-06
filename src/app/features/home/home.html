@@ -328,49 +328,26 @@
       role="tabpanel"
       [attr.aria-label]="i18n.t('home.tab.reports')"
     >
-      <section class="period-card">
-        <header class="period-card__head">
-          <div>
-            <h2 class="period-card__title">{{ i18n.t('home.period.title') }}</h2>
-            @if (!reportsHasSignal()) {
-              @if (period(); as p) {
-                <p class="period-card__range">
-                  {{ i18n.t('home.period.since', { date: p.startDate }) }}
-                </p>
-              } @else {
-                <p class="period-card__range">{{ i18n.t('home.period.none') }}</p>
-              }
-            }
-          </div>
-          <button
-            type="button"
-            class="period-card__new"
-            [disabled]="startingPeriod() || !activeCarId()"
-            (click)="openPeriodForm()"
-          >
-            {{ i18n.t('home.period.startNew') }}
-          </button>
-        </header>
-        @if (showPeriodForm()) {
-          <div class="period-form stack">
+      <section class="reports-range">
+        <h2 class="reports-range__title">{{ i18n.t('home.period.title') }}</h2>
+        <app-select-field
+          [label]="i18n.t('history.range')"
+          [options]="reportRangeOptions()"
+          [value]="reportRangePreset()"
+          (valueChange)="setReportRange($event)"
+        />
+        @if (reportRangePreset() === 'custom') {
+          <div class="reports-range__dates">
             <app-date-field
-              [label]="i18n.t('home.period.closeDate')"
-              [(value)]="periodCloseDate"
+              [label]="i18n.t('history.from')"
+              [value]="reportFrom()"
+              (valueChange)="reportFrom.set($event)"
             />
             <app-date-field
-              [label]="i18n.t('home.period.newStart')"
-              [(value)]="periodStartDate"
+              [label]="i18n.t('history.to')"
+              [value]="reportTo()"
+              (valueChange)="reportTo.set($event)"
             />
-            <div class="period-form__actions">
-              <button type="button" class="ghost" (click)="cancelPeriodForm()">
-                {{ i18n.t('common.cancel') }}
-              </button>
-              <app-primary-button
-                [label]="i18n.t('home.period.confirm')"
-                [disabled]="startingPeriod()"
-                (pressed)="confirmNewPeriod()"
-              />
-            </div>
           </div>
         }
       </section>
@@ -383,13 +360,7 @@
       } @else {
         <article class="report-hero" [attr.aria-label]="i18n.t('reports.glance.spend')">
           <header class="report-hero__head">
-            <p class="report-hero__kicker">
-              @if (period(); as p) {
-                {{ i18n.t('home.period.since', { date: i18n.formatDate(p.startDate) }) }}
-              } @else {
-                {{ i18n.t('reports.lead') }}
-              }
-            </p>
+            <p class="report-hero__kicker">{{ reportSince() }}</p>
             <p class="report-hero__total" [class.metric--ghost]="totals().total <= 0">
               @if (totals().total > 0) {
                 {{ formatMoney(totals().total) }}
@@ -400,7 +371,7 @@
             <p class="report-hero__label">{{ i18n.t('reports.glance.spend') }}</p>
           </header>
 
-          @if (totals().total > 0) {
+          @if (reportBrief().mix.length > 1) {
             <div class="report-mix" role="img" [attr.aria-label]="i18n.t('charts.mix')">
               <div class="stack-bar__track">
                 @for (slice of reportBrief().mix; track slice.key) {
@@ -425,92 +396,68 @@
               </ul>
             </div>
           }
-        </article>
 
-        <ul class="report-spec">
-          <li class="report-spec__row">
-            <span class="report-spec__label">{{ i18n.t('reports.glance.economy') }}</span>
-            <strong
-              class="report-spec__value"
-              [class.metric--ghost]="fuelMetrics().lastL100 == null"
-            >
-              @if (fuelMetrics().lastL100 != null) {
-                {{ i18n.formatUnit(fuelMetrics().lastL100!, 'common.lPer100', 1) }}
-              } @else {
-                —.—
-              }
-            </strong>
-            @if (economyVsUsual(); as vs) {
-              <span class="report-spec__hint">
-                {{ i18n.t('reports.usual', { value: i18n.formatUnit(vs.baselineL100, 'common.lPer100', 1) }) }}
-              </span>
-            }
-          </li>
-          <li class="report-spec__row">
-            <span class="report-spec__label">{{ i18n.t('home.costPerKm') }}</span>
-            <strong
-              class="report-spec__value"
-              [class.metric--ghost]="fuelMetrics().costPerKm == null"
-            >
-              @if (fuelMetrics().costPerKm != null) {
-                {{ formatCostPerKm(fuelMetrics().costPerKm!) }}
-              } @else {
-                —.—
-              }
-            </strong>
-          </li>
-          <li class="report-spec__row">
-            <span class="report-spec__label">{{ i18n.t('charts.cat.fuel') }}</span>
-            <strong
-              class="report-spec__value"
-              [class.metric--ghost]="reportBrief().liters <= 0"
-            >
-              @if (reportBrief().liters > 0) {
-                {{ i18n.formatUnit(reportBrief().liters, 'common.liters', 1) }}
-              } @else {
-                —.—
-              }
-            </strong>
-            @if (reportBrief().fillCount > 0) {
-              <span class="report-spec__hint">
-                {{ i18n.t('reports.fills', { count: i18n.formatNumber(reportBrief().fillCount, { maximumFractionDigits: 0 }) }) }}
-                @if (reportBrief().distanceKm > 0) {
-                  · {{ i18n.formatNumber(reportBrief().distanceKm, { maximumFractionDigits: 0 }) }}
-                  {{ i18n.t('common.km') }}
+          <ul class="report-spec">
+            @if (fuelMetrics().lastL100 != null) {
+              <li class="report-spec__row">
+                <span class="report-spec__label">{{ i18n.t('reports.glance.economy') }}</span>
+                <strong class="report-spec__value">
+                  {{ i18n.formatUnit(fuelMetrics().lastL100!, 'common.lPer100', 1) }}
+                </strong>
+                @if (economyVsUsual(); as vs) {
+                  <span class="report-spec__hint">
+                    {{ i18n.t('reports.usual', { value: i18n.formatUnit(vs.baselineL100, 'common.lPer100', 1) }) }}
+                  </span>
                 }
-              </span>
+              </li>
             }
-          </li>
-          <li class="report-spec__row">
-            <span class="report-spec__label">{{ i18n.t('reports.glance.services') }}</span>
-            <strong
-              class="report-spec__value"
-              [class.metric--ghost]="reportBrief().maintCount === 0"
-            >
-              {{ i18n.formatNumber(reportBrief().maintCount, { maximumFractionDigits: 0 }) }}
-            </strong>
-            @if (totals().maintenance > 0) {
-              <span class="report-spec__hint">{{ formatMoney(totals().maintenance) }}</span>
+            @if (reportBrief().liters > 0 || reportBrief().fillCount > 0) {
+              <li class="report-spec__row">
+                <span class="report-spec__label">{{ i18n.t('charts.cat.fuel') }}</span>
+                <strong class="report-spec__value">
+                  {{ i18n.formatUnit(reportBrief().liters, 'common.liters', 1) }}
+                </strong>
+                @if (reportBrief().fillCount > 0) {
+                  <span class="report-spec__hint">
+                    {{ i18n.t('reports.fills', { count: i18n.formatNumber(reportBrief().fillCount, { maximumFractionDigits: 0 }) }) }}
+                    @if (reportBrief().distanceKm > 0) {
+                      · {{ i18n.formatNumber(reportBrief().distanceKm, { maximumFractionDigits: 0 }) }}
+                      {{ i18n.t('common.km') }}
+                    }
+                  </span>
+                }
+              </li>
             }
-          </li>
-        </ul>
-
-        <section class="tab-block" [attr.aria-label]="i18n.t('reports.insights')">
-          <h2 class="tab-block__title">
-            {{ i18n.t('reports.insights') }}
-            <span class="tab-block__count">{{ reports().length }}</span>
-          </h2>
-          <ul class="reports-list">
-            @for (card of reports(); track card.id) {
-              <li class="report-row" [attr.data-tone]="card.tone">
-                <h3 class="report-row__title">{{ reportTitle(card.titleKey) }}</h3>
-                <p class="report-row__body">
-                  {{ reportBody(card.bodyKey, card.bodyParams) }}
-                </p>
+            @if (reportCostPerKm(); as perKm) {
+              <li class="report-spec__row">
+                <span class="report-spec__label">{{ i18n.t('reports.costKm') }}</span>
+                <strong class="report-spec__value">{{ formatCostPerKm(perKm) }}</strong>
+              </li>
+            }
+            @if (reportBrief().maintCount > 0) {
+              <li class="report-spec__row">
+                <span class="report-spec__label">{{ i18n.t('reports.glance.services') }}</span>
+                <strong class="report-spec__value">
+                  {{ i18n.formatNumber(reportBrief().maintCount, { maximumFractionDigits: 0 }) }}
+                </strong>
+                @if (totals().maintenance > 0) {
+                  <span class="report-spec__hint">{{ formatMoney(totals().maintenance) }}</span>
+                }
               </li>
             }
           </ul>
-        </section>
+
+          @if (reportEconomyLine(); as line) {
+            <p class="report-note">{{ line }}</p>
+          }
+          @if (reportRepeats() > 0) {
+            <p class="report-note">
+              {{
+                i18n.t('reports.breakdown.recurring', { count: reportRepeats() })
+              }}
+            </p>
+          }
+        </article>
       }
     </section>
   }

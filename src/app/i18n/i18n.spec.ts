@@ -127,7 +127,7 @@ describe('I18n.formatUnit', () => {
     });
     const i18n = TestBed.inject(I18n);
     await i18n.setLanguage('ar');
-    const withPct = i18n.t('reports.biggest.fuel', { pct: 52 });
+    const withPct = i18n.t('reports.economyLine.better', { pct: 52 });
     expect(withPct).toMatch(/[\u0660-\u0669]/);
     expect(withPct).not.toMatch(/[0-9]/);
     const withDate = i18n.t('home.period.since', { date: '2026-03-15' });

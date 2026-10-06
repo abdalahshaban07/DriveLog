@@ -13,11 +13,7 @@ import { Db } from '../../data/db';
 import { currentWeather, getCoords, type WeatherNow } from '../../data/remote';
 import { buildDueItems, nextDueItem, todayDateOnly } from '../../domain/dues';
 import { nextExpiringDoc, vaultExpiryForKind } from '../../domain/vehicle-docs';
-import {
-  activePeriod,
-  daysUntil,
-  periodTotals,
-} from '../../domain/expense-period';
+import { daysUntil, inActivePeriod, periodTotals } from '../../domain/expense-period';
 import {
   buildExpenseLedger,
   ledgerCategoryTotals,
@@ -43,7 +39,15 @@ import {
   unitPriceTrend,
   type TrendPoint,
 } from '../../domain/insights';
-import type { Car, DueItem, DueSource, DueStatus, ExpenseCategory, HealthStatus } from '../../domain/models';
+import type {
+  Car,
+  DueItem,
+  DueSource,
+  DueStatus,
+  ExpenseCategory,
+  ExpensePeriod,
+  HealthStatus,
+} from '../../domain/models';
 import { buildMonthOutlook } from '../../domain/recommendations';
 import { SAMPLE_CAR_ID } from '../../domain/sample-data';
 import {
@@ -51,7 +55,8 @@ import {
   isRealFillUp,
   shouldShowSetupChecklist,
 } from '../../domain/setup-checklist';
-import { buildReportBrief, buildSmartReports } from '../../domain/smart-reports';
+import { buildReportBrief, recurringBreakdownCount } from '../../domain/smart-reports';
+import { rangeBoundsForPreset, type HistoryRangePreset } from '../../domain/export-history';
 import { homeHealthSummary } from '../../domain/vehicle-facts';
 import { I18n } from '../../i18n/i18n';
 import { HealthRow } from '../../ui/health-row/health-row';
@@ -63,7 +68,6 @@ import { DonutChart, type DonutSlice } from '../../ui/charts/donut-chart';
 import { DateField } from '../../ui/date-field';
 import { MotionPolicy } from '../../ui/motion/motion-policy';
 import { PageHeader } from '../../ui/page-header';
-import { PrimaryButton } from '../../ui/primary-button';
 import { SelectField } from '../../ui/select-field';
 import { InstallCard } from './cards/install-card/install-card';
 import { QuickLog } from './cards/quick-log/quick-log';
@@ -99,7 +103,6 @@ interface PaperLine {
   imports: [
     PageHeader,
     DateField,
-    PrimaryButton,
     RouterLink,
     BarChart,
     LineChart,
@@ -129,10 +132,9 @@ export class HomePage {
   readonly view = signal<HomeView>('dashboard');
   readonly chartCategory = signal<ChartCategory>('all');
   readonly chartPeriod = signal<LedgerPeriodFilter>('3m');
-  readonly startingPeriod = signal(false);
-  readonly showPeriodForm = signal(false);
-  readonly periodCloseDate = signal(todayDateOnly());
-  readonly periodStartDate = signal(todayDateOnly());
+  readonly reportRangePreset = signal<HistoryRangePreset>('3months');
+  readonly reportFrom = signal('');
+  readonly reportTo = signal('');
   readonly glanceFlash = signal(false);
   readonly weather = signal<WeatherNow | null>(null);
   readonly weatherBusy = signal(false);
@@ -172,35 +174,71 @@ export class HomePage {
     })),
   );
 
-  readonly activeCarId = computed(() => this.db.car()?.id ?? '');
-  readonly period = computed(() =>
-    activePeriod(this.db.expensePeriods(), this.activeCarId()),
+  readonly reportRangePresets: { id: HistoryRangePreset; labelKey: MsgKey }[] = [
+    { id: 'thisMonth', labelKey: 'history.rangeThisMonth' },
+    { id: '3months', labelKey: 'history.range3Months' },
+    { id: 'year', labelKey: 'history.rangeYear' },
+    { id: 'custom', labelKey: 'history.rangeCustom' },
+  ];
+
+  readonly reportRangeOptions = computed(() =>
+    this.reportRangePresets.map((preset) => ({
+      value: preset.id,
+      label: this.i18n.t(preset.labelKey),
+    })),
   );
+
+  readonly activeCarId = computed(() => this.db.car()?.id ?? '');
+  readonly reportWindow = computed((): ExpensePeriod => {
+    const carId = this.activeCarId();
+    const preset = this.reportRangePreset();
+    if (preset === 'custom') {
+      const from = this.reportFrom();
+      const to = this.reportTo();
+      return {
+        id: 'reports-view',
+        carId,
+        startDate: from || '0001-01-01',
+        endDate: to || undefined,
+      };
+    }
+    const bounds = rangeBoundsForPreset(preset, todayDateOnly());
+    return {
+      id: 'reports-view',
+      carId,
+      startDate: bounds.from,
+      endDate: bounds.to,
+    };
+  });
   readonly totals = computed(() =>
     periodTotals(
-      this.period(),
+      this.reportWindow(),
       this.db.fillUps(),
       this.db.maintenance(),
       this.db.breakdowns(),
       this.db.otherExpenses(),
     ),
   );
-  readonly reports = computed(() =>
-    buildSmartReports({
-      fills: this.db.fillUps(),
-      maintenance: this.db.maintenance(),
-      breakdowns: this.db.breakdowns(),
-      other: this.db.otherExpenses(),
-      period: this.period(),
-    }),
-  );
   readonly reportBrief = computed(() =>
     buildReportBrief({
       fills: this.db.fillUps(),
       maintenance: this.db.maintenance(),
-      period: this.period(),
+      period: this.reportWindow(),
       totals: this.totals(),
     }),
+  );
+  readonly reportCostPerKm = computed(() => {
+    const km = this.reportBrief().distanceKm;
+    const fuel = this.totals().fuel;
+    if (km <= 0 || fuel <= 0) {
+      return null;
+    }
+    return fuel / km;
+  });
+  readonly reportRepeats = computed(() =>
+    recurringBreakdownCount(
+      this.db.breakdowns().filter((row) => inActivePeriod(row.date, this.reportWindow())),
+    ),
   );
   readonly economyVsUsual = computed(() => tankEconomyVsAvg(this.db.fillUps()));
   readonly ledgerRows = computed(() =>
@@ -221,7 +259,7 @@ export class HomePage {
   );
   readonly sampleMode = computed(() => this.db.settings().sampleMode === true);
   readonly hasRealFills = computed(() => this.db.fillUps().some(isRealFillUp));
-  /** ponytail: empty when no logs at all — domain always returns 4 placeholder cards */
+  /** Empty only when the car has no logs at all. The range filter still hides rows. */
   readonly reportsHasSignal = computed(
     () =>
       this.totals().total > 0 ||
@@ -906,10 +944,6 @@ export class HomePage {
     return this.i18n.t(`charts.cat.${cat}` as MsgKey);
   }
 
-  reportTitle(key: string): string {
-    return this.i18n.t(key as MsgKey);
-  }
-
   mixSeg(key: ExpenseCategory): 'fuel' | 'maint' | 'break' | 'other' {
     switch (key) {
       case 'fuel':
@@ -933,15 +967,49 @@ export class HomePage {
     });
   }
 
-  reportBody(key: string, params?: Record<string, string | number>): string {
-    const next = { ...(params ?? {}) };
-    for (const k of ['l100', 'current', 'baseline'] as const) {
-      const v = next[k];
-      if (typeof v === 'number') {
-        next[k] = this.i18n.formatUnit(v, 'common.lPer100', 1);
+  reportSince(): string {
+    const preset = this.reportRangePreset();
+    if (preset === 'custom') {
+      const from = this.reportFrom();
+      const to = this.reportTo();
+      if (from) {
+        return this.i18n.t('home.period.since', { date: from });
+      }
+      if (to) {
+        return this.i18n.t('reports.rangeUntil', { date: to });
+      }
+      return this.i18n.t('charts.periodAll');
+    }
+    return this.i18n.t('home.period.since', { date: this.reportWindow().startDate });
+  }
+
+  reportEconomyLine(): string | null {
+    const vs = this.economyVsUsual();
+    if (!vs) {
+      return null;
+    }
+    const pct = this.i18n.formatNumber(Math.round(Math.abs(vs.deltaPct)), {
+      maximumFractionDigits: 0,
+    });
+    switch (vs.direction) {
+      case 'better':
+        return this.i18n.t('reports.economyLine.better', { pct });
+      case 'worse':
+        return this.i18n.t('reports.economyLine.worse', { pct });
+      case 'flat':
+        return this.i18n.t('reports.economyLine.flat');
+      default: {
+        const _exhaustive: never = vs.direction;
+        return _exhaustive;
       }
     }
-    return this.i18n.t(key as MsgKey, next);
+  }
+
+  setReportRange(id: string): void {
+    if (!isHistoryRangePreset(id)) {
+      return;
+    }
+    this.reportRangePreset.set(id);
   }
 
   barPct(part: number, total: number): number {
@@ -969,33 +1037,17 @@ export class HomePage {
     }
   }
 
-  openPeriodForm(): void {
-    const today = todayDateOnly();
-    this.periodCloseDate.set(today);
-    this.periodStartDate.set(today);
-    this.showPeriodForm.set(true);
-  }
+}
 
-  cancelPeriodForm(): void {
-    this.showPeriodForm.set(false);
-  }
-
-  async confirmNewPeriod(): Promise<void> {
-    const carId = this.activeCarId();
-    if (!carId) {
-      return;
-    }
-    this.startingPeriod.set(true);
-    try {
-      await this.db.startNewPeriod(
-        carId,
-        this.periodStartDate(),
-        this.periodCloseDate(),
-      );
-      this.showPeriodForm.set(false);
-    } finally {
-      this.startingPeriod.set(false);
-    }
+function isHistoryRangePreset(id: string): id is HistoryRangePreset {
+  switch (id) {
+    case 'thisMonth':
+    case '3months':
+    case 'year':
+    case 'custom':
+      return true;
+    default:
+      return false;
   }
 }
 

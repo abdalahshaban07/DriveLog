@@ -147,6 +147,59 @@ describe('HomePage', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.report-hero')).toBeFalsy();
     expect(fixture.nativeElement.querySelector('.empty-state')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.reports-range')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.reports-list')).toBeFalsy();
+    expect(fixture.componentInstance.reportRangePreset()).toBe('3months');
+  });
+
+  it('sums the reports sheet inside the selected range', () => {
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const today = `${now.getFullYear()}-${month}-${day}`;
+    const stamp = (date: string) => ({
+      createdAt: `${date}T00:00:00.000Z`,
+      updatedAt: `${date}T00:00:00.000Z`,
+    });
+    fuelUseFills.push(
+      {
+        id: 'in',
+        date: today,
+        liters: 28.1,
+        cost: 914,
+        odometer: 1514,
+        distanceKm: 514,
+        tankFull: true,
+        ...stamp(today),
+      },
+      {
+        id: 'out',
+        date: '2020-01-01',
+        liters: 40,
+        cost: 5000,
+        odometer: 100,
+        distanceKm: 400,
+        tankFull: true,
+        ...stamp('2020-01-01'),
+      },
+    );
+    const fixture = TestBed.createComponent(HomePage);
+    fixture.componentInstance.view.set('reports');
+    fixture.detectChanges();
+    const hero = fixture.nativeElement.querySelector('.report-hero')?.textContent ?? '';
+    expect(hero).toContain('914');
+    expect(hero).not.toContain('5000');
+    expect(hero).toContain('reports.costKm');
+    expect(fixture.nativeElement.querySelector('.report-mix')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('.reports-list')).toBeFalsy();
+    fixture.componentInstance.setReportRange('custom');
+    fixture.componentInstance.reportFrom.set('2020-01-01');
+    fixture.componentInstance.reportTo.set('2020-01-31');
+    fixture.detectChanges();
+    const custom = fixture.nativeElement.querySelector('.report-hero')?.textContent ?? '';
+    expect(custom).toContain('5000');
+    expect(custom).not.toContain('914');
+    expect(fixture.nativeElement.querySelector('.reports-range__dates')).toBeTruthy();
   });
 
   it('hides the needs list when nothing is urgent', () => {

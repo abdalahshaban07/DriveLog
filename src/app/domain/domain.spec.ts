@@ -1191,6 +1191,23 @@ describe('report brief', () => {
       ['maintenance', 60],
     ]);
   });
+
+  it('counts a symptom only when it shows up twice', async () => {
+    const { recurringBreakdownCount } = await import('./smart-reports');
+    const row = (id: string, symptom: string) => ({
+      id,
+      carId: 'c',
+      symptom,
+      repairCost: 1,
+      odometer: 1,
+      date: '2026-02-01',
+      category: 'mechanical' as const,
+      createdAt: '2026-02-01T00:00:00.000Z',
+      updatedAt: '2026-02-01T00:00:00.000Z',
+    });
+    expect(recurringBreakdownCount([row('a', 'صوت'), row('b', 'صوت'), row('c', 'تاني')])).toBe(2);
+    expect(recurringBreakdownCount([row('a', 'صوت')])).toBe(0);
+  });
 });
 
 describe('look packs', () => {

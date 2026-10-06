@@ -167,6 +167,40 @@
   background: var(--fill-surface);
 }
 
+.report-hero .report-spec {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.report-hero .report-spec__row {
+  padding-inline: 0;
+}
+
+.report-note {
+  margin: var(--space-3) 0 0;
+  font-weight: 700;
+  line-height: 1.55;
+  unicode-bidi: isolate;
+}
+
+.reports-range {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.reports-range__title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.reports-range__dates {
+  display: grid;
+  gap: var(--space-3);
+}
+
 .report-spec__row {
   grid-template-columns: minmax(0, 1fr) auto;
   padding: var(--space-3) var(--space-4);
@@ -244,20 +278,6 @@
   .empty-cta:active {
     transform: none;
   }
-}
-
-.period-form {
-  margin-block-end: var(--space-4);
-  padding: var(--space-4);
-  border-radius: calc(var(--radius) - 4px);
-  background: var(--fill-well);
-}
-
-.period-form__actions {
-  display: flex;
-  gap: var(--space-3);
-  justify-content: flex-end;
-  align-items: center;
 }
 
 .carousel__spec {
@@ -794,22 +814,6 @@
   margin: var(--space-1) 0 0;
   color: var(--muted);
   font-size: 0.9rem;
-}
-
-.period-card__new {
-  min-height: var(--tap);
-  padding: 0 var(--space-3);
-  border: 1px solid color-mix(in srgb, var(--fuel) 55%, var(--hairline));
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--fuel) 10%, transparent);
-  color: var(--fuel);
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.period-card__new:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .period-grid {
