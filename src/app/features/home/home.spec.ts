@@ -152,6 +152,21 @@ describe('HomePage', () => {
     expect(fixture.componentInstance.reportRangePreset()).toBe('3months');
   });
 
+  it('keeps the charts tab to the three main trends', () => {
+    const fixture = TestBed.createComponent(HomePage);
+    fixture.componentInstance.view.set('charts');
+    fixture.detectChanges();
+    const panel = fixture.nativeElement.querySelector('.charts-panel');
+    expect(panel.querySelector('.tab-glance')).toBeFalsy();
+    expect(panel.querySelector('.ledger')).toBeFalsy();
+    expect(panel.querySelector('.stack-legend')).toBeFalsy();
+    const labels = [...panel.querySelectorAll('.chart-card__label')].map((node: Element) =>
+      node.textContent?.trim(),
+    );
+    expect(labels).toEqual(['charts.periodSpend', 'reports.glance.economy', 'charts.kmDriven']);
+    expect(fixture.componentInstance.priceMoved()).toBe(false);
+  });
+
   it('sums the reports sheet inside the selected range', () => {
     const now = new Date();
     const month = String(now.getMonth() + 1).padStart(2, '0');

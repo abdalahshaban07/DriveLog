@@ -463,49 +463,13 @@
   }
 
   @if (view() === 'charts') {
-    @let ltGlance = ledgerTotals();
     <section
       class="home-panel charts-panel list-reveal"
       role="tabpanel"
       [attr.aria-label]="i18n.t('home.tab.charts')"
     >
-      <div class="tab-glance" role="status" [attr.aria-label]="i18n.t('home.tab.charts')">
-        <p class="tab-glance__lead">{{ i18n.t('charts.lead') }}</p>
-        <ul class="tab-glance__counts">
-          <li class="tab-glance__count">
-            <span
-              class="tab-glance__num"
-              [class.metric--ghost]="ltGlance.fuel <= 0"
-            >{{ formatMoney(ltGlance.fuel) }}</span>
-            <span class="tab-glance__label">{{ i18n.t('charts.cat.fuel') }}</span>
-          </li>
-          <li class="tab-glance__count">
-            <span
-              class="tab-glance__num"
-              [class.metric--ghost]="ltGlance.maintenance <= 0"
-            >{{ formatMoney(ltGlance.maintenance) }}</span>
-            <span class="tab-glance__label">{{ i18n.t('charts.cat.maintenance') }}</span>
-          </li>
-          <li class="tab-glance__count">
-            <span
-              class="tab-glance__num"
-              [class.metric--ghost]="ltGlance.breakdown <= 0"
-            >{{ formatMoney(ltGlance.breakdown) }}</span>
-            <span class="tab-glance__label">{{ i18n.t('charts.cat.breakdown') }}</span>
-          </li>
-          <li class="tab-glance__count">
-            <span
-              class="tab-glance__num"
-              [class.metric--ghost]="ltGlance.other <= 0"
-            >{{ formatMoney(ltGlance.other) }}</span>
-            <span class="tab-glance__label">{{ i18n.t('charts.cat.other') }}</span>
-          </li>
-        </ul>
-      </div>
-
       <section class="tab-block" [attr.aria-label]="i18n.t('charts.trends')">
         <div class="trends-head">
-          <h2 class="tab-block__title">{{ i18n.t('charts.trends') }}</h2>
           <app-select-field
             class="filter-select trends-period"
             [compact]="true"
@@ -538,7 +502,7 @@
             }
           </div>
           <div class="chart-card">
-            <span class="chart-card__label">{{ i18n.t('home.economy') }}</span>
+            <span class="chart-card__label">{{ i18n.t('reports.glance.economy') }}</span>
             <div class="chart-card__head">
               <strong class="chart-card__value" [class.metric--ghost]="economyLatest() == null">
                 @if (economyLatest(); as latest) {
@@ -556,7 +520,7 @@
                 [values]="economyValues()"
                 [labels]="economyLabels()"
                 [reference]="economyAvg()"
-                [label]="i18n.t('home.economy')"
+                [label]="i18n.t('reports.glance.economy')"
               />
               @if (economyBest(); as best) {
                 <p class="chart-card__foot">
@@ -565,52 +529,6 @@
               }
             } @else {
               <p class="chart-card__empty">{{ i18n.t('charts.needDistance') }}</p>
-            }
-          </div>
-          <div class="chart-card">
-            <span class="chart-card__label">{{ i18n.t('home.costPerKm') }}</span>
-            <div class="chart-card__head">
-              <strong class="chart-card__value" [class.metric--ghost]="costLatest() == null">
-                @if (costLatest(); as latest) {
-                  {{ formatCostPerKm(latest) }}
-                } @else {
-                  {{ i18n.t('home.monthFuelDelta.none') }}
-                }
-              </strong>
-              @if (costDelta(); as delta) {
-                <span class="chart-card__delta">{{ formatMoneyDelta(delta, 2) }}</span>
-              }
-            </div>
-            @if (costValues().length >= 1) {
-              <app-line-chart
-                [values]="costValues()"
-                [labels]="costLabels()"
-                [reference]="costAvg()"
-                [tickDigits]="2"
-                [label]="i18n.t('home.costPerKm')"
-              />
-              @if (costBest(); as best) {
-                <p class="chart-card__foot">{{ i18n.t('charts.best') }} {{ formatCostPerKm(best) }}</p>
-              }
-            } @else {
-              <p class="chart-card__empty">{{ i18n.t('charts.needDistance') }}</p>
-            }
-          </div>
-          <div class="chart-card">
-            <span class="chart-card__label">{{ i18n.t('charts.fuelGradeShare') }}</span>
-            <div class="chart-card__head">
-              <strong class="chart-card__value" [class.metric--ghost]="fuelGradeTotal() <= 0">
-                {{ formatMoney(fuelGradeTotal()) }}
-              </strong>
-            </div>
-            @if (fuelGradeSlices().length) {
-              <app-donut-chart
-                [slices]="fuelGradeSlices()"
-                [label]="i18n.t('charts.fuelGradeShare')"
-              />
-              <p class="chart-card__foot">{{ i18n.t('charts.gradeCount', { count: fuelGradeShare().length }) }}</p>
-            } @else {
-              <p class="chart-card__empty">{{ i18n.t('charts.empty') }}</p>
             }
           </div>
           <div class="chart-card">
@@ -635,6 +553,19 @@
               <p class="chart-card__empty">{{ i18n.t('charts.needDistance') }}</p>
             }
           </div>
+          @if (fuelGradeSlices().length > 1) {
+            <div class="chart-card">
+              <span class="chart-card__label">{{ i18n.t('charts.fuelGradeShare') }}</span>
+              <div class="chart-card__head">
+                <strong class="chart-card__value">{{ formatMoney(fuelGradeTotal()) }}</strong>
+              </div>
+              <app-donut-chart
+                [slices]="fuelGradeSlices()"
+                [label]="i18n.t('charts.fuelGradeShare')"
+              />
+            </div>
+          }
+          @if (priceMoved()) {
           <div class="chart-card">
             <span class="chart-card__label">{{ i18n.t('charts.unitPrice') }}</span>
             <div class="chart-card__head">
@@ -660,10 +591,10 @@
               @if (priceAvg(); as avg) {
                 <p class="chart-card__foot">{{ i18n.t('charts.avgPrice', { amount: formatCostPerKm(avg) }) }}</p>
               }
-            } @else {
-              <p class="chart-card__empty">{{ i18n.t('charts.empty') }}</p>
             }
           </div>
+          }
+          @if (placeSlices().length > 1) {
           <div class="chart-card">
             <span class="chart-card__label">{{ i18n.t('charts.stations') }}</span>
             <div class="chart-card__head">
@@ -677,141 +608,10 @@
                 [label]="i18n.t('charts.stations')"
               />
               <p class="chart-card__foot">{{ placeSlices()[0]?.detail }}</p>
-            } @else {
-              <p class="chart-card__empty">{{ i18n.t('charts.placesEmpty') }}</p>
             }
           </div>
+          }
         </div>
-      </section>
-
-      <section class="tab-block" [attr.aria-label]="i18n.t('charts.mix')">
-        <h2 class="tab-block__title">{{ i18n.t('charts.mix') }}</h2>
-        <div class="charts-filters">
-          <app-select-field
-            class="filter-select"
-            [compact]="true"
-            [label]="i18n.t('charts.category')"
-            [options]="chartCategorySelectOptions()"
-            [value]="chartCategory()"
-            (valueChange)="chartCategory.set($any($event))"
-          />
-        </div>
-
-        @let lt = ledgerTotals();
-        @if (lt.total > 0) {
-          <div #stackBar class="stack-bar" role="img" [attr.aria-label]="i18n.t('charts.stackLabel')">
-            <div class="stack-bar__track">
-              <span
-                class="stack-bar__seg stack-bar__seg--fuel"
-                [style.flex]="barPct(lt.fuel, lt.total)"
-              ></span>
-              <span
-                class="stack-bar__seg stack-bar__seg--maint"
-                [style.flex]="barPct(lt.maintenance, lt.total)"
-              ></span>
-              <span
-                class="stack-bar__seg stack-bar__seg--break"
-                [style.flex]="barPct(lt.breakdown, lt.total)"
-              ></span>
-              <span
-                class="stack-bar__seg stack-bar__seg--other"
-                [style.flex]="barPct(lt.other, lt.total)"
-              ></span>
-            </div>
-            <ul class="stack-legend">
-              @if (lt.fuel > 0) {
-                <li>
-                  <span class="stack-legend__swatch stack-bar__seg--fuel"></span>
-                  <span>{{ i18n.t('charts.cat.fuel') }}</span>
-                  <strong>{{ formatMoney(lt.fuel) }}</strong>
-                  <span>{{ sharePct(lt.fuel, lt.total) }}%</span>
-                </li>
-              }
-              @if (lt.maintenance > 0) {
-                <li>
-                  <span class="stack-legend__swatch stack-bar__seg--maint"></span>
-                  <span>{{ i18n.t('charts.cat.maintenance') }}</span>
-                  <strong>{{ formatMoney(lt.maintenance) }}</strong>
-                  <span>{{ sharePct(lt.maintenance, lt.total) }}%</span>
-                </li>
-              }
-              @if (lt.breakdown > 0) {
-                <li>
-                  <span class="stack-legend__swatch stack-bar__seg--break"></span>
-                  <span>{{ i18n.t('charts.cat.breakdown') }}</span>
-                  <strong>{{ formatMoney(lt.breakdown) }}</strong>
-                  <span>{{ sharePct(lt.breakdown, lt.total) }}%</span>
-                </li>
-              }
-              @if (lt.other > 0) {
-                <li>
-                  <span class="stack-legend__swatch stack-bar__seg--other"></span>
-                  <span>{{ i18n.t('charts.cat.other') }}</span>
-                  <strong>{{ formatMoney(lt.other) }}</strong>
-                  <span>{{ sharePct(lt.other, lt.total) }}%</span>
-                </li>
-              }
-            </ul>
-          </div>
-        } @else {
-          <div class="empty-state">
-            <p>{{ i18n.t('charts.empty') }}</p>
-            <a routerLink="/fill-up" class="empty-cta">{{ i18n.t('home.logFillUp') }}</a>
-          </div>
-        }
-      </section>
-
-      <section class="tab-block" [attr.aria-label]="i18n.t('charts.ledger')">
-        <h2 class="tab-block__title">
-          {{ i18n.t('charts.ledger') }}
-          <span class="tab-block__count">{{ ledgerRows().length }}</span>
-        </h2>
-        @if (ledgerRows().length === 0) {
-          <div class="empty-state">
-            <p>{{ i18n.t('charts.ledgerEmpty') }}</p>
-            <a routerLink="/fill-up" class="empty-cta">{{ i18n.t('home.logFillUp') }}</a>
-          </div>
-        } @else {
-          <ul #ledgerList class="ledger list-reveal">
-            @for (row of ledgerRows(); track row.id) {
-              @if (row.category === 'fuel' && row.fuelDetail; as fd) {
-                <li class="ledger-row" data-tone="fuel">
-                  <div class="ledger-row__head">
-                    <strong class="ledger-row__cost">{{ formatMoney(row.amount) }}</strong>
-                    <time class="ledger-row__date">{{ ledgerDateLabel(row.date) }}</time>
-                  </div>
-                  <div class="ledger-row__facts">
-                    <span>{{ i18n.formatUnit(fd.liters, 'common.liters', 1) }}</span>
-                    @if (ledgerKmChip(row); as kmLabel) {
-                      <span class="ledger-row__sep" aria-hidden="true">·</span>
-                      <span>{{ kmLabel }}</span>
-                    }
-                    @if (fd.fuelGrade) {
-                      <span class="chip chip--fuel">{{ gradeLabel(fd.fuelGrade) }}</span>
-                    }
-                  </div>
-                  @if (fd.placeLabel) {
-                    <span class="ledger-row__place">{{ fd.placeLabel }}</span>
-                  }
-                </li>
-              } @else {
-                <li class="ledger-row" [attr.data-tone]="row.category">
-                  <div class="ledger-row__head">
-                    <strong class="ledger-row__cost">{{ formatMoney(row.amount) }}</strong>
-                    <time class="ledger-row__date">{{ ledgerDateLabel(row.date) }}</time>
-                  </div>
-                  <div class="ledger-row__body">
-                    <span class="ledger-row__cat">{{ categoryLabel(row.category) }}</span>
-                    <strong class="ledger-row__title">{{ ledgerTitle(row.title) }}</strong>
-                  </div>
-                  @if (row.meta) {
-                    <span class="ledger-row__meta">{{ row.meta }}</span>
-                  }
-                </li>
-              }
-            }
-          </ul>
-        }
       </section>
     </section>
   }

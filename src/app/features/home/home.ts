@@ -14,14 +14,9 @@ import { currentWeather, getCoords, type WeatherNow } from '../../data/remote';
 import { buildDueItems, nextDueItem, todayDateOnly } from '../../domain/dues';
 import { nextExpiringDoc, vaultExpiryForKind } from '../../domain/vehicle-docs';
 import { daysUntil, inActivePeriod, periodTotals } from '../../domain/expense-period';
-import {
-  buildExpenseLedger,
-  ledgerCategoryTotals,
-  type LedgerPeriodFilter,
-  type LedgerRow,
-} from '../../domain/expense-ledger';
+import { type LedgerPeriodFilter } from '../../domain/expense-ledger';
 import { fuelBoard, fuelDashboardMetrics, sparklineGeometry } from '../../domain/fuel-dashboard';
-import { dueItemLabel, isStoredMessageKey, partDefinitionLabel } from '../../domain/part-name';
+import { dueItemLabel, partDefinitionLabel } from '../../domain/part-name';
 import {
   fuelUseCompare,
   tankEconomyVsAvg,
@@ -29,7 +24,6 @@ import {
   type FuelUseReason,
 } from '../../domain/economy';
 import {
-  costPerKmTrend,
   distanceByMonth,
   economyTrend,
   fuelGradeCostShare,
@@ -66,7 +60,6 @@ import { BarChart } from '../../ui/charts/bar-chart';
 import { LineChart } from '../../ui/charts/line-chart';
 import { DonutChart, type DonutSlice } from '../../ui/charts/donut-chart';
 import { DateField } from '../../ui/date-field';
-import { MotionPolicy } from '../../ui/motion/motion-policy';
 import { PageHeader } from '../../ui/page-header';
 import { SelectField } from '../../ui/select-field';
 import { InstallCard } from './cards/install-card/install-card';
@@ -78,7 +71,6 @@ import {
   type ChecklistItem,
 } from './cards/setup-checklist/setup-checklist';
 type HomeView = 'dashboard' | 'reports' | 'charts';
-type ChartCategory = ExpenseCategory | 'all';
 type AttentionTone = 'soon' | 'overdue';
 type PaperTone = 'plain' | AttentionTone;
 
@@ -123,14 +115,10 @@ export class HomePage {
   readonly db = inject(Db);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly policy = inject(MotionPolicy);
   private readonly install = inject(InstallPwa);
-  private readonly ledgerList = viewChild<ElementRef<HTMLElement>>('ledgerList');
-  private readonly stackBar = viewChild<ElementRef<HTMLElement>>('stackBar');
   private readonly glanceStrip = viewChild<ElementRef<HTMLElement>>('glanceStrip');
 
   readonly view = signal<HomeView>('dashboard');
-  readonly chartCategory = signal<ChartCategory>('all');
   readonly chartPeriod = signal<LedgerPeriodFilter>('3m');
   readonly reportRangePreset = signal<HistoryRangePreset>('3months');
   readonly reportFrom = signal('');
@@ -145,27 +133,12 @@ export class HomePage {
     { id: 'charts', labelKey: 'home.tab.charts' },
   ];
 
-  readonly chartCategoryOptions: { id: ChartCategory; labelKey: MsgKey }[] = [
-    { id: 'all', labelKey: 'charts.categoryAll' },
-    { id: 'fuel', labelKey: 'charts.categoryFuel' },
-    { id: 'maintenance', labelKey: 'charts.categoryMaintenance' },
-    { id: 'breakdown', labelKey: 'charts.categoryBreakdown' },
-    { id: 'other', labelKey: 'charts.categoryOther' },
-  ];
-
   readonly chartPeriodOptions: { id: LedgerPeriodFilter; labelKey: MsgKey }[] = [
     { id: '30d', labelKey: 'charts.period30d' },
     { id: '3m', labelKey: 'charts.period3m' },
     { id: '6m', labelKey: 'charts.period6m' },
     { id: 'all', labelKey: 'charts.periodAll' },
   ];
-
-  readonly chartCategorySelectOptions = computed(() =>
-    this.chartCategoryOptions.map((opt) => ({
-      value: opt.id,
-      label: this.i18n.t(opt.labelKey),
-    })),
-  );
 
   readonly chartPeriodSelectOptions = computed(() =>
     this.chartPeriodOptions.map((opt) => ({
@@ -241,17 +214,6 @@ export class HomePage {
     ),
   );
   readonly economyVsUsual = computed(() => tankEconomyVsAvg(this.db.fillUps()));
-  readonly ledgerRows = computed(() =>
-    buildExpenseLedger({
-      fills: this.db.fillUps(),
-      maintenance: this.db.maintenance(),
-      breakdowns: this.db.breakdowns(),
-      other: this.db.otherExpenses(),
-      category: this.chartCategory(),
-      period: this.chartPeriod(),
-    }),
-  );
-  readonly ledgerTotals = computed(() => ledgerCategoryTotals(this.ledgerRows()));
   readonly fuelMetrics = computed(() => fuelDashboardMetrics(this.db.fillUps()));
   readonly fuelPulse = computed(() => fuelBoard(this.db.fillUps()));
   readonly pulseSpark = computed(() =>
@@ -356,12 +318,6 @@ export class HomePage {
   readonly economyLatest = computed(() => this.economySeries().at(-1)?.value ?? null);
   readonly economyDelta = computed(() => seriesDelta(this.economySeries()));
   readonly economyAvg = computed(() => seriesMean(this.economySeries()));
-  readonly costSeries = computed(() => costPerKmTrend(this.db.fillUps(), this.chartPeriod()));
-  readonly costValues = computed(() => this.costSeries().map((p) => p.value));
-  readonly costLabels = computed(() => this.costSeries().map((p) => this.shortDate(p.date)));
-  readonly costLatest = computed(() => this.costSeries().at(-1)?.value ?? null);
-  readonly costDelta = computed(() => seriesDelta(this.costSeries()));
-  readonly costAvg = computed(() => seriesMean(this.costSeries()));
   readonly spendTrendEntries = computed(() =>
     spendByMonthEntries(this.db.fillUps(), this.chartPeriod()),
   );
@@ -412,6 +368,7 @@ export class HomePage {
   readonly priceLatest = computed(() => this.priceSeries().at(-1)?.value ?? null);
   readonly priceDelta = computed(() => seriesDelta(this.priceSeries()));
   readonly priceAvg = computed(() => seriesMean(this.priceSeries()));
+  readonly priceMoved = computed(() => priceSpread(this.priceValues()));
   readonly placeShare = computed(() => placeSpendShare(this.db.fillUps(), this.chartPeriod()));
   readonly placeSlices = computed((): DonutSlice[] =>
     this.placeShare().map((s) => ({
@@ -421,7 +378,6 @@ export class HomePage {
     })),
   );
   readonly economyBest = computed(() => seriesMin(this.economySeries()));
-  readonly costBest = computed(() => seriesMin(this.costSeries()));
   readonly monthOutlook = computed(() =>
     buildMonthOutlook(
       this.db.fillUps(),
@@ -508,9 +464,6 @@ export class HomePage {
       }
     });
     afterNextRender(() => {
-      if (this.view() === 'charts') {
-        void this.animateCharts();
-      }
       void this.loadWeather();
     });
   }
@@ -683,39 +636,6 @@ export class HomePage {
     }
   }
 
-  async animateCharts(): Promise<void> {
-    if (!this.policy.allowAnime('stackBar')) {
-      return;
-    }
-    try {
-      const { animate, stagger } = await import('animejs');
-      const bar = this.stackBar()?.nativeElement;
-      if (bar) {
-        const segs = bar.querySelectorAll('.stack-bar__seg');
-        animate(segs, {
-          opacity: [0, 1],
-          scaleX: [0.6, 1],
-          delay: stagger(60),
-          duration: 480,
-          ease: 'out(3)',
-        });
-      }
-      const list = this.ledgerList()?.nativeElement;
-      if (list) {
-        const rows = list.querySelectorAll('.ledger-row');
-        animate(rows, {
-          opacity: [0, 1],
-          translateY: [8, 0],
-          delay: stagger(40),
-          duration: 420,
-          ease: 'out(3)',
-        });
-      }
-    } catch {
-      /* CSS fallback */
-    }
-  }
-
   paperLines(car: Car): PaperLine[] {
     const kinds = [
       { id: 'license' as const, key: 'due.license' as const },
@@ -808,15 +728,6 @@ export class HomePage {
       return '';
     }
     return this.i18n.t('charts.perMonth', { amount: this.formatMoney(total / count) });
-  }
-
-  sharePct(part: number, total: number): string {
-    if (total <= 0) {
-      return this.i18n.formatNumber(0, { maximumFractionDigits: 0 });
-    }
-    return this.i18n.formatNumber(Math.round((part / total) * 100), {
-      maximumFractionDigits: 0,
-    });
   }
 
   formatSigned(value: number, digits: number): string {
@@ -922,24 +833,6 @@ export class HomePage {
     return this.i18n.t(`fillUp.grade.${grade}` as MsgKey);
   }
 
-  ledgerKmChip(row: LedgerRow): string | null {
-    const km = row.fuelDetail?.distanceKm;
-    if (km == null || km <= 0) {
-      return null;
-    }
-    return this.i18n.t('history.kmDriven', {
-      km: this.i18n.formatNumber(km, { maximumFractionDigits: 0 }),
-    });
-  }
-
-  ledgerTitle(title: string): string {
-    return isStoredMessageKey(title) ? this.i18n.t(title as MsgKey) : title;
-  }
-
-  ledgerDateLabel(date: string): string {
-    return this.i18n.formatDate(date, { day: 'numeric', month: 'short' });
-  }
-
   categoryLabel(cat: ExpenseCategory): string {
     return this.i18n.t(`charts.cat.${cat}` as MsgKey);
   }
@@ -1012,18 +905,8 @@ export class HomePage {
     this.reportRangePreset.set(id);
   }
 
-  barPct(part: number, total: number): number {
-    if (total <= 0) {
-      return 0;
-    }
-    return Math.max(2, Math.round((part / total) * 100));
-  }
-
   setView(next: HomeView): void {
     this.view.set(next);
-    if (next === 'charts') {
-      queueMicrotask(() => void this.animateCharts());
-    }
     void this.router.navigate([], {
       queryParams: { view: next === 'dashboard' ? null : next },
       queryParamsHandling: 'merge',
@@ -1063,6 +946,18 @@ function seriesMean(points: readonly TrendPoint[]): number | null {
     return null;
   }
   return points.reduce((sum, point) => sum + point.value, 0) / points.length;
+}
+
+function priceSpread(values: readonly number[]): boolean {
+  if (values.length < 2) {
+    return false;
+  }
+  const low = Math.min(...values);
+  const high = Math.max(...values);
+  if (low <= 0) {
+    return high > 0;
+  }
+  return ((high - low) / low) * 100 >= TANK_ECONOMY_FLAT_PCT;
 }
 
 function seriesMin(points: readonly TrendPoint[]): number | null {
