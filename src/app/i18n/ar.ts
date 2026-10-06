@@ -410,7 +410,7 @@ export const ar: Record<MsgKey, string> = {
   'maint.duesEmpty': 'مفيش حاجة مستحقة دلوقتي',
   'maint.duesOverdue': '{count} متأخر',
   'maint.duesSoon': '{count} قريب الاستحقاق',
-  'maint.duesOk': 'كل حاجة تمام',
+  'maint.duesOk': 'مفيش قطعة متأخرة أو قرب معادها',
   'history.kmDriven': '{km} كم متقطوعة',
   'nav.fuel': 'البنزين',
   'nav.around': 'حولي',

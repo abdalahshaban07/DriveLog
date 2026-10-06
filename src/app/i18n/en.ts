@@ -415,7 +415,7 @@ export const en = {
   'maint.duesEmpty': 'Nothing due right now',
   'maint.duesOverdue': '{count} overdue',
   'maint.duesSoon': '{count} due soon',
-  'maint.duesOk': 'All clear',
+  'maint.duesOk': 'No part is overdue or due soon',
   'history.kmDriven': '{km} km driven',
   'nav.fuel': 'Fuel',
   'nav.around': 'Around',
