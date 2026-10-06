@@ -38,6 +38,7 @@ export interface Recommendation {
 
 export interface MonthOutlook {
   actual: number;
+  previous: number;
   projected: number | null;
   elapsedDays: number;
   daysInMonth: number;
@@ -61,6 +62,10 @@ function monthPrefix(now: Date): string {
   const y = now.getFullYear();
   const m = String(now.getMonth() + 1).padStart(2, '0');
   return `${y}-${m}`;
+}
+
+function previousMonthPrefix(now: Date): string {
+  return monthPrefix(new Date(now.getFullYear(), now.getMonth() - 1, 1));
 }
 
 function monthExpenseCount(
@@ -136,12 +141,19 @@ export function buildMonthOutlook(
   const elapsedDays = now.getDate();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const actual = monthSpendTotal(prefix, fills, maintenance, breakdowns, other);
+  const previous = monthSpendTotal(
+    previousMonthPrefix(now),
+    fills,
+    maintenance,
+    breakdowns,
+    other,
+  );
   const expenseCount = monthExpenseCount(prefix, fills, maintenance, breakdowns, other);
   const projected =
     elapsedDays >= 3 && expenseCount >= 1
       ? Math.round((actual / elapsedDays) * daysInMonth)
       : null;
-  return { actual, projected, elapsedDays, daysInMonth, expenseCount };
+  return { actual, previous, projected, elapsedDays, daysInMonth, expenseCount };
 }
 
 function dueRoute(item: DueItem): string {

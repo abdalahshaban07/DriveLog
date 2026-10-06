@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
+import { currentWeather, getCoords, type WeatherNow } from '../../data/remote';
 import { buildDueItems, nextDueItem, todayDateOnly } from '../../domain/dues';
 import { nextExpiringDoc, vaultExpiryForKind } from '../../domain/vehicle-docs';
 import {
@@ -48,6 +49,7 @@ import {
 import { buildReportBrief, buildSmartReports } from '../../domain/smart-reports';
 import { homeHealthSummary } from '../../domain/vehicle-facts';
 import { I18n } from '../../i18n/i18n';
+import { HealthRow } from '../../ui/health-row/health-row';
 import type { MsgKey } from '../../i18n/en';
 import { InstallPwa } from '../../pwa/install-pwa';
 import { BarChart } from '../../ui/charts/bar-chart';
@@ -60,6 +62,7 @@ import { PrimaryButton } from '../../ui/primary-button';
 import { SelectField } from '../../ui/select-field';
 import { InstallCard } from './cards/install-card/install-card';
 import { QuickLog } from './cards/quick-log/quick-log';
+import { WeatherTipCard } from './cards/weather-tip/weather-tip';
 import { SampleBanner } from './cards/sample-banner/sample-banner';
 import {
   SetupChecklist,
@@ -101,6 +104,8 @@ interface PaperLine {
     SetupChecklist,
     InstallCard,
     QuickLog,
+    HealthRow,
+    WeatherTipCard,
   ],
   templateUrl: './home.html',
   styleUrl: './home.scss',
@@ -124,6 +129,8 @@ export class HomePage {
   readonly periodCloseDate = signal(todayDateOnly());
   readonly periodStartDate = signal(todayDateOnly());
   readonly glanceFlash = signal(false);
+  readonly weather = signal<WeatherNow | null>(null);
+  readonly weatherBusy = signal(false);
 
   readonly tabOptions: { id: HomeView; labelKey: MsgKey }[] = [
     { id: 'dashboard', labelKey: 'home.tab.dashboard' },
@@ -381,6 +388,8 @@ export class HomePage {
     ),
   );
   readonly healthSummary = computed(() => homeHealthSummary(this.db));
+  readonly healthAttention = computed(() => this.healthSummary().attention);
+  readonly healthTop = computed(() => this.healthSummary().top);
   /** Overdue service, urgent papers, then the top health item. Empty when nothing is urgent. */
   readonly attention = computed((): AttentionRow[] => {
     const items: AttentionRow[] = [];
@@ -437,7 +446,24 @@ export class HomePage {
       if (this.view() === 'charts') {
         void this.animateCharts();
       }
+      void this.loadWeather();
     });
+  }
+
+  private async loadWeather(): Promise<void> {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      return;
+    }
+    this.weatherBusy.set(true);
+    try {
+      const coords = await getCoords();
+      if (!coords) {
+        return;
+      }
+      this.weather.set(await currentWeather(coords.lat, coords.lon));
+    } finally {
+      this.weatherBusy.set(false);
+    }
   }
 
   async clearSample(): Promise<void> {
@@ -753,6 +779,33 @@ export class HomePage {
     }
     const body = formatAbs(abs);
     return value > 0 ? `+${body}` : `−${body}`;
+  }
+
+  /** End-of-month projection compared with last month's total. */
+  monthVsLast(): { pct: number; tone: 'up' | 'down' | 'same' } | null {
+    const outlook = this.monthOutlook();
+    if (outlook.previous <= 0 || outlook.projected == null) {
+      return null;
+    }
+    const pct = Math.round(((outlook.projected - outlook.previous) / outlook.previous) * 100);
+    if (Math.abs(pct) < 3) {
+      return { pct, tone: 'same' };
+    }
+    return { pct, tone: pct > 0 ? 'up' : 'down' };
+  }
+
+  monthVsLastLabel(): string | null {
+    const vs = this.monthVsLast();
+    if (!vs) {
+      return null;
+    }
+    if (vs.tone === 'same') {
+      return this.i18n.t('home.monthFuelDelta.same');
+    }
+    const abs = this.i18n.formatNumber(Math.abs(vs.pct), { maximumFractionDigits: 0 });
+    return vs.tone === 'up'
+      ? this.i18n.t('home.monthFuelDelta.up', { pct: abs })
+      : this.i18n.t('home.monthFuelDelta.down', { pct: `-${abs}` });
   }
 
   monthPace(elapsedDays: number, daysInMonth: number): number {

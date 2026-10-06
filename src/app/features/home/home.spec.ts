@@ -88,7 +88,9 @@ describe('HomePage', () => {
     const page = fixture.componentInstance;
     expect(page.attention()).toEqual([]);
     expect(page.monthOutlook().actual).toBe(0);
+    expect(page.monthOutlook().previous).toBe(0);
     expect(page.monthOutlook().projected).toBeNull();
+    expect(page.monthVsLast()).toBeNull();
     expect(page.monthPace(10, 31)).toBe(32);
     expect(page.monthPace(0, 0)).toBe(0);
     expect(page.headerLine()).toBe('Car · 1000 common.km');
@@ -134,7 +136,8 @@ describe('HomePage', () => {
     const fixture = TestBed.createComponent(HomePage);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.needs')).toBeFalsy();
-    expect(fixture.nativeElement.querySelector('.vehicle-status')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('.vehicle-status')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('app-weather-tip')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('.rec-section')).toBeFalsy();
   });
 });

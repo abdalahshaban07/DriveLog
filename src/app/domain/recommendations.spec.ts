@@ -54,7 +54,22 @@ describe('buildMonthOutlook', () => {
       now,
     );
     expect(outlook.actual).toBe(150);
+    expect(outlook.previous).toBe(0);
     expect(outlook.expenseCount).toBe(2);
+  });
+
+  it('sums last month for the comparison', () => {
+    const outlook = buildMonthOutlook(
+      [
+        fill({ id: 'f1', date: '2026-03-05', cost: 100, liters: 40, odometer: 1100, tankFull: true }),
+        fill({ id: 'f0', date: '2026-02-20', cost: 80, liters: 30, odometer: 1000, tankFull: true }),
+      ],
+      [],
+      [],
+      [],
+      new Date(2026, 2, 10),
+    );
+    expect(outlook.previous).toBe(80);
   });
 
   it('projects spend when at least 3 days elapsed and one expense', () => {

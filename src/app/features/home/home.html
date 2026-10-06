@@ -213,6 +213,27 @@
           </section>
         }
 
+        <section class="vehicle-status" [attr.aria-label]="i18n.t('home.vehicleStatus')">
+          <header class="vehicle-status__head">
+            <h2>{{ i18n.t('home.vehicleStatus') }}</h2>
+            <a routerLink="/health">{{ i18n.t('health.viewAll') }}</a>
+          </header>
+          <p class="vehicle-status__count">
+            {{ i18n.t('health.attentionCount', { count: healthAttention() }) }}
+          </p>
+          @if (healthTop().length) {
+            <ul class="vehicle-status__list">
+              @for (item of healthTop(); track item.partDefinitionId) {
+                <li>
+                  <app-health-row [item]="item" />
+                </li>
+              }
+            </ul>
+          }
+        </section>
+
+        <app-weather-tip [weather]="weather()" [busy]="weatherBusy()" />
+
         @if (hasRealFills() || sampleMode()) {
           @let outlook = monthOutlook();
           <section class="month-outlook" role="status" [attr.aria-label]="i18n.t('home.monthOutlook')">
@@ -250,6 +271,17 @@
                   }
                 </strong>
               </div>
+            </div>
+            <div class="month-outlook__vs">
+              <span class="month-outlook__label">{{ i18n.t('home.lastMonthSpend') }}</span>
+              <strong>{{ formatMoney(outlook.previous) }}</strong>
+              @if (monthVsLastLabel(); as delta) {
+                <span
+                  class="month-outlook__delta"
+                  [class.month-outlook__delta--up]="monthVsLast()?.tone === 'up'"
+                  [class.month-outlook__delta--down]="monthVsLast()?.tone === 'down'"
+                >{{ i18n.t('home.projectedSpend') }} {{ delta }}</span>
+              }
             </div>
           </section>
         }

@@ -1098,6 +1098,82 @@
   line-height: 1.05;
 }
 
+.month-outlook__vs {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-block-start: var(--space-3);
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--hairline);
+}
+
+.month-outlook__vs strong {
+  margin-inline-start: auto;
+  font-variant-numeric: tabular-nums;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.month-outlook__delta {
+  padding: 0.08rem 0.45rem;
+  border-radius: 999px;
+  background: var(--fill-well);
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.month-outlook__delta--up {
+  color: var(--stop);
+  background: color-mix(in srgb, var(--stop) 12%, var(--fill-well));
+}
+
+.month-outlook__delta--down {
+  color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 14%, var(--fill-well));
+}
+
+.vehicle-status {
+  margin-block-end: var(--space-5);
+}
+
+.vehicle-status__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.vehicle-status__head h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.vehicle-status__head a {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.vehicle-status__count {
+  margin: var(--space-2) 0 0;
+  font-weight: 700;
+}
+
+.vehicle-status__list {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+  border-block-start: 1px solid var(--hairline);
+}
+
 .carousel {
   scrollbar-width: none;
 }
