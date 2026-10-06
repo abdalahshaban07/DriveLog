@@ -27,6 +27,14 @@ import { PageHeader } from '../../ui/page-header';
 import { FUEL_TABS, SectionTabs } from '../../ui/section-tabs/section-tabs';
 import { SelectField } from '../../ui/select-field';
 
+const GRADE_ORDER: readonly FuelGrade[] = [
+  'gasoline92',
+  'gasoline95',
+  'solar',
+  'diesel',
+  'custom',
+];
+
 type GradeFilter = FuelGrade | 'all';
 type TypeFilter = EnergyKind | 'all';
 
@@ -59,14 +67,6 @@ export class FillUpHistoryPage {
     { id: 'custom', labelKey: 'history.rangeCustom' },
   ];
 
-  readonly gradeChips: { id: GradeFilter; labelKey: MsgKey }[] = [
-    { id: 'all', labelKey: 'history.filterAll' },
-    { id: 'gasoline92', labelKey: 'fillUp.grade.gasoline92' },
-    { id: 'gasoline95', labelKey: 'fillUp.grade.gasoline95' },
-    { id: 'solar', labelKey: 'fillUp.grade.solar' },
-    { id: 'custom', labelKey: 'fillUp.grade.custom' },
-  ];
-
   readonly typeChips: { id: TypeFilter; labelKey: MsgKey }[] = [
     { id: 'all', labelKey: 'history.filterAllTypes' },
     { id: 'fuel', labelKey: 'history.type.fuel' },
@@ -80,12 +80,46 @@ export class FillUpHistoryPage {
     })),
   );
 
-  readonly gradeOptions = computed(() =>
-    this.gradeChips.map((c) => ({
-      value: c.id,
-      label: this.i18n.t(c.labelKey),
-    })),
+  readonly presentGrades = computed(() => {
+    const { from, to } = this.activeRange();
+    const seen = new Set<FuelGrade>();
+    for (const fill of this.db.fillUps()) {
+      if (from && fill.date < from) {
+        continue;
+      }
+      if (to && fill.date > to) {
+        continue;
+      }
+      if (fill.fuelGrade) {
+        seen.add(fill.fuelGrade);
+      }
+    }
+    return GRADE_ORDER.filter((id) => seen.has(id));
+  });
+
+  readonly showGradeFilter = computed(() => this.presentGrades().length > 1);
+
+  readonly showTypeFilter = computed(() => this.db.chargeSessions().length > 0);
+
+  readonly activeGrade = computed((): GradeFilter => {
+    const selected = this.gradeFilter();
+    if (!this.showGradeFilter() || selected === 'all') {
+      return 'all';
+    }
+    return this.presentGrades().includes(selected) ? selected : 'all';
+  });
+
+  readonly activeType = computed((): TypeFilter =>
+    this.showTypeFilter() ? this.typeFilter() : 'all',
   );
+
+  readonly gradeOptions = computed(() => [
+    { value: 'all', label: this.i18n.t('history.filterAll') },
+    ...this.presentGrades().map((id) => ({
+      value: id,
+      label: this.gradeLabel(id),
+    })),
+  ]);
 
   readonly typeOptions = computed(() =>
     this.typeChips.map((c) => ({
@@ -107,7 +141,7 @@ export class FillUpHistoryPage {
 
   readonly fuelRows = computed(() =>
     filterFillUps(this.db.fillUps(), {
-      grade: this.gradeFilter(),
+      grade: this.activeGrade(),
       ...this.activeRange(),
     }),
   );
@@ -126,8 +160,26 @@ export class FillUpHistoryPage {
   });
 
   readonly rows = computed(() =>
-    mergeEnergyHistory(this.fuelRows(), this.chargeRows(), this.typeFilter()),
+    mergeEnergyHistory(this.fuelRows(), this.chargeRows(), this.activeType()),
   );
+
+  readonly periodTotals = computed(() => {
+    let total = 0;
+    let liters = 0;
+    let kWh = 0;
+    let km = 0;
+    let hasKm = false;
+    for (const group of this.groupedRows()) {
+      total += group.total;
+      liters += group.liters;
+      kWh += group.kWh;
+      if (group.km != null) {
+        km += group.km;
+        hasKm = true;
+      }
+    }
+    return { total, liters, kWh, km: hasKm ? km : null };
+  });
 
   readonly groupedRows = computed(() => {
     const groups = new Map<string, EnergyHistoryRow[]>();
@@ -188,10 +240,6 @@ export class FillUpHistoryPage {
     });
   }
 
-  isEfficiencyEnd(id: string): boolean {
-    return this.efficiencyWarn()?.endId === id;
-  }
-
   gradeLabel(grade?: string): string {
     if (!grade) {
       return '';
@@ -212,8 +260,27 @@ export class FillUpHistoryPage {
     }
   }
 
-  datePill(date: string): string {
-    return this.i18n.formatDate(date, { day: 'numeric', month: 'short' });
+  dayNumber(date: string): string {
+    return this.i18n.formatDate(date, { day: 'numeric' });
+  }
+
+  monthShort(date: string): string {
+    return this.i18n.formatDate(date, { month: 'short' });
+  }
+
+  l100(fill: FillUp): number | null {
+    const km = this.kmDriven(fill);
+    if (km == null || km <= 0 || fill.liters <= 0) {
+      return null;
+    }
+    return (fill.liters / km) * 100;
+  }
+
+  formatL100(value: number): string {
+    return this.i18n.formatNumber(value, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    });
   }
 
   kmDriven(f: FillUp): number | null {
@@ -230,16 +297,6 @@ export class FillUpHistoryPage {
     }
     const d = f.odometer - prev.odometer;
     return d > 0 ? d : null;
-  }
-
-  kmDrivenLabel(f: FillUp): string | null {
-    const km = this.kmDriven(f);
-    if (km == null) {
-      return null;
-    }
-    return this.i18n.t('history.kmDriven', {
-      km: this.i18n.formatNumber(km, { maximumFractionDigits: 0 }),
-    });
   }
 
   chargeEcoLabel(c: ChargeSession): string | null {

@@ -350,6 +350,7 @@ export const ar: Record<MsgKey, string> = {
   'history.filterGrade': 'تصفية حسب نوع البنزين',
   'history.filterType': 'تصفية حسب النوع',
   'history.filterAll': 'كل الأنواع',
+  'history.amount': 'المبلغ',
   'history.from': 'من',
   'history.to': 'إلى',
   'history.share': 'تحميل CSV',

@@ -355,6 +355,7 @@ export const en = {
   'history.filterGrade': 'Filter by fuel grade',
   'history.filterType': 'Filter by type',
   'history.filterAll': 'All grades',
+  'history.amount': 'Amount',
   'history.from': 'From',
   'history.to': 'To',
   'history.share': 'Download CSV',

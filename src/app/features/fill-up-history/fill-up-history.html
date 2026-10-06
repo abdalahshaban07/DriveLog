@@ -25,19 +25,21 @@
       </div>
     }
 
-    <app-select-field
-      [label]="i18n.t('history.filterType')"
-      [options]="typeOptions()"
-      [value]="typeFilter()"
-      (valueChange)="setType($event)"
-    />
-
-    @if (typeFilter() !== 'charge') {
+    @if (showGradeFilter()) {
       <app-select-field
         [label]="i18n.t('history.filterGrade')"
         [options]="gradeOptions()"
-        [value]="gradeFilter()"
+        [value]="activeGrade()"
         (valueChange)="setGrade($event)"
+      />
+    }
+
+    @if (showTypeFilter()) {
+      <app-select-field
+        [label]="i18n.t('history.filterType')"
+        [options]="typeOptions()"
+        [value]="activeType()"
+        (valueChange)="setType($event)"
       />
     }
   </div>
@@ -46,20 +48,56 @@
     <p class="empty-state">{{ i18n.t('home.logFirst') }}</p>
     <a routerLink="/fill-up" class="cta">{{ i18n.t('empty.fillUps.cta') }}</a>
   } @else {
+    @let totals = periodTotals();
+    <section class="history-sheet" [attr.aria-label]="i18n.t('history.range')">
+      <div class="history-sheet__facts">
+        <div>
+          <span class="history-sheet__label">{{ i18n.t('history.amount') }}</span>
+          <strong><bdi dir="ltr">{{ formatMoney(totals.total) }}</bdi></strong>
+        </div>
+        @if (totals.liters > 0) {
+          <div>
+            <span class="history-sheet__label">{{ i18n.t('fillUp.liters') }}</span>
+            <strong>
+              <bdi dir="ltr">{{ i18n.formatNumber(totals.liters, { maximumFractionDigits: 1 }) }}</bdi>
+            </strong>
+          </div>
+        }
+        @if (totals.km != null) {
+          <div>
+            <span class="history-sheet__label">{{ i18n.t('fuel.monthDistance') }}</span>
+            <strong>
+              <bdi dir="ltr">{{ i18n.formatNumber(totals.km, { maximumFractionDigits: 0 }) }}</bdi>
+              {{ i18n.t('common.km') }}
+            </strong>
+          </div>
+        }
+        @if (totals.kWh > 0) {
+          <div>
+            <span class="history-sheet__label">{{ i18n.t('history.type.charge') }}</span>
+            <strong>
+              <bdi dir="ltr">{{ i18n.formatNumber(totals.kWh, { maximumFractionDigits: 1 }) }}</bdi>
+            </strong>
+          </div>
+        }
+      </div>
+      @if (fuelRows().length) {
+        <div class="history-exports">
+          <button type="button" [disabled]="shareBusy()" (click)="exportPdf()">
+            {{ shareBusy() ? i18n.t('common.loading') : i18n.t('history.exportPdf') }}
+          </button>
+          <button type="button" [disabled]="shareBusy()" (click)="shareCsv()">
+            {{ shareBusy() ? i18n.t('common.loading') : i18n.t('history.share') }}
+          </button>
+        </div>
+      }
+    </section>
     @if (efficiencyWarn()) {
       <p class="efficiency-banner" role="status">
         {{ i18n.t('history.efficiencyBanner') }}
         <span class="efficiency-banner__hint">{{ efficiencyHint() }}</span>
       </p>
     }
-    <div class="history-actions">
-      <button type="button" class="ghost-btn" [disabled]="shareBusy()" (click)="shareCsv()">
-        {{ shareBusy() ? i18n.t('common.loading') : i18n.t('history.share') }}
-      </button>
-      <button type="button" class="ghost-btn" [disabled]="shareBusy()" (click)="exportPdf()">
-        {{ shareBusy() ? i18n.t('common.loading') : i18n.t('history.exportPdf') }}
-      </button>
-    </div>
     @if (shareError()) {
       <p class="error-state" role="alert">{{ shareError() }}</p>
     }
@@ -69,34 +107,29 @@
           <div class="history-month__head">
             <h2 class="history-month__title">{{ monthLabel(group.month) }}</h2>
             <div class="history-month__totals">
-              <p class="history-month__total">{{ formatMoney(group.total) }}</p>
-              @if (group.liters > 0) {
-                <p class="history-month__secondary">
-                  {{
-                    i18n.t('history.monthLiters', {
-                      liters: i18n.formatNumber(group.liters, { maximumFractionDigits: 1 }),
-                    })
-                  }}
-                </p>
-              }
-              @if (group.kWh > 0) {
-                <p class="history-month__secondary">
-                  {{
-                    i18n.t('history.kWhDriven', {
-                      kWh: i18n.formatNumber(group.kWh, { maximumFractionDigits: 1 }),
-                    })
-                  }}
-                </p>
-              }
-              @if (group.km != null) {
-                <p class="history-month__secondary">
-                  {{
-                    i18n.t('history.monthKm', {
-                      km: i18n.formatNumber(group.km, { maximumFractionDigits: 0 }),
-                    })
-                  }}
-                </p>
-              }
+              <p class="history-month__total">
+                <bdi dir="ltr">{{ formatMoney(group.total) }}</bdi>
+              </p>
+              <p class="history-month__secondary">
+                @if (group.liters > 0) {
+                  <span>
+                    <bdi dir="ltr">{{ i18n.formatNumber(group.liters, { maximumFractionDigits: 1 }) }}</bdi>
+                    {{ i18n.t('common.liters') }}
+                  </span>
+                }
+                @if (group.km != null) {
+                  <span>
+                    <bdi dir="ltr">{{ i18n.formatNumber(group.km, { maximumFractionDigits: 0 }) }}</bdi>
+                    {{ i18n.t('common.km') }}
+                  </span>
+                }
+                @if (group.kWh > 0) {
+                  <span>
+                    <bdi dir="ltr">{{ i18n.formatNumber(group.kWh, { maximumFractionDigits: 1 }) }}</bdi>
+                    {{ i18n.t('history.type.charge') }}
+                  </span>
+                }
+              </p>
             </div>
           </div>
           <ul class="history-ledger">
@@ -109,55 +142,46 @@
                     (click)="editRow(item)"
                   >
                     <div class="history-ledger__main">
-                      <span class="pill">{{ datePill(item.row.date) }}</span>
-                      <div class="history-ledger__meta">
-                        <span
-                          class="chip"
-                          [class.chip--charge]="item.kind === 'charge'"
-                          [class.chip--fuel]="item.kind === 'fuel'"
-                        >
-                          {{
-                            item.kind === 'charge'
-                              ? i18n.t('history.type.charge')
-                              : i18n.t('history.type.fuel')
-                          }}
-                        </span>
+                      <span class="history-day">
+                        <strong>{{ dayNumber(item.row.date) }}</strong>
+                        <span>{{ monthShort(item.row.date) }}</span>
+                      </span>
+                      <span class="history-ledger__body">
+                        @if (item.row.placeLabel) {
+                          <span class="history-ledger__place">{{ item.row.placeLabel }}</span>
+                        }
                         @if (item.kind === 'fuel') {
-                          <span class="chip">
-                            {{ i18n.formatUnit(item.row.liters, 'common.liters', 1) }}
+                          <span class="history-liters">
+                            <bdi dir="ltr">{{ i18n.formatNumber(item.row.liters, { maximumFractionDigits: 1 }) }}</bdi>
+                            <span>{{ i18n.t('common.liters') }}</span>
+                            @if (item.row.fuelGrade) {
+                              <span class="chip chip--fuel">{{ gradeLabel(item.row.fuelGrade) }}</span>
+                            }
                           </span>
-                          @if (item.row.fuelGrade) {
-                            <span class="chip chip--fuel">{{ gradeLabel(item.row.fuelGrade) }}</span>
+                          @if (l100(item.row); as rate) {
+                            <span class="history-eco">
+                              <bdi dir="ltr">{{ formatL100(rate) }}</bdi>
+                              <span>{{ i18n.t('fuel.per100Lead') }}</span>
+                              <bdi dir="ltr">{{ i18n.formatNumber(100, { maximumFractionDigits: 0 }) }}</bdi>
+                              <span>{{ i18n.t('common.km') }}</span>
+                            </span>
                           }
-                          @if (kmDrivenLabel(item.row); as kmLabel) {
-                            <span class="chip">{{ kmLabel }}</span>
-                          }
-                          @if (isEfficiencyEnd(item.row.id)) {
-                            <span
-                              class="chip chip--warn"
-                              [attr.title]="efficiencyHint()"
-                            >
-                              {{ i18n.t('history.efficiencyWarn') }}
+                          @if (kmDriven(item.row); as km) {
+                            <span class="history-km">
+                              <bdi dir="ltr">{{ i18n.formatNumber(km, { maximumFractionDigits: 0 }) }}</bdi>
+                              {{ i18n.t('common.km') }}
                             </span>
                           }
                         } @else {
-                          <span class="chip">
-                            {{
-                              i18n.t('history.kWhDriven', {
-                                kWh: i18n.formatNumber(item.row.kWh, {
-                                  maximumFractionDigits: 1,
-                                }),
-                              })
-                            }}
+                          <span class="chip chip--charge">{{ i18n.t('history.type.charge') }}</span>
+                          <span class="history-liters">
+                            <bdi dir="ltr">{{ i18n.formatNumber(item.row.kWh, { maximumFractionDigits: 1 }) }}</bdi>
                           </span>
                           @if (chargeEcoLabel(item.row); as eco) {
-                            <span class="chip">{{ eco }}</span>
+                            <span class="history-km">{{ eco }}</span>
                           }
                         }
-                      </div>
-                      @if (item.row.placeLabel) {
-                        <span class="history-ledger__place">{{ item.row.placeLabel }}</span>
-                      }
+                      </span>
                     </div>
                     <div class="history-ledger__side">
                       <strong class="history-ledger__cost">{{ formatMoney(item.row.cost) }}</strong>
