@@ -217,8 +217,10 @@
       @if (justSaved() && clean()) {
         <p class="budget__note budget__note--ok" role="status">{{ i18n.t('budget.saved') }}</p>
       }
-      <app-primary-button [label]="i18n.t('budget.save')" (pressed)="save()" />
     </section>
+    <div class="budget__save">
+      <app-primary-button [label]="i18n.t('budget.save')" [stretch]="true" (pressed)="save()" />
+    </div>
   } @else {
     <p class="empty-state">{{ i18n.t('budget.notEnoughData') }}</p>
   }

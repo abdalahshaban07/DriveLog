@@ -1,7 +1,22 @@
+.breakdowns {
+  padding-block-end: calc(var(--tap) + var(--space-6));
+}
+
 .form-actions {
   display: flex;
   gap: var(--space-3);
   align-items: center;
+}
+
+.dock {
+  position: fixed;
+  z-index: 90;
+  inset-inline: max(var(--space-4), calc((100% - var(--shell)) / 2 + var(--space-4)));
+  bottom: calc(var(--nav-height) + var(--space-2));
+}
+
+:host-context([data-look='receipt']) .dock {
+  bottom: calc(max(var(--space-3), env(safe-area-inset-bottom, 0px)) + var(--tap) + var(--space-4));
 }
 
 .section-title {

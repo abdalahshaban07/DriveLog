@@ -15,7 +15,7 @@ import { buildDueItems, nextDueItem, todayDateOnly } from '../../domain/dues';
 import { nextExpiringDoc, vaultExpiryForKind } from '../../domain/vehicle-docs';
 import { daysUntil, inActivePeriod, periodTotals } from '../../domain/expense-period';
 import { fuelBoard, fuelDashboardMetrics, sparklineGeometry } from '../../domain/fuel-dashboard';
-import { dueItemLabel, partDefinitionLabel } from '../../domain/part-name';
+import { dueItemLabel } from '../../domain/part-name';
 import {
   fuelUseCompare,
   tankEconomyVsAvg,
@@ -40,7 +40,6 @@ import type {
   DueStatus,
   ExpenseCategory,
   ExpensePeriod,
-  HealthStatus,
 } from '../../domain/models';
 import { buildMonthOutlook } from '../../domain/recommendations';
 import { SAMPLE_CAR_ID } from '../../domain/sample-data';
@@ -379,72 +378,25 @@ export class HomePage {
   );
   /** Liters so far vs the same days last month, with a reason when we can name one. */
   readonly fuelUse = computed(() => fuelUseCompare(this.db.fillUps()));
-  /** Next maintenance that is not yet soon or overdue. Urgent items live in attention. */
-  readonly comingDue = computed(() => {
-    const car = this.db.car();
-    if (!car) {
-      return null;
-    }
-    const docs = this.db.vehicleDocuments();
-    const items = buildDueItems(
-      this.db.settings(),
-      this.db.maintenance(),
-      car.currentOdometer,
-      todayDateOnly(),
-      {
-        ...car,
-        licenseExpiry: vaultExpiryForKind(docs, 'license') ?? car.licenseExpiry,
-        registrationExpiry: vaultExpiryForKind(docs, 'registration') ?? car.registrationExpiry,
-      },
-    ).filter((item) => item.source === 'maintenance' && item.status === 'future');
-    return nextDueItem(items);
-  });
   readonly healthSummary = computed(() => homeHealthSummary(this.db));
   readonly healthAttention = computed(() => this.healthSummary().attention);
   readonly healthTop = computed(() => this.healthSummary().top);
-  /** Overdue service, urgent papers, then the top health item. Empty when nothing is urgent. */
+  /** Dated papers only. Part health stays in the vehicle-status block. */
   readonly attention = computed((): AttentionRow[] => {
-    const items: AttentionRow[] = [];
-    const due = this.nextDue();
-    if (due?.source === 'maintenance' && (due.status === 'overdue' || due.status === 'dueSoon')) {
-      items.push({
-        id: due.id,
-        title: this.dueLabel(),
-        detail: this.dueCountdown() ?? '',
-        tone: due.status === 'overdue' ? 'overdue' : 'soon',
-        route: '/maintenance',
-      });
-    }
     const car = this.db.car();
-    if (car) {
-      const urgentPapers = this.paperLines(car)
-        .filter((paper): paper is PaperLine & { tone: AttentionTone } => paper.tone !== 'plain')
-        .sort((a, b) => this.paperRank(a.tone) - this.paperRank(b.tone));
-      for (const paper of urgentPapers) {
-        if (items.length >= 3) {
-          break;
-        }
-        items.push({
-          id: paper.id,
-          title: paper.name,
-          detail: paper.value,
-          tone: paper.tone,
-          route: '/vault',
-        });
-      }
+    if (!car) {
+      return [];
     }
-    const health = this.healthSummary().top.find((item) => this.healthTone(item.status) != null);
-    const healthTone = health ? this.healthTone(health.status) : null;
-    if (health && healthTone && items.length < 3) {
-      items.push({
-        id: `health-${health.partDefinitionId}`,
-        title: partDefinitionLabel(health.part, (key) => this.i18n.t(key as MsgKey)),
-        detail: this.i18n.t(`health.status.${health.status}` as MsgKey),
-        tone: healthTone,
-        route: `/health/${health.partDefinitionId}`,
-      });
-    }
-    return items.slice(0, 3);
+    return this.paperLines(car)
+      .filter((paper): paper is PaperLine & { tone: AttentionTone } => paper.tone !== 'plain')
+      .sort((a, b) => this.paperRank(a.tone) - this.paperRank(b.tone))
+      .map((paper) => ({
+        id: paper.id,
+        title: paper.name,
+        detail: paper.value,
+        tone: paper.tone,
+        route: '/vault',
+      }));
   });
 
   constructor() {
@@ -667,25 +619,6 @@ export class HomePage {
     return tone === 'overdue' ? 0 : 1;
   }
 
-  private healthTone(status: HealthStatus): AttentionTone | null {
-    switch (status) {
-      case 'overdue':
-      case 'critical':
-      case 'due':
-        return 'overdue';
-      case 'soon':
-      case 'inspect':
-        return 'soon';
-      case 'good':
-      case 'unknown':
-        return null;
-      default: {
-        const _exhaustive: never = status;
-        return _exhaustive;
-      }
-    }
-  }
-
   licenseDays(expiry?: string): number | null {
     if (!expiry) {
       return null;
@@ -763,21 +696,6 @@ export class HomePage {
       return { pct, tone: 'same' };
     }
     return { pct, tone: pct > 0 ? 'up' : 'down' };
-  }
-
-  comingLine(): string | null {
-    const due = this.comingDue();
-    if (!due) {
-      return null;
-    }
-    const name = dueItemLabel(due, this.db.maintenance(), this.db.catalog(), (key) =>
-      this.i18n.t(key as MsgKey),
-    );
-    const detail = this.countdownFor(due);
-    if (!detail) {
-      return name;
-    }
-    return this.i18n.t('home.comingLine', { name, detail });
   }
 
   fuelUseWhy(): string | null {

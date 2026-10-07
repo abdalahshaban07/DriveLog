@@ -113,23 +113,23 @@
   align-items: start;
 }
 
-.maint-form__advanced {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  backdrop-filter: none;
-}
-
-.maint-form__advanced > .disclosure__body {
-  border-block-start: 0;
-  margin-block-start: 0;
+.maint {
+  padding-block-end: calc(var(--tap) + var(--space-6));
 }
 
 .maint-form__save {
   padding-block-start: var(--space-1);
+}
+
+.dock {
+  position: fixed;
+  z-index: 90;
+  inset-inline: max(var(--space-4), calc((100% - var(--shell)) / 2 + var(--space-4)));
+  bottom: calc(var(--nav-height) + var(--space-2));
+}
+
+:host-context([data-look='receipt']) .dock {
+  bottom: calc(max(var(--space-3), env(safe-area-inset-bottom, 0px)) + var(--tap) + var(--space-4));
 }
 
 .section-title {

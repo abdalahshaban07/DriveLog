@@ -567,12 +567,21 @@
   transform: scale(0.98);
 }
 
+.fill-up {
+  padding-block-end: calc(var(--tap) + var(--space-6));
+}
+
 .save-wrap {
-  position: sticky;
-  inset-block-end: 0;
-  z-index: 2;
+  position: fixed;
+  z-index: 90;
+  inset-inline: max(var(--space-4), calc((100% - var(--shell)) / 2 + var(--space-4)));
+  bottom: calc(var(--nav-height) + var(--space-2));
   padding-block: var(--space-2);
   background: color-mix(in srgb, var(--bg) 88%, transparent);
+}
+
+:host-context([data-look='receipt']) .save-wrap {
+  bottom: calc(max(var(--space-3), env(safe-area-inset-bottom, 0px)) + var(--tap) + var(--space-4));
 }
 
 @media (prefers-reduced-motion: reduce) {

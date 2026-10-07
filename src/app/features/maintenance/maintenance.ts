@@ -79,7 +79,6 @@ export class MaintenancePage {
   readonly odoError = signal('');
   readonly costError = signal('');
   readonly holidays = signal<PublicHoliday[]>([]);
-  readonly advancedOpen = signal(false);
 
   readonly partOptions = computed(() => {
     const opts = this.db.catalog().map((p) => ({
@@ -209,11 +208,6 @@ export class MaintenancePage {
     return this.i18n.formatDate(date, { month: 'short' });
   }
 
-  onAdvancedToggle(event: Event): void {
-    const el = event.target as HTMLDetailsElement;
-    this.advancedOpen.set(el.open);
-  }
-
   resetForm(): void {
     this.editId.set(null);
     this.partId.set('');
@@ -228,7 +222,6 @@ export class MaintenancePage {
     this.condition.set('');
     this.odoError.set('');
     this.costError.set('');
-    this.advancedOpen.set(false);
   }
 
   startEdit(row: Maintenance): void {
@@ -243,19 +236,6 @@ export class MaintenancePage {
     this.dueDate.set(row.dueDate ?? '');
     this.partModel.set(row.partModel ?? '');
     this.condition.set(row.condition ?? '');
-    this.advancedOpen.set(this.rowHasAdvanced(row));
-  }
-
-  /** Open details when the row already has something besides the cost. */
-  private rowHasAdvanced(row: Maintenance): boolean {
-    return (
-      !!row.partModel ||
-      !!row.condition ||
-      row.dueKm != null ||
-      !!row.dueDate ||
-      !!row.note ||
-      !!(row.measurements && row.measurements.length)
-    );
   }
 
   async save(): Promise<void> {

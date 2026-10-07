@@ -1,5 +1,8 @@
 <div class="stack home">
   <app-page-header [title]="i18n.t('app.name')" [subtitle]="headerLine()" />
+  @if (view() === 'dashboard') {
+    <app-weather-tip [weather]="weather()" [busy]="weatherBusy()" />
+  }
 
   <div class="section-tabs" role="tablist" [attr.aria-label]="i18n.t('home.tabs')">
     @for (tab of tabOptions; track tab.id) {
@@ -23,6 +26,7 @@
       [attr.aria-label]="i18n.t('home.tab.dashboard')"
     >
       @if (db.cars().length) {
+        @if (db.cars().length > 1) {
         <div class="carousel" [attr.aria-label]="i18n.t('home.carousel.label')">
           @for (car of db.cars(); track car.id) {
             <button
@@ -69,6 +73,7 @@
             </button>
           }
         </div>
+        }
 
         @if (sampleMode()) {
           <app-sample-banner (clear)="clearSample()" />
@@ -179,8 +184,6 @@
           </a>
         </section>
 
-        <app-weather-tip [weather]="weather()" [busy]="weatherBusy()" />
-
         @if (!hasRealFills() && !sampleMode()) {
           <a routerLink="/fill-up" class="ghost-cta">{{ i18n.t('home.ghost.cta') }}</a>
         }
@@ -193,7 +196,7 @@
           <section class="needs" [attr.aria-label]="i18n.t('home.needsYou')">
             <header class="needs__head">
               <h2 class="needs__title">{{ i18n.t('home.needsYou') }}</h2>
-              <a class="needs__all" routerLink="/health">{{ i18n.t('health.viewAll') }}</a>
+              <a class="needs__all" routerLink="/vault">{{ i18n.t('health.viewAll') }}</a>
             </header>
             <ul class="needs__list">
               @for (item of attention(); track item.id) {
@@ -215,11 +218,25 @@
           </section>
         }
 
-        @if (comingDue()) {
-          <a class="coming" routerLink="/maintenance">
-            <span class="coming__label">{{ i18n.t('home.nextDue') }}</span>
-            <span class="coming__value">{{ comingLine() }}</span>
-          </a>
+        @if (healthAttention() > 0) {
+          <section class="vehicle-status" [attr.aria-label]="i18n.t('home.vehicleStatus')">
+            <header class="vehicle-status__head">
+              <h2>{{ i18n.t('home.vehicleStatus') }}</h2>
+              <a routerLink="/health">{{ i18n.t('health.viewAll') }}</a>
+            </header>
+            <p class="vehicle-status__count">
+              {{ i18n.t('health.attentionCount', { count: healthAttention() }) }}
+            </p>
+            @if (healthTop().length) {
+              <ul class="vehicle-status__list">
+                @for (item of healthTop(); track item.partDefinitionId) {
+                  <li>
+                    <app-health-row [item]="item" />
+                  </li>
+                }
+              </ul>
+            }
+          </section>
         }
 
         @if (hasRealFills() || sampleMode()) {
@@ -293,27 +310,6 @@
                   </span>
                 </p>
               }
-            }
-          </section>
-        }
-
-        @if (healthAttention() > 0) {
-          <section class="vehicle-status" [attr.aria-label]="i18n.t('home.vehicleStatus')">
-            <header class="vehicle-status__head">
-              <h2>{{ i18n.t('home.vehicleStatus') }}</h2>
-              <a routerLink="/health">{{ i18n.t('health.viewAll') }}</a>
-            </header>
-            <p class="vehicle-status__count">
-              {{ i18n.t('health.attentionCount', { count: healthAttention() }) }}
-            </p>
-            @if (healthTop().length) {
-              <ul class="vehicle-status__list">
-                @for (item of healthTop(); track item.partDefinitionId) {
-                  <li>
-                    <app-health-row [item]="item" />
-                  </li>
-                }
-              </ul>
             }
           </section>
         }

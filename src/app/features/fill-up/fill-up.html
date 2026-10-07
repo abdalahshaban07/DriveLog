@@ -432,6 +432,7 @@
     <app-primary-button
       [label]="logMode() === 'charge' ? i18n.t('charge.save') : i18n.t('fillUp.save')"
       [disabled]="!canSave()"
+      [stretch]="true"
       (pressed)="save()"
     />
   </div>

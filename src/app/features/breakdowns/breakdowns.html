@@ -37,19 +37,19 @@
       [(value)]="note"
       [multiline]="true"
     />
-    <div class="form-actions">
-      @if (editId()) {
-        <button type="button" class="ghost" (click)="resetForm()">
-          {{ i18n.t('common.cancel') }}
-        </button>
-      }
-      <app-primary-button
-        [label]="i18n.t('breakdowns.save')"
-        [disabled]="saving()"
-        (pressed)="save()"
-      />
-    </div>
   </section>
+  <div class="form-actions dock">
+    @if (editId()) {
+      <button type="button" class="ghost" (click)="resetForm()">
+        {{ i18n.t('common.cancel') }}
+      </button>
+    }
+    <app-primary-button
+      [label]="i18n.t('breakdowns.save')"
+      [disabled]="saving()"
+      (pressed)="save()"
+    />
+  </div>
 
   <h2 class="section-title">{{ i18n.t('breakdowns.list') }}</h2>
   @if (list().length === 0) {

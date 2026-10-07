@@ -312,15 +312,14 @@ describe('HomePage', () => {
     )].map((node: Element) => node.tagName === 'APP-WEATHER-TIP' || node.tagName === 'APP-QUICK-LOG'
       ? node.tagName.toLowerCase()
       : [...node.classList].find((name) => name !== 'list-reveal') ?? node.tagName);
-    expect(order).toEqual(['pulse', 'app-weather-tip', 'app-quick-log', 'month-outlook']);
+    expect(order).toEqual(['app-weather-tip', 'pulse', 'app-quick-log', 'month-outlook']);
   });
 
-  it('shows the next maintenance as a quiet line until it is urgent', () => {
+  it('keeps a future service off the paper list', () => {
     maintenanceRows.push({ id: 'm1', type: 'oil', dueKm: 5000, date: '2026-01-01', odometer: 1000 });
     const fixture = TestBed.createComponent(HomePage);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.needs')).toBeFalsy();
-    expect(fixture.nativeElement.querySelector('.coming')?.textContent).toContain('home.nextDue');
-    expect(fixture.nativeElement.querySelector('.coming__value')?.textContent).toBe('home.comingLine');
+    expect(fixture.nativeElement.querySelector('.coming')).toBeFalsy();
   });
 });

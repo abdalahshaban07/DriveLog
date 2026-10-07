@@ -72,44 +72,35 @@
       />
     </div>
 
-    <details
-      class="disclosure maint-form__advanced"
-      [open]="advancedOpen()"
-      (toggle)="onAdvancedToggle($event)"
-    >
-      <summary>{{ i18n.t('maint.advanced') }}</summary>
-      <div class="disclosure__body">
-        <app-text-field [label]="i18n.t('maint.step.brand')" [(value)]="partModel" />
-        <app-select-field
-          [label]="i18n.t('maint.step.condition')"
-          [options]="conditionOptions()"
-          [(value)]="condition"
-        />
-        <div class="maint-form__pair">
-          <app-numeric-field [label]="i18n.t('maint.dueKm')" [(value)]="dueKm" />
-          <app-date-field
-            [label]="i18n.t('maint.dueDate')"
-            [(value)]="dueDate"
-            mode="due"
-          />
-        </div>
-        <app-text-field
-          [label]="i18n.t('maint.step.notes')"
-          [(value)]="note"
-          [multiline]="true"
-        />
-      </div>
-    </details>
-
-    <div class="maint-form__save">
-      <app-primary-button
-        [label]="i18n.t('maint.save')"
-        [disabled]="!canSave() || saving()"
-        [stretch]="true"
-        (pressed)="save()"
+    <app-text-field [label]="i18n.t('maint.step.brand')" [(value)]="partModel" />
+    <app-select-field
+      [label]="i18n.t('maint.step.condition')"
+      [options]="conditionOptions()"
+      [(value)]="condition"
+    />
+    <div class="maint-form__pair">
+      <app-numeric-field [label]="i18n.t('maint.dueKm')" [(value)]="dueKm" />
+      <app-date-field
+        [label]="i18n.t('maint.dueDate')"
+        [(value)]="dueDate"
+        mode="due"
       />
     </div>
+    <app-text-field
+      [label]="i18n.t('maint.step.notes')"
+      [(value)]="note"
+      [multiline]="true"
+    />
   </section>
+
+  <div class="maint-form__save dock">
+    <app-primary-button
+      [label]="i18n.t('maint.save')"
+      [disabled]="!canSave() || saving()"
+      [stretch]="true"
+      (pressed)="save()"
+    />
+  </div>
 
   <h2 class="section-title">{{ i18n.t('maint.list') }}</h2>
   @if (history().length === 0) {
