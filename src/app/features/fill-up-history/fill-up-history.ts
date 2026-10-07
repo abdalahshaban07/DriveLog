@@ -73,13 +73,6 @@ export class FillUpHistoryPage {
     { id: 'charge', labelKey: 'history.type.charge' },
   ];
 
-  readonly rangeOptions = computed(() =>
-    this.rangePresets.map((p) => ({
-      value: p.id,
-      label: this.i18n.t(p.labelKey),
-    })),
-  );
-
   readonly presentGrades = computed(() => {
     const { from, to } = this.activeRange();
     const seen = new Set<FuelGrade>();

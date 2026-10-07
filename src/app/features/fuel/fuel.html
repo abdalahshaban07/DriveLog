@@ -130,85 +130,42 @@
     </div>
   </section>
 
-  @if (lastFill(); as f) {
+  @if (recent().length) {
     <section class="log card" [attr.aria-label]="i18n.t('fuel.recent')">
-      <a
-        class="slip"
-        [routerLink]="['/fill-up']"
-        [queryParams]="{ id: f.id }"
-        [attr.aria-label]="i18n.t('fuel.lastFillStrip')"
-      >
-        <div class="slip__top">
-          <p class="slip__label">{{ i18n.t('home.lastFill') }}</p>
-          <time [attr.datetime]="f.date" dir="rtl">
-            {{ i18n.formatDate(f.date, { day: 'numeric', month: 'short', year: 'numeric' }) }}
-          </time>
-        </div>
-        @if (f.placeLabel) {
-          <p class="slip__place">{{ f.placeLabel }}</p>
-        }
-        <div class="slip__figures">
-          <div class="slip__figure">
-            <span class="slip__label">{{ i18n.t('fillUp.liters') }}</span>
-            <strong>
-              <bdi dir="ltr">{{ i18n.formatNumber(f.liters, { maximumFractionDigits: 1 }) }}</bdi>
-            </strong>
-          </div>
-          <div class="slip__figure slip__figure--end">
-            <span class="slip__label">{{ i18n.t('fillUp.total') }}</span>
-            <strong>{{ formatMoney(f.cost) }}</strong>
-          </div>
-        </div>
-        @if ((f.unitPrice != null && f.unitPrice > 0) || (f.distanceKm != null && f.distanceKm > 0)) {
-          <div class="slip__meta">
-            @if (f.unitPrice != null && f.unitPrice > 0) {
-              <div>
-                <span class="slip__label">{{ i18n.t('fillUp.unitPrice') }}</span>
-                <strong>
-                  <bdi dir="ltr">{{ i18n.formatNumber(f.unitPrice, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</bdi>
-                </strong>
-              </div>
-            }
-            @if (f.distanceKm != null && f.distanceKm > 0) {
-              <div>
-                <span class="slip__label">{{ i18n.t('fuel.monthDistance') }}</span>
-                <strong>
-                  <bdi dir="ltr">{{ i18n.formatNumber(f.distanceKm, { maximumFractionDigits: 0 }) }}</bdi>
-                  {{ i18n.t('common.km') }}
-                </strong>
-              </div>
-            }
-          </div>
-        }
-      </a>
-
-      @if (older().length) {
-        <div class="recent__list">
-          @for (row of older(); track row.id) {
-            <a class="recent__row" [routerLink]="['/fill-up']" [queryParams]="{ id: row.id }">
-              <span class="recent__when">
-                <strong>{{ i18n.formatDate(row.date, { day: 'numeric' }) }}</strong>
-                <span>{{ i18n.formatDate(row.date, { month: 'short' }) }}</span>
+      <div class="recent__list recent__list--flat">
+        @for (row of recent(); track row.id; let first = $first) {
+          <a
+            class="recent__row"
+            [class.recent__row--last]="first"
+            [routerLink]="['/fill-up']"
+            [queryParams]="{ id: row.id }"
+            [attr.aria-label]="first ? i18n.t('fuel.lastFillStrip') : null"
+          >
+            <span class="recent__when">
+              @if (first) {
+                <span class="recent__mark">{{ i18n.t('fuel.last') }}</span>
+              }
+              <strong>{{ i18n.formatDate(row.date, { day: 'numeric' }) }}</strong>
+              <span>{{ i18n.formatDate(row.date, { month: 'short' }) }}</span>
+            </span>
+            <span class="recent__mid">
+              <span class="recent__liters">
+                <bdi dir="ltr">{{ i18n.formatNumber(row.liters, { maximumFractionDigits: 1 }) }}</bdi>
+                <span>{{ i18n.t('common.liters') }}</span>
               </span>
-              <span class="recent__mid">
-                <span class="recent__liters">
-                  <bdi dir="ltr">{{ i18n.formatNumber(row.liters, { maximumFractionDigits: 1 }) }}</bdi>
-                  <span>{{ i18n.t('common.liters') }}</span>
+              @if (rowL100(row.id); as l100) {
+                <span class="recent__eco">
+                  <bdi dir="ltr">{{ formatL100(l100) }}</bdi>
+                  <span>{{ i18n.t('fuel.per100Lead') }}</span>
+                  <bdi dir="ltr">{{ i18n.formatNumber(100, { maximumFractionDigits: 0 }) }}</bdi>
+                  <span>{{ i18n.t('common.km') }}</span>
                 </span>
-                @if (rowL100(row.id); as l100) {
-                  <span class="recent__eco">
-                    <bdi dir="ltr">{{ formatL100(l100) }}</bdi>
-                    <span>{{ i18n.t('fuel.per100Lead') }}</span>
-                    <bdi dir="ltr">{{ i18n.formatNumber(100, { maximumFractionDigits: 0 }) }}</bdi>
-                    <span>{{ i18n.t('common.km') }}</span>
-                  </span>
-                }
-              </span>
-              <strong class="recent__cost">{{ formatMoney(row.cost) }}</strong>
-            </a>
-          }
-        </div>
-      }
+              }
+            </span>
+            <strong class="recent__cost">{{ formatMoney(row.cost) }}</strong>
+          </a>
+        }
+      </div>
 
       <a routerLink="/history/fill-ups" class="recent__all">
         <span>{{ i18n.t('fuel.seeHistory') }}</span>

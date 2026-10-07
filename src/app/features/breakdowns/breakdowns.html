@@ -14,17 +14,19 @@
       [(value)]="symptom"
       [error]="symptomError()"
     />
-    <app-numeric-field
-      [label]="i18n.t('breakdowns.cost')"
-      [(value)]="repairCost"
-      [error]="costError()"
-    />
+    <div class="pair">
+      <app-numeric-field
+        [label]="i18n.t('breakdowns.cost')"
+        [(value)]="repairCost"
+        [error]="costError()"
+      />
+      <app-date-field [label]="i18n.t('breakdowns.date')" [(value)]="date" />
+    </div>
     <app-numeric-field
       [label]="i18n.t('breakdowns.odometer')"
       [(value)]="odometer"
       [error]="odoError()"
     />
-    <app-date-field [label]="i18n.t('breakdowns.date')" [(value)]="date" />
     <app-text-field [label]="i18n.t('breakdowns.shop')" [(value)]="shopName" />
     <app-select-field
       [label]="i18n.t('breakdowns.category')"

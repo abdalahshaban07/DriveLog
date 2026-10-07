@@ -84,9 +84,7 @@ export class FuelPage {
 
   readonly hasFills = computed(() => this.filtered().length > 0);
 
-  readonly lastFill = computed(() => this.filtered()[0] ?? null);
-
-  readonly older = computed(() => this.filtered().slice(1, 4));
+  readonly recent = computed(() => this.filtered().slice(0, 4));
 
   /** A tip that only restates the economy line stays off the page. */
   readonly tipKey = computed((): MsgKey | null => {

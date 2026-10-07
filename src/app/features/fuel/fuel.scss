@@ -335,6 +335,24 @@ a.slip {
   border-block-start: 1px solid var(--hairline);
 }
 
+.recent__list--flat {
+  margin-block-start: 0;
+  border-block-start: 0;
+}
+
+.recent__row--last {
+  background: var(--metric-tint);
+  border-inline-start: 3px solid var(--fuel);
+  padding-inline-start: var(--space-2);
+}
+
+.recent__when .recent__mark {
+  color: var(--fuel);
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .recent__row {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -359,7 +377,7 @@ a.slip {
   line-height: 1;
 }
 
-.recent__when span,
+.recent__when span:not(.recent__mark),
 .recent__eco {
   color: var(--muted);
   font-size: 0.75rem;

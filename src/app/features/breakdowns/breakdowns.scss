@@ -2,6 +2,16 @@
   padding-block-end: calc(var(--tap) + var(--space-6));
 }
 
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.pair > * {
+  min-width: 0;
+}
+
 .form-actions {
   display: flex;
   gap: var(--space-3);

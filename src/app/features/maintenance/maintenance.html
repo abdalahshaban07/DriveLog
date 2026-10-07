@@ -72,12 +72,14 @@
       />
     </div>
 
-    <app-text-field [label]="i18n.t('maint.step.brand')" [(value)]="partModel" />
-    <app-select-field
-      [label]="i18n.t('maint.step.condition')"
-      [options]="conditionOptions()"
-      [(value)]="condition"
-    />
+    <div class="maint-form__pair">
+      <app-text-field [label]="i18n.t('maint.step.brand')" [(value)]="partModel" />
+      <app-select-field
+        [label]="i18n.t('maint.step.condition')"
+        [options]="conditionOptions()"
+        [(value)]="condition"
+      />
+    </div>
     <div class="maint-form__pair">
       <app-numeric-field [label]="i18n.t('maint.dueKm')" [(value)]="dueKm" />
       <app-date-field

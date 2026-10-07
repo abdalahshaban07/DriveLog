@@ -10,6 +10,7 @@
 .history-filter__dates {
   display: grid;
   gap: var(--space-3);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
 .history-sheet {
@@ -282,12 +283,6 @@
   color: var(--cta-text);
   font-weight: 700;
   text-decoration: none;
-}
-
-@media (min-width: 768px) {
-  .history-filter__dates {
-    grid-template-columns: 1fr 1fr;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

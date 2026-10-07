@@ -53,13 +53,6 @@ export class MaintenanceHistoryPage {
     { id: 'custom', labelKey: 'history.rangeCustom' },
   ];
 
-  readonly rangeOptions = computed(() =>
-    this.rangePresets.map((p) => ({
-      value: p.id,
-      label: this.i18n.t(p.labelKey),
-    })),
-  );
-
   readonly activeRange = computed(() => {
     const preset = this.rangePreset();
     if (preset === 'custom') {

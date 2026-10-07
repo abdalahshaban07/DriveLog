@@ -14,30 +14,32 @@
       [(value)]="label"
       [error]="labelError()"
     />
-    <app-numeric-field
-      [label]="i18n.t('otherExpenses.amount')"
-      [(value)]="amount"
-      [error]="amountError()"
-    />
-    <app-date-field [label]="i18n.t('otherExpenses.date')" [(value)]="date" />
+    <div class="pair">
+      <app-numeric-field
+        [label]="i18n.t('otherExpenses.amount')"
+        [(value)]="amount"
+        [error]="amountError()"
+      />
+      <app-date-field [label]="i18n.t('otherExpenses.date')" [(value)]="date" />
+    </div>
     <app-text-field
       [label]="i18n.t('otherExpenses.note')"
       [(value)]="note"
       [multiline]="true"
     />
-    <div class="form-actions">
-      @if (editId()) {
-        <button type="button" class="ghost" (click)="resetForm()">
-          {{ i18n.t('common.cancel') }}
-        </button>
-      }
-      <app-primary-button
-        [label]="i18n.t('otherExpenses.save')"
-        [disabled]="saving()"
-        (pressed)="save()"
-      />
-    </div>
   </section>
+  <div class="form-actions dock">
+    @if (editId()) {
+      <button type="button" class="ghost" (click)="resetForm()">
+        {{ i18n.t('common.cancel') }}
+      </button>
+    }
+    <app-primary-button
+      [label]="i18n.t('otherExpenses.save')"
+      [disabled]="saving()"
+      (pressed)="save()"
+    />
+  </div>
 
   <h2 class="section-title">{{ i18n.t('otherExpenses.list') }}</h2>
   @if (list().length === 0) {
