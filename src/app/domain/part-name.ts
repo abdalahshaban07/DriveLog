@@ -41,6 +41,15 @@ export function maintenanceRecordLabel(
   return t(`maintenance.type.${row.type}`);
 }
 
+/** History type filter id (`oil` or `custom:…`) in the user's language. */
+export function historyTypeLabel(typeId: string, t: (key: string) => string): string {
+  if (typeId.startsWith('custom:')) {
+    const name = typeId.slice('custom:'.length);
+    return isStoredMessageKey(name) ? t(name) : name;
+  }
+  return t(`maintenance.type.${typeId}`);
+}
+
 /** Next-due chip: part name, not the leftover category word "Other". */
 export function dueItemLabel(
   due: { labelKey: string; maintenanceId?: string },

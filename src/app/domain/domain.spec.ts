@@ -1122,7 +1122,7 @@ describe('i18n parity', () => {
 
 describe('part labels', () => {
   it('translates stored part keys and keeps custom Arabic names', async () => {
-    const { maintenanceRecordLabel } = await import('./part-name');
+    const { historyTypeLabel, maintenanceRecordLabel } = await import('./part-name');
     const t = (key: string) => (key === 'parts.shockStrut' ? 'المساعد' : key);
     expect(
       maintenanceRecordLabel(
@@ -1133,6 +1133,15 @@ describe('part labels', () => {
     ).toBe('المساعد');
     expect(maintenanceRecordLabel({ type: 'other', otherLabel: 'كاوتش ميزان' }, [], t)).toBe(
       'كاوتش ميزان',
+    );
+    expect(
+      historyTypeLabel('custom:parts.airFilter', (key) =>
+        key === 'parts.airFilter' ? 'فلتر الهواء' : key,
+      ),
+    ).toBe('فلتر الهواء');
+    expect(historyTypeLabel('custom:كاوتش ميزان', t)).toBe('كاوتش ميزان');
+    expect(historyTypeLabel('oil', (key) => (key === 'maintenance.type.oil' ? 'زيت' : key))).toBe(
+      'زيت',
     );
     const { dueItemLabel } = await import('./part-name');
     expect(

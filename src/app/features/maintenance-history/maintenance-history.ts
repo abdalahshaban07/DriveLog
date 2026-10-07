@@ -10,7 +10,7 @@ import {
   type HistoryRangePreset,
 } from '../../domain/export-history';
 import { todayDateOnly } from '../../domain/dues';
-import { maintenanceRecordLabel } from '../../domain/part-name';
+import { historyTypeLabel, maintenanceRecordLabel } from '../../domain/part-name';
 import { MAINTENANCE_TYPES } from '../../domain/models';
 import type { Maintenance } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
@@ -95,9 +95,7 @@ export class MaintenanceHistoryPage {
     { value: 'all', label: this.i18n.t('maint.filterAll') },
     ...this.presentTypes().map((id) => ({
       value: id,
-      label: id.startsWith('custom:')
-        ? id.slice('custom:'.length)
-        : this.i18n.t(`maintenance.type.${id}` as MsgKey),
+      label: historyTypeLabel(id, (key) => this.i18n.t(key as MsgKey)),
     })),
   ]);
 
