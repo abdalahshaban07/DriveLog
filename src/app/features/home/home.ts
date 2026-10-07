@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
-import { currentWeather, getCoords, type WeatherNow } from '../../data/remote';
+import { coarseCoords, currentWeather, getCoords, type WeatherNow } from '../../data/remote';
 import { buildDueItems, nextDueItem, todayDateOnly } from '../../domain/dues';
 import { nextExpiringDoc, vaultExpiryForKind } from '../../domain/vehicle-docs';
 import { daysUntil, inActivePeriod, periodTotals } from '../../domain/expense-period';
@@ -263,8 +263,10 @@ export class HomePage {
       return this.i18n.t('app.subtitle');
     }
     const spec = this.vehicleLine(car);
+    const plate = car.plate?.trim();
     const km = `${this.i18n.formatNumber(car.currentOdometer, { maximumFractionDigits: 0 })} ${this.i18n.t('common.km')}`;
-    return spec ? `${car.nickname} · ${spec} · ${km}` : `${car.nickname} · ${km}`;
+    const name = [car.nickname, spec, plate ? plateRun(plate) : ''].filter((part) => !!part).join(' · ');
+    return `${name} · ${km}`;
   });
   readonly nextDue = computed(() => {
     const car = this.db.car();
@@ -417,11 +419,12 @@ export class HomePage {
     }
     this.weatherBusy.set(true);
     try {
-      const coords = await getCoords();
-      if (!coords) {
-        return;
-      }
-      this.weather.set(await currentWeather(coords.lat, coords.lon));
+    // GPS often stays blank (denied, or the prompt never finishes). City weather does not need it.
+    const coords = (await coarseCoords()) ?? (await getCoords());
+    if (!coords) {
+      return;
+    }
+    this.weather.set(await currentWeather(coords.lat, coords.lon));
     } finally {
       this.weatherBusy.set(false);
     }
@@ -929,6 +932,12 @@ function fuelUseWhyKey(
       return exhaustive;
     }
   }
+}
+
+/** Keep a mixed Arabic/Latin plate in the order it was typed. */
+function plateRun(plate: string): string {
+  const rtl = /[\u0590-\u08FF]/.test(plate);
+  return `${rtl ? '\u2067' : '\u2066'}${plate}\u2069`;
 }
 
 function monthDelta(values: readonly number[]): number | null {

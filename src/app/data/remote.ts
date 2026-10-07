@@ -183,6 +183,28 @@ export function getCoords(): Promise<Coords | null> {
   return readCoords(navigator.geolocation);
 }
 
+/** geojs returns latitude/longitude as strings. No key. */
+export function parseIpCoords(raw: unknown): Coords | null {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  const row = raw as { latitude?: unknown; longitude?: unknown };
+  const lat = Number(row.latitude);
+  const lon = Number(row.longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    return null;
+  }
+  if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+    return null;
+  }
+  return { lat, lon };
+}
+
+/** City-level fix when GPS is denied or never answers. */
+export async function coarseCoords(): Promise<Coords | null> {
+  return parseIpCoords(await fetchJson('https://get.geojs.io/v1/ip/geo.json'));
+}
+
 export function parseWeather(raw: unknown, lat: number, lon: number): WeatherNow | null {
   if (!raw || typeof raw !== 'object') {
     return null;

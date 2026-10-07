@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parsePhotonPoint, photonSearchUrl, readCoords } from './remote';
+import { parseIpCoords, parsePhotonPoint, photonSearchUrl, readCoords } from './remote';
 
 function position(lat: number, lon: number): GeolocationPosition {
   return {
@@ -96,6 +96,21 @@ describe('parsePhotonPoint', () => {
   it('returns null when the payload has no point', () => {
     expect(parsePhotonPoint({ features: [] })).toBeNull();
     expect(parsePhotonPoint(null)).toBeNull();
+  });
+});
+
+describe('parseIpCoords', () => {
+  it('reads string latitude and longitude', () => {
+    expect(parseIpCoords({ latitude: '30.04', longitude: '31.24' })).toEqual({
+      lat: 30.04,
+      lon: 31.24,
+    });
+  });
+
+  it('returns null when the payload has no point', () => {
+    expect(parseIpCoords(null)).toBeNull();
+    expect(parseIpCoords({ latitude: 'nope', longitude: '31' })).toBeNull();
+    expect(parseIpCoords({ latitude: '91', longitude: '0' })).toBeNull();
   });
 });
 

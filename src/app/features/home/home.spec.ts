@@ -35,6 +35,7 @@ describe('HomePage', () => {
               {
                 id: 'c1',
                 nickname: 'Car',
+                plate: 'ABC 123',
                 currentOdometer: 1000,
                 initialOdometer: 0,
                 createdAt: '2026-01-01T00:00:00.000Z',
@@ -44,6 +45,7 @@ describe('HomePage', () => {
             car: () => ({
               id: 'c1',
               nickname: 'Car',
+              plate: 'ABC 123',
               currentOdometer: 1000,
               initialOdometer: 0,
               createdAt: '2026-01-01T00:00:00.000Z',
@@ -110,7 +112,7 @@ describe('HomePage', () => {
     expect(fixture.nativeElement.querySelector('.fuel-use')).toBeFalsy();
     expect(page.monthPace(10, 31)).toBe(32);
     expect(page.monthPace(0, 0)).toBe(0);
-    expect(page.headerLine()).toBe('Car · 1000 common.km');
+    expect(page.headerLine()).toBe('Car · \u2066ABC 123\u2069 · 1000 common.km');
     expect(page.paperLines(page.db.car()!).map((paper) => paper.tone)).toEqual(['plain', 'plain']);
     const flagged = page.paperLines({
       ...page.db.car()!,
