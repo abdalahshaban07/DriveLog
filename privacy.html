@@ -36,7 +36,7 @@
         <h2>Optional features that contact third-party services</h2>
         <p>These run only when you use the related feature:</p>
         <ul>
-          <li><strong>Location</strong> (only if you grant permission): your approximate coordinates are sent to <a href="https://open-meteo.com/">Open-Meteo</a> for weather and to OpenStreetMap Overpass servers to find nearby stations. Opening a station launches Google Maps.</li>
+          <li><strong>Location</strong>: the home weather line asks <a href="https://www.geojs.io/">geojs.io</a> for a city from your IP, then sends that point to <a href="https://open-meteo.com/">Open-Meteo</a>. Nearby stations still use device location only if you grant it, via OpenStreetMap Overpass. Opening a station launches Google Maps.</li>
           <li><strong>AI assistant</strong> (optional, can be turned off in Settings): your question, the recent chat, and a summary of your logs (such as fuel economy, spending, and maintenance totals) are sent to a free AI provider (llm7.io, or kilo.ai as a fallback), or to a provider you configure yourself in Settings, to generate a reply. No name, VIN, plate, or GPS is included. AI replies can be reported from the assistant screen.</li>
           <li><strong>Currency and region</strong>: your IP address is used by ipapi.co to suggest a default currency; country and holiday lists come from restcountries.com and date.nager.at.</li>
           <li><strong>Fuel prices</strong>: public price data is downloaded from openvan.camp. No personal data is sent.</li>
