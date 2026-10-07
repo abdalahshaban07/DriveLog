@@ -33,31 +33,36 @@ import { I18n } from '../i18n/i18n';
     </div>
   `,
   styles: `
+    :host { display: block; }
     .receipt {
-      padding: var(--space-4);
-      border-radius: calc(var(--radius) - 4px);
-      background: color-mix(in srgb, var(--paper-text) 3%, var(--fill-paper));
-      color: var(--paper-text);
-      border: var(--border-width) dashed color-mix(in srgb, var(--paper-muted) 38%, transparent);
+      min-height: 42px;
+      padding: var(--space-2) var(--space-3);
+      border-radius: calc(var(--radius) - 2px);
+      background: var(--card-dark);
+      color: var(--card-dark-text);
+      border: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
     .receipt-line {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      gap: var(--space-3);
-      font-size: 0.9rem;
-      color: var(--paper-muted);
+      gap: var(--space-2);
+      font-size: 0.75rem;
+      color: color-mix(in srgb, var(--card-dark-text) 72%, transparent);
     }
     .receipt-line--total {
       margin-block-start: var(--space-2);
       padding-block-start: var(--space-3);
       border-block-start: 1px dashed color-mix(in srgb, var(--paper-muted) 40%, transparent);
       font-weight: 600;
-      color: var(--paper-text);
+      color: var(--card-dark-text);
     }
     .receipt-line--total strong {
       font-variant-numeric: tabular-nums;
-      font-size: clamp(1.5rem, 6vw, 1.85rem);
+      font-size: 1.05rem;
       font-weight: 700;
       letter-spacing: -0.02em;
       line-height: 1.1;
@@ -65,8 +70,10 @@ import { I18n } from '../i18n/i18n';
     }
     .receipt__hint {
       margin: 0;
-      color: var(--paper-muted);
-      font-size: 0.9rem;
+      color: var(--card-dark-text);
+      font-size: 0.8rem;
+      font-weight: 700;
+      line-height: 1.3;
     }
   `,
 })

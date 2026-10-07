@@ -97,7 +97,8 @@ export const en = {
   'fillUp.fuelType': 'Fuel type',
   'fillUp.lastPaid': 'Last paid',
   'fillUp.receipt': 'Receipt preview',
-  'fillUp.receiptHint': 'Enter liters and pick a fuel type',
+  'fillUp.receiptHint': 'Shows after the liters',
+  'fillUp.glanceUse': 'Use',
   'fillUp.costOverrideHint':
     'Using your last paid price — national board price unavailable for this grade.',
   'fillUp.unitPrice': 'Price per liter',
