@@ -183,24 +183,26 @@
           mode="record"
           (valueChange)="dateError.set('')"
         />
-        <app-numeric-field
-          [label]="distanceLabel()"
-          [(value)]="distanceKm"
-          [error]="distanceError()"
-          (valueChange)="onDistanceChange()"
-        />
+        <div class="pair-col">
+          <app-numeric-field
+            [label]="distanceLabel()"
+            [(value)]="distanceKm"
+            [error]="distanceError()"
+            (valueChange)="onDistanceChange()"
+          />
+          @if (liveEconomy(); as eco) {
+            <p class="pair-eco hint" role="status">
+              {{
+                i18n.t('fillUp.economyLive', {
+                  value: i18n.formatNumber(eco, { maximumFractionDigits: 1 }),
+                })
+              }}
+            </p>
+          }
+        </div>
       </div>
       @if (distanceWarn()) {
         <p class="hint" role="status">{{ distanceWarn() }}</p>
-      }
-      @if (liveEconomy(); as eco) {
-        <p class="hint" role="status">
-          {{
-            i18n.t('fillUp.economyLive', {
-              value: i18n.formatNumber(eco, { maximumFractionDigits: 1 }),
-            })
-          }}
-        </p>
       }
 
       <div class="console__pair">
@@ -210,7 +212,8 @@
           [error]="litersError()"
           (valueChange)="onLitersChange()"
         />
-        <div class="cost-block">
+        <div class="pair-col">
+          <span class="label">{{ i18n.t('fillUp.total') }}</span>
           <app-receipt-preview
             [liters]="litersNum()"
             [unitPrice]="unitPrice()"

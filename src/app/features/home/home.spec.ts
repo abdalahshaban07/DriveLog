@@ -274,7 +274,7 @@ describe('HomePage', () => {
     expect(fixture.nativeElement.querySelector('.needs')).toBeFalsy();
     expect(fixture.nativeElement.querySelector('.vehicle-status')).toBeFalsy();
     expect(fixture.nativeElement.querySelector('.coming')).toBeFalsy();
-    expect(fixture.nativeElement.querySelector('app-weather-tip')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('app-page-header app-weather-tip')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('.rec-section')).toBeFalsy();
   });
 

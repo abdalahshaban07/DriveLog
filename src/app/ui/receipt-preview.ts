@@ -17,63 +17,69 @@ import { I18n } from '../i18n/i18n';
   template: `
     <div class="receipt" role="status" aria-live="polite" [attr.aria-label]="i18n.t('fillUp.receipt')">
       @if (liters() > 0 && unitPrice() != null) {
-        <div class="receipt-line">
-          <span>
-            {{ i18n.formatUnit(liters(), 'common.liters', 2) }} ×
-            {{ i18n.formatUnit(unitPrice()!, 'common.perLiter', 3) }}
-          </span>
-        </div>
-        <div class="receipt-line receipt-line--total" [class.metric-flash]="flash()">
-          <span>{{ i18n.t('fillUp.total') }}</span>
-          <strong>{{ formatMoney(displayTotal()) }}</strong>
-        </div>
+        <span class="receipt-math" dir="ltr">
+          {{
+            i18n.formatNumber(liters(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+          }}
+          ×
+          {{
+            i18n.formatNumber(unitPrice()!, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 3,
+            })
+          }}
+        </span>
+        <strong class="receipt-total" dir="ltr" [class.metric-flash]="flash()">{{
+          formatMoney(displayTotal())
+        }}</strong>
       } @else {
         <p class="receipt__hint">{{ i18n.t('fillUp.receiptHint') }}</p>
       }
     </div>
   `,
   styles: `
-    :host { display: block; }
+    :host { display: block; min-width: 0; }
     .receipt {
-      min-height: 42px;
-      padding: var(--space-2) var(--space-3);
+      min-height: var(--tap);
+      padding: 0 var(--space-3);
       border-radius: calc(var(--radius) - 2px);
       background: var(--card-dark);
       color: var(--card-dark-text);
       border: 0;
       display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-    .receipt-line {
-      display: flex;
+      flex-direction: row;
+      align-items: center;
       justify-content: space-between;
-      align-items: baseline;
       gap: var(--space-2);
+      overflow: hidden;
+    }
+    .receipt-math {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
       font-size: 0.75rem;
+      font-weight: 600;
       color: color-mix(in srgb, var(--card-dark-text) 72%, transparent);
     }
-    .receipt-line--total {
-      margin-block-start: var(--space-2);
-      padding-block-start: var(--space-3);
-      border-block-start: 1px dashed color-mix(in srgb, var(--paper-muted) 40%, transparent);
-      font-weight: 600;
-      color: var(--card-dark-text);
-    }
-    .receipt-line--total strong {
+    .receipt-total {
+      flex: none;
       font-variant-numeric: tabular-nums;
-      font-size: 1.05rem;
+      font-size: 0.9rem;
       font-weight: 700;
       letter-spacing: -0.02em;
       line-height: 1.1;
+      white-space: nowrap;
       transition: opacity var(--motion-fast) var(--ease-out);
     }
     .receipt__hint {
+      width: 100%;
       margin: 0;
       color: var(--card-dark-text);
       font-size: 0.8rem;
       font-weight: 700;
       line-height: 1.3;
+      text-align: center;
     }
   `,
 })

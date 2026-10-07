@@ -1,8 +1,9 @@
 <div class="stack home">
-  <app-page-header [title]="i18n.t('app.name')" [subtitle]="headerLine()" />
-  @if (view() === 'dashboard') {
-    <app-weather-tip [weather]="weather()" [busy]="weatherBusy()" />
-  }
+  <app-page-header [title]="i18n.t('app.name')" [subtitle]="headerLine()">
+    @if (view() === 'dashboard') {
+      <app-weather-tip [weather]="weather()" [busy]="weatherBusy()" />
+    }
+  </app-page-header>
 
   <div class="section-tabs" role="tablist" [attr.aria-label]="i18n.t('home.tabs')">
     @for (tab of tabOptions; track tab.id) {
