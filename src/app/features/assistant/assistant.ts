@@ -13,7 +13,7 @@ import { Db } from '../../data/db';
 import {
   ADVISOR_FAQ,
   advisorFaqVisible,
-  faqQueryMatch,
+  faqSuggests,
   markFaqQuery,
   type AdvisorFaq,
   type AdvisorFaqGroup,
@@ -108,7 +108,7 @@ export class AssistantPage {
     return groups
       .map((group) => ({
         ...group,
-        items: group.items.filter((item) => faqQueryMatch(this.i18n.t(item.key), q)),
+        items: group.items.filter((item) => faqSuggests(item, this.i18n.t(item.key), q)),
       }))
       .filter((group) => group.items.length > 0);
   });
@@ -117,7 +117,7 @@ export class AssistantPage {
 
   readonly showFreeAsk = computed(() => {
     const q = this.query().trim();
-    return q.length > 0 && this.exactFaq() == null;
+    return q.length > 0 && this.exactFaq() == null && this.menuGroups().length === 0;
   });
 
   /** Play generative-AI policy: users must be able to flag AI output. */
@@ -168,6 +168,11 @@ export class AssistantPage {
     const exact = this.exactFaq();
     if (exact) {
       void this.sendFaq(exact);
+      return;
+    }
+    const first = this.menuOpen() ? this.menuGroups()[0]?.items[0] : undefined;
+    if (first) {
+      void this.sendFaq(first);
       return;
     }
     void this.sendTyped();

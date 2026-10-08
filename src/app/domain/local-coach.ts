@@ -11,7 +11,7 @@ import { buildAnswerCard, cardText, type AnswerCard, type CardFormat } from './a
 import { currencyWord } from './currencies';
 import { computeEconomySegments, computePerFillSegments, fuelUseCompare } from './economy';
 import type { PeriodTotals } from './expense-period';
-import type { Breakdown, Car, FillUp, Maintenance, OtherExpense } from './models';
+import type { Breakdown, Car, FillUp, HealthStatus, Maintenance, OtherExpense } from './models';
 import {
   SYSTEM_BRAKE_DISCS_ID,
   SYSTEM_BRAKE_PADS_ID,
@@ -27,8 +27,10 @@ import {
   type CoachLogs,
   type CoachServiceHit,
   type CoachSpendHit,
+  type SpendBucket,
 } from './smart-advisor';
 import { buildVehicleFacts, type VehicleFactsBundle } from './vehicle-facts';
+import type { HealthItem } from './vehicle-health';
 
 export type CoachSource = 'local' | 'remote';
 
@@ -48,6 +50,20 @@ export type CoachInputs = {
 type CoachPartSnapshot = {
   name: string;
   status: string;
+};
+
+type CoachPartFact = {
+  name: string;
+  status: string;
+  remainingKm: number | null;
+  lastDate: string | null;
+  lastOdo: number | null;
+};
+
+type CoachSpendFact = {
+  label: string;
+  amount: number;
+  date: string;
 };
 
 export type CoachSnapshot = {
@@ -70,6 +86,23 @@ export type CoachSnapshot = {
   maintenanceCount: number;
   breakdownCount: number;
   parts: CoachPartSnapshot[];
+  /** Absent on older fixtures. Null means the log has no such row. */
+  lastSpend?: CoachSpendFact | null;
+  allTotal?: number | null;
+  allFuel?: number | null;
+  allMaintenance?: number | null;
+  allBreakdown?: number | null;
+  allOther?: number | null;
+  monthProjected?: number | null;
+  monthPrevious?: number | null;
+  fuelLiters?: number | null;
+  fuelPrevLiters?: number | null;
+  fuelKm?: number | null;
+  fuelPrevKm?: number | null;
+  oil?: CoachPartFact | null;
+  tires?: CoachPartFact | null;
+  brakes?: CoachPartFact | null;
+  lastFault?: { title: string; date: string } | null;
 };
 
 type Translate = (key: MsgKey, params?: Record<string, string | number>) => string;
@@ -235,6 +268,7 @@ export function coachSnapshot(
       name: partLabel(item, t),
       status: t(statusKey(item.status)),
     }));
+  const use = logs.fuelUse;
   return {
     nickname: car.nickname,
     odometer: car.currentOdometer,
@@ -255,6 +289,28 @@ export function coachSnapshot(
     maintenanceCount: logs.maintenanceCount,
     breakdownCount: logs.breakdownCount,
     parts,
+    lastSpend: logs.lastSpend
+      ? {
+          label: bucketWord(logs.lastSpend.bucket, t),
+          amount: Math.round(logs.lastSpend.amount),
+          date: logs.lastSpend.date,
+        }
+      : null,
+    allTotal: logs.allTotal ?? null,
+    allFuel: logs.allFuel ?? null,
+    allMaintenance: logs.allMaintenance ?? null,
+    allBreakdown: logs.allBreakdown ?? null,
+    allOther: logs.allOther ?? null,
+    monthProjected: logs.monthProjected ?? null,
+    monthPrevious: logs.monthPrevious ?? null,
+    fuelLiters: use ? round1(use.liters) : null,
+    fuelPrevLiters: use ? round1(use.previousLiters) : null,
+    fuelKm: use ? Math.round(use.km) : null,
+    fuelPrevKm: use ? Math.round(use.previousKm) : null,
+    oil: partFact('oil', facts.healthItems, t),
+    tires: partFact('tires', facts.healthItems, t),
+    brakes: partFact('brakes', facts.healthItems, t),
+    lastFault: logs.lastBreakdown ?? null,
   };
 }
 
@@ -279,6 +335,9 @@ export function coachPrompt(snapshot: CoachSnapshot, lang: 'en' | 'ar'): string 
     ar
       ? 'استخدم الأسطر دي بس. الرقم 0 معناه صفر، مش إن البيانات ناقصة. قول «مش متسجل» بس لو السطر مكتوب كده. متخترعش تكاليف.'
       : 'Use only the lines below. 0 means zero, not missing data. Say "not recorded" only when a line says that. Do not invent costs.',
+    ar
+      ? 'أسطر «كل سجلات» عدد السجلات من الأول، مش فلوس الشهر. «صيانة متوقعة خلال 90 يوم» تقدير جاي، مش مصروف اتدفع.'
+      : 'Lines marked (all) are lifetime record counts, not this month\'s money. Expected within 90 days is an upcoming estimate, not money already spent.',
     '',
     row(ar ? 'العربية' : 'Car', snapshot.nickname),
     row(ar ? 'العداد' : 'Odometer', `${snapshot.odometer} ${ar ? 'كم' : 'km'}`),
@@ -288,12 +347,32 @@ export function coachPrompt(snapshot: CoachSnapshot, lang: 'en' | 'ar'): string 
     row(ar ? 'صيانة الشهر' : 'Maintenance this month', money(snapshot.maintenance)),
     row(ar ? 'أعطال الشهر' : 'Breakdowns this month', money(snapshot.breakdown)),
     row(ar ? 'مصاريف تانية الشهر' : 'Other costs this month', money(snapshot.other)),
-    row(ar ? 'سجلات الصيانة' : 'Maintenance records', String(snapshot.maintenanceCount)),
-    row(ar ? 'سجلات الأعطال' : 'Breakdown records', String(snapshot.breakdownCount)),
+    row(ar ? 'آخر مصروف' : 'Last spend', spendFact(snapshot, missing)),
+    row(ar ? 'كل المصروف' : 'All-time spend', money(snapshot.allTotal ?? null)),
+    row(ar ? 'بنزين من الأول' : 'Fuel all-time', money(snapshot.allFuel ?? null)),
+    row(ar ? 'صيانة من الأول' : 'Maintenance all-time', money(snapshot.allMaintenance ?? null)),
+    row(ar ? 'أعطال من الأول' : 'Breakdowns all-time', money(snapshot.allBreakdown ?? null)),
+    row(ar ? 'مصاريف تانية من الأول' : 'Other costs all-time', money(snapshot.allOther ?? null)),
+    row(ar ? 'المتوقع آخر الشهر' : 'Projected end of month', money(snapshot.monthProjected ?? null)),
+    row(ar ? 'الشهر اللي فات' : 'Last month', money(snapshot.monthPrevious ?? null)),
+    row(
+      ar ? 'لتر البنزين' : 'Fuel liters',
+      versus(snapshot.fuelLiters, snapshot.fuelPrevLiters, ar ? 'لتر' : 'L', ar, missing, true),
+    ),
+    row(
+      ar ? 'كم البنزين' : 'Fuel distance',
+      versus(snapshot.fuelKm, snapshot.fuelPrevKm, ar ? 'كم' : 'km', ar, missing, false),
+    ),
+    row(ar ? 'كل سجلات الصيانة' : 'Maintenance records (all)', String(snapshot.maintenanceCount)),
+    row(ar ? 'كل سجلات الأعطال' : 'Breakdown records (all)', String(snapshot.breakdownCount)),
+    partRow(ar ? 'الزيت' : 'Oil', snapshot.oil, ar, missing),
+    partRow(ar ? 'الكاوتش' : 'Tires', snapshot.tires, ar, missing),
+    partRow(ar ? 'الفرامل' : 'Brakes', snapshot.brakes, ar, missing),
+    row(ar ? 'آخر عطل' : 'Last fault', faultFact(snapshot, missing)),
     row(ar ? 'ميزانية الصيانة' : 'Maintenance budget', money(snapshot.monthlyBudget)),
     row(ar ? 'الاحتياطي المقترح' : 'Suggested reserve', money(snapshot.recommendedReserve)),
     row(ar ? 'هدف الاحتياطي' : 'Reserve target', money(snapshot.reserveTarget)),
-    row(ar ? 'صيانة خلال 90 يوم' : 'Due within 90 days', money(snapshot.eligible90)),
+    row(ar ? 'صيانة متوقعة خلال 90 يوم' : 'Expected within 90 days', money(snapshot.eligible90)),
     row(
       ar ? 'ارتفاع البنزين' : 'Fuel use change',
       snapshot.fuelRisePct == null ? missing : `${Math.round(snapshot.fuelRisePct)}%`,
@@ -303,6 +382,135 @@ export function coachPrompt(snapshot: CoachSnapshot, lang: 'en' | 'ar'): string 
     row(ar ? 'القدرة على التكلفة' : 'Affordability', affordWord(snapshot.affordability, ar, missing)),
     ...attention,
   ].join('\n');
+}
+
+function round1(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
+function spendFact(snapshot: CoachSnapshot, missing: string): string {
+  const last = snapshot.lastSpend;
+  if (!last) return missing;
+  return `${last.label} ${Math.round(last.amount)} ${snapshot.currency} · ${last.date}`;
+}
+
+function faultFact(snapshot: CoachSnapshot, missing: string): string {
+  const fault = snapshot.lastFault;
+  if (!fault) return missing;
+  return `${fault.title} · ${fault.date}`;
+}
+
+function versus(
+  now: number | null | undefined,
+  prev: number | null | undefined,
+  unit: string,
+  ar: boolean,
+  missing: string,
+  decimal: boolean,
+): string {
+  if (now == null && prev == null) return missing;
+  const fmt = (value: number | null | undefined) => {
+    if (value == null) return missing;
+    const n = decimal ? Math.round(value * 10) / 10 : Math.round(value);
+    return `${n} ${unit}`;
+  };
+  return `${fmt(now)} ${ar ? 'مقابل' : 'vs'} ${fmt(prev)}`;
+}
+
+function partRow(
+  label: string,
+  part: CoachPartFact | null | undefined,
+  ar: boolean,
+  missing: string,
+): string {
+  if (!part) return `${label}: ${missing}`;
+  const unit = ar ? 'كم' : 'km';
+  const left = part.remainingKm == null ? missing : `${Math.round(part.remainingKm)} ${unit}`;
+  const last =
+    part.lastDate && part.lastOdo != null
+      ? `${part.lastDate} · ${Math.round(part.lastOdo)} ${unit}`
+      : missing;
+  const leftLabel = ar ? 'الباقي' : 'left';
+  const changeLabel = ar ? 'آخر تغيير' : 'last change';
+  return `${label}: ${part.name} · ${part.status} · ${leftLabel} ${left} · ${changeLabel} ${last}`;
+}
+
+function bucketWord(bucket: SpendBucket, t: Translate): string {
+  switch (bucket) {
+    case 'fuel':
+      return t('advisor.bucket.fuel');
+    case 'maintenance':
+      return t('advisor.bucket.maintenance');
+    case 'breakdown':
+      return t('advisor.bucket.breakdown');
+    case 'other':
+      return t('advisor.bucket.other');
+    default: {
+      const _e: never = bucket;
+      return _e;
+    }
+  }
+}
+
+function partFact(
+  part: AdvisorPart,
+  items: readonly HealthItem[],
+  t: Translate,
+): CoachPartFact | null {
+  const item = preferredPart(part, items);
+  if (!item) return null;
+  return {
+    name: partLabel(item, t),
+    status: t(statusKey(item.status)),
+    remainingKm: item.remainingKm ?? null,
+    lastDate: item.lastServiceDate ?? null,
+    lastOdo: item.lastServiceOdo ?? null,
+  };
+}
+
+function preferredPart(part: AdvisorPart, items: readonly HealthItem[]): HealthItem | undefined {
+  const ids = idsFor(part);
+  return items
+    .filter((item) => ids.includes(item.partDefinitionId))
+    .sort((a, b) => statusRank(a.status) - statusRank(b.status))[0];
+}
+
+function idsFor(part: AdvisorPart): readonly string[] {
+  switch (part) {
+    case 'oil':
+      return [SYSTEM_ENGINE_OIL_ID];
+    case 'tires':
+      return [SYSTEM_TIRES_ID];
+    case 'brakes':
+      return [SYSTEM_BRAKE_PADS_ID, SYSTEM_BRAKE_DISCS_ID];
+    default: {
+      const _e: never = part;
+      return _e;
+    }
+  }
+}
+
+function statusRank(status: HealthStatus): number {
+  switch (status) {
+    case 'critical':
+      return 0;
+    case 'overdue':
+      return 1;
+    case 'due':
+      return 2;
+    case 'soon':
+      return 3;
+    case 'inspect':
+      return 4;
+    case 'unknown':
+      return 5;
+    case 'good':
+      return 6;
+    default: {
+      const _e: never = status;
+      return _e;
+    }
+  }
 }
 
 function economyLine(value: number | null, ar: boolean, missing: string): string {

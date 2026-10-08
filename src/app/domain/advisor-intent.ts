@@ -120,6 +120,7 @@ const RULES: { intent: AdvisorIntent; patterns: RegExp[] }[] = [
       /period/i,
       /مصروف/,
       /صرفت/,
+      /صرف/,
       /دفعت/,
       /دفع/,
       /فلوس/,

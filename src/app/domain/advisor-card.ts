@@ -1,5 +1,10 @@
 import type { MsgKey } from '../i18n/en';
-import { normalizeAdvisorText, type AdvisorPart, type AdvisorRead } from './advisor-intent';
+import {
+  normalizeAdvisorText,
+  readAdvisor,
+  type AdvisorPart,
+  type AdvisorRead,
+} from './advisor-intent';
 import type { FuelUseCompare, FuelUseReason } from './economy';
 import type { HealthStatus } from './models';
 import {
@@ -89,6 +94,17 @@ export function faqQueryMatch(label: string, query: string): boolean {
   const needle = normalizeAdvisorText(query);
   if (!needle) return true;
   return normalizeAdvisorText(label).includes(needle);
+}
+
+/** A typed word like «الصرف» should surface the ready question for that intent. */
+export function faqSuggests(item: AdvisorFaq, label: string, query: string): boolean {
+  const needle = normalizeAdvisorText(query);
+  if (!needle) return false;
+  if (normalizeAdvisorText(label).includes(needle)) return true;
+  const read = readAdvisor(query);
+  if (read.intent === 'UNSUPPORTED' || read.intent !== item.read.intent) return false;
+  if (read.part && read.part !== item.read.part) return false;
+  return read.window === item.read.window;
 }
 
 /** Highlight the query inside a question. Folding keeps إزاي and ازاي on the same span. */

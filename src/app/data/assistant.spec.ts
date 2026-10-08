@@ -63,6 +63,18 @@ describe('fetchChatReply', () => {
     localStorage.clear();
   });
 
+  it('answers الصرف from the local month card and does not call the model', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const reply = await fetchChatReply(mockDb(true), 'الصرف', 'ar', (k) => k);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(reply.source).toBe('local');
+    expect(reply.card?.kicker).toBe('assistant.card.month');
+    expect(hourCount()).toBe(0);
+  });
+
   it('uses remote when online and gateway succeeds', async () => {
     const fetchMock = vi.fn().mockResolvedValue(okChat('remote-ok'));
     vi.stubGlobal('fetch', fetchMock);

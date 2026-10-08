@@ -5,6 +5,7 @@ import {
   buildAnswerCard,
   cardText,
   faqQueryMatch,
+  faqSuggests,
   markFaqQuery,
 } from './advisor-card';
 import { SYSTEM_ENGINE_OIL_ID } from './part-catalog';
@@ -181,5 +182,15 @@ describe('faq search', () => {
       { text: ' محتاج يتغير؟', mark: false },
     ]);
     expect(markFaqQuery('إزاي أحسّن', 'ازاي')[0]).toEqual({ text: 'إزاي', mark: true });
+  });
+
+  it('suggests the month question for الصرف even though the label does not contain it', () => {
+    const period = ADVISOR_FAQ.find((item) => item.key === 'assistant.faq.period')!;
+    const last = ADVISOR_FAQ.find((item) => item.key === 'assistant.faq.lastSpend')!;
+    const oilDue = ADVISOR_FAQ.find((item) => item.key === 'assistant.faq.oilDue')!;
+    expect(faqSuggests(period, 'صرفت كام الشهر ده؟', 'الصرف')).toBe(true);
+    expect(faqSuggests(last, 'آخر حاجة صرفت فيها كام؟', 'الصرف')).toBe(false);
+    expect(faqSuggests(oilDue, 'الزيت محتاج يتغير؟', 'زيت')).toBe(true);
+    expect(faqSuggests(period, 'صرفت كام الشهر ده؟', 'زيت')).toBe(false);
   });
 });

@@ -6,8 +6,10 @@ import {
   readAdvisor,
 } from './advisor-intent';
 import { FUEL_TIP_KEYS, nextFuelTipKey } from './fuel-tips';
-import { buildCoachLogs, coachPrompt, type CoachSnapshot } from './local-coach';
-import type { Breakdown, FillUp, Maintenance } from './models';
+import { buildCoachLogs, coachPrompt, coachSnapshot, type CoachSnapshot } from './local-coach';
+import type { Breakdown, Car, FillUp, Maintenance, PartDefinition } from './models';
+import { SYSTEM_BRAKE_DISCS_ID, SYSTEM_BRAKE_PADS_ID, SYSTEM_ENGINE_OIL_ID } from './part-catalog';
+import type { HealthItem } from './vehicle-health';
 import { askLocal, type AdvisorFacts, type CoachLogs } from './smart-advisor';
 import type { Db } from '../data/db';
 import type { MsgKey } from '../i18n/en';
@@ -87,6 +89,7 @@ describe('detectAdvisorIntent (Egyptian AR)', () => {
     expect(detectAdvisorIntent('إزاي أحسّن استهلاك البنزين؟')).toBe('FUEL_SPENDING');
     expect(detectAdvisorIntent('العربيه بتستهلك كتير اوي')).toBe('FUEL_SPENDING');
     expect(detectAdvisorIntent('صرفت كام الفترة دي؟')).toBe('SPENDING_TREND');
+    expect(detectAdvisorIntent('الصرف')).toBe('SPENDING_TREND');
     expect(detectAdvisorIntent('كام دفعت الشهر ده')).toBe('SPENDING_TREND');
     expect(detectAdvisorIntent('عندي كام سجل صيانة؟')).toBe('MAINT_LOG');
     expect(detectAdvisorIntent('محتاج اغير الزيت امتى')).toBe('MAINTENANCE_PRIORITY');
@@ -155,12 +158,144 @@ describe('coachPrompt', () => {
     expect(prompt).toContain('مصروف الشهر ده: 1812 جنيه');
     expect(prompt).toContain('بنزين الشهر: 1812 جنيه');
     expect(prompt).toContain('صيانة الشهر: 0 جنيه');
+    expect(prompt).toContain('كل سجلات الصيانة: 4');
+    expect(prompt).toContain('صيانة متوقعة خلال 90 يوم: 0 جنيه');
+    expect(prompt).toContain('آخر مصروف: مش متسجل');
     expect(prompt).toContain('ميزانية الصيانة: مش متسجل');
     expect(prompt).toContain('الرقم 0 معناه صفر');
+    expect(prompt).toContain('أسطر «كل سجلات» عدد السجلات من الأول');
     expect(prompt).toContain('- تيل الفرامل: افحص');
     expect(prompt).not.toContain('"fuel"');
   });
+
+  it('carries the same facts as the answer cards, including a healthy part', () => {
+    const snapshot: CoachSnapshot = {
+      nickname: 'تست',
+      odometer: 45540,
+      currency: 'جنيه',
+      budgetHealth: 'HEALTHY',
+      affordability: 'UNKNOWN',
+      recommendedReserve: null,
+      reserveTarget: null,
+      monthlyBudget: null,
+      eligible90: 900,
+      fuelRisePct: null,
+      lastL100: 7.9,
+      periodTotal: 1420,
+      fuel: 1420,
+      maintenance: 0,
+      breakdown: 0,
+      other: 0,
+      maintenanceCount: 4,
+      breakdownCount: 1,
+      parts: [],
+      lastSpend: { label: 'بنزين', amount: 400, date: '2026-10-02' },
+      allTotal: 9000,
+      allFuel: 7000,
+      allMaintenance: 1500,
+      allBreakdown: 500,
+      allOther: 0,
+      monthProjected: 5503,
+      monthPrevious: 3857,
+      fuelLiters: 77.6,
+      fuelPrevLiters: 99,
+      fuelKm: 982,
+      fuelPrevKm: 1225,
+      oil: {
+        name: 'زيت المحرك',
+        status: 'كويس',
+        remainingKm: 3960,
+        lastDate: '2026-09-05',
+        lastOdo: 44500,
+      },
+      tires: null,
+      brakes: null,
+      lastFault: { title: 'صوت فرامل', date: '2026-03-02' },
+    };
+    const prompt = coachPrompt(snapshot, 'ar');
+    expect(prompt).toContain('آخر مصروف: بنزين 400 جنيه · 2026-10-02');
+    expect(prompt).toContain('كل المصروف: 9000 جنيه');
+    expect(prompt).toContain('مصاريف تانية من الأول: 0 جنيه');
+    expect(prompt).toContain('المتوقع آخر الشهر: 5503 جنيه');
+    expect(prompt).toContain('الشهر اللي فات: 3857 جنيه');
+    expect(prompt).toContain('لتر البنزين: 77.6 لتر مقابل 99 لتر');
+    expect(prompt).toContain('كم البنزين: 982 كم مقابل 1225 كم');
+    expect(prompt).toContain('الزيت: زيت المحرك · كويس · الباقي 3960 كم · آخر تغيير 2026-09-05 · 44500 كم');
+    expect(prompt).toContain('الكاوتش: مش متسجل');
+    expect(prompt).toContain('آخر عطل: صوت فرامل · 2026-03-02');
+    expect(prompt).toContain('صيانة متوقعة خلال 90 يوم: 900 جنيه');
+  });
 });
+
+describe('coachSnapshot', () => {
+  it('keeps a healthy part and the worse brake', () => {
+    const car: Car = {
+      id: 'c1',
+      nickname: 'تست',
+      initialOdometer: 0,
+      currentOdometer: 45540,
+      createdAt: '2026-01-01',
+      updatedAt: '2026-01-01',
+    };
+    const snapshot = coachSnapshot(
+      facts({
+        healthItems: [
+          part(SYSTEM_ENGINE_OIL_ID, 'good', 3960),
+          part(SYSTEM_BRAKE_PADS_ID, 'good', 8000),
+          part(SYSTEM_BRAKE_DISCS_ID, 'due', 200),
+        ],
+      }),
+      {
+        ...logs,
+        currency: 'جنيه',
+        lastSpend: { bucket: 'fuel', amount: 400.4, date: '2026-10-02' },
+        allTotal: 10,
+        monthProjected: 5503,
+        monthPrevious: 0,
+      },
+      { fuel: 1420, maintenance: 0, breakdowns: 0, other: 0, total: 1420 },
+      car,
+      t,
+    );
+    expect(snapshot.oil).toMatchObject({
+      status: 'health.status.good',
+      remainingKm: 3960,
+    });
+    expect(snapshot.brakes).toMatchObject({
+      name: SYSTEM_BRAKE_DISCS_ID,
+      status: 'health.status.due',
+      remainingKm: 200,
+    });
+    expect(snapshot.lastSpend).toEqual({
+      label: 'advisor.bucket.fuel',
+      amount: 400,
+      date: '2026-10-02',
+    });
+    expect(snapshot.monthPrevious).toBe(0);
+  });
+});
+
+function part(id: string, status: HealthItem['status'], remainingKm: number): HealthItem {
+  const definition: PartDefinition = {
+    id,
+    category: 'ENGINE',
+    source: 'system',
+    trackingMode: 'interval',
+    active: true,
+    createdAt: '2026-01-01',
+    updatedAt: '2026-01-01',
+  };
+  return {
+    partDefinitionId: id,
+    part: definition,
+    status,
+    reasons: [],
+    confidence: 'high',
+    primarySource: 'USER_HISTORY',
+    sources: ['USER_HISTORY'],
+    remainingKm,
+  };
+}
 
 describe('askLocal', () => {
   it('fills the answer with the number it already computed', () => {

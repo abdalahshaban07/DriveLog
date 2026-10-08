@@ -165,9 +165,8 @@ export async function fetchChatReply(
   const local = (): CoachReply =>
     localCoachAnswer(q, loaded.facts, loaded.logs, asMsg, read, format);
 
-  if (intentHint) {
-    return local();
-  }
+  const localReply = local();
+  if (intentHint || localReply.card) return localReply;
 
   if (isAssistantOnline(db) && canRemoteAssistantCall() && browserMayReachGateway()) {
     const remote = await tryRemoteChat(
@@ -181,5 +180,5 @@ export async function fetchChatReply(
     }
   }
 
-  return local();
+  return localReply;
 }
