@@ -7,7 +7,10 @@ async function dismissWhatsNewIfOpen(page: Page): Promise<void> {
   } catch {
     return;
   }
-  await page.getByRole('button', { name: /got it|حسنًا|later|لاحقًا/i }).first().click();
+  await page
+    .getByRole('button', { name: /got it|تمام|later|بعدين/i })
+    .first()
+    .click();
   await expect(sheet).toBeHidden({ timeout: 5_000 });
 }
 
@@ -53,9 +56,7 @@ test.describe('UI modernization smoke', () => {
     await page.goto('/around');
     await dismissWhatsNewIfOpen(page);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await expect(
-      page.getByRole('button', { name: /use my location|استخدم موقعي/i }),
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: /use my location|استخدم موقعي/i })).toBeVisible();
   });
 
   test('home tabs and fill-up tank switch render', async ({ page }) => {
