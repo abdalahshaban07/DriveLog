@@ -728,8 +728,18 @@
   color: var(--stop);
 }
 
-.needs {
+.needs,
+.needs-jump {
   margin-block-end: var(--space-4);
+}
+
+.needs-jump {
+  display: flex;
+  align-items: center;
+  min-height: var(--tap);
+  font-weight: 700;
+  color: inherit;
+  text-decoration: none;
 }
 
 .needs__head {
@@ -1132,6 +1142,17 @@
 .month-outlook__delta--up {
   color: var(--stop);
   background: color-mix(in srgb, var(--stop) 12%, var(--fill-well));
+}
+
+.month-outlook__share {
+  width: 100%;
+  margin-block-start: var(--space-3);
+}
+
+.month-outlook__note {
+  margin: var(--space-2) 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
 }
 
 .month-outlook__delta--down {

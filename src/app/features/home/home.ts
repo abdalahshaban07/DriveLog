@@ -41,7 +41,9 @@ import type {
   ExpenseCategory,
   ExpensePeriod,
 } from '../../domain/models';
+import { buildMonthShare, monthShareIsEmpty } from '../../domain/month-share';
 import { buildMonthOutlook } from '../../domain/recommendations';
+import { buildUpcoming } from '../../domain/upcoming';
 import { SAMPLE_CAR_ID } from '../../domain/sample-data';
 import {
   buildSetupChecklist,
@@ -378,6 +380,29 @@ export class HomePage {
       this.db.otherExpenses(),
     ),
   );
+  readonly monthShare = computed(() =>
+    buildMonthShare(
+      this.db.fillUps(),
+      this.db.maintenance(),
+      this.db.breakdowns(),
+      this.db.otherExpenses(),
+    ),
+  );
+  readonly canShareMonth = computed(() => !monthShareIsEmpty(this.monthShare()));
+  readonly shareNote = signal('');
+  readonly upcoming = computed(() => {
+    const car = this.db.car();
+    if (!car) {
+      return [];
+    }
+    return buildUpcoming({
+      maintenance: this.db.maintenance(),
+      documents: this.db.vehicleDocuments(),
+      odometer: car.currentOdometer,
+      licenseExpiry: car.licenseExpiry,
+      registrationExpiry: car.registrationExpiry,
+    });
+  });
   /** Liters so far vs the same days last month, with a reason when we can name one. */
   readonly fuelUse = computed(() => fuelUseCompare(this.db.fillUps()));
   readonly healthSummary = computed(() => homeHealthSummary(this.db));
@@ -640,6 +665,95 @@ export class HomePage {
       return 'soon';
     }
     return 'ok';
+  }
+
+  showMonthOutlook(): boolean {
+    return this.hasRealFills() || this.sampleMode() || this.canShareMonth();
+  }
+
+  async shareMonth(): Promise<void> {
+    const text = this.monthShareText();
+    if (!text) {
+      return;
+    }
+    this.shareNote.set('');
+    const title = text.split('\n')[0] ?? '';
+    const nav = navigator as Navigator & { share?: (data: ShareData) => Promise<void> };
+    try {
+      if (typeof nav.share === 'function') {
+        await nav.share({ title, text });
+        return;
+      }
+      await this.copyMonth(text);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return;
+      }
+      try {
+        await this.copyMonth(text);
+      } catch {
+        this.shareNote.set(this.i18n.t('home.shareMonthFailed'));
+      }
+    }
+  }
+
+  private async copyMonth(text: string): Promise<void> {
+    await navigator.clipboard.writeText(text);
+    this.shareNote.set(this.i18n.t('home.shareMonthCopied'));
+  }
+
+  private monthShareText(): string | null {
+    const share = this.monthShare();
+    if (monthShareIsEmpty(share)) {
+      return null;
+    }
+    const month = this.i18n.formatDate(`${share.prefix}-01`, { month: 'long', year: 'numeric' });
+    const car = this.db.car()?.nickname?.trim();
+    const lines = [
+      car ? this.i18n.t('share.monthTitle', { month, car }) : month,
+    ];
+    if (share.fillCount) {
+      lines.push(this.i18n.t('share.fills', { count: share.fillCount }));
+      lines.push(
+        this.i18n.t('share.liters', {
+          liters: this.i18n.formatNumber(share.liters, { maximumFractionDigits: 1 }),
+        }),
+      );
+      lines.push(this.i18n.t('share.fuel', { amount: this.formatMoney(share.fuelCost) }));
+      if (share.km != null) {
+        lines.push(
+          this.i18n.t('share.km', {
+            km: this.i18n.formatNumber(Math.round(share.km), { maximumFractionDigits: 0 }),
+          }),
+        );
+      }
+    }
+    if (share.maintenanceCount) {
+      lines.push(
+        this.i18n.t('share.maintenance', {
+          count: share.maintenanceCount,
+          amount: this.formatMoney(share.maintenanceCost),
+        }),
+      );
+    }
+    if (share.otherCount) {
+      lines.push(
+        this.i18n.t('share.other', {
+          count: share.otherCount,
+          amount: this.formatMoney(share.otherCost),
+        }),
+      );
+    }
+    if (share.breakdownCount) {
+      lines.push(
+        this.i18n.t('share.breakdowns', {
+          count: share.breakdownCount,
+          amount: this.formatMoney(share.breakdownCost),
+        }),
+      );
+    }
+    lines.push(this.i18n.t('share.total', { amount: this.formatMoney(share.total) }));
+    return lines.join('\n');
   }
 
   formatMoney(value: number): string {

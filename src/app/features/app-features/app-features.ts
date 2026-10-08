@@ -49,6 +49,7 @@ export const FEATURE_CATALOG: readonly FeatureGroup[] = [
       { titleKey: 'features.expenses.title', bodyKey: 'features.expenses.body' },
       { titleKey: 'features.vault.title', bodyKey: 'features.vault.body' },
       { titleKey: 'features.preTrip.title', bodyKey: 'features.preTrip.body' },
+      { titleKey: 'features.upcoming.title', bodyKey: 'features.upcoming.body' },
     ],
   },
   {
@@ -59,6 +60,7 @@ export const FEATURE_CATALOG: readonly FeatureGroup[] = [
       { titleKey: 'features.shareTarget.title', bodyKey: 'features.shareTarget.body' },
       { titleKey: 'features.costGlance.title', bodyKey: 'features.costGlance.body' },
       { titleKey: 'features.efficiency.title', bodyKey: 'features.efficiency.body' },
+      { titleKey: 'features.shareMonth.title', bodyKey: 'features.shareMonth.body' },
     ],
   },
 ];

@@ -1,0 +1,27 @@
+<div class="stack upcoming page-narrow">
+  <app-page-header
+    [title]="i18n.t('upcoming.title')"
+    [subtitle]="i18n.t('upcoming.lead')"
+    [showBack]="true"
+    (back)="back()"
+  />
+
+  @if (items().length) {
+    <ul class="upcoming__list">
+      @for (item of items(); track item.id) {
+        <li>
+          <a class="upcoming__link" [routerLink]="item.route">
+            <app-due-row
+              [title]="title(item)"
+              [meta]="meta(item)"
+              [statusLabel]="statusLabel(item)"
+              [status]="item.status"
+            />
+          </a>
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="upcoming__empty">{{ i18n.t('upcoming.empty') }}</p>
+  }
+</div>
