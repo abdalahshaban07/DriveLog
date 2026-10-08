@@ -135,7 +135,7 @@
 
 .vault-stats li {
   display: grid;
-  gap: 2px;
+  gap: var(--space-2);
   justify-items: center;
   text-align: center;
 }
@@ -381,7 +381,7 @@
 
 .doc-card__id {
   display: grid;
-  gap: 2px;
+  gap: var(--space-2);
   min-inline-size: 0;
   flex: 1;
 }

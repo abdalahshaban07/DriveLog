@@ -29,7 +29,7 @@ import { I18n } from '../../../../i18n/i18n';
       justify-content: space-between;
       gap: var(--space-3);
     }
-    .sample-banner__title { margin: 0 0 var(--space-1); font-size: 1rem; }
+    .sample-banner__title { margin: 0 0 var(--space-2); font-size: 1rem; }
     .sample-banner__body { margin: 0; color: var(--muted); font-size: 0.9rem; }
     .sample-banner__btn {
       min-height: var(--tap);

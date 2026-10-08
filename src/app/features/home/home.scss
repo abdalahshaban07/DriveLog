@@ -1,7 +1,7 @@
 .reports-panel,
 .charts-panel {
   display: grid;
-  gap: var(--space-5);
+  gap: var(--space-4);
 }
 
 .tab-glance,
@@ -178,7 +178,7 @@
 }
 
 .report-note {
-  margin: var(--space-3) 0 0;
+  margin: 0;
   font-weight: 700;
   line-height: 1.55;
   unicode-bidi: isolate;
@@ -292,7 +292,7 @@
 }
 
 .pulse {
-  margin-block-end: var(--space-5);
+  margin-block-end: var(--space-4);
   overflow: hidden;
   border: 1px solid var(--hairline);
   border-radius: calc(var(--radius) + 8px);
@@ -699,7 +699,7 @@
 
 .plate__papers {
   display: grid;
-  gap: 2px;
+  gap: var(--space-2);
   width: 100%;
   margin-block-start: var(--space-1);
 }
@@ -729,7 +729,7 @@
 }
 
 .needs {
-  margin-block-end: var(--space-5);
+  margin-block-end: var(--space-4);
 }
 
 .needs__head {
@@ -836,7 +836,7 @@
 
 .period-metric {
   display: grid;
-  gap: 2px;
+  gap: var(--space-2);
   padding: var(--space-3);
   border-radius: calc(var(--radius) - 4px);
 }
@@ -1174,7 +1174,7 @@
 
 .fuel-use__facts {
   display: grid;
-  gap: 0.15rem;
+  gap: var(--space-2);
   margin: var(--space-2) 0 0;
   color: var(--muted);
   font-size: 0.78rem;
@@ -1188,7 +1188,7 @@
 }
 
 .vehicle-status {
-  margin-block-end: var(--space-5);
+  margin-block-end: var(--space-4);
 }
 
 .vehicle-status__head {
