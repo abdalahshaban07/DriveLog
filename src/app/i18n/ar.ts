@@ -598,7 +598,6 @@ export const ar: Record<MsgKey, string> = {
   'home.carousel.label': 'عربياتك',
   'home.license.missing': 'مش محدد',
   'home.license.days': 'باقي {days} يوم',
-  'home.period.title': 'فترة المصاريف',
   'home.period.since': 'من {date}',
   'home.period.none': 'مفيش فترة مفتوحة',
   'home.period.startNew': 'ابدأ فترة جديدة',

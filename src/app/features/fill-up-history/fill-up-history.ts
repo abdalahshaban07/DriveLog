@@ -22,8 +22,8 @@ import type { ChargeSession, FillUp, FuelGrade } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { ConfirmBar } from '../../ui/confirm-bar';
-import { DateField } from '../../ui/date-field';
 import { PageHeader } from '../../ui/page-header';
+import { PeriodRange } from '../../ui/period-range';
 import { FUEL_TABS, SectionTabs } from '../../ui/section-tabs/section-tabs';
 import { SelectField } from '../../ui/select-field';
 
@@ -41,7 +41,7 @@ type TypeFilter = EnergyKind | 'all';
 @Component({
   selector: 'app-fill-up-history',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, SectionTabs, RouterLink, DateField, SelectField, ConfirmBar],
+  imports: [PageHeader, SectionTabs, RouterLink, PeriodRange, SelectField, ConfirmBar],
   templateUrl: './fill-up-history.html',
   styleUrl: './fill-up-history.scss',
 })
@@ -59,13 +59,6 @@ export class FillUpHistoryPage {
   readonly shareBusy = signal(false);
   readonly shareError = signal('');
   readonly pendingDelete = signal<{ kind: EnergyKind; id: string } | null>(null);
-
-  readonly rangePresets: { id: HistoryRangePreset; labelKey: MsgKey }[] = [
-    { id: 'thisMonth', labelKey: 'history.rangeThisMonth' },
-    { id: '3months', labelKey: 'history.range3Months' },
-    { id: 'year', labelKey: 'history.rangeYear' },
-    { id: 'custom', labelKey: 'history.rangeCustom' },
-  ];
 
   readonly typeChips: { id: TypeFilter; labelKey: MsgKey }[] = [
     { id: 'all', labelKey: 'history.filterAllTypes' },
@@ -306,8 +299,8 @@ export class FillUpHistoryPage {
     return this.i18n.formatMoney(value, this.db.settings().currency, 2);
   }
 
-  setRangePreset(id: string): void {
-    this.rangePreset.set(id as HistoryRangePreset);
+  setRangePreset(id: HistoryRangePreset): void {
+    this.rangePreset.set(id);
   }
 
   setGrade(id: string): void {

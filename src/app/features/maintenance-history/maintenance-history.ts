@@ -16,15 +16,15 @@ import type { Maintenance } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { ConfirmBar } from '../../ui/confirm-bar';
-import { DateField } from '../../ui/date-field';
 import { PageHeader } from '../../ui/page-header';
+import { PeriodRange } from '../../ui/period-range';
 import { SectionTabs, type SectionTab } from '../../ui/section-tabs/section-tabs';
 import { SelectField } from '../../ui/select-field';
 
 @Component({
   selector: 'app-maintenance-history',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, SectionTabs, RouterLink, DateField, SelectField, ConfirmBar],
+  imports: [PageHeader, SectionTabs, RouterLink, PeriodRange, SelectField, ConfirmBar],
   templateUrl: './maintenance-history.html',
   styleUrl: './maintenance-history.scss',
 })
@@ -45,13 +45,6 @@ export class MaintenanceHistoryPage {
   readonly shareBusy = signal(false);
   readonly shareError = signal('');
   readonly pendingDelete = signal<string | null>(null);
-
-  readonly rangePresets: { id: HistoryRangePreset; labelKey: MsgKey }[] = [
-    { id: 'thisMonth', labelKey: 'history.rangeThisMonth' },
-    { id: '3months', labelKey: 'history.range3Months' },
-    { id: 'year', labelKey: 'history.rangeYear' },
-    { id: 'custom', labelKey: 'history.rangeCustom' },
-  ];
 
   readonly activeRange = computed(() => {
     const preset = this.rangePreset();
@@ -167,8 +160,8 @@ export class MaintenanceHistoryPage {
     this.typeFilter.set(id);
   }
 
-  setRangePreset(id: string): void {
-    this.rangePreset.set(id as HistoryRangePreset);
+  setRangePreset(id: HistoryRangePreset): void {
+    this.rangePreset.set(id);
   }
 
   editRow(id: string): void {

@@ -60,9 +60,8 @@ import { InstallPwa } from '../../pwa/install-pwa';
 import { BarChart } from '../../ui/charts/bar-chart';
 import { LineChart } from '../../ui/charts/line-chart';
 import { DonutChart, type DonutSlice } from '../../ui/charts/donut-chart';
-import { DateField } from '../../ui/date-field';
 import { PageHeader } from '../../ui/page-header';
-import { SelectField } from '../../ui/select-field';
+import { PeriodRange } from '../../ui/period-range';
 import { InstallCard } from './cards/install-card/install-card';
 import { QuickLog } from './cards/quick-log/quick-log';
 import { WeatherTipCard } from './cards/weather-tip/weather-tip';
@@ -95,12 +94,11 @@ interface PaperLine {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     PageHeader,
-    DateField,
     RouterLink,
     BarChart,
     LineChart,
     DonutChart,
-    SelectField,
+    PeriodRange,
     SampleBanner,
     SetupChecklist,
     InstallCard,
@@ -135,20 +133,6 @@ export class HomePage {
     { id: 'reports', labelKey: 'home.tab.reports' },
     { id: 'charts', labelKey: 'home.tab.charts' },
   ];
-
-  readonly reportRangePresets: { id: HistoryRangePreset; labelKey: MsgKey }[] = [
-    { id: 'thisMonth', labelKey: 'history.rangeThisMonth' },
-    { id: '3months', labelKey: 'history.range3Months' },
-    { id: 'year', labelKey: 'history.rangeYear' },
-    { id: 'custom', labelKey: 'history.rangeCustom' },
-  ];
-
-  readonly reportRangeOptions = computed(() =>
-    this.reportRangePresets.map((preset) => ({
-      value: preset.id,
-      label: this.i18n.t(preset.labelKey),
-    })),
-  );
 
   readonly activeCarId = computed(() => this.db.car()?.id ?? '');
   readonly reportWindow = computed((): ExpensePeriod => {
@@ -924,17 +908,11 @@ export class HomePage {
     }
   }
 
-  setReportRange(id: string): void {
-    if (!isHistoryRangePreset(id)) {
-      return;
-    }
+  setReportRange(id: HistoryRangePreset): void {
     this.reportRangePreset.set(id);
   }
 
-  setChartRange(id: string): void {
-    if (!isHistoryRangePreset(id)) {
-      return;
-    }
+  setChartRange(id: HistoryRangePreset): void {
     this.chartRangePreset.set(id);
   }
 
@@ -961,18 +939,6 @@ function historyWindow(preset: HistoryRangePreset, from: string, to: string): Da
   }
   const bounds = rangeBoundsForPreset(preset, todayDateOnly());
   return { from: bounds.from, to: bounds.to };
-}
-
-function isHistoryRangePreset(id: string): id is HistoryRangePreset {
-  switch (id) {
-    case 'thisMonth':
-    case '3months':
-    case 'year':
-    case 'custom':
-      return true;
-    default:
-      return false;
-  }
 }
 
 function seriesDelta(points: readonly TrendPoint[]): number | null {

@@ -149,7 +149,7 @@ describe('HomePage', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.report-hero')).toBeFalsy();
     expect(fixture.nativeElement.querySelector('.empty-state')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('.reports-range')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('app-period-range')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('.reports-list')).toBeFalsy();
     expect(fixture.componentInstance.reportRangePreset()).toBe('3months');
   });
@@ -167,10 +167,12 @@ describe('HomePage', () => {
     );
     expect(labels).toEqual(['charts.periodSpend', 'reports.glance.economy', 'charts.kmDriven']);
     expect(fixture.componentInstance.chartRangePreset()).toBe('3months');
-    expect(panel.querySelector('.reports-range__title')?.textContent?.trim()).toBe(
-      'home.period.title',
+    expect(panel.querySelector('.period-range__label')?.textContent?.trim()).toBe('history.range');
+    expect(panel.querySelector('.history-range__btn--on')?.textContent?.trim()).toBe(
+      'history.range3Months',
     );
-    expect(panel.querySelector('.reports-range__dates')).toBeFalsy();
+    expect(panel.querySelectorAll('.history-range__btn').length).toBe(4);
+    expect(panel.querySelector('.history-filter__dates')).toBeFalsy();
     expect(fixture.componentInstance.priceMoved()).toBe(false);
   });
 
@@ -210,12 +212,17 @@ describe('HomePage', () => {
     page.view.set('charts');
     fixture.detectChanges();
     expect(page.spendTotal()).toBe(914);
-    page.setChartRange('custom');
+    const customBtn = [...fixture.nativeElement.querySelectorAll('.history-range__btn')].find(
+      (node) => node.textContent?.trim() === 'history.rangeCustom',
+    ) as HTMLButtonElement;
+    customBtn.click();
+    fixture.detectChanges();
+    expect(page.chartRangePreset()).toBe('custom');
     page.chartFrom.set('2020-01-01');
     page.chartTo.set('2020-01-31');
     fixture.detectChanges();
     expect(page.spendTotal()).toBe(5000);
-    expect(fixture.nativeElement.querySelector('.charts-panel .reports-range__dates')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.charts-panel .history-filter__dates')).toBeTruthy();
   });
 
   it('sums the reports sheet inside the selected range', () => {
@@ -265,7 +272,7 @@ describe('HomePage', () => {
     const custom = fixture.nativeElement.querySelector('.report-hero')?.textContent ?? '';
     expect(custom).toContain('5000');
     expect(custom).not.toContain('914');
-    expect(fixture.nativeElement.querySelector('.reports-range__dates')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.reports-panel .history-filter__dates')).toBeTruthy();
   });
 
   it('hides the needs list when nothing is urgent', () => {

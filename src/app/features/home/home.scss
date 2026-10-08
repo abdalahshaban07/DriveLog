@@ -184,23 +184,6 @@
   unicode-bidi: isolate;
 }
 
-.reports-range {
-  display: grid;
-  gap: var(--space-3);
-}
-
-.reports-range__title {
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-}
-
-.reports-range__dates {
-  display: grid;
-  gap: var(--space-3);
-}
-
 .report-spec__row {
   grid-template-columns: minmax(0, 1fr) auto;
   padding: var(--space-3) var(--space-4);

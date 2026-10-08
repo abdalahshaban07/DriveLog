@@ -608,7 +608,6 @@ export const en = {
   'home.carousel.label': 'Your vehicles',
   'home.license.missing': 'Not set',
   'home.license.days': '{days} days left',
-  'home.period.title': 'Expense period',
   'home.period.since': 'Since {date}',
   'home.period.none': 'No open period',
   'home.period.startNew': 'Start new period',
