@@ -113,6 +113,12 @@ export const routes: Routes = [
     canActivate: [setupGuard],
   },
   {
+    path: 'upcoming',
+    loadComponent: () =>
+      import('./features/upcoming/upcoming').then((m) => m.UpcomingPage),
+    canActivate: [setupGuard],
+  },
+  {
     path: 'pre-trip',
     loadComponent: () =>
       import('./features/pre-trip/pre-trip').then((m) => m.PreTripPage),

@@ -61,6 +61,7 @@ export class Shell {
   /** Bottom-nav section for pages reached through in-section tabs. */
   readonly section = computed(() => {
     const path = this.url().split(/[?#]/)[0];
+    if (path === '/upcoming') return 'home';
     if (/^\/(fuel|around|fill-up|history\/fill-ups)(\/|$)/.test(path)) return 'fuel';
     if (/^\/(maintenance|history\/maintenance)(\/|$)/.test(path)) return 'maintenance';
     return null;
