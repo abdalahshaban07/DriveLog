@@ -8,13 +8,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import {
-  NavigationEnd,
-  Router,
-  RouterLink,
-  RouterLinkActive,
-  RouterOutlet,
-} from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter, fromEvent, map, merge, skip, startWith } from 'rxjs';
 import { Db } from '../data/db';
@@ -44,9 +38,7 @@ export class Shell {
 
   readonly updateDismissed = signal(false);
   /** ponytail: browser online flag only — no probe ping */
-  readonly online = signal(
-    typeof navigator === 'undefined' ? true : navigator.onLine,
-  );
+  readonly online = signal(typeof navigator === 'undefined' ? true : navigator.onLine);
 
   private readonly url = toSignal(
     this.router.events.pipe(
@@ -66,14 +58,11 @@ export class Shell {
     if (/^\/(maintenance|history\/maintenance)(\/|$)/.test(path)) return 'maintenance';
     return null;
   });
-  readonly updateReady = computed(
-    () => this.install.updateReady() && !this.updateDismissed(),
-  );
+  readonly updateReady = computed(() => this.install.updateReady() && !this.updateDismissed());
   readonly showUpdate = this.updateReady;
+  /** Notes wait until this build is running, so Later does not open the same sheet again. */
   readonly showNotes = computed(
-    () =>
-      !this.updateReady() &&
-      (this.whatsNew.visible() || this.whatsNew.manualOpen()),
+    () => !this.install.updateReady() && (this.whatsNew.visible() || this.whatsNew.manualOpen()),
   );
   readonly modalTitle = computed(() => this.i18n.t('update.available'));
   readonly notesTitle = computed(() => this.i18n.t('update.whatsNew'));

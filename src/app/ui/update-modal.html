@@ -12,50 +12,42 @@
         @if (releaseId()) {
           <p class="update-sheet__kicker">{{ i18n.t('update.release') }} · {{ releaseId() }}</p>
         }
-        <h2 [id]="titleId" class="update-sheet__title">
-          {{ title() || i18n.t('update.available') }}
-        </h2>
+        <h2 [id]="titleId" class="update-sheet__title">{{ heading() }}</h2>
       </div>
-      <button
-        type="button"
-        class="update-sheet__close"
-        [attr.aria-label]="i18n.t('update.later')"
-        (click)="later.emit()"
-      >
-        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-          <path
-            d="M6 6l12 12M18 6L6 18"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-          />
-        </svg>
-      </button>
     </header>
 
-    @if (cards().length) {
-      <p class="update-sheet__lead">{{ i18n.t('update.notesLead') }}</p>
+    @if (isUpdate()) {
+      <p class="update-sheet__body">{{ i18n.t('update.notifyBody') }}</p>
+    } @else if (solo(); as card) {
+      @if (card.body) {
+        <p class="update-sheet__body">{{ card.body }}</p>
+      }
+      @if (card.points.length) {
+        <ul class="note__facts">
+          @for (point of card.points; track $index) {
+            <li>{{ point }}</li>
+          }
+        </ul>
+      }
+    } @else if (many()) {
+      <p class="update-sheet__lead">{{ i18n.t('update.changeCount', { n: cards().length }) }}</p>
       <section class="update-sheet__features" [attr.aria-label]="i18n.t('update.whatsNew')">
-        <ol class="ledger list-reveal">
+        <ol class="notes">
           @for (card of cards(); track $index) {
-            <li class="ledger__item" [class.ledger__item--lead]="$first">
-              <span class="ledger__num" aria-hidden="true">{{ ledgerIndex($index) }}</span>
-              <div class="ledger__copy">
-                @if (card.kicker) {
-                  <p class="ledger__kicker">{{ card.kicker }}</p>
-                }
+            <li class="note">
+              <span class="note__mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  @for (d of iconPaths(card.icon); track d) {
+                    <path [attr.d]="d" />
+                  }
+                </svg>
+              </span>
+              <div class="note__copy">
                 @if (card.title) {
-                  <h3 class="ledger__title">{{ card.title }}</h3>
+                  <h3 class="note__title">{{ card.title }}</h3>
                 }
-                @if (card.points.length) {
-                  <ul class="ledger__facts">
-                    @for (point of card.points; track $index) {
-                      <li>{{ point }}</li>
-                    }
-                  </ul>
-                } @else if (card.body) {
-                  <p class="ledger__body">{{ card.body }}</p>
+                @if (card.body) {
+                  <p class="note__line">{{ card.body }}</p>
                 }
               </div>
             </li>
@@ -63,16 +55,11 @@
         </ol>
       </section>
     } @else if (lines().length) {
-      <section class="update-sheet__features" [attr.aria-label]="i18n.t('update.whatsNew')">
-        <ol class="ledger list-reveal">
-          @for (line of lines(); track line) {
-            <li class="ledger__item" [class.ledger__item--lead]="$first">
-              <span class="ledger__num" aria-hidden="true">{{ ledgerIndex($index) }}</span>
-              <p class="ledger__body">{{ line }}</p>
-            </li>
-          }
-        </ol>
-      </section>
+      <ul class="note__facts">
+        @for (line of lines(); track line) {
+          <li>{{ line }}</li>
+        }
+      </ul>
     } @else {
       <p class="update-sheet__body">{{ i18n.t('update.notifyBody') }}</p>
     }
@@ -84,7 +71,7 @@
           [stretch]="true"
           (pressed)="updateNow.emit()"
         />
-        <button type="button" class="ghost-btn update-sheet__ghost" (click)="later.emit()">
+        <button type="button" class="ghost update-sheet__later" (click)="later.emit()">
           {{ i18n.t('update.later') }}
         </button>
       } @else {
