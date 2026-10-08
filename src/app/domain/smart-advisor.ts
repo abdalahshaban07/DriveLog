@@ -1,7 +1,9 @@
 import {
-  detectAdvisorIntent,
   normalizeAdvisorText,
+  readAdvisor,
   type AdvisorIntent,
+  type AdvisorPart,
+  type AdvisorRead,
 } from './advisor-intent';
 import type { Affordability, BudgetHealth } from './budget-engine';
 import type { DataQualityTip } from './data-quality';
@@ -30,12 +32,42 @@ export type AdvisorFacts = {
   affordability: Affordability;
 };
 
+export type SpendBucket = 'fuel' | 'maintenance' | 'breakdown' | 'other';
+
+export type CoachServiceHit = {
+  kind: AdvisorPart | 'other';
+  name: string;
+  date: string;
+  odometer: number;
+};
+
+export type CoachSpendHit = {
+  bucket: SpendBucket;
+  amount: number;
+  date: string;
+};
+
 export type CoachLogs = {
   currency: string;
   periodTotal: number;
   maintenanceCount: number;
   breakdownCount: number;
   lastL100: number | null;
+  /** Period split. Absent → the total-only sentence. */
+  spendFuel?: number;
+  spendMaintenance?: number;
+  spendBreakdown?: number;
+  spendOther?: number;
+  allFuel?: number;
+  allMaintenance?: number;
+  allBreakdown?: number;
+  allOther?: number;
+  allTotal?: number;
+  prevL100?: number | null;
+  lastBreakdown?: { title: string; date: string } | null;
+  /** Newest first. */
+  services?: readonly CoachServiceHit[];
+  lastSpend?: CoachSpendHit | null;
 };
 
 export type LocalAnswer = {
@@ -126,14 +158,79 @@ function partParams(item: HealthItem, t: Translate): Record<string, string | num
   return { part: partLabel(item, t), status: t(statusKey(item.status)) };
 }
 
-function mentionedPart(
-  question: string,
-  items: readonly HealthItem[],
-): HealthItem | undefined {
+function round1(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
+function toRead(question: string, hint?: AdvisorIntent | AdvisorRead): AdvisorRead {
+  if (hint && typeof hint === 'object') return hint;
+  const read = readAdvisor(question);
+  if (!hint) return read;
+  return { ...read, intent: hint };
+}
+
+function bucketLabel(bucket: SpendBucket, t: Translate): string {
+  switch (bucket) {
+    case 'fuel':
+      return t('advisor.bucket.fuel');
+    case 'maintenance':
+      return t('advisor.bucket.maintenance');
+    case 'breakdown':
+      return t('advisor.bucket.breakdown');
+    case 'other':
+      return t('advisor.bucket.other');
+    default: {
+      const _e: never = bucket;
+      return _e;
+    }
+  }
+}
+
+function partKindLabel(kind: AdvisorPart, t: Translate): string {
+  switch (kind) {
+    case 'oil':
+      return t('parts.engineOil');
+    case 'tires':
+      return t('parts.tires');
+    case 'brakes':
+      return t('parts.brakePads');
+    default: {
+      const _e: never = kind;
+      return _e;
+    }
+  }
+}
+
+function serviceLabel(hit: CoachServiceHit, t: Translate): string {
+  if (hit.kind === 'other') return hit.name || t('advisor.part.other');
+  return partKindLabel(hit.kind, t);
+}
+
+function partIds(part: AdvisorPart): readonly string[] {
+  switch (part) {
+    case 'oil':
+      return [SYSTEM_ENGINE_OIL_ID];
+    case 'tires':
+      return [SYSTEM_TIRES_ID];
+    case 'brakes':
+      return [SYSTEM_BRAKE_PADS_ID, SYSTEM_BRAKE_DISCS_ID];
+    default: {
+      const _e: never = part;
+      return _e;
+    }
+  }
+}
+
+function itemForPart(part: AdvisorPart, items: readonly HealthItem[]): HealthItem | undefined {
+  const ids = partIds(part);
+  return items.find((item) => ids.includes(item.partDefinitionId));
+}
+
+function mentionedPart(question: string, items: readonly HealthItem[]): HealthItem | undefined {
   const q = normalizeAdvisorText(question);
   const rules: { re: RegExp; ids: readonly string[]; word: RegExp }[] = [
     { re: /oil|زيت/, ids: [SYSTEM_ENGINE_OIL_ID], word: /oil|زيت/ },
-    { re: /tire|كاوتش|اطار/, ids: [SYSTEM_TIRES_ID], word: /tire|كاوتش|اطار/ },
+    { re: /tire|كاوتش|كوتش|اطار/, ids: [SYSTEM_TIRES_ID], word: /tire|كاوتش|كوتش|اطار/ },
     {
       re: /brake|فرامل/,
       ids: [SYSTEM_BRAKE_PADS_ID, SYSTEM_BRAKE_DISCS_ID],
@@ -164,9 +261,10 @@ export function askLocal(
   facts: AdvisorFacts,
   logs: CoachLogs,
   t: Translate,
-  hint?: AdvisorIntent,
+  hint?: AdvisorIntent | AdvisorRead,
 ): LocalAnswer {
-  const intent = hint ?? detectAdvisorIntent(question);
+  const read = toRead(question, hint);
+  const intent = read.intent;
   switch (intent) {
     case 'RECOMMENDED_RESERVE':
       return facts.recommendedReserve == null
@@ -176,7 +274,9 @@ export function askLocal(
             currency: logs.currency,
           });
     case 'MAINTENANCE_PRIORITY': {
-      const item = focusPart(question, facts.healthItems);
+      const item = read.part
+        ? itemForPart(read.part, facts.healthItems)
+        : focusPart(question, facts.healthItems);
       return item
         ? answer('advisor.answer.priorityTitle', 'advisor.answer.priorityBody', partParams(item, t))
         : answer('advisor.answer.priorityTitle', 'advisor.answer.priorityEmpty');
@@ -185,6 +285,13 @@ export function askLocal(
       if (facts.fuelRisePct != null) {
         return answer('advisor.answer.fuelTitle', 'advisor.answer.fuelBody', {
           pct: Math.round(facts.fuelRisePct),
+        });
+      }
+      if (logs.lastL100 != null && logs.prevL100 != null) {
+        return answer('advisor.answer.fuelTitle', 'advisor.answer.fuelDelta', {
+          l100: round1(logs.lastL100),
+          prev: round1(logs.prevL100),
+          delta: round1(logs.lastL100 - logs.prevL100),
         });
       }
       if (logs.lastL100 != null) {
@@ -209,7 +316,9 @@ export function askLocal(
         status: budgetLabel(facts.budgetHealth, t),
       });
     case 'PART_STATUS': {
-      const item = focusPart(question, facts.healthItems);
+      const item = read.part
+        ? itemForPart(read.part, facts.healthItems)
+        : focusPart(question, facts.healthItems);
       return item
         ? answer(
             'advisor.answer.partStatusTitle',
@@ -218,23 +327,78 @@ export function askLocal(
           )
         : answer('advisor.answer.partStatusTitle', 'advisor.answer.partStatusEmpty');
     }
-    case 'PART_HISTORY':
+    case 'PART_HISTORY': {
+      const services = logs.services ?? [];
+      const pool = read.part ? services.filter((hit) => hit.kind === read.part) : services;
+      const hit = read.window === 'all' ? undefined : pool[0];
+      if (hit) {
+        return answer('advisor.answer.partHistoryTitle', 'advisor.answer.partHistoryLast', {
+          part: serviceLabel(hit, t),
+          date: hit.date,
+          km: Math.round(hit.odometer),
+        });
+      }
+      if (read.part && logs.services) {
+        return answer('advisor.answer.partHistoryTitle', 'advisor.answer.partHistoryCount', {
+          count: pool.length,
+          part: partKindLabel(read.part, t),
+        });
+      }
       return answer('advisor.answer.partHistoryTitle', 'advisor.answer.partHistoryBody', {
         count: logs.maintenanceCount,
       });
+    }
     case 'MAINT_LOG':
       return answer('advisor.answer.maintLogTitle', 'advisor.answer.maintLogBody', {
         count: logs.maintenanceCount,
       });
-    case 'BREAKDOWN':
+    case 'BREAKDOWN': {
+      const last = logs.lastBreakdown;
+      if (read.window !== 'all' && last?.title) {
+        return answer('advisor.answer.breakdownTitle', 'advisor.answer.breakdownLast', {
+          title: last.title,
+          date: last.date,
+          count: logs.breakdownCount,
+        });
+      }
       return answer('advisor.answer.breakdownTitle', 'advisor.answer.breakdownBody', {
         count: logs.breakdownCount,
       });
-    case 'SPENDING_TREND':
+    }
+    case 'SPENDING_TREND': {
+      if (read.window === 'last' && logs.lastSpend) {
+        return answer('advisor.answer.spendTitle', 'advisor.answer.spendLast', {
+          label: bucketLabel(logs.lastSpend.bucket, t),
+          amount: Math.round(logs.lastSpend.amount),
+          date: logs.lastSpend.date,
+          currency: logs.currency,
+        });
+      }
+      const all = read.window === 'all';
+      const fuel = all ? logs.allFuel : logs.spendFuel;
+      const maintenance = all ? logs.allMaintenance : logs.spendMaintenance;
+      const breakdown = all ? logs.allBreakdown : logs.spendBreakdown;
+      const other = all ? logs.allOther : logs.spendOther;
+      const total = all ? (logs.allTotal ?? logs.periodTotal) : logs.periodTotal;
+      if (fuel != null && maintenance != null && breakdown != null && other != null) {
+        return answer(
+          'advisor.answer.spendTitle',
+          all ? 'advisor.answer.spendAll' : 'advisor.answer.spendSplit',
+          {
+            total: Math.round(total),
+            fuel: Math.round(fuel),
+            maintenance: Math.round(maintenance),
+            breakdown: Math.round(breakdown),
+            other: Math.round(other),
+            currency: logs.currency,
+          },
+        );
+      }
       return answer('advisor.answer.spendTitle', 'advisor.answer.spendBody', {
         total: Math.round(logs.periodTotal),
         currency: logs.currency,
       });
+    }
     case 'UNSUPPORTED':
       return answer('advisor.answer.unsupportedTitle', 'advisor.answer.unsupportedBody');
     default: {

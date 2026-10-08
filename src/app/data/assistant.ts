@@ -3,7 +3,12 @@ import {
   ASSISTANT_THINKING_MAX_TOKENS,
   FREE_LLM_GATEWAYS,
 } from '../domain/free-llm-gateways';
-import type { AdvisorIntent } from '../domain/advisor-intent';
+import {
+  forcedAdvisorRead,
+  readAdvisor,
+  type AdvisorIntent,
+  type AdvisorRead,
+} from '../domain/advisor-intent';
 import {
   coachSnapshot,
   loadCoachInputs,
@@ -151,6 +156,7 @@ export async function fetchChatReply(
   t: Translate,
   intentHint?: AdvisorIntent,
   history: readonly ChatMessage[] = [],
+  carry: AdvisorRead | null = null,
 ): Promise<CoachReply> {
   const q = question.trim();
   if (!q) {
@@ -163,7 +169,8 @@ export async function fetchChatReply(
   }
 
   const asMsg = t as (key: MsgKey, params?: Record<string, string | number>) => string;
-  const local = (): CoachReply => localCoachAnswer(q, loaded.facts, loaded.logs, asMsg, intentHint);
+  const read = carry ?? (intentHint ? forcedAdvisorRead(q, intentHint) : readAdvisor(q));
+  const local = (): CoachReply => localCoachAnswer(q, loaded.facts, loaded.logs, asMsg, read);
 
   if (intentHint) {
     return local();

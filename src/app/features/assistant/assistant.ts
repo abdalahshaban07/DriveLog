@@ -7,13 +7,14 @@ import {
   signal,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import {
-  fetchChatReply,
-  isAssistantOnline,
-  type ChatMessage,
-} from '../../data/assistant';
+import { fetchChatReply, isAssistantOnline, type ChatMessage } from '../../data/assistant';
 import { Db } from '../../data/db';
-import { intentFromFaqKey } from '../../domain/advisor-intent';
+import {
+  forcedAdvisorRead,
+  intentFromFaqKey,
+  readAdvisor,
+  type AdvisorRead,
+} from '../../domain/advisor-intent';
 import type { MsgKey } from '../../i18n/en';
 import { I18n } from '../../i18n/i18n';
 import { PageHeader } from '../../ui/page-header';
@@ -51,6 +52,8 @@ export class AssistantPage {
   readonly busy = signal(false);
   readonly messages = signal<UiMessage[]>([]);
   readonly statusKey = signal<MsgKey | null>(null);
+  /** Last answered intent, so "والزيت؟" can keep or shift that slot. */
+  private readonly carry = signal<AdvisorRead | null>(null);
 
   readonly online = computed(() => isAssistantOnline(this.db));
   /** Only suggest questions the car's logs can actually answer. */
@@ -74,6 +77,7 @@ export class AssistantPage {
   clearChat(): void {
     this.messages.set([]);
     this.statusKey.set(null);
+    this.carry.set(null);
   }
 
   async sendFaq(key: MsgKey): Promise<void> {
@@ -96,15 +100,17 @@ export class AssistantPage {
     this.busy.set(true);
     this.statusKey.set(null);
 
+    const read = intentHint
+      ? forcedAdvisorRead(question, intentHint)
+      : readAdvisor(question, this.carry());
+    if (read.intent !== 'UNSUPPORTED') this.carry.set(read);
+
     const history: ChatMessage[] = this.messages().map((m) => ({
       role: m.role,
       content: m.content,
     }));
 
-    this.messages.update((list) => [
-      ...list,
-      { role: 'user', content: question },
-    ]);
+    this.messages.update((list) => [...list, { role: 'user', content: question }]);
     this.scrollToLatest();
 
     try {
@@ -115,6 +121,7 @@ export class AssistantPage {
         (key, params) => this.i18n.t(key as MsgKey, params),
         intentHint,
         history,
+        read,
       );
 
       if (reply.source === 'local' && this.online()) {
