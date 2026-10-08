@@ -1,6 +1,6 @@
 
-/** Marketing/splash version. Bump for v1.6 — do not use package.json 0.0.0. */
-export const APP_VERSION = '1.6';
+/** User-facing release on splash and about. Schema stays on DB_VERSION. */
+export const APP_VERSION = '0.1';
 
 export const DB_NAME = 'drivelog';
 export const DB_VERSION = 6;
