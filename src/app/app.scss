@@ -13,8 +13,18 @@
 }
 
 .splash__logo {
-  width: 7.5rem;
-  height: 7.5rem;
+  width: 7.25rem;
+  height: 7.25rem;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 22%;
+  background: #0b0d10;
+
+  img {
+    width: 72%;
+    height: 72%;
+  }
 }
 
 .splash__ver {
