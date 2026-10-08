@@ -15,74 +15,116 @@
     </p>
   }
 
-  @if (questionsOpen() && faqGroups().length) {
-    <section class="ask-card" [attr.aria-label]="i18n.t('assistant.faqTitle')">
-      @for (group of faqGroups(); track group.id) {
-        <div class="ask-group">
-          <p class="ask-label"><i></i>{{ i18n.t(group.labelKey) }}</p>
+  <section class="ask" [attr.aria-label]="i18n.t('assistant.faqTitle')">
+    <div class="ask-field">
+      <input
+        #queryInput
+        class="ask-input"
+        type="text"
+        role="combobox"
+        enterkeyhint="send"
+        autocomplete="off"
+        autocapitalize="off"
+        [attr.aria-expanded]="menuOpen()"
+        [attr.aria-label]="i18n.t('assistant.search')"
+        [attr.placeholder]="i18n.t('assistant.search')"
+        [disabled]="busy()"
+        (input)="onQuery($event)"
+        (focus)="menuOpen.set(true)"
+        (keydown.enter)="onEnter()"
+      />
+      @if (query().trim()) {
+        <button type="button" class="ask-icon" [disabled]="busy()" (click)="clearQuery()">×</button>
+      } @else {
+        <button
+          type="button"
+          class="ask-icon"
+          [attr.aria-expanded]="menuOpen()"
+          [disabled]="busy()"
+          (click)="toggleMenu()"
+        >
+          ⌄
+        </button>
+      }
+    </div>
+
+    @if (menuOpen() && (menuGroups().length || showFreeAsk())) {
+      <div class="ask-menu">
+        @if (browsing() && faqGroups().length > 1) {
+          <div class="ask-pills">
+            @for (group of faqGroups(); track group.id) {
+              <button
+                type="button"
+                class="ask-pill"
+                [class.on]="group.id === activeGroup()"
+                [disabled]="busy()"
+                (click)="pickGroup(group.id)"
+              >
+                {{ i18n.t(group.labelKey) }}
+              </button>
+            }
+          </div>
+        }
+        @for (group of menuGroups(); track group.id) {
+          @if (!browsing()) {
+            <p class="ask-label"><i></i>{{ i18n.t(group.labelKey) }}</p>
+          }
           @for (item of group.items; track item.key) {
-            <button type="button" class="ask-row" [disabled]="busy()" (click)="sendFaq(item)">
-              {{ i18n.t(item.key) }}
+            <button
+              type="button"
+              class="ask-hit"
+              [class.on]="!browsing() && item.key === firstHitKey()"
+              [disabled]="busy()"
+              (click)="sendFaq(item)"
+            >
+              @for (part of marks(item); track $index) {@if (part.mark) {<b class="ask-mark">{{ part.text }}</b>} @else {{{ part.text }}}}
             </button>
           }
-        </div>
-      }
-    </section>
-  } @else if (messages().length) {
-    <button type="button" class="ask-more" [disabled]="busy()" (click)="questionsOpen.set(true)">
-      {{ i18n.t('assistant.faq.more') }}
-    </button>
-  }
+        }
+        @if (showFreeAsk()) {
+          <button type="button" class="ask-hit ask-send" [disabled]="busy()" (click)="sendTyped()">
+            {{ i18n.t('assistant.ask', { q: query().trim() }) }}
+          </button>
+        }
+      </div>
+    }
+  </section>
 
-  @if (messages().length || busy()) {
-    <ul class="chat__list list-reveal" [attr.aria-label]="i18n.t('assistant.chat')">
-      @for (msg of messages(); track $index) {
-        <li
-          class="chat__bubble"
-          [class.chat__bubble--card]="!!msg.card"
-          [attr.data-role]="msg.role"
-          [attr.data-source]="msg.source ?? null"
-        >
-          @if (msg.card; as card) {
-            <p class="reply__kicker">{{ card.kicker }}</p>
-            <p class="reply__figure">
-              <bdi>{{ card.figure }}</bdi>
-              @if (card.unit) {
-                <small>{{ card.unit }}</small>
-              }
-            </p>
-            @for (line of card.lines; track $index) {
-              <p class="reply__line">
-                <span>{{ line.label }}</span>
-                <b><bdi>{{ line.value }}</bdi></b>
-              </p>
-            }
-            @if (card.note) {
-              <p class="reply__note">{{ card.note }}</p>
-            }
-          } @else {
-            <p>{{ msg.content }}</p>
+  @if (busy()) {
+    <div class="answer answer--loading" role="status" [attr.aria-label]="i18n.t('common.loading')">
+      <span class="chat__spinner" aria-hidden="true"></span>
+    </div>
+  } @else if (reply(); as answer) {
+    <article #answerEl class="answer" [attr.data-source]="answer.source">
+      @if (answer.card; as card) {
+        <p class="reply__kicker">{{ card.kicker }}</p>
+        <p class="reply__figure">
+          <bdi>{{ card.figure }}</bdi>
+          @if (card.unit) {
+            <small>{{ card.unit }}</small>
           }
-          @if (msg.role === 'assistant' && msg.source === 'remote') {
-            <a class="chat__report" [href]="reportHref(msg.content)">
-              {{ i18n.t('assistant.report') }}
-            </a>
-          }
-        </li>
+        </p>
+        @for (line of card.lines; track $index) {
+          <p class="reply__line">
+            <span>{{ line.label }}</span>
+            <b><bdi>{{ line.value }}</bdi></b>
+          </p>
+        }
+        @if (card.note) {
+          <p class="reply__note">{{ card.note }}</p>
+        }
+      } @else {
+        <p class="reply__text">{{ answer.content }}</p>
       }
-      @if (busy()) {
-        <li
-          class="chat__bubble chat__bubble--loading"
-          data-role="assistant"
-          role="status"
-          aria-live="polite"
-          [attr.aria-label]="i18n.t('common.loading')"
-        >
-          <span class="chat__spinner" aria-hidden="true"></span>
-        </li>
+      @if (answer.source === 'remote') {
+        <a class="chat__report" [href]="reportHref(answer.content)">
+          {{ i18n.t('assistant.report') }}
+        </a>
       }
-    </ul>
-    <div data-chat-end tabindex="-1" aria-hidden="true"></div>
+    </article>
+    <button type="button" class="ghost" (click)="clearAnswer()">
+      {{ i18n.t('assistant.clear') }}
+    </button>
   }
 
   @if (statusKey()) {
@@ -93,28 +135,4 @@
       }
     </p>
   }
-
-  <section class="composer card">
-      <app-text-field
-        [label]="i18n.t('assistant.input')"
-        [(value)]="draft"
-        [multiline]="true"
-      />
-      <div class="composer__actions">
-        <app-primary-button
-          [label]="i18n.t('assistant.send')"
-          [disabled]="busy() || !draft().trim()"
-          [stretch]="true"
-          (pressed)="sendTyped()"
-        />
-        <button
-          type="button"
-          class="ghost"
-          [disabled]="busy() || messages().length === 0"
-          (click)="clearChat()"
-        >
-          {{ i18n.t('assistant.clear') }}
-        </button>
-      </div>
-  </section>
 </div>

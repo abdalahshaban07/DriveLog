@@ -4,6 +4,8 @@ import {
   advisorFaqVisible,
   buildAnswerCard,
   cardText,
+  faqQueryMatch,
+  markFaqQuery,
 } from './advisor-card';
 import { SYSTEM_ENGINE_OIL_ID } from './part-catalog';
 import type { PartDefinition } from './models';
@@ -165,5 +167,19 @@ describe('buildAnswerCard', () => {
         logs(),
       ),
     ).toBe(true);
+  });
+});
+
+describe('faq search', () => {
+  it('matches a folded fragment and marks it in the original question', () => {
+    expect(faqQueryMatch('الزيت محتاج يتغير؟', 'زيت')).toBe(true);
+    expect(faqQueryMatch('صرفت كام الشهر ده؟', 'زيت')).toBe(false);
+    expect(faqQueryMatch('إزاي أحسّن', 'ازاي')).toBe(true);
+    expect(markFaqQuery('الزيت محتاج يتغير؟', 'زيت')).toEqual([
+      { text: 'ال', mark: false },
+      { text: 'زيت', mark: true },
+      { text: ' محتاج يتغير؟', mark: false },
+    ]);
+    expect(markFaqQuery('إزاي أحسّن', 'ازاي')[0]).toEqual({ text: 'إزاي', mark: true });
   });
 });

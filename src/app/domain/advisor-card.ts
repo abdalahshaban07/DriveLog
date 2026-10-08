@@ -1,5 +1,5 @@
 import type { MsgKey } from '../i18n/en';
-import type { AdvisorPart, AdvisorRead } from './advisor-intent';
+import { normalizeAdvisorText, type AdvisorPart, type AdvisorRead } from './advisor-intent';
 import type { FuelUseCompare, FuelUseReason } from './economy';
 import type { HealthStatus } from './models';
 import {
@@ -80,6 +80,57 @@ export function cardText(card: AnswerCard): string {
   const head = [card.kicker, [card.figure, card.unit].filter(Boolean).join(' ')];
   const lines = card.lines.map((line) => `${line.label} ${line.value}`.trim());
   return [...head, ...lines, card.note ?? ''].map((line) => line.trim()).filter(Boolean).join('\n');
+}
+
+export type FaqMark = { text: string; mark: boolean };
+
+/** Empty query matches every question. Otherwise the folded label must contain the query. */
+export function faqQueryMatch(label: string, query: string): boolean {
+  const needle = normalizeAdvisorText(query);
+  if (!needle) return true;
+  return normalizeAdvisorText(label).includes(needle);
+}
+
+/** Highlight the query inside a question. Folding keeps إزاي and ازاي on the same span. */
+export function markFaqQuery(label: string, query: string): FaqMark[] {
+  const needle = normalizeAdvisorText(query);
+  if (!needle) return [{ text: label, mark: false }];
+  const folded = foldSpans(label);
+  const at = folded.fold.indexOf(needle);
+  if (at < 0) return [{ text: label, mark: false }];
+  const start = folded.starts[at]!;
+  const end = folded.ends[at + needle.length - 1]!;
+  const parts = [
+    { text: label.slice(0, start), mark: false },
+    { text: label.slice(start, end), mark: true },
+    { text: label.slice(end), mark: false },
+  ];
+  return parts.filter((part) => part.text.length > 0);
+}
+
+function foldSpans(label: string): { fold: string; starts: number[]; ends: number[] } {
+  let fold = '';
+  const starts: number[] = [];
+  const ends: number[] = [];
+  for (let i = 0; i < label.length; i++) {
+    const piece = foldChar(label[i]!);
+    for (const out of piece) {
+      fold += out;
+      starts.push(i);
+      ends.push(i + 1);
+    }
+  }
+  return { fold, starts, ends };
+}
+
+function foldChar(ch: string): string {
+  return ch
+    .normalize('NFKD')
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+    .replace(/[أإآٱ]/g, 'ا')
+    .replace(/ة/g, 'ه')
+    .replace(/ى/g, 'ي')
+    .toLowerCase();
 }
 
 export function advisorFaqVisible(item: AdvisorFaq, facts: AdvisorFacts, logs: CoachLogs): boolean {
