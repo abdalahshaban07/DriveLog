@@ -86,7 +86,10 @@ describe('fetchChatReply', () => {
     expect(body.chat_template_kwargs).toEqual({ reasoning_effort: 'low' });
     expect(init.signal).toBeInstanceOf(AbortSignal);
     const system = body.messages.find((m) => m.role === 'system');
-    expect(system?.content).toContain('"nickname":"Test"');
+    expect(system?.content).toContain('Car: Test');
+    expect(system?.content).toContain('Fuel this month: 0 EGP');
+    expect(system?.content).toContain('0 means zero');
+    expect(system?.content).not.toContain('"nickname"');
     expect(system?.content).not.toContain('healthItems');
     expect(hourCount()).toBe(1);
   });

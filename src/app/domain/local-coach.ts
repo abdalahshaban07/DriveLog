@@ -258,6 +258,97 @@ export function coachSnapshot(
   };
 }
 
+/** Named lines for the online coach. 0 stays 0; only nulls become "not recorded". */
+export function coachPrompt(snapshot: CoachSnapshot, lang: 'en' | 'ar'): string {
+  const ar = lang === 'ar';
+  const missing = ar ? 'مش متسجل' : 'not recorded';
+  const money = (value: number | null) =>
+    value == null ? missing : `${Math.round(value)} ${snapshot.currency}`;
+  const row = (label: string, value: string) => `${label}: ${value}`;
+  const attention =
+    snapshot.parts.length === 0
+      ? [row(ar ? 'محتاج اهتمام' : 'Needs attention', ar ? 'مفيش' : 'none')]
+      : [
+          ar ? 'محتاج اهتمام:' : 'Needs attention:',
+          ...snapshot.parts.map((part) => `- ${part.name}: ${part.status}`),
+        ];
+  return [
+    ar
+      ? 'أنت مدرب DriveLog لعربيّة واحدة. جاوب بالعامية المصرية، جمل قصيرة، من غير علامات ومن غير إنجليزي.'
+      : "You are DriveLog's coach for one car. Reply in short plain sentences, with no markdown.",
+    ar
+      ? 'استخدم الأسطر دي بس. الرقم 0 معناه صفر، مش إن البيانات ناقصة. قول «مش متسجل» بس لو السطر مكتوب كده. متخترعش تكاليف.'
+      : 'Use only the lines below. 0 means zero, not missing data. Say "not recorded" only when a line says that. Do not invent costs.',
+    '',
+    row(ar ? 'العربية' : 'Car', snapshot.nickname),
+    row(ar ? 'العداد' : 'Odometer', `${snapshot.odometer} ${ar ? 'كم' : 'km'}`),
+    row(ar ? 'العملة' : 'Currency', snapshot.currency),
+    row(ar ? 'مصروف الشهر ده' : 'This month', money(snapshot.periodTotal)),
+    row(ar ? 'بنزين الشهر' : 'Fuel this month', money(snapshot.fuel)),
+    row(ar ? 'صيانة الشهر' : 'Maintenance this month', money(snapshot.maintenance)),
+    row(ar ? 'أعطال الشهر' : 'Breakdowns this month', money(snapshot.breakdown)),
+    row(ar ? 'مصاريف تانية الشهر' : 'Other costs this month', money(snapshot.other)),
+    row(ar ? 'سجلات الصيانة' : 'Maintenance records', String(snapshot.maintenanceCount)),
+    row(ar ? 'سجلات الأعطال' : 'Breakdown records', String(snapshot.breakdownCount)),
+    row(ar ? 'ميزانية الصيانة' : 'Maintenance budget', money(snapshot.monthlyBudget)),
+    row(ar ? 'الاحتياطي المقترح' : 'Suggested reserve', money(snapshot.recommendedReserve)),
+    row(ar ? 'هدف الاحتياطي' : 'Reserve target', money(snapshot.reserveTarget)),
+    row(ar ? 'صيانة خلال 90 يوم' : 'Due within 90 days', money(snapshot.eligible90)),
+    row(
+      ar ? 'ارتفاع البنزين' : 'Fuel use change',
+      snapshot.fuelRisePct == null ? missing : `${Math.round(snapshot.fuelRisePct)}%`,
+    ),
+    row(ar ? 'آخر استهلاك' : 'Latest economy', economyLine(snapshot.lastL100, ar, missing)),
+    row(ar ? 'حالة الميزانية' : 'Budget health', healthWord(snapshot.budgetHealth, ar, missing)),
+    row(ar ? 'القدرة على التكلفة' : 'Affordability', affordWord(snapshot.affordability, ar, missing)),
+    ...attention,
+  ].join('\n');
+}
+
+function economyLine(value: number | null, ar: boolean, missing: string): string {
+  if (value == null) return missing;
+  const n = Math.round(value * 10) / 10;
+  return `${n} ${ar ? 'لتر لكل 100 كم' : 'L/100 km'}`;
+}
+
+function healthWord(health: CoachSnapshot['budgetHealth'], ar: boolean, missing: string): string {
+  switch (health) {
+    case 'EXCELLENT':
+      return ar ? 'ممتازة' : 'Excellent';
+    case 'HEALTHY':
+      return ar ? 'كويسة' : 'Healthy';
+    case 'WATCH':
+      return ar ? 'خلي بالك' : 'Watch';
+    case 'HIGH':
+      return ar ? 'عالية' : 'High';
+    case 'CRITICAL':
+      return ar ? 'حرجة' : 'Critical';
+    case 'UNKNOWN':
+      return missing;
+    default: {
+      const _e: never = health;
+      return _e;
+    }
+  }
+}
+
+function affordWord(value: CoachSnapshot['affordability'], ar: boolean, missing: string): string {
+  switch (value) {
+    case 'CAN_AFFORD':
+      return ar ? 'يقدر' : 'Can afford';
+    case 'TIGHT':
+      return ar ? 'ضيقة' : 'Tight';
+    case 'NOT_RECOMMENDED':
+      return ar ? 'مش مناسب' : 'Not recommended';
+    case 'UNKNOWN':
+      return missing;
+    default: {
+      const _e: never = value;
+      return _e;
+    }
+  }
+}
+
 export function localCoachAnswer(
   question: string,
   facts: AdvisorFacts,

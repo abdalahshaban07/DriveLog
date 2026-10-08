@@ -6,7 +6,7 @@ import {
   readAdvisor,
 } from './advisor-intent';
 import { FUEL_TIP_KEYS, nextFuelTipKey } from './fuel-tips';
-import { buildCoachLogs } from './local-coach';
+import { buildCoachLogs, coachPrompt, type CoachSnapshot } from './local-coach';
 import type { Breakdown, FillUp, Maintenance } from './models';
 import { askLocal, type AdvisorFacts, type CoachLogs } from './smart-advisor';
 import type { Db } from '../data/db';
@@ -125,6 +125,40 @@ describe('detectAdvisorIntent (Egyptian AR)', () => {
       intent: 'PART_HISTORY',
       part: 'oil',
     });
+  });
+});
+
+describe('coachPrompt', () => {
+  it('names this month in Arabic and keeps zero distinct from missing', () => {
+    const snapshot: CoachSnapshot = {
+      nickname: 'تست',
+      odometer: 45540,
+      currency: 'جنيه',
+      budgetHealth: 'HEALTHY',
+      affordability: 'UNKNOWN',
+      recommendedReserve: null,
+      reserveTarget: null,
+      monthlyBudget: null,
+      eligible90: 0,
+      fuelRisePct: null,
+      lastL100: 7.9,
+      periodTotal: 1812,
+      fuel: 1812,
+      maintenance: 0,
+      breakdown: 0,
+      other: 0,
+      maintenanceCount: 4,
+      breakdownCount: 0,
+      parts: [{ name: 'تيل الفرامل', status: 'افحص' }],
+    };
+    const prompt = coachPrompt(snapshot, 'ar');
+    expect(prompt).toContain('مصروف الشهر ده: 1812 جنيه');
+    expect(prompt).toContain('بنزين الشهر: 1812 جنيه');
+    expect(prompt).toContain('صيانة الشهر: 0 جنيه');
+    expect(prompt).toContain('ميزانية الصيانة: مش متسجل');
+    expect(prompt).toContain('الرقم 0 معناه صفر');
+    expect(prompt).toContain('- تيل الفرامل: افحص');
+    expect(prompt).not.toContain('"fuel"');
   });
 });
 

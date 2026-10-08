@@ -11,6 +11,7 @@ import {
 } from '../domain/advisor-intent';
 import type { CardFormat } from '../domain/advisor-card';
 import {
+  coachPrompt,
   coachSnapshot,
   loadCoachInputs,
   localCoachAnswer,
@@ -73,18 +74,7 @@ function trimHistory(history: readonly ChatMessage[]): OpenAiChatMessage[] {
 }
 
 function buildSystemPrompt(lang: 'en' | 'ar', snapshot: CoachSnapshot): string {
-  const langLine =
-    lang === 'ar'
-      ? 'Reply in Arabic script only, in clear Egyptian-friendly Arabic. No English words and no chain-of-thought.'
-      : 'Reply in English.';
-  return [
-    'You are DriveLog, a concise fuel and maintenance coach for one personal car.',
-    'Use only the JSON below. If a value is null, say you do not know.',
-    'Do not invent VIN, plate, GPS, or costs.',
-    'Keep answers to a few sentences.',
-    langLine,
-    JSON.stringify(snapshot),
-  ].join('\n');
+  return coachPrompt(snapshot, lang);
 }
 
 function browserMayReachGateway(): boolean {
