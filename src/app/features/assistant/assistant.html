@@ -15,68 +15,86 @@
     </p>
   }
 
-  <section class="assistant__faq" [attr.aria-label]="i18n.t('assistant.faqTitle')">
-    <p class="section-label">{{ i18n.t('assistant.faqTitle') }}</p>
-    <div class="chip-rail">
-      @for (key of faqKeys(); track key) {
-        <button
-          type="button"
-          class="chip"
-          [disabled]="busy()"
-          (click)="sendFaq(key)"
-        >
-          {{ i18n.t(key) }}
-        </button>
+  @if (questionsOpen() && faqGroups().length) {
+    <section class="ask-card" [attr.aria-label]="i18n.t('assistant.faqTitle')">
+      @for (group of faqGroups(); track group.id) {
+        <div class="ask-group">
+          <p class="ask-label"><i></i>{{ i18n.t(group.labelKey) }}</p>
+          @for (item of group.items; track item.key) {
+            <button type="button" class="ask-row" [disabled]="busy()" (click)="sendFaq(item)">
+              {{ i18n.t(item.key) }}
+            </button>
+          }
+        </div>
       }
-    </div>
-  </section>
+    </section>
+  } @else if (messages().length) {
+    <button type="button" class="ask-more" [disabled]="busy()" (click)="questionsOpen.set(true)">
+      {{ i18n.t('assistant.faq.more') }}
+    </button>
+  }
 
-  <section class="assistant__chat card" [attr.aria-label]="i18n.t('assistant.chat')">
-    <p class="section-label">{{ i18n.t('assistant.chat') }}</p>
-
-    @if (messages().length === 0 && !busy()) {
-      <p class="empty-state">{{ i18n.t('assistant.emptyChat') }}</p>
-    } @else {
-      <ul class="chat__list list-reveal">
-        @for (msg of messages(); track $index) {
-          <li
-            class="chat__bubble"
-            [attr.data-role]="msg.role"
-            [attr.data-source]="msg.source ?? null"
-          >
-            <p>{{ msg.content }}</p>
-            @if (msg.role === 'assistant' && msg.source === 'remote') {
-              <a class="chat__report" [href]="reportHref(msg.content)">
-                {{ i18n.t('assistant.report') }}
-              </a>
+  @if (messages().length || busy()) {
+    <ul class="chat__list list-reveal" [attr.aria-label]="i18n.t('assistant.chat')">
+      @for (msg of messages(); track $index) {
+        <li
+          class="chat__bubble"
+          [class.chat__bubble--card]="!!msg.card"
+          [attr.data-role]="msg.role"
+          [attr.data-source]="msg.source ?? null"
+        >
+          @if (msg.card; as card) {
+            <p class="reply__kicker">{{ card.kicker }}</p>
+            <p class="reply__figure">
+              <bdi>{{ card.figure }}</bdi>
+              @if (card.unit) {
+                <small>{{ card.unit }}</small>
+              }
+            </p>
+            @for (line of card.lines; track $index) {
+              <p class="reply__line">
+                <span>{{ line.label }}</span>
+                <b><bdi>{{ line.value }}</bdi></b>
+              </p>
             }
-          </li>
-        }
-        @if (busy()) {
-          <li
-            class="chat__bubble chat__bubble--loading"
-            data-role="assistant"
-            role="status"
-            aria-live="polite"
-            [attr.aria-label]="i18n.t('common.loading')"
-          >
-            <span class="chat__spinner" aria-hidden="true"></span>
-          </li>
-        }
-      </ul>
-      <div data-chat-end tabindex="-1" aria-hidden="true"></div>
-    }
+            @if (card.note) {
+              <p class="reply__note">{{ card.note }}</p>
+            }
+          } @else {
+            <p>{{ msg.content }}</p>
+          }
+          @if (msg.role === 'assistant' && msg.source === 'remote') {
+            <a class="chat__report" [href]="reportHref(msg.content)">
+              {{ i18n.t('assistant.report') }}
+            </a>
+          }
+        </li>
+      }
+      @if (busy()) {
+        <li
+          class="chat__bubble chat__bubble--loading"
+          data-role="assistant"
+          role="status"
+          aria-live="polite"
+          [attr.aria-label]="i18n.t('common.loading')"
+        >
+          <span class="chat__spinner" aria-hidden="true"></span>
+        </li>
+      }
+    </ul>
+    <div data-chat-end tabindex="-1" aria-hidden="true"></div>
+  }
 
-    @if (statusKey()) {
-      <p class="assistant__status" role="status" aria-live="polite">
-        {{ i18n.t(statusKey()!) }}
-        @if (statusKey() === 'assistant.localOnly' || statusKey() === 'assistant.network') {
-          <a routerLink="/settings">{{ i18n.t('assistant.openSettings') }}</a>
-        }
-      </p>
-    }
+  @if (statusKey()) {
+    <p class="assistant__status" role="status" aria-live="polite">
+      {{ i18n.t(statusKey()!) }}
+      @if (statusKey() === 'assistant.localOnly' || statusKey() === 'assistant.network') {
+        <a routerLink="/settings">{{ i18n.t('assistant.openSettings') }}</a>
+      }
+    </p>
+  }
 
-    <div class="composer">
+  <section class="composer card">
       <app-text-field
         [label]="i18n.t('assistant.input')"
         [(value)]="draft"
@@ -98,6 +116,5 @@
           {{ i18n.t('assistant.clear') }}
         </button>
       </div>
-    </div>
   </section>
 </div>

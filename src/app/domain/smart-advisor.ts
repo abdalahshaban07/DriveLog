@@ -15,6 +15,7 @@ import {
   SYSTEM_ENGINE_OIL_ID,
   SYSTEM_TIRES_ID,
 } from './part-catalog';
+import type { FuelUseCompare } from './economy';
 import type { HealthItem } from './vehicle-health';
 
 export type AdvisorFacts = {
@@ -68,6 +69,10 @@ export type CoachLogs = {
   /** Newest first. */
   services?: readonly CoachServiceHit[];
   lastSpend?: CoachSpendHit | null;
+  /** Calendar month, same window as the home month card. */
+  monthProjected?: number | null;
+  monthPrevious?: number;
+  fuelUse?: FuelUseCompare | null;
 };
 
 export type LocalAnswer = {

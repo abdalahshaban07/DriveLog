@@ -9,6 +9,7 @@ import {
   type AdvisorIntent,
   type AdvisorRead,
 } from '../domain/advisor-intent';
+import type { CardFormat } from '../domain/advisor-card';
 import {
   coachSnapshot,
   loadCoachInputs,
@@ -157,6 +158,7 @@ export async function fetchChatReply(
   intentHint?: AdvisorIntent,
   history: readonly ChatMessage[] = [],
   carry: AdvisorRead | null = null,
+  format?: CardFormat,
 ): Promise<CoachReply> {
   const q = question.trim();
   if (!q) {
@@ -170,7 +172,8 @@ export async function fetchChatReply(
 
   const asMsg = t as (key: MsgKey, params?: Record<string, string | number>) => string;
   const read = carry ?? (intentHint ? forcedAdvisorRead(q, intentHint) : readAdvisor(q));
-  const local = (): CoachReply => localCoachAnswer(q, loaded.facts, loaded.logs, asMsg, read);
+  const local = (): CoachReply =>
+    localCoachAnswer(q, loaded.facts, loaded.logs, asMsg, read, format);
 
   if (intentHint) {
     return local();

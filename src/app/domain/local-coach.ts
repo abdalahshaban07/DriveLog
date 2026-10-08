@@ -2,12 +2,14 @@ import type { Db } from '../data/db';
 import type { MsgKey } from '../i18n/en';
 import {
   normalizeAdvisorText,
+  readAdvisor,
   type AdvisorIntent,
   type AdvisorPart,
   type AdvisorRead,
 } from './advisor-intent';
+import { buildAnswerCard, cardText, type AnswerCard, type CardFormat } from './advisor-card';
 import { currencyWord } from './currencies';
-import { computeEconomySegments, computePerFillSegments } from './economy';
+import { computeEconomySegments, computePerFillSegments, fuelUseCompare } from './economy';
 import type { PeriodTotals } from './expense-period';
 import type { Breakdown, Car, FillUp, Maintenance, OtherExpense } from './models';
 import {
@@ -16,7 +18,7 @@ import {
   SYSTEM_ENGINE_OIL_ID,
   SYSTEM_TIRES_ID,
 } from './part-catalog';
-import { currentMonthSpend } from './recommendations';
+import { buildMonthOutlook, currentMonthSpend } from './recommendations';
 import {
   askLocal,
   partLabel,
@@ -33,6 +35,7 @@ export type CoachSource = 'local' | 'remote';
 export type CoachReply = {
   text: string;
   source: CoachSource;
+  card?: AnswerCard;
 };
 
 export type CoachInputs = {
@@ -197,18 +200,24 @@ export function loadCoachInputs(db: Db): CoachInputs | null {
   const other = db.otherExpenses();
   const settings = db.settings();
   const totals = currentMonthSpend(fills, maintenance, breakdowns, other);
+  const outlook = buildMonthOutlook(fills, maintenance, breakdowns, other);
   return {
     car,
     facts,
     totals,
-    logs: buildCoachLogs(
-      currencyWord(settings.currency, settings.language),
-      totals,
-      fills,
-      maintenance,
-      breakdowns,
-      other,
-    ),
+    logs: {
+      ...buildCoachLogs(
+        currencyWord(settings.currency, settings.language),
+        totals,
+        fills,
+        maintenance,
+        breakdowns,
+        other,
+      ),
+      monthProjected: outlook.projected,
+      monthPrevious: outlook.previous,
+      fuelUse: fuelUseCompare(fills),
+    },
   };
 }
 
@@ -255,8 +264,19 @@ export function localCoachAnswer(
   logs: CoachLogs,
   t: Translate,
   intentHint?: AdvisorIntent | AdvisorRead,
+  format?: CardFormat,
 ): CoachReply {
-  const answer = askLocal(question, facts, logs, t, intentHint);
+  const read = asRead(question, intentHint);
+  const card = buildAnswerCard(read, facts, logs, t, format);
+  if (card) return { text: cardText(card), source: 'local', card };
+  const answer = askLocal(question, facts, logs, t, read);
   const text = `${t(answer.titleKey)} ${t(answer.bodyKey, answer.params)}`.trim();
   return { text, source: 'local' };
+}
+
+function asRead(question: string, hint?: AdvisorIntent | AdvisorRead): AdvisorRead {
+  if (hint && typeof hint === 'object') return hint;
+  const read = readAdvisor(question);
+  if (!hint) return read;
+  return { ...read, intent: hint };
 }

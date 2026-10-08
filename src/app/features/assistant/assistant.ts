@@ -10,11 +10,19 @@ import { Router, RouterLink } from '@angular/router';
 import { fetchChatReply, isAssistantOnline, type ChatMessage } from '../../data/assistant';
 import { Db } from '../../data/db';
 import {
+  ADVISOR_FAQ,
+  advisorFaqVisible,
+  type AdvisorFaq,
+  type AdvisorFaqGroup,
+  type AnswerCard,
+} from '../../domain/advisor-card';
+import {
   forcedAdvisorRead,
-  intentFromFaqKey,
   readAdvisor,
+  type AdvisorIntent,
   type AdvisorRead,
 } from '../../domain/advisor-intent';
+import { loadCoachInputs } from '../../domain/local-coach';
 import type { MsgKey } from '../../i18n/en';
 import { I18n } from '../../i18n/i18n';
 import { PageHeader } from '../../ui/page-header';
@@ -22,17 +30,17 @@ import { PrimaryButton } from '../../ui/primary-button';
 import { TextField } from '../../ui/text-field';
 import { CONTACT_EMAIL } from '../support/support';
 
-const FAQ_KEYS = [
-  'assistant.faq.economy',
-  'assistant.faq.period',
-  'assistant.faq.maintenance',
-  'assistant.faq.breakdown',
-] as const satisfies readonly MsgKey[];
+type FaqGroup = {
+  id: AdvisorFaqGroup;
+  labelKey: MsgKey;
+  items: AdvisorFaq[];
+};
 
 type UiMessage = {
   role: 'user' | 'assistant';
   content: string;
   source?: 'local' | 'remote';
+  card?: AnswerCard;
 };
 
 @Component({
@@ -51,20 +59,25 @@ export class AssistantPage {
   readonly draft = signal('');
   readonly busy = signal(false);
   readonly messages = signal<UiMessage[]>([]);
+  readonly questionsOpen = signal(true);
   readonly statusKey = signal<MsgKey | null>(null);
   /** Last answered intent, so "والزيت؟" can keep or shift that slot. */
   private readonly carry = signal<AdvisorRead | null>(null);
 
   readonly online = computed(() => isAssistantOnline(this.db));
-  /** Only suggest questions the car's logs can actually answer. */
-  readonly faqKeys = computed(() => {
-    const has: Record<(typeof FAQ_KEYS)[number], boolean> = {
-      'assistant.faq.economy': this.db.fillUps().length >= 2,
-      'assistant.faq.period': true,
-      'assistant.faq.maintenance': this.db.maintenance().length > 0,
-      'assistant.faq.breakdown': this.db.breakdowns().length > 0,
-    };
-    return FAQ_KEYS.filter((k) => has[k]);
+  /** Questions the logs can actually answer, in three groups. */
+  readonly faqGroups = computed((): FaqGroup[] => {
+    const loaded = loadCoachInputs(this.db);
+    if (!loaded) return [];
+    const order = ['spend', 'car', 'budget'] as const;
+    return order.flatMap((id) => {
+      const items = ADVISOR_FAQ.filter(
+        (item) => item.group === id && advisorFaqVisible(item, loaded.facts, loaded.logs),
+      );
+      if (!items.length) return [];
+      const labelKey = groupLabel(id);
+      return [{ id, labelKey, items }];
+    });
   });
 
   /** Play generative-AI policy: users must be able to flag AI output. */
@@ -78,11 +91,11 @@ export class AssistantPage {
     this.messages.set([]);
     this.statusKey.set(null);
     this.carry.set(null);
+    this.questionsOpen.set(true);
   }
 
-  async sendFaq(key: MsgKey): Promise<void> {
-    const text = this.i18n.t(key);
-    await this.send(text, intentFromFaqKey(key));
+  async sendFaq(item: AdvisorFaq): Promise<void> {
+    await this.send(this.i18n.t(item.key), item.read.intent, item.read);
   }
 
   async sendTyped(): Promise<void> {
@@ -94,15 +107,17 @@ export class AssistantPage {
 
   private async send(
     question: string,
-    intentHint?: ReturnType<typeof intentFromFaqKey>,
+    intentHint?: AdvisorIntent,
+    forced?: AdvisorRead,
   ): Promise<void> {
     if (this.busy()) return;
     this.busy.set(true);
     this.statusKey.set(null);
+    this.questionsOpen.set(false);
 
-    const read = intentHint
+    const read = forced ?? (intentHint
       ? forcedAdvisorRead(question, intentHint)
-      : readAdvisor(question, this.carry());
+      : readAdvisor(question, this.carry()));
     if (read.intent !== 'UNSUPPORTED') this.carry.set(read);
 
     const history: ChatMessage[] = this.messages().map((m) => ({
@@ -122,9 +137,17 @@ export class AssistantPage {
         intentHint,
         history,
         read,
+        {
+          amount: (value) => this.i18n.formatNumber(Math.round(value)),
+          liters: (value) =>
+            this.i18n.formatNumber(value, { maximumFractionDigits: 1, minimumFractionDigits: 0 }),
+          date: (iso) => this.i18n.formatDate(iso, { day: 'numeric', month: 'short' }),
+        },
       );
 
-      if (reply.source === 'local' && this.online()) {
+      if (forced) {
+        this.statusKey.set(null);
+      } else if (reply.source === 'local' && this.online()) {
         this.statusKey.set('assistant.network');
       } else if (!this.online()) {
         this.statusKey.set('assistant.localOnly');
@@ -138,6 +161,7 @@ export class AssistantPage {
           role: 'assistant',
           content: reply.text,
           source: reply.source,
+          card: reply.card,
         },
       ]);
       this.scrollToLatest();
@@ -163,5 +187,20 @@ export class AssistantPage {
         }
       });
     });
+  }
+}
+
+function groupLabel(id: AdvisorFaqGroup): MsgKey {
+  switch (id) {
+    case 'spend':
+      return 'assistant.group.spend';
+    case 'car':
+      return 'assistant.group.car';
+    case 'budget':
+      return 'assistant.group.budget';
+    default: {
+      const _e: never = id;
+      return _e;
+    }
   }
 }

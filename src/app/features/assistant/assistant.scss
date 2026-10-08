@@ -27,66 +27,76 @@
   margin-inline-start: var(--space-2);
 }
 
-.assistant__faq {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+.ask-card,
+.composer.card {
+  background: var(--paper);
+  border-radius: 18px;
+  box-shadow: var(--shadow-soft);
 }
 
-.chip-rail {
+.ask-card {
+  padding: var(--space-2) var(--space-2) var(--space-3);
+}
+
+.ask-group + .ask-group {
+  margin-block-start: var(--space-2);
+}
+
+.ask-label {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-2);
+  margin: var(--space-2) var(--space-3) 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
-.chip {
+.ask-label i {
+  width: 7px;
+  height: 7px;
+  border-radius: 99px;
+  background: var(--fuel);
+}
+
+.ask-row,
+.ask-more {
+  width: 100%;
   min-height: var(--tap);
-  padding-inline: var(--space-3);
-  border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
-  border-radius: var(--radius);
-  background: var(--well);
+  padding: var(--space-3);
+  border: 0;
+  border-block-end: 1px solid var(--hairline);
+  background: transparent;
   color: var(--text);
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 0.98rem;
+  line-height: 1.45;
+  text-align: start;
   cursor: pointer;
-  transition:
-    transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
-    background-color 160ms ease,
-    border-color 160ms ease;
 }
 
-.chip:disabled {
+.ask-group .ask-row:last-child {
+  border-block-end: 0;
+}
+
+.ask-row:disabled,
+.ask-more:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .chip:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--fuel) 12%, var(--surface));
-    border-color: color-mix(in srgb, var(--fuel) 40%, transparent);
-  }
+.ask-more {
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--muted);
+  font-weight: 700;
 }
 
-.chip:active:not(:disabled) {
-  transform: scale(0.97);
-}
-
-.chip:focus-visible {
+.ask-row:focus-visible,
+.ask-more:focus-visible {
   outline: 2px solid var(--fuel);
   outline-offset: 2px;
-}
-
-.assistant .section-label,
-.assistant__chat .empty-state {
-  margin: 0;
-}
-
-.assistant__chat {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  background: var(--paper);
-  color: var(--paper-text);
 }
 
 .chat__list {
@@ -109,17 +119,63 @@
 }
 
 .chat__bubble[data-role='user'] {
-  background: color-mix(in srgb, var(--fuel) 14%, var(--surface));
-  align-self: end;
+  background: color-mix(in srgb, var(--fuel) 16%, var(--paper));
+  align-self: start;
+  max-inline-size: 86%;
 }
 
 .chat__bubble[data-role='assistant'] {
-  align-self: start;
+  align-self: stretch;
+  background: var(--paper);
+  box-shadow: var(--shadow-soft);
 }
 
 .chat__bubble p {
   margin: 0;
   white-space: pre-wrap;
+}
+
+.chat__bubble .reply__kicker,
+.chat__bubble .reply__note {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.chat__bubble .reply__figure {
+  margin: 2px 0 var(--space-2);
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.chat__bubble .reply__figure small {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-inline-start: 0.25rem;
+}
+
+.chat__bubble .reply__line {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0;
+  padding-block: var(--space-2);
+  border-block-start: 1px solid var(--hairline);
+  font-size: 0.92rem;
+  font-weight: 400;
+}
+
+.chat__bubble .reply__line b {
+  font-weight: 700;
+  text-align: end;
+}
+
+.chat__bubble .reply__note {
+  margin-block-start: var(--space-2);
+  font-weight: 400;
+  line-height: 1.5;
 }
 
 .chat__report {
@@ -162,6 +218,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  padding: var(--space-4);
 }
 
 .composer__actions {
@@ -186,13 +243,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .chip,
+  .ask-row,
   .ghost,
   .chat__bubble {
     transition: none;
   }
 
-  .chip:active:not(:disabled),
   .ghost:active:not(:disabled) {
     transform: none;
   }
