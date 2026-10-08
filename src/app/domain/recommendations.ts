@@ -1,6 +1,6 @@
 import { buildDueItems, todayDateOnly } from './dues';
 import { tankEconomyVsAvg } from './economy';
-import { activePeriod, daysUntil, periodTotals } from './expense-period';
+import { activePeriod, daysUntil, periodTotals, type PeriodTotals } from './expense-period';
 import { fuelDashboardMetrics } from './fuel-dashboard';
 import { firstDueHolidayNudge, type PublicHoliday } from './holidays';
 import { pickFuelTipKey } from './fuel-tips';
@@ -99,6 +99,32 @@ function monthExpenseCount(
   return count;
 }
 
+function spendForPrefix(
+  prefix: string,
+  fills: readonly FillUp[],
+  maintenance: readonly Maintenance[],
+  breakdowns: readonly Breakdown[],
+  other: readonly OtherExpense[],
+): PeriodTotals {
+  let fuel = 0;
+  let maint = 0;
+  let br = 0;
+  let oth = 0;
+  for (const f of fills) {
+    if (f.date.startsWith(prefix)) fuel += f.cost;
+  }
+  for (const m of maintenance) {
+    if (m.date.startsWith(prefix) && m.cost != null) maint += m.cost;
+  }
+  for (const b of breakdowns) {
+    if (b.date.startsWith(prefix)) br += b.repairCost;
+  }
+  for (const o of other) {
+    if (o.date.startsWith(prefix)) oth += o.amount;
+  }
+  return { fuel, maintenance: maint, breakdowns: br, other: oth, total: fuel + maint + br + oth };
+}
+
 function monthSpendTotal(
   prefix: string,
   fills: readonly FillUp[],
@@ -106,28 +132,18 @@ function monthSpendTotal(
   breakdowns: readonly Breakdown[],
   other: readonly OtherExpense[],
 ): number {
-  let total = 0;
-  for (const f of fills) {
-    if (f.date.startsWith(prefix)) {
-      total += f.cost;
-    }
-  }
-  for (const m of maintenance) {
-    if (m.date.startsWith(prefix)) {
-      if (m.cost != null) total += m.cost;
-    }
-  }
-  for (const b of breakdowns) {
-    if (b.date.startsWith(prefix)) {
-      total += b.repairCost;
-    }
-  }
-  for (const o of other) {
-    if (o.date.startsWith(prefix)) {
-      total += o.amount;
-    }
-  }
-  return total;
+  return spendForPrefix(prefix, fills, maintenance, breakdowns, other).total;
+}
+
+/** Calendar-month buckets. Same total as the month outlook card. */
+export function currentMonthSpend(
+  fills: readonly FillUp[],
+  maintenance: readonly Maintenance[],
+  breakdowns: readonly Breakdown[],
+  other: readonly OtherExpense[],
+  now: Date = new Date(),
+): PeriodTotals {
+  return spendForPrefix(monthPrefix(now), fills, maintenance, breakdowns, other);
 }
 
 export function buildMonthOutlook(

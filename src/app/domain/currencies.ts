@@ -65,6 +65,12 @@ export function validCurrency(code: string): string {
   return /^[A-Z]{3}$/.test(current) ? current : DEFAULT_CURRENCY;
 }
 
+/** Word that belongs in a sentence. Arabic EGP is جنيه, not the code. */
+export function currencyWord(code: string, lang: 'en' | 'ar'): string {
+  if (lang === 'ar' && code.trim().toUpperCase() === 'EGP') return 'جنيه';
+  return code;
+}
+
 export function currencyLabel(
   code: string,
   lang: 'en' | 'ar',

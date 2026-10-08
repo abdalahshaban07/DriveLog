@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { currencyLabel, listCurrencyOptions, validCurrency } from './currencies';
+import { currencyLabel, currencyWord, listCurrencyOptions, validCurrency } from './currencies';
 import { knownOdometer, latestEconomy } from './economy';
 import { runEconomySelfCheck } from './economy.check';
 import { runMaintenanceFieldsSelfCheck } from './maintenance-fields.check';
@@ -519,6 +519,13 @@ describe('currencies', () => {
     expect(currencyLabel('EGP', 'en')).toMatch(/EGP/);
     expect(currencyLabel('EGP', 'ar')).toMatch(/EGP/);
     expect(currencyLabel('EGP', 'ar')).not.toBe('EGP');
+  });
+
+  it('says جنيه for EGP in an Arabic sentence', () => {
+    expect(currencyWord('EGP', 'ar')).toBe('جنيه');
+    expect(currencyWord('egp', 'ar')).toBe('جنيه');
+    expect(currencyWord('EGP', 'en')).toBe('EGP');
+    expect(currencyWord('SAR', 'ar')).toBe('SAR');
   });
 
   it('keeps the selected code in the list', () => {

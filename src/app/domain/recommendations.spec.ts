@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildMonthOutlook, buildRecommendations } from './recommendations';
+import { buildMonthOutlook, buildRecommendations, currentMonthSpend } from './recommendations';
 import type { Breakdown, Car, FillUp, Maintenance, Settings } from './models';
 
 const settings: Settings = {
@@ -36,26 +36,43 @@ function fill(
 describe('buildMonthOutlook', () => {
   it('sums all expense categories for the current month', () => {
     const now = new Date(2026, 2, 10);
-    const outlook = buildMonthOutlook(
-      [fill({ id: 'f1', date: '2026-03-05', cost: 100, liters: 40, odometer: 1100, tankFull: true })],
-      [
-        {
-          id: 'm1',
-          type: 'oil',
-          odometer: 1100,
-          cost: 50,
-          date: '2026-03-06',
-          createdAt: '2026-03-06T00:00:00.000Z',
-          updatedAt: '2026-03-06T00:00:00.000Z',
-        },
-      ],
-      [],
-      [],
-      now,
-    );
+    const fills = [
+      fill({ id: 'f1', date: '2026-03-05', cost: 100, liters: 40, odometer: 1100, tankFull: true }),
+    ];
+    const maintenance = [
+      {
+        id: 'm1',
+        type: 'oil' as const,
+        odometer: 1100,
+        cost: 50,
+        date: '2026-03-06',
+        createdAt: '2026-03-06T00:00:00.000Z',
+        updatedAt: '2026-03-06T00:00:00.000Z',
+      },
+    ];
+    const outlook = buildMonthOutlook(fills, maintenance, [], [], now);
     expect(outlook.actual).toBe(150);
     expect(outlook.previous).toBe(0);
     expect(outlook.expenseCount).toBe(2);
+    expect(currentMonthSpend(fills, maintenance, [], [], now)).toEqual({
+      fuel: 100,
+      maintenance: 50,
+      breakdowns: 0,
+      other: 0,
+      total: outlook.actual,
+    });
+  });
+
+  it('keeps last month out of the current month the coach reads', () => {
+    const now = new Date(2026, 9, 8);
+    const fills = [
+      fill({ id: 'early', date: '2026-10-02', cost: 948, liters: 40, odometer: 1, tankFull: true }),
+      fill({ id: 'late', date: '2026-10-06', cost: 914, liters: 30, odometer: 2, tankFull: true }),
+      fill({ id: 'sept', date: '2026-09-20', cost: 25543, liters: 90, odometer: 3, tankFull: true }),
+    ];
+    const month = currentMonthSpend(fills, [], [], [], now);
+    expect(month.total).toBe(1862);
+    expect(month.total).toBe(buildMonthOutlook(fills, [], [], [], now).actual);
   });
 
   it('sums last month for the comparison', () => {

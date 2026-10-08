@@ -6,8 +6,9 @@ import {
   type AdvisorPart,
   type AdvisorRead,
 } from './advisor-intent';
+import { currencyWord } from './currencies';
 import { computeEconomySegments, computePerFillSegments } from './economy';
-import { activePeriod, periodTotals, type PeriodTotals } from './expense-period';
+import type { PeriodTotals } from './expense-period';
 import type { Breakdown, Car, FillUp, Maintenance, OtherExpense } from './models';
 import {
   SYSTEM_BRAKE_DISCS_ID,
@@ -15,6 +16,7 @@ import {
   SYSTEM_ENGINE_OIL_ID,
   SYSTEM_TIRES_ID,
 } from './part-catalog';
+import { currentMonthSpend } from './recommendations';
 import {
   askLocal,
   partLabel,
@@ -193,18 +195,20 @@ export function loadCoachInputs(db: Db): CoachInputs | null {
   const maintenance = db.maintenance();
   const breakdowns = db.breakdowns();
   const other = db.otherExpenses();
-  const totals = periodTotals(
-    activePeriod(db.expensePeriods(), car.id),
-    fills,
-    maintenance,
-    breakdowns,
-    other,
-  );
+  const settings = db.settings();
+  const totals = currentMonthSpend(fills, maintenance, breakdowns, other);
   return {
     car,
     facts,
     totals,
-    logs: buildCoachLogs(db.settings().currency, totals, fills, maintenance, breakdowns, other),
+    logs: buildCoachLogs(
+      currencyWord(settings.currency, settings.language),
+      totals,
+      fills,
+      maintenance,
+      breakdowns,
+      other,
+    ),
   };
 }
 
