@@ -249,14 +249,16 @@ export class AssistantPage {
         },
       );
 
-      if (forced) {
+      if (forced || reply.card) {
         this.statusKey.set(null);
-      } else if (reply.source === 'local' && this.online()) {
+      } else if (reply.remoteFailed) {
         this.statusKey.set('assistant.network');
       } else if (!this.online()) {
         this.statusKey.set('assistant.localOnly');
-      } else {
+      } else if (reply.source === 'remote') {
         this.statusKey.set('assistant.sourceRemote');
+      } else {
+        this.statusKey.set(null);
       }
 
       this.turns.update((list) => [

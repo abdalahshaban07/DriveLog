@@ -38,6 +38,8 @@ export type CoachReply = {
   text: string;
   source: CoachSource;
   card?: AnswerCard;
+  /** The online call was attempted and returned nothing. */
+  remoteFailed?: boolean;
 };
 
 export type CoachInputs = {

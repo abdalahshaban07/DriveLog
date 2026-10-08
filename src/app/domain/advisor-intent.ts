@@ -14,6 +14,7 @@ export type AdvisorIntent =
   | 'FUEL_SPENDING'
   | 'SPENDING_TREND'
   | 'PART_STATUS'
+  | 'COACH_ADVICE'
   | 'UNSUPPORTED';
 
 export type AdvisorPart = 'oil' | 'tires' | 'brakes';
@@ -226,6 +227,7 @@ export function defaultWindow(intent: AdvisorIntent): AdvisorWindow {
     case 'BUDGET_HEALTH':
     case 'SPENDING_TREND':
     case 'PART_STATUS':
+    case 'COACH_ADVICE':
     case 'UNSUPPORTED':
       return 'period';
     default: {
@@ -251,9 +253,16 @@ function isFollowUp(text: string): boolean {
   return /^(و|طيب|كمان|برضو|and\b|also\b)/.test(text);
 }
 
+/** «ازاي / أحسّن / نصيحة» asks for a method, not the numbers card. */
+export function isAdviceAsk(raw: string): boolean {
+  const text = normalizeAdvisorText(raw);
+  return /ازاي|احسن|تحسين|نصيح|how (do|can|to)|improve|\btip\b|advice/.test(text);
+}
+
 export function readAdvisor(raw: string, carry?: AdvisorRead | null): AdvisorRead {
   const text = normalizeAdvisorText(raw);
   if (!text) return { intent: 'UNSUPPORTED', window: 'period' };
+  if (isAdviceAsk(text)) return { intent: 'COACH_ADVICE', window: 'period' };
   const part = detectPart(text);
   const window = detectWindow(text);
   if (carry && carry.intent !== 'UNSUPPORTED' && isFollowUp(text)) {

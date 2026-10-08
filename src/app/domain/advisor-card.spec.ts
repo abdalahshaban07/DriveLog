@@ -192,5 +192,30 @@ describe('faq search', () => {
     expect(faqSuggests(last, 'آخر حاجة صرفت فيها كام؟', 'الصرف')).toBe(false);
     expect(faqSuggests(oilDue, 'الزيت محتاج يتغير؟', 'زيت')).toBe(true);
     expect(faqSuggests(period, 'صرفت كام الشهر ده؟', 'زيت')).toBe(false);
+    const economy = ADVISOR_FAQ.find((item) => item.key === 'assistant.faq.economy')!;
+    expect(faqSuggests(economy, 'استهلاك البنزين عامل إزاي؟', 'ازاي احسن الاستهلاك')).toBe(false);
+  });
+
+  it('leaves a how-to question without a numbers card', () => {
+    const card = buildAnswerCard(
+      { intent: 'COACH_ADVICE', window: 'period' },
+      facts(),
+      logs({
+        fuelUse: {
+          liters: 77.6,
+          previousLiters: 99,
+          km: 982,
+          previousKm: 1225,
+          l100: 7.9,
+          previousL100: 8.1,
+          pct: -22,
+          tone: 'down',
+          direction: 'down',
+          reason: 'distance',
+        },
+      }),
+      t,
+    );
+    expect(card).toBeNull();
   });
 });

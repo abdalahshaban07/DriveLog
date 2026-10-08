@@ -72,6 +72,33 @@ describe('fetchChatReply', () => {
     expect(fetchMock).not.toHaveBeenCalled();
     expect(reply.source).toBe('local');
     expect(reply.card?.kicker).toBe('assistant.card.month');
+    expect(reply.remoteFailed).toBeUndefined();
+    expect(hourCount()).toBe(0);
+  });
+
+  it('sends a how-to question online instead of the fuel card', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okChat('ظبط ضغط الكاوتش ومتسيّبش العربية تدور.'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const reply = await fetchChatReply(mockDb(true), 'ازاي احسن الاستهلاك', 'ar', (k) => k);
+
+    expect(fetchMock).toHaveBeenCalled();
+    expect(reply).toEqual({
+      text: 'ظبط ضغط الكاوتش ومتسيّبش العربية تدور.',
+      source: 'remote',
+    });
+  });
+
+  it('keeps a local tip and flags the call when the how-to request fails', async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const reply = await fetchChatReply(mockDb(true), 'ازاي احسن الاستهلاك', 'ar', (k) => k);
+
+    expect(reply.source).toBe('local');
+    expect(reply.card).toBeUndefined();
+    expect(reply.remoteFailed).toBe(true);
+    expect(reply.text).toContain('fuel.tip.tirePressure');
     expect(hourCount()).toBe(0);
   });
 

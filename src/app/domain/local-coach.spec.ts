@@ -86,7 +86,9 @@ describe('detectAdvisorIntent (Egyptian AR)', () => {
   });
 
   it('maps FAQ-like and colloquial sentences', () => {
-    expect(detectAdvisorIntent('إزاي أحسّن استهلاك البنزين؟')).toBe('FUEL_SPENDING');
+    expect(detectAdvisorIntent('إزاي أحسّن استهلاك البنزين؟')).toBe('COACH_ADVICE');
+    expect(detectAdvisorIntent('ازاي احسن الاستهلاك')).toBe('COACH_ADVICE');
+    expect(detectAdvisorIntent('نصيحة')).toBe('COACH_ADVICE');
     expect(detectAdvisorIntent('العربيه بتستهلك كتير اوي')).toBe('FUEL_SPENDING');
     expect(detectAdvisorIntent('صرفت كام الفترة دي؟')).toBe('SPENDING_TREND');
     expect(detectAdvisorIntent('الصرف')).toBe('SPENDING_TREND');
@@ -312,6 +314,14 @@ describe('askLocal', () => {
 
     const spend = askLocal('صرفت كام', facts(), logs, t);
     expect(spend.params).toEqual({ total: 1500, currency: 'EGP' });
+  });
+
+  it('answers a how-to with a tip instead of the fuel numbers', () => {
+    const advice = askLocal('ازاي احسن الاستهلاك', facts(), logs, t);
+    expect(advice.titleKey).toBe('advisor.answer.adviceTitle');
+    expect(advice.bodyKey).toBe('fuel.tip.tirePressure');
+    const budgetAdvice = askLocal('ازاي احسن الميزانية', facts(), logs, t);
+    expect(budgetAdvice.bodyKey).toBe('advisor.answer.adviceBudget');
   });
 
   it('uses the FAQ hint instead of the question text', () => {

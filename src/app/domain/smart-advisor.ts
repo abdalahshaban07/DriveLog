@@ -167,6 +167,16 @@ function round1(value: number): number {
   return Math.round(value * 10) / 10;
 }
 
+function adviceBodyKey(question: string): MsgKey {
+  const text = normalizeAdvisorText(question);
+  if (/زيت|oil/.test(text)) return 'advisor.answer.adviceOil';
+  if (/كاوتش|كوتش|اطار|tire/.test(text)) return 'advisor.answer.adviceTires';
+  if (/فرامل|brake/.test(text)) return 'advisor.answer.adviceBrakes';
+  if (/ميزاني|احتياط|budget|reserve/.test(text)) return 'advisor.answer.adviceBudget';
+  if (/بنزين|وقود|استهلاك|لتر|fuel|econom|consum|سواق/.test(text)) return 'fuel.tip.tirePressure';
+  return 'advisor.answer.adviceBody';
+}
+
 function toRead(question: string, hint?: AdvisorIntent | AdvisorRead): AdvisorRead {
   if (hint && typeof hint === 'object') return hint;
   const read = readAdvisor(question);
@@ -404,6 +414,8 @@ export function askLocal(
         currency: logs.currency,
       });
     }
+    case 'COACH_ADVICE':
+      return answer('advisor.answer.adviceTitle', adviceBodyKey(question));
     case 'UNSUPPORTED':
       return answer('advisor.answer.unsupportedTitle', 'advisor.answer.unsupportedBody');
     default: {

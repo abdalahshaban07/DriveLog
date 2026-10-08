@@ -1219,6 +1219,12 @@ export const en = {
   'advisor.answer.spendLast': 'Latest cost is {label} on {date}: {amount} {currency}.',
   'advisor.answer.maintLogTitle': 'Maintenance log',
   'advisor.answer.maintLogBody': 'You have {count} maintenance records on file.',
+  'advisor.answer.adviceTitle': 'Tip',
+  'advisor.answer.adviceBody': 'On this device: check the latest log before changing a habit.',
+  'advisor.answer.adviceOil': 'Change the oil on its interval, and do not pass the listed kilometers.',
+  'advisor.answer.adviceTires': 'Check tire pressure every month. Low pressure raises fuel use.',
+  'advisor.answer.adviceBrakes': 'If the brakes feel soft or noisy, have them inspected before the next long trip.',
+  'advisor.answer.adviceBudget': 'Keep the maintenance reserve for the next service instead of spending it early.',
   'advisor.answer.unsupportedTitle': 'I can help with maintenance and budget',
   'advisor.answer.unsupportedBody':
     "Ask about fuel economy, this period's spending, the maintenance log, or breakdowns.",

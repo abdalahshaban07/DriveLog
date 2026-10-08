@@ -1204,6 +1204,12 @@ export const ar: Record<MsgKey, string> = {
   'advisor.answer.spendLast': 'آخر مصروف {label} يوم {date}: {amount} {currency}.',
   'advisor.answer.maintLogTitle': 'سجل الصيانة',
   'advisor.answer.maintLogBody': 'عندك {count} سجل صيانة.',
+  'advisor.answer.adviceTitle': 'نصيحة',
+  'advisor.answer.adviceBody': 'من على الجهاز: راجع آخر سجل قبل ما تغيّر عادة.',
+  'advisor.answer.adviceOil': 'غيّر الزيت على المعاد، ومتعدّيش الكيلومترات المكتوبة.',
+  'advisor.answer.adviceTires': 'شوف ضغط الكاوتش كل شهر. الضغط الناقص بيزوّد الاستهلاك.',
+  'advisor.answer.adviceBrakes': 'لو الفرامل طرية أو بتصوّت، افحصها قبل مشوار طويل.',
+  'advisor.answer.adviceBudget': 'سيّب احتياطي الصيانة للخدمة الجاية، ومتصرفهوش بدري.',
   'advisor.answer.unsupportedTitle': 'أقدر أساعد في الصيانة والميزانية',
   'advisor.answer.unsupportedBody':
     'اسأل عن استهلاك البنزين، أو مصروف الفترة، أو سجل الصيانة، أو الأعطال.',

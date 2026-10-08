@@ -209,6 +209,7 @@ export function buildAnswerCard(
       return reserveCard(facts, logs, t, format);
     case 'AFFORDABILITY':
     case 'MAINT_LOG':
+    case 'COACH_ADVICE':
     case 'UNSUPPORTED':
       return null;
     default: {

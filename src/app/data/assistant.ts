@@ -178,6 +178,7 @@ export async function fetchChatReply(
     if (remote) {
       return { text: remote, source: 'remote' };
     }
+    return { ...localReply, remoteFailed: true };
   }
 
   return localReply;
