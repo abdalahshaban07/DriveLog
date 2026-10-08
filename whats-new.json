@@ -1,28 +1,50 @@
 {
-  "id": "notes-72c97eb",
+  "id": "notes-1cd8f824",
   "en": [
     {
-      "icon": "chart",
-      "kicker": "Reports",
-      "title": "PDF reports, redesigned",
-      "body": "Maintenance, fill-ups, and the car passport now share one clearer report: summary figures first, then each record on its own card.",
+      "icon": "wrench",
+      "kicker": "Coming up",
+      "title": "One list for what’s next",
+      "body": "Overdue items and the next 90 days — service, license, registration, and vault dates including insurance — on one screen.",
       "points": [
-        "Summary figures up front",
-        "Shop, parts, and readings included",
-        "Same layout on every PDF"
+        "Opened from Home",
+        "Overdue first, then by date",
+        "Kilometres-only rows when they’re close"
+      ]
+    },
+    {
+      "icon": "chart",
+      "kicker": "Month",
+      "title": "Share this month",
+      "body": "One tap on the month outlook sends fuel, maintenance, and other costs as text.",
+      "points": [
+        "This month, this car",
+        "Copies the text if sharing isn’t available",
+        "Hidden when the month is empty"
       ]
     }
   ],
   "ar": [
     {
-      "icon": "chart",
-      "kicker": "التقارير",
-      "title": "تقارير PDF بشكل جديد",
-      "body": "الصيانة والتعبئة وجواز السيارة بقوا تقرير واحد أوضح: الأرقام الأول، وبعدين كل سجل في كارت لوحده.",
+      "icon": "wrench",
+      "kicker": "الجاي",
+      "title": "قائمة واحدة للي جاي",
+      "body": "المتأخر والـ ٩٠ يوم الجايين — صيانة، رخصة، ترخيص، وتواريخ الخزنة ومنها التأمين — في شاشة واحدة.",
       "points": [
-        "الأرقام المهمة في الأول",
-        "المركز والقطعة والقراءات ظاهرين",
-        "نفس الشكل في كل PDF"
+        "بتتفتح من الرئيسية",
+        "المتأخر الأول وبعدين بالتاريخ",
+        "صفوف الكيلومتر تظهر لما تقرب"
+      ]
+    },
+    {
+      "icon": "chart",
+      "kicker": "الشهر",
+      "title": "شارك الشهر",
+      "body": "ضغطة على نظرة الشهر تبعت البنزين والصيانة والمصاريف التانية كنص.",
+      "points": [
+        "الشهر ده، العربية دي",
+        "النص بيتنسخ لو المشاركة مش متاحة",
+        "الشهر الفاضي من غير زر"
       ]
     }
   ]
