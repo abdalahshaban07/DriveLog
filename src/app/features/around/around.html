@@ -7,13 +7,15 @@
 
   @if (!requested()) {
     <section class="card around-finder" role="status" aria-live="polite">
-      <div class="around-finder__visual" aria-hidden="true">
-        <span class="around-finder__ring"></span>
-        <span class="around-finder__ring"></span>
-        <span class="around-finder__ring"></span>
-        <span class="around-finder__core"></span>
+      <div class="around-finder__lead">
+        <div class="around-finder__visual" aria-hidden="true">
+          <span class="around-finder__ring"></span>
+          <span class="around-finder__ring"></span>
+          <span class="around-finder__ring"></span>
+          <span class="around-finder__core"></span>
+        </div>
+        <p class="around-finder__copy">{{ i18n.t('around.explain') }}</p>
       </div>
-      <p class="around-finder__copy">{{ i18n.t('around.explain') }}</p>
       <app-numeric-field
         [label]="i18n.t('around.range')"
         [value]="rangeText()"
@@ -36,6 +38,7 @@
       />
       <app-primary-button
         [label]="i18n.t('around.areaSearch')"
+        tone="quiet"
         [stretch]="true"
         [disabled]="nearbyLoading()"
         (pressed)="searchArea()"

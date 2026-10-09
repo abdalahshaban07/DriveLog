@@ -12,6 +12,6 @@ export class PrimaryButton {
   readonly label = input.required<string>();
   readonly disabled = input(false);
   readonly stretch = input(false);
-  readonly tone = input<'fuel' | 'mint'>('fuel');
+  readonly tone = input<'fuel' | 'mint' | 'quiet'>('fuel');
   readonly pressed = output<void>();
 }

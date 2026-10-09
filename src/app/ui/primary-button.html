@@ -2,6 +2,7 @@
   type="button"
   class="btn"
   [class.btn--mint]="tone() === 'mint'"
+  [class.btn--quiet]="tone() === 'quiet'"
   [disabled]="disabled()"
   (click)="pressed.emit()"
 >

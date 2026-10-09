@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { AroundPage } from './around';
 import { I18n } from '../../i18n/i18n';
@@ -21,6 +22,15 @@ describe('AroundPage', () => {
         },
       ],
     }).compileComponents();
+  });
+
+  it('keeps area search quieter than use my location', () => {
+    const fixture = TestBed.createComponent(AroundPage);
+    fixture.detectChanges();
+    const buttons = fixture.debugElement.queryAll(By.css('app-primary-button'));
+    expect(buttons).toHaveLength(2);
+    expect(buttons[0].componentInstance.tone()).toBe('fuel');
+    expect(buttons[1].componentInstance.tone()).toBe('quiet');
   });
 
   it('does not request location until the CTA is used', () => {

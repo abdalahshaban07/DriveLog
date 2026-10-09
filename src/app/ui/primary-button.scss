@@ -24,8 +24,17 @@
 .btn--mint {
   background: var(--btn-bg, var(--cta-surface, var(--cta)));
 }
+.btn--quiet {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--hairline);
+  box-shadow: none;
+}
 .btn:hover:not(:disabled) {
   box-shadow: var(--btn-hover-shadow, 0 0 16px var(--glow));
+}
+.btn--quiet:hover:not(:disabled) {
+  box-shadow: none;
 }
 .btn:active:not(:disabled) {
   transform: translate(var(--btn-press-x, 0), var(--btn-press-y, 1px));
