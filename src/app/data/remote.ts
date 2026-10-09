@@ -135,25 +135,137 @@ export function readCoords(geo: Geolocation): Promise<Coords | null> {
 
 /** Photon GeoJSON: coordinates are [lon, lat]. No key. */
 export function parsePhotonPoint(raw: unknown): Coords | null {
+  const hit = photonHits(raw)[0];
+  return hit ? { lat: hit.lat, lon: hit.lon } : null;
+}
+
+export type GeocodedPlace = Coords & { label: string };
+
+type PhotonHit = Coords & {
+  name: string;
+  city: string;
+  state: string;
+  county: string;
+  district: string;
+  locality: string;
+};
+
+/** Address words that also exist in 6th of October, so they must not outrank a city name. */
+const GENERIC_PLACE = new Set([
+  'حي',
+  'خامس',
+  'خامسه',
+  'مجاوره',
+  'جديد',
+  'جديده',
+  'مدينه',
+]);
+
+function foldArabic(raw: string): string {
+  return raw
+    .normalize('NFKD')
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+    .replace(/[أإآٱ]/g, 'ا')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .replace(/ؤ/g, 'و')
+    .replace(/ئ/g, 'ي')
+    .toLowerCase();
+}
+
+function placeTokens(raw: string): string[] {
+  return foldArabic(raw)
+    .split(/[^\u0600-\u06FFa-z0-9]+/i)
+    .map((token) => token.replace(/^ال/, ''))
+    .filter((token) => token && !GENERIC_PLACE.has(token) && !/^\d+$/.test(token));
+}
+
+function photonText(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function photonHits(raw: unknown): PhotonHit[] {
   if (!raw || typeof raw !== 'object') {
-    return null;
+    return [];
   }
   const features = (raw as { features?: unknown }).features;
-  const first = Array.isArray(features) ? features[0] : null;
-  if (!first || typeof first !== 'object') {
+  if (!Array.isArray(features)) {
+    return [];
+  }
+  const hits: PhotonHit[] = [];
+  for (const feature of features) {
+    if (!feature || typeof feature !== 'object') {
+      continue;
+    }
+    const coordinates = (feature as { geometry?: { coordinates?: unknown } }).geometry
+      ?.coordinates;
+    if (!Array.isArray(coordinates) || coordinates.length < 2) {
+      continue;
+    }
+    const lon = Number(coordinates[0]);
+    const lat = Number(coordinates[1]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+      continue;
+    }
+    const props = (feature as { properties?: Record<string, unknown> }).properties ?? {};
+    hits.push({
+      lat,
+      lon,
+      name: photonText(props['name']),
+      city: photonText(props['city']),
+      state: photonText(props['state']),
+      county: photonText(props['county']),
+      district: photonText(props['district']),
+      locality: photonText(props['locality']),
+    });
+  }
+  return hits;
+}
+
+function photonScore(query: string[], hit: PhotonHit): number {
+  const region = new Set([...placeTokens(hit.state), ...placeTokens(hit.county), ...placeTokens(hit.city)]);
+  const near = new Set([...placeTokens(hit.district), ...placeTokens(hit.locality)]);
+  const name = new Set(placeTokens(hit.name));
+  let score = 0;
+  for (const token of query) {
+    if (region.has(token)) {
+      score += 3;
+    } else if (near.has(token)) {
+      score += 2;
+    } else if (name.has(token)) {
+      score += 1;
+    }
+  }
+  return score;
+}
+
+function photonLabel(hit: PhotonHit): string {
+  const state = hit.state;
+  const city = hit.city;
+  if (state && city && foldArabic(state) !== foldArabic(city)) {
+    return `${state} · ${city}`;
+  }
+  return state || city || hit.name;
+}
+
+/** First hit when nothing distinctive matches. Otherwise the highest score; ties keep Photon order. */
+export function pickPhotonPlace(raw: unknown, query: string): GeocodedPlace | null {
+  const hits = photonHits(raw);
+  const first = hits[0];
+  if (!first) {
     return null;
   }
-  const coordinates = (first as { geometry?: { coordinates?: unknown } }).geometry
-    ?.coordinates;
-  if (!Array.isArray(coordinates) || coordinates.length < 2) {
-    return null;
+  const tokens = placeTokens(query);
+  let best = first;
+  let bestScore = photonScore(tokens, first);
+  for (const hit of hits.slice(1)) {
+    const score = photonScore(tokens, hit);
+    if (score > bestScore) {
+      best = hit;
+      bestScore = score;
+    }
   }
-  const lon = Number(coordinates[0]);
-  const lat = Number(coordinates[1]);
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-    return null;
-  }
-  return { lat, lon };
+  return { lat: best.lat, lon: best.lon, label: photonLabel(best) };
 }
 
 /** Egypt only, so a name like المعادي cannot resolve abroad. minLon,minLat,maxLon,maxLat. */
@@ -163,7 +275,7 @@ const EGYPT_BBOX = '24.7,22,36.9,31.7';
 export function photonSearchUrl(query: string, lang: 'en' | 'ar'): string {
   return `https://photon.komoot.io/api/?${new URLSearchParams({
     q: query.trim(),
-    limit: '1',
+    limit: '8',
     lang: lang === 'en' ? 'en' : 'default',
     bbox: EGYPT_BBOX,
   })}`;
@@ -172,12 +284,12 @@ export function photonSearchUrl(query: string, lang: 'en' | 'ar'): string {
 export async function geocodePlace(
   query: string,
   lang: 'en' | 'ar' = 'en',
-): Promise<Coords | null> {
+): Promise<GeocodedPlace | null> {
   const q = query.trim();
   if (!q) {
     return null;
   }
-  return parsePhotonPoint(await fetchJson(photonSearchUrl(q, lang)));
+  return pickPhotonPlace(await fetchJson(photonSearchUrl(q, lang)), q);
 }
 
 export function getCoords(): Promise<Coords | null> {
@@ -599,6 +711,8 @@ export type AroundCache = {
   radiusKm: number;
   items: NearbyPoi[];
   savedAt: number;
+  /** Area we understood, when the search was by name. */
+  label?: string;
 };
 
 export function readAroundCache(
@@ -639,7 +753,15 @@ export function writeAroundCache(
   }
 }
 
-export function mapsSearchUrl(lat: number, lon: number, lang: 'en' | 'ar'): string {
+export function mapsSearchUrl(
+  lat: number,
+  lon: number,
+  lang: 'en' | 'ar',
+  origin?: Coords | null,
+): string {
+  if (origin) {
+    return `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lon}&destination=${lat},${lon}&hl=${lang}`;
+  }
   return `https://www.google.com/maps/search/?api=1&query=${lat},${lon}&hl=${lang}`;
 }
 

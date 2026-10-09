@@ -27,6 +27,10 @@
     </button>
   </div>
 
+  @if (place() && !loading()) {
+    <p class="around-place">{{ i18n.t('around.place', { place: place() }) }}</p>
+  }
+
   @if (loading()) {
     <div class="around-results__body">
       <div class="skeleton around-skel" aria-hidden="true"></div>
@@ -80,7 +84,7 @@
       @if (list()[0]; as nearest) {
         <span class="around-glance__near">{{
           i18n.t('around.nearest', { distance: distanceLabel(nearest) })
-        }}</span>
+        }} · {{ i18n.t('around.straight') }}</span>
       }
     </p>
     <ul class="around-list">
@@ -111,7 +115,10 @@
             <span class="around-card__body">
               <span class="around-card__top">
                 <span class="around-card__name">{{ poi.name }}</span>
-                <span class="around-card__dist">{{ distanceLabel(poi) }}</span>
+                <span class="around-card__dist">
+                  {{ distanceLabel(poi) }}
+                  <span class="around-card__straight">{{ i18n.t('around.straight') }}</span>
+                </span>
               </span>
               <span class="around-card__meta">
                 @if (poi.openNow === true) {

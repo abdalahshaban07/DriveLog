@@ -444,6 +444,8 @@ export const en = {
   'around.attrOsm': '© OpenStreetMap contributors',
   'around.count': '{count} places',
   'around.nearest': 'Nearest {distance}',
+  'around.straight': 'Straight line',
+  'around.place': 'Searching around {place}',
   'around.directions': 'Directions',
   'around.closed': 'Closed',
   'around.or': 'or',

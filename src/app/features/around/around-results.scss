@@ -39,6 +39,12 @@
   border-radius: var(--radius);
 }
 
+.around-place {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .around-glance {
   display: flex;
   flex-wrap: wrap;
@@ -145,7 +151,7 @@
 
 .around-card__top {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-3);
 }
@@ -157,6 +163,9 @@
 }
 
 .around-card__dist {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
   flex-shrink: 0;
   padding: 2px 8px;
   border-radius: 999px;
@@ -166,6 +175,12 @@
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   text-align: end;
+}
+
+.around-card__straight {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 600;
 }
 
 .around-card__meta {

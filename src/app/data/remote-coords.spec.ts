@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  mapsSearchUrl,
   parseIpCoords,
   parsePhotonPoint,
   photonSearchUrl,
+  pickPhotonPlace,
   readAroundCache,
   readCoords,
   writeAroundCache,
@@ -127,7 +129,59 @@ describe('photonSearchUrl', () => {
     const url = photonSearchUrl('القاهره', 'ar');
     expect(url).toContain('lang=default');
     expect(url).not.toContain('lang=ar');
+    expect(url).toContain('limit=8');
     expect(url).toContain('bbox=24.7%2C22%2C36.9%2C31.7');
+  });
+});
+
+const beniSuefHits = {
+  features: [
+    {
+      geometry: { coordinates: [30.923149, 29.9397396] },
+      properties: {
+        name: 'مدرسة 6 أكتوبر الأبتدائية الجديدة',
+        city: 'مدينة 6 أكتوبر',
+        district: 'الحى الخامس',
+        locality: 'المجاورة 3',
+        state: 'الجيزة',
+      },
+    },
+    {
+      geometry: { coordinates: [31.1244432, 29.0409555] },
+      properties: {
+        name: 'محور الجامعه',
+        city: 'New Bani Suef City',
+        locality: 'المجاورة 3',
+        state: 'بنى سويف',
+      },
+    },
+  ],
+};
+
+describe('pickPhotonPlace', () => {
+  it('prefers بني سويف over the 6th of October school', () => {
+    expect(
+      pickPhotonPlace(beniSuefHits, 'بني سويف الجديده الحي الخامس المجاوره الخامسه'),
+    ).toEqual({
+      lat: 29.0409555,
+      lon: 31.1244432,
+      label: 'بنى سويف · New Bani Suef City',
+    });
+  });
+
+  it('keeps the first hit when nothing distinctive matches', () => {
+    expect(pickPhotonPlace(beniSuefHits, 'zzzz')?.lat).toBe(29.9397396);
+    expect(pickPhotonPlace({ features: [] }, 'بني سويف')).toBeNull();
+  });
+});
+
+describe('mapsSearchUrl', () => {
+  it('routes from the search point to the station', () => {
+    expect(
+      mapsSearchUrl(29.05, 31.13, 'ar', { lat: 29.0409555, lon: 31.1244432 }),
+    ).toBe(
+      'https://www.google.com/maps/dir/?api=1&origin=29.0409555,31.1244432&destination=29.05,31.13&hl=ar',
+    );
   });
 });
 

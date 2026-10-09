@@ -54,6 +54,8 @@ export class AroundPage {
   readonly rangeError = signal('');
   readonly areaText = signal('');
   readonly areaError = signal('');
+  readonly placeLabel = signal('');
+  readonly searchOrigin = signal<{ lat: number; lon: number } | null>(null);
   private readonly locateMode = signal<'gps' | 'area'>('gps');
 
   setNearbyKind(kind: 'fuel' | 'charge'): void {
@@ -101,14 +103,18 @@ export class AroundPage {
     this.requested.set(true);
     this.nearbyLoading.set(true);
     this.nearbyError.set(null);
+    this.placeLabel.set('');
+    this.searchOrigin.set(null);
     try {
-      const coords = await geocodePlace(query, this.i18n.language());
-      if (!coords) {
+      const place = await geocodePlace(query, this.i18n.language());
+      if (!place) {
         this.nearbyError.set(this.i18n.t('around.areaMiss'));
         this.nearbyItems.set([]);
+        this.placeLabel.set('');
+        this.searchOrigin.set(null);
         return;
       }
-      this.rememberAround(coords, await nearbyAround(coords, this.rangeKm()));
+      this.rememberAround(place, await nearbyAround(place, this.rangeKm()), place.label);
     } catch {
       this.failAround();
     } finally {
@@ -133,11 +139,15 @@ export class AroundPage {
     this.requested.set(true);
     this.nearbyLoading.set(true);
     this.nearbyError.set(null);
+    this.placeLabel.set('');
+    this.searchOrigin.set(null);
     try {
       const coords = await getCoords();
       if (!coords) {
         this.nearbyError.set(this.i18n.t('home.nearbyGpsDenied'));
         this.nearbyItems.set([]);
+        this.placeLabel.set('');
+        this.searchOrigin.set(null);
         return;
       }
       this.rememberAround(coords, await nearbyAround(coords, this.rangeKm()));
@@ -148,8 +158,14 @@ export class AroundPage {
     }
   }
 
-  private rememberAround(origin: { lat: number; lon: number }, items: NearbyPoi[]): void {
+  private rememberAround(
+    origin: { lat: number; lon: number },
+    items: NearbyPoi[],
+    label = '',
+  ): void {
     this.nearbyItems.set(items);
+    this.searchOrigin.set(origin);
+    this.placeLabel.set(label);
     if (!items.length) {
       return;
     }
@@ -159,6 +175,7 @@ export class AroundPage {
       radiusKm: this.rangeKm(),
       items,
       savedAt: Date.now(),
+      ...(label ? { label } : {}),
     });
   }
 
@@ -166,10 +183,14 @@ export class AroundPage {
     const cached = readAroundCache();
     if (cached?.items.length) {
       this.nearbyItems.set(cached.items);
+      this.searchOrigin.set({ lat: cached.lat, lon: cached.lon });
+      this.placeLabel.set(cached.label ?? '');
       this.nearbyError.set(this.i18n.t('around.cached'));
       return;
     }
     this.nearbyError.set(this.i18n.t('home.nearbyUnavailable'));
     this.nearbyItems.set([]);
+    this.placeLabel.set('');
+    this.searchOrigin.set(null);
   }
 }

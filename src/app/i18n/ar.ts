@@ -438,6 +438,8 @@ export const ar: Record<MsgKey, string> = {
   'around.attrOsm': '© مساهمو OpenStreetMap',
   'around.count': '{count} مكان',
   'around.nearest': 'الأقرب {distance}',
+  'around.straight': 'خط مستقيم',
+  'around.place': 'بنبحث حوالين {place}',
   'around.directions': 'الاتجاهات',
   'around.closed': 'مغلق',
   'around.or': 'أو',

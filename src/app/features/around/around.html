@@ -70,6 +70,8 @@
       [loading]="nearbyLoading()"
       [error]="nearbyError()"
       [kind]="nearbyKind()"
+      [place]="placeLabel()"
+      [origin]="searchOrigin()"
       (kindChange)="setNearbyKind($event)"
       (retry)="retrySearch()"
     />

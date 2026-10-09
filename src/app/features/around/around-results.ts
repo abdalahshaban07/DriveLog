@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import {
   mapsSearchUrl,
+  type Coords,
   type NearbyConnector,
   type NearbyPoi,
 } from '../../data/remote';
@@ -27,6 +28,8 @@ export class AroundResults {
   readonly loading = input(false);
   readonly error = input<string | null>(null);
   readonly kind = input<'fuel' | 'charge'>('fuel');
+  readonly place = input('');
+  readonly origin = input<Coords | null>(null);
   readonly kindChange = output<'fuel' | 'charge'>();
   readonly retry = output<void>();
 
@@ -39,7 +42,7 @@ export class AroundResults {
   );
 
   mapsUrl(poi: NearbyPoi): string {
-    return mapsSearchUrl(poi.lat, poi.lon, this.i18n.language());
+    return mapsSearchUrl(poi.lat, poi.lon, this.i18n.language(), this.origin());
   }
 
   distanceLabel(poi: NearbyPoi): string {
