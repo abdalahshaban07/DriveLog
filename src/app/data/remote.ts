@@ -121,16 +121,19 @@ function watchOnce(geo: Geolocation, options: PositionOptions): Promise<Coords |
   });
 }
 
+function attemptCoords(geo: Geolocation, index: number): Promise<Coords | null> {
+  const options = GEO_ATTEMPTS[index];
+  if (!options) {
+    return Promise.resolve(null);
+  }
+  // The first watch must start in the click turn, or mobile browsers skip the prompt.
+  return watchOnce(geo, options).then((coords) =>
+    coords ? coords : attemptCoords(geo, index + 1),
+  );
+}
+
 export function readCoords(geo: Geolocation): Promise<Coords | null> {
-  return (async () => {
-    for (const options of GEO_ATTEMPTS) {
-      const coords = await watchOnce(geo, options);
-      if (coords) {
-        return coords;
-      }
-    }
-    return null;
-  })();
+  return attemptCoords(geo, 0);
 }
 
 /** Photon GeoJSON: coordinates are [lon, lat]. No key. */

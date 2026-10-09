@@ -9,9 +9,22 @@ describe('aroundMapEmbedUrl', () => {
   it('centers a fuel search without an API key', () => {
     const url = aroundMapEmbedUrl({ lat: 30.0444, lon: 31.2357 }, 'fuel', 'ar');
     expect(url).toBe(
-      'https://maps.google.com/maps?q=%D9%85%D8%AD%D8%B7%D8%A9%20%D8%A8%D9%86%D8%B2%D9%8A%D9%86&ll=30.0444,31.2357&z=15&hl=ar&output=embed',
+      'https://maps.google.com/maps?q=%D9%85%D8%AD%D8%B7%D8%A9%20%D8%A8%D9%86%D8%B2%D9%8A%D9%86&ll=30.0444,31.2357&z=14&hl=ar&t=m&output=embed',
     );
     expect(url).not.toContain('key=');
+  });
+
+  it('keeps a named area inside the search', () => {
+    const url = aroundMapEmbedUrl(
+      { lat: 29.03, lon: 31.1 },
+      'fuel',
+      'ar',
+      14,
+      'بني سويف الجديدة',
+    );
+    expect(url).toContain(encodeURIComponent('محطة بنزين في بني سويف الجديدة'));
+    expect(url).toContain('ll=29.03,31.1');
+    expect(url).toContain('t=m');
   });
 
   it('switches the query for charging stations', () => {
@@ -19,6 +32,7 @@ describe('aroundMapEmbedUrl', () => {
     expect(url).toContain('q=EV%20charging%20station');
     expect(url).toContain('ll=30,31');
     expect(url).toContain('z=14');
+    expect(url).toContain('t=m');
     expect(url).toContain('hl=en');
   });
 });
@@ -98,7 +112,7 @@ describe('AroundPage', () => {
     fixture.detectChanges();
     await fixture.componentInstance.useMyLocation();
     expect(fixture.componentInstance.origin()).toBeNull();
-    expect(fixture.componentInstance.gpsError()).toBe('home.nearbyGpsDenied');
+    expect(fixture.componentInstance.gpsError()).toBe('around.gpsDenied');
     expect(fixture.nativeElement.querySelector('iframe')).toBeNull();
   });
 

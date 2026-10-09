@@ -434,6 +434,7 @@ export const en = {
   'around.explain': 'A Google map shows the stations. Location is used only when you ask.',
   'around.mapTitle': 'Nearby stations map',
   'around.changePlace': 'Change place',
+  'around.gpsDenied': 'The browser blocked location. Allow it in the site settings, or search by area.',
   'around.useLocation': 'Use my location',
   'around.retry': 'Try again',
   'around.cached': 'Server is down. Showing the last result that worked.',

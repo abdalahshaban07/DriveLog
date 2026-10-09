@@ -7,7 +7,7 @@ import { PrimaryButton } from '../../ui/primary-button';
 import { TextField } from '../../ui/text-field';
 import { FUEL_TABS, SectionTabs } from '../../ui/section-tabs/section-tabs';
 
-export const AROUND_MAP_ZOOM = 15;
+export const AROUND_MAP_ZOOM = 14;
 
 type AroundKind = 'fuel' | 'charge';
 
@@ -24,15 +24,18 @@ function mapQuery(kind: AroundKind, lang: 'en' | 'ar'): string {
   }
 }
 
-/** Keyless Google embed. `ll` centers the search; zoom stands in for a km radius. */
+/** Keyless Google embed. `ll` keeps the camera on the place; `t=m` stays on the road map where the pins sit. */
 export function aroundMapEmbedUrl(
   origin: { lat: number; lon: number },
   kind: AroundKind,
   lang: 'en' | 'ar',
   zoom = AROUND_MAP_ZOOM,
+  place = '',
 ): string {
-  const q = encodeURIComponent(mapQuery(kind, lang));
-  return `https://maps.google.com/maps?q=${q}&ll=${origin.lat},${origin.lon}&z=${zoom}&hl=${lang}&output=embed`;
+  const base = mapQuery(kind, lang);
+  const named = place.trim();
+  const q = named ? (lang === 'ar' ? `${base} في ${named}` : `${base} in ${named}`) : base;
+  return `https://maps.google.com/maps?q=${encodeURIComponent(q)}&ll=${origin.lat},${origin.lon}&z=${zoom}&hl=${lang}&t=m&output=embed`;
 }
 
 @Component({
@@ -60,7 +63,7 @@ export class AroundPage {
     if (!origin) {
       return '';
     }
-    return aroundMapEmbedUrl(origin, this.kind(), this.i18n.language());
+    return aroundMapEmbedUrl(origin, this.kind(), this.i18n.language(), AROUND_MAP_ZOOM, this.placeLabel());
   });
 
   readonly mapUrl = computed((): SafeResourceUrl | null => {
@@ -115,7 +118,7 @@ export class AroundPage {
     try {
       const coords = await getCoords();
       if (!coords) {
-        this.gpsError.set(this.i18n.t('home.nearbyGpsDenied'));
+        this.gpsError.set(this.i18n.t('around.gpsDenied'));
         return;
       }
       this.placeLabel.set('');
