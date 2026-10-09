@@ -29,6 +29,11 @@
 
   @if (place() && !loading()) {
     <p class="around-place">{{ i18n.t('around.place', { place: place() }) }}</p>
+    <p class="around-hint">
+      {{ i18n.t('around.hintLead') }}
+      <span dir="ltr">OpenStreetMap</span>{{ i18n.language() === 'ar' ? '،' : ',' }}<br />
+      {{ i18n.t('around.hintRest') }}
+    </p>
   }
 
   @if (loading()) {
@@ -119,7 +124,4 @@
     </ul>
   }
 
-  <p class="around-results__attr">
-    {{ i18n.t('around.attrOsm') }}
-  </p>
 </section>
