@@ -156,12 +156,16 @@ export function parsePhotonPoint(raw: unknown): Coords | null {
   return { lat, lon };
 }
 
+/** Egypt only, so a name like المعادي cannot resolve abroad. minLon,minLat,maxLon,maxLat. */
+const EGYPT_BBOX = '24.7,22,36.9,31.7';
+
 /** Photon rejects lang=ar (400). Arabic queries still match with default. */
 export function photonSearchUrl(query: string, lang: 'en' | 'ar'): string {
   return `https://photon.komoot.io/api/?${new URLSearchParams({
     q: query.trim(),
     limit: '1',
     lang: lang === 'en' ? 'en' : 'default',
+    bbox: EGYPT_BBOX,
   })}`;
 }
 
@@ -524,6 +528,19 @@ async function fetchAroundAt(
   return fetchNearbyAt(origin, radiusKm * 1000);
 }
 
+function overpassAroundQuery(
+  origin: Coords,
+  radiusM: number,
+  element: 'node' | 'way',
+): string {
+  const around = `(around:${radiusM},${origin.lat},${origin.lon})`;
+  return `[out:json][timeout:20];(
+${element}["amenity"="fuel"]${around};
+${element}["shop"="fuel"]${around};
+${element}["amenity"="charging_station"]${around};
+);out tags center;`;
+}
+
 async function fetchOverpass(query: string): Promise<unknown | null> {
   const body = `data=${encodeURIComponent(query)}`;
   for (const url of OVERPASS_ENDPOINTS) {
@@ -534,7 +551,7 @@ async function fetchOverpass(query: string): Promise<unknown | null> {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body,
       },
-      25_000,
+      12_000,
     );
     if (raw != null) {
       return raw;
@@ -543,26 +560,83 @@ async function fetchOverpass(query: string): Promise<unknown | null> {
   return null;
 }
 
+function overpassElements(raw: unknown): unknown[] {
+  if (!raw || typeof raw !== 'object') {
+    return [];
+  }
+  const elements = (raw as { elements?: unknown }).elements;
+  return Array.isArray(elements) ? elements : [];
+}
+
 async function fetchNearbyAt(
   origin: Coords,
   radiusM: number,
 ): Promise<NearbyPoi[] | null> {
-  // Nodes + ways (stations often mapped as areas); shop=fuel covers a few brand footprints.
-  const q = `[out:json][timeout:25];
-(
-  node["amenity"="fuel"](around:${radiusM},${origin.lat},${origin.lon});
-  way["amenity"="fuel"](around:${radiusM},${origin.lat},${origin.lon});
-  node["shop"="fuel"](around:${radiusM},${origin.lat},${origin.lon});
-  way["shop"="fuel"](around:${radiusM},${origin.lat},${origin.lon});
-  node["amenity"="charging_station"](around:${radiusM},${origin.lat},${origin.lon});
-  way["amenity"="charging_station"](around:${radiusM},${origin.lat},${origin.lon});
-);
-out tags center;`;
-  const raw = await fetchOverpass(q);
-  if (raw == null) {
+  // Nodes first. A combined node+way query is what the public servers drop.
+  const nodes = await fetchOverpass(overpassAroundQuery(origin, radiusM, 'node'));
+  if (nodes == null) {
     return null;
   }
-  return parseNearbyPoi(raw, origin);
+  const fromNodes = parseNearbyPoi(nodes, origin);
+  if (fromNodes.length) {
+    return fromNodes;
+  }
+  const ways = await fetchOverpass(overpassAroundQuery(origin, radiusM, 'way'));
+  if (ways == null) {
+    return fromNodes;
+  }
+  return parseNearbyPoi(
+    { elements: [...overpassElements(nodes), ...overpassElements(ways)] },
+    origin,
+  );
+}
+
+const AROUND_CACHE_KEY = 'drivelog.around.v1';
+
+export type AroundCache = {
+  lat: number;
+  lon: number;
+  radiusKm: number;
+  items: NearbyPoi[];
+  savedAt: number;
+};
+
+export function readAroundCache(
+  storage: Storage | null = typeof localStorage !== 'undefined' ? localStorage : null,
+): AroundCache | null {
+  if (!storage) {
+    return null;
+  }
+  try {
+    const raw = storage.getItem(AROUND_CACHE_KEY);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw) as AroundCache;
+    if (!parsed || !Array.isArray(parsed.items) || !parsed.items.length) {
+      return null;
+    }
+    if (!Number.isFinite(parsed.lat) || !Number.isFinite(parsed.lon)) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function writeAroundCache(
+  cache: AroundCache,
+  storage: Storage | null = typeof localStorage !== 'undefined' ? localStorage : null,
+): void {
+  if (!storage || !cache.items.length) {
+    return;
+  }
+  try {
+    storage.setItem(AROUND_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // ponytail: private mode can throw; the list on screen still shows
+  }
 }
 
 export function mapsSearchUrl(lat: number, lon: number, lang: 'en' | 'ar'): string {

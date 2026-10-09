@@ -33,7 +33,7 @@
       <div class="skeleton around-skel" aria-hidden="true"></div>
       <div class="skeleton around-skel" aria-hidden="true"></div>
     </div>
-  } @else if (error()) {
+  } @else if (error() && list().length === 0) {
     <div class="around-error">
       <div class="error-state" role="alert">
         <p>{{ error() }}</p>
@@ -57,6 +57,24 @@
       <p>{{ i18n.t('home.nearbyEmpty') }}</p>
     </div>
   } @else {
+    @if (error()) {
+      <div class="around-note">
+        <p>{{ error() }}</p>
+        <button
+          type="button"
+          class="around-retry"
+          [attr.aria-label]="i18n.t('around.retry')"
+          (click)="retry.emit()"
+        >
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M4.5 12a7.5 7.5 0 0 1 12.7-5.4L20 9" />
+            <path d="M20 4v5h-5" />
+            <path d="M19.5 12a7.5 7.5 0 0 1-12.7 5.4L4 15" />
+            <path d="M4 20v-5h5" />
+          </svg>
+        </button>
+      </div>
+    }
     <p class="around-glance">
       <span>{{ i18n.t('around.count', { count: i18n.formatNumber(list().length) }) }}</span>
       @if (list()[0]; as nearest) {

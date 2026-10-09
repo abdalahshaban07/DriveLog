@@ -8,6 +8,8 @@ import {
   geocodePlace,
   getCoords,
   nearbyAround,
+  readAroundCache,
+  writeAroundCache,
   type NearbyPoi,
 } from '../../data/remote';
 import {
@@ -106,13 +108,20 @@ export class AroundPage {
         this.nearbyItems.set([]);
         return;
       }
-      this.nearbyItems.set(await nearbyAround(coords, this.rangeKm()));
+      this.rememberAround(coords, await nearbyAround(coords, this.rangeKm()));
     } catch {
-      this.nearbyError.set(this.i18n.t('home.nearbyUnavailable'));
-      this.nearbyItems.set([]);
+      this.failAround();
     } finally {
       this.nearbyLoading.set(false);
     }
+  }
+
+  retrySearch(): void {
+    if (this.locateMode() === 'area') {
+      void this.searchArea();
+      return;
+    }
+    void this.useMyLocation();
   }
 
   async useMyLocation(): Promise<void> {
@@ -131,13 +140,36 @@ export class AroundPage {
         this.nearbyItems.set([]);
         return;
       }
-      const list = await nearbyAround(coords, this.rangeKm());
-      this.nearbyItems.set(list);
+      this.rememberAround(coords, await nearbyAround(coords, this.rangeKm()));
     } catch {
-      this.nearbyError.set(this.i18n.t('home.nearbyUnavailable'));
-      this.nearbyItems.set([]);
+      this.failAround();
     } finally {
       this.nearbyLoading.set(false);
     }
+  }
+
+  private rememberAround(origin: { lat: number; lon: number }, items: NearbyPoi[]): void {
+    this.nearbyItems.set(items);
+    if (!items.length) {
+      return;
+    }
+    writeAroundCache({
+      lat: origin.lat,
+      lon: origin.lon,
+      radiusKm: this.rangeKm(),
+      items,
+      savedAt: Date.now(),
+    });
+  }
+
+  private failAround(): void {
+    const cached = readAroundCache();
+    if (cached?.items.length) {
+      this.nearbyItems.set(cached.items);
+      this.nearbyError.set(this.i18n.t('around.cached'));
+      return;
+    }
+    this.nearbyError.set(this.i18n.t('home.nearbyUnavailable'));
+    this.nearbyItems.set([]);
   }
 }

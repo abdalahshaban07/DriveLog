@@ -435,6 +435,7 @@ export const en = {
     'Find nearby gas stations and charge points. Location is used only when you ask.',
   'around.useLocation': 'Use my location',
   'around.retry': 'Try again',
+  'around.cached': 'Server is down. Showing the last result that worked.',
   'around.openNow': 'Open now',
   'around.connectorFast': 'Fast',
   'around.connectorMedium': 'Medium',

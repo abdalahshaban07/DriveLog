@@ -429,6 +429,7 @@ export const ar: Record<MsgKey, string> = {
   'around.explain': 'لاقي محطات البنزين والشحن القريبة. بنستخدم الموقع بس لما تطلب.',
   'around.useLocation': 'استخدم موقعي',
   'around.retry': 'حاول تاني',
+  'around.cached': 'السيرفر مش متاح. دي آخر نتيجة نجحنا نجيبها.',
   'around.openNow': 'مفتوح دلوقتي',
   'around.connectorFast': 'سريعة',
   'around.connectorMedium': 'وسط',

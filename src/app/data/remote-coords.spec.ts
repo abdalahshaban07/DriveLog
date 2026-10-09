@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { parseIpCoords, parsePhotonPoint, photonSearchUrl, readCoords } from './remote';
+import {
+  parseIpCoords,
+  parsePhotonPoint,
+  photonSearchUrl,
+  readAroundCache,
+  readCoords,
+  writeAroundCache,
+  type AroundCache,
+} from './remote';
 
 function position(lat: number, lon: number): GeolocationPosition {
   return {
@@ -119,5 +127,40 @@ describe('photonSearchUrl', () => {
     const url = photonSearchUrl('القاهره', 'ar');
     expect(url).toContain('lang=default');
     expect(url).not.toContain('lang=ar');
+    expect(url).toContain('bbox=24.7%2C22%2C36.9%2C31.7');
+  });
+});
+
+describe('around cache', () => {
+  it('roundtrips the last station list and rejects junk', () => {
+    const storage = new Map<string, string>();
+    const memory = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        storage.set(key, value);
+      },
+    } as Storage;
+    const saved: AroundCache = {
+      lat: 30.04,
+      lon: 31.24,
+      radiusKm: 8,
+      savedAt: 1,
+      items: [
+        {
+          id: 1,
+          kind: 'fuel',
+          name: 'توتال',
+          lat: 30.05,
+          lon: 31.25,
+          distanceKm: 0.4,
+        },
+      ],
+    };
+    writeAroundCache(saved, memory);
+    expect(readAroundCache(memory)).toEqual(saved);
+    writeAroundCache({ ...saved, items: [] }, memory);
+    expect(readAroundCache(memory)).toEqual(saved);
+    memory.setItem('drivelog.around.v1', '{');
+    expect(readAroundCache(memory)).toBeNull();
   });
 });

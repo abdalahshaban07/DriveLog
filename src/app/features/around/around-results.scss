@@ -85,6 +85,23 @@
   display: block;
 }
 
+.around-note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.around-note p {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: calc(var(--radius) - 4px);
+  background: var(--fill-well);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .around-list {
   display: grid;
   gap: var(--space-3);
