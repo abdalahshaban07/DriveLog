@@ -1,96 +1,85 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  signal,
-} from '@angular/core';
-import {
-  geocodePlace,
-  getCoords,
-  nearbyAround,
-  readAroundCache,
-  writeAroundCache,
-  type NearbyPoi,
-} from '../../data/remote';
-import {
-  AROUND_RADIUS_DEFAULT_KM,
-  AROUND_RADIUS_MAX_KM,
-  AROUND_RADIUS_MIN_KM,
-  clampAroundRadiusKm,
-} from '../../domain/around-filter';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { DomSanitizer, type SafeResourceUrl } from '@angular/platform-browser';
+import { geocodePlace, getCoords } from '../../data/remote';
 import { I18n } from '../../i18n/i18n';
-import { NumericField } from '../../ui/numeric-field';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
 import { TextField } from '../../ui/text-field';
 import { FUEL_TABS, SectionTabs } from '../../ui/section-tabs/section-tabs';
-import { AroundResults } from './around-results';
+
+export const AROUND_MAP_ZOOM = 15;
+
+type AroundKind = 'fuel' | 'charge';
+
+function mapQuery(kind: AroundKind, lang: 'en' | 'ar'): string {
+  switch (kind) {
+    case 'fuel':
+      return lang === 'ar' ? 'محطة بنزين' : 'gas station';
+    case 'charge':
+      return lang === 'ar' ? 'محطة شحن سيارات' : 'EV charging station';
+    default: {
+      const _never: never = kind;
+      return _never;
+    }
+  }
+}
+
+/** Keyless Google embed. `ll` centers the search; zoom stands in for a km radius. */
+export function aroundMapEmbedUrl(
+  origin: { lat: number; lon: number },
+  kind: AroundKind,
+  lang: 'en' | 'ar',
+  zoom = AROUND_MAP_ZOOM,
+): string {
+  const q = encodeURIComponent(mapQuery(kind, lang));
+  return `https://maps.google.com/maps?q=${q}&ll=${origin.lat},${origin.lon}&z=${zoom}&hl=${lang}&output=embed`;
+}
 
 @Component({
   selector: 'app-around-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    PageHeader,
-    AroundResults,
-    PrimaryButton,
-    NumericField,
-    TextField,
-    SectionTabs,
-  ],
+  imports: [PageHeader, PrimaryButton, TextField, SectionTabs],
   templateUrl: './around.html',
   styleUrl: './around.scss',
 })
 export class AroundPage {
   readonly i18n = inject(I18n);
+  private readonly sanitizer = inject(DomSanitizer);
   readonly tabs = FUEL_TABS;
 
-  readonly requested = signal(false);
-  readonly nearbyKind = signal<'fuel' | 'charge'>('fuel');
-  readonly nearbyLoading = signal(false);
-  readonly nearbyError = signal<string | null>(null);
-  readonly nearbyItems = signal<NearbyPoi[]>([]);
-  readonly rangeText = signal(String(AROUND_RADIUS_DEFAULT_KM));
-  readonly rangeKm = signal(AROUND_RADIUS_DEFAULT_KM);
-  readonly rangeError = signal('');
+  readonly kind = signal<AroundKind>('fuel');
+  readonly locating = signal(false);
+  readonly gpsError = signal('');
   readonly areaText = signal('');
   readonly areaError = signal('');
   readonly placeLabel = signal('');
-  readonly searchOrigin = signal<{ lat: number; lon: number } | null>(null);
-  private readonly locateMode = signal<'gps' | 'area'>('gps');
+  readonly origin = signal<{ lat: number; lon: number } | null>(null);
 
-  setNearbyKind(kind: 'fuel' | 'charge'): void {
-    this.nearbyKind.set(kind);
+  readonly mapSrc = computed((): string => {
+    const origin = this.origin();
+    if (!origin) {
+      return '';
+    }
+    return aroundMapEmbedUrl(origin, this.kind(), this.i18n.language());
+  });
+
+  readonly mapUrl = computed((): SafeResourceUrl | null => {
+    const src = this.mapSrc();
+    return src ? this.sanitizer.bypassSecurityTrustResourceUrl(src) : null;
+  });
+
+  setNearbyKind(kind: AroundKind): void {
+    this.kind.set(kind);
   }
 
-  onRange(raw: string): void {
-    this.rangeText.set(raw);
-    const n = Number(raw);
-    if (
-      !Number.isFinite(n) ||
-      n < AROUND_RADIUS_MIN_KM ||
-      n > AROUND_RADIUS_MAX_KM
-    ) {
-      this.rangeError.set(this.i18n.t('around.rangeError'));
-      return;
-    }
-    this.rangeError.set('');
-    this.rangeKm.set(clampAroundRadiusKm(n));
-  }
-
-  onRangeCommit(): void {
-    this.onRange(this.rangeText());
-    if (!this.rangeError() && this.requested()) {
-      if (this.locateMode() === 'area') {
-        void this.searchArea();
-      } else {
-        void this.useMyLocation();
-      }
-    }
+  changePlace(): void {
+    this.origin.set(null);
+    this.placeLabel.set('');
+    this.gpsError.set('');
   }
 
   async searchArea(): Promise<void> {
-    this.onRange(this.rangeText());
-    if (this.rangeError() || this.nearbyLoading()) {
+    if (this.locating()) {
       return;
     }
     const query = this.areaText().trim();
@@ -99,98 +88,42 @@ export class AroundPage {
       return;
     }
     this.areaError.set('');
-    this.locateMode.set('area');
-    this.requested.set(true);
-    this.nearbyLoading.set(true);
-    this.nearbyError.set(null);
-    this.placeLabel.set('');
-    this.searchOrigin.set(null);
+    this.gpsError.set('');
+    this.locating.set(true);
     try {
       const place = await geocodePlace(query, this.i18n.language());
       if (!place) {
-        this.nearbyError.set(this.i18n.t('around.areaMiss'));
-        this.nearbyItems.set([]);
-        this.placeLabel.set('');
-        this.searchOrigin.set(null);
+        this.areaError.set(this.i18n.t('around.areaMiss'));
         return;
       }
-      this.rememberAround(place, await nearbyAround(place, this.rangeKm()), place.label);
+      this.placeLabel.set(place.label);
+      this.origin.set({ lat: place.lat, lon: place.lon });
     } catch {
-      this.failAround();
+      this.gpsError.set(this.i18n.t('home.nearbyUnavailable'));
     } finally {
-      this.nearbyLoading.set(false);
+      this.locating.set(false);
     }
-  }
-
-  retrySearch(): void {
-    if (this.locateMode() === 'area') {
-      void this.searchArea();
-      return;
-    }
-    void this.useMyLocation();
   }
 
   async useMyLocation(): Promise<void> {
-    this.onRange(this.rangeText());
-    if (this.rangeError() || this.nearbyLoading()) {
+    if (this.locating()) {
       return;
     }
-    this.locateMode.set('gps');
-    this.requested.set(true);
-    this.nearbyLoading.set(true);
-    this.nearbyError.set(null);
-    this.placeLabel.set('');
-    this.searchOrigin.set(null);
+    this.locating.set(true);
+    this.gpsError.set('');
+    this.areaError.set('');
     try {
       const coords = await getCoords();
       if (!coords) {
-        this.nearbyError.set(this.i18n.t('home.nearbyGpsDenied'));
-        this.nearbyItems.set([]);
-        this.placeLabel.set('');
-        this.searchOrigin.set(null);
+        this.gpsError.set(this.i18n.t('home.nearbyGpsDenied'));
         return;
       }
-      this.rememberAround(coords, await nearbyAround(coords, this.rangeKm()));
+      this.placeLabel.set('');
+      this.origin.set(coords);
     } catch {
-      this.failAround();
+      this.gpsError.set(this.i18n.t('home.nearbyUnavailable'));
     } finally {
-      this.nearbyLoading.set(false);
+      this.locating.set(false);
     }
-  }
-
-  private rememberAround(
-    origin: { lat: number; lon: number },
-    items: NearbyPoi[],
-    label = '',
-  ): void {
-    this.nearbyItems.set(items);
-    this.searchOrigin.set(origin);
-    this.placeLabel.set(label);
-    if (!items.length) {
-      return;
-    }
-    writeAroundCache({
-      lat: origin.lat,
-      lon: origin.lon,
-      radiusKm: this.rangeKm(),
-      items,
-      savedAt: Date.now(),
-      ...(label ? { label } : {}),
-    });
-  }
-
-  private failAround(): void {
-    const cached = readAroundCache();
-    if (cached?.items.length) {
-      this.nearbyItems.set(cached.items);
-      this.searchOrigin.set({ lat: cached.lat, lon: cached.lon });
-      this.placeLabel.set(cached.label ?? '');
-      this.nearbyError.set(this.i18n.t('around.cached'));
-      return;
-    }
-    this.nearbyError.set(this.i18n.t('home.nearbyUnavailable'));
-    this.nearbyItems.set([]);
-    this.placeLabel.set('');
-    this.searchOrigin.set(null);
   }
 }

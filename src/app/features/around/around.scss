@@ -1,11 +1,29 @@
-.around-page {
-  display: grid;
-  gap: var(--space-4);
+.around-page--map {
+  flex: 1;
+  min-height: calc(100dvh - var(--nav-height) - var(--space-5) - var(--space-6));
 }
 
-.around-bar {
-  display: grid;
-  gap: var(--space-4);
+.around-place {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.around-map-frame {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 24rem;
+  overflow: hidden;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--well);
+}
+
+.around-map {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 24rem;
+  border: 0;
 }
 
 .around-finder {

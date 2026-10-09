@@ -1,11 +1,50 @@
-<div class="stack around-page">
-  <app-page-header
-    [title]="i18n.t('around.title')"
-    [subtitle]="i18n.t('around.subtitle')"
-  />
+<div class="stack around-page" [class.around-page--map]="mapUrl()">
+  <app-page-header [title]="i18n.t('around.title')" [subtitle]="i18n.t('around.subtitle')" />
   <app-section-tabs [tabs]="tabs" [ariaLabel]="i18n.t('nav.fuel')" />
 
-  @if (!requested()) {
+  <div class="seg" role="group" [attr.aria-label]="i18n.t('home.nearby')">
+    <button
+      type="button"
+      class="seg__btn"
+      [class.seg__btn--on]="kind() === 'fuel'"
+      [attr.aria-pressed]="kind() === 'fuel'"
+      (click)="setNearbyKind('fuel')"
+    >
+      {{ i18n.t('home.nearbyFuel') }}
+    </button>
+    <button
+      type="button"
+      class="seg__btn"
+      [class.seg__btn--on]="kind() === 'charge'"
+      [attr.aria-pressed]="kind() === 'charge'"
+      (click)="setNearbyKind('charge')"
+    >
+      {{ i18n.t('home.nearbyCharge') }}
+    </button>
+  </div>
+
+  @if (mapSrc(); as src) {
+    @if (placeLabel()) {
+      <p class="around-place">{{ i18n.t('around.place', { place: placeLabel() }) }}</p>
+    }
+    @for (frame of [src]; track frame) {
+      <div class="around-map-frame">
+        <iframe
+          class="around-map"
+          [title]="i18n.t('around.mapTitle')"
+          [src]="mapUrl()"
+          referrerpolicy="no-referrer-when-downgrade"
+          allowfullscreen
+        ></iframe>
+      </div>
+    }
+    <app-primary-button
+      [label]="i18n.t('around.changePlace')"
+      tone="quiet"
+      [stretch]="true"
+      (pressed)="changePlace()"
+    />
+  } @else {
     <section class="card around-finder" role="status" aria-live="polite">
       <div class="around-finder__lead">
         <div class="around-finder__visual" aria-hidden="true">
@@ -16,17 +55,13 @@
         </div>
         <p class="around-finder__copy">{{ i18n.t('around.explain') }}</p>
       </div>
-      <app-numeric-field
-        [label]="i18n.t('around.range')"
-        [value]="rangeText()"
-        [error]="rangeError()"
-        (valueChange)="onRange($event)"
-        (touch)="onRangeCommit()"
-      />
+      @if (gpsError()) {
+        <p class="error-state" role="alert">{{ gpsError() }}</p>
+      }
       <app-primary-button
         [label]="i18n.t('around.useLocation')"
         [stretch]="true"
-        [disabled]="nearbyLoading()"
+        [disabled]="locating()"
         (pressed)="useMyLocation()"
       />
       <p class="around-or">{{ i18n.t('around.or') }}</p>
@@ -40,40 +75,9 @@
         [label]="i18n.t('around.areaSearch')"
         tone="quiet"
         [stretch]="true"
-        [disabled]="nearbyLoading()"
+        [disabled]="locating()"
         (pressed)="searchArea()"
       />
     </section>
-  } @else {
-    <div class="around-bar">
-      <app-numeric-field
-        [label]="i18n.t('around.range')"
-        [value]="rangeText()"
-        [error]="rangeError()"
-        (valueChange)="onRange($event)"
-        (touch)="onRangeCommit()"
-      />
-      <app-text-field
-        [label]="i18n.t('around.area')"
-        [value]="areaText()"
-        [error]="areaError()"
-        (valueChange)="areaText.set($event)"
-      />
-      <app-primary-button
-        [label]="i18n.t('around.areaSearch')"
-        [disabled]="nearbyLoading()"
-        (pressed)="searchArea()"
-      />
-    </div>
-    <app-around-results
-      [items]="nearbyItems()"
-      [loading]="nearbyLoading()"
-      [error]="nearbyError()"
-      [kind]="nearbyKind()"
-      [place]="placeLabel()"
-      [origin]="searchOrigin()"
-      (kindChange)="setNearbyKind($event)"
-      (retry)="retrySearch()"
-    />
   }
 </div>

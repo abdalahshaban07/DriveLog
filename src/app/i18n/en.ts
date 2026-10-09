@@ -207,7 +207,7 @@ export const en = {
   'features.fuel.title': 'Fuel',
   'features.fuel.body': 'Log fill-ups, grades, and cost per liter.',
   'features.around.title': 'Around you',
-  'features.around.body': 'Nearby fuel and charge points within a range you set.',
+  'features.around.body': 'A Google map of nearby fuel and charge stations.',
   'features.maintenance.title': 'Maintenance',
   'features.maintenance.body': 'Service log plus due reminders by date or km.',
   'features.fillUp.title': 'Fill-up form',
@@ -431,8 +431,9 @@ export const en = {
   'nav.more': 'More',
   'around.title': 'Around you',
   'around.subtitle': 'Fuel and charge points near your location',
-  'around.explain':
-    'Find nearby gas stations and charge points. Location is used only when you ask.',
+  'around.explain': 'A Google map shows the stations. Location is used only when you ask.',
+  'around.mapTitle': 'Nearby stations map',
+  'around.changePlace': 'Change place',
   'around.useLocation': 'Use my location',
   'around.retry': 'Try again',
   'around.cached': 'Server is down. Showing the last result that worked.',
@@ -442,8 +443,6 @@ export const en = {
   'around.connectorMedium': 'Medium',
   'around.connectorSlow': 'Slow',
   'around.connectorTotal': 'Total {count}',
-  'around.hintLead': 'Place and distance come from',
-  'around.hintRest': 'and they are less precise than Google.',
   'around.count': '{count} places',
   'around.nearest': 'Nearest {distance}',
   'around.straight': 'Straight line',
@@ -500,7 +499,7 @@ export const en = {
     'Open Settings → Appearance. Language, theme, Look, and currency all live there.',
   'help.q.around': 'What is Around you?',
   'help.a.around':
-    'Nearby fuel and charge points from public map data. Location is used only when you ask for nearby results.',
+    'A Google map of nearby fuel and charge stations. Location is used only when you ask to open the map.',
   'help.q.reset': 'How do I start over?',
   'help.a.reset':
     'Settings → Start from scratch clears local data and returns you to setup. Export a backup first if you need it.',
@@ -564,7 +563,7 @@ export const en = {
   'help.s.look.1': 'Settings → Appearance.',
   'help.s.look.2': 'Language, theme, Look, and currency are on that screen.',
   'help.s.around.1': 'Fuel → Around you.',
-  'help.s.around.2': 'Location is used only when you ask for nearby results.',
+  'help.s.around.2': 'Location is used only when you open the map.',
   'help.q.advisor': 'What is Smart Advisor?',
   'help.a.advisor':
     'A coach that reads your local logs. With the Settings toggle on, it can use free public gateways. Off, rate-limited, or offline, it falls back to local tips. No API key.',

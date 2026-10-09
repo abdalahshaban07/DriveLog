@@ -1,8 +1,8 @@
 # Around
 
-Macrostructure: page header → ambient canvas hero → explicit “Use my location” CTA → fuel/charge segment list → OSM attribution.
+Macrostructure: page header → fuel/charge segment → either a location finder or a Google map.
 
-- List-first Operate surface (no map SDK).
-- Geolocation only after the CTA; denied/unavailable/empty/retry stay actionable.
-- Rows deep-link to maps; motion is restrained CSS/canvas with reduced-motion fallback.
-- Compact station picker may still appear on Fill-up for logging; full browse stays here.
+- The map is a keyless Google embed. Fuel and charge each send their own search query, centered on the chosen coordinates.
+- Geolocation only after the CTA. A denied fix stays on the finder with an error.
+- Area search geocodes a name, then opens the same map. Changing place returns to the finder.
+- No station cards. Google draws the pins; this page does not read them back.
