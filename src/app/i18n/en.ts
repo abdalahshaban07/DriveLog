@@ -437,6 +437,7 @@ export const en = {
   'around.retry': 'Try again',
   'around.cached': 'Server is down. Showing the last result that worked.',
   'around.openNow': 'Open now',
+  'around.allDay': '24 hours',
   'around.connectorFast': 'Fast',
   'around.connectorMedium': 'Medium',
   'around.connectorSlow': 'Slow',

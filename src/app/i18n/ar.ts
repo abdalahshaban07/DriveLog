@@ -431,6 +431,7 @@ export const ar: Record<MsgKey, string> = {
   'around.retry': 'حاول تاني',
   'around.cached': 'السيرفر مش متاح. دي آخر نتيجة نجحنا نجيبها.',
   'around.openNow': 'مفتوح دلوقتي',
+  'around.allDay': '٢٤ ساعة',
   'around.connectorFast': 'سريعة',
   'around.connectorMedium': 'وسط',
   'around.connectorSlow': 'بطيئة',
