@@ -5,6 +5,7 @@ import {
   parsePhotonPoint,
   photonSearchUrl,
   pickPhotonPlace,
+  shortenPlaceQuery,
   readAroundCache,
   readCoords,
   writeAroundCache,
@@ -158,6 +159,21 @@ const beniSuefHits = {
   ],
 };
 
+describe('shortenPlaceQuery', () => {
+  it('drops the block words and restores ة', () => {
+    expect(shortenPlaceQuery('بني سويف الجديده الحي الخامس')).toBe('بني سويف الجديدة');
+    expect(shortenPlaceQuery('بني سويف الجديده الحي الخامس المجاوره الخامسه')).toBe(
+      'بني سويف الجديدة',
+    );
+  });
+
+  it('keeps a number that is part of the place name', () => {
+    expect(shortenPlaceQuery('التجمع الخامس')).toBe('التجمع الخامس');
+    expect(shortenPlaceQuery('المعادي')).toBe('المعادي');
+    expect(shortenPlaceQuery('مدينة نصر')).toBe('مدينة نصر');
+  });
+});
+
 describe('pickPhotonPlace', () => {
   it('prefers بني سويف over the 6th of October school', () => {
     expect(
@@ -166,6 +182,72 @@ describe('pickPhotonPlace', () => {
       lat: 29.0409555,
       lon: 31.1244432,
       label: 'بنى سويف · New Bani Suef City',
+    });
+  });
+
+  it('keeps the city whose name is the query, not a road inside it', () => {
+    expect(
+      pickPhotonPlace(
+        {
+          features: [
+            {
+              geometry: { coordinates: [31.8704, 28.9355] },
+              properties: {
+                name: 'طريق الزعفرانه, بنى سويف',
+                city: 'بني سويف الجديدة',
+                state: 'بنى سويف',
+                osm_value: 'motorway',
+              },
+            },
+            {
+              geometry: { coordinates: [31.1068, 29.0321] },
+              properties: {
+                name: 'بني سويف الجديدة',
+                state: 'بنى سويف',
+                osm_value: 'city',
+              },
+            },
+          ],
+        },
+        'بني سويف الجديدة',
+      ),
+    ).toEqual({
+      lat: 29.0321,
+      lon: 31.1068,
+      label: 'بني سويف الجديدة',
+    });
+  });
+
+  it('prefers the city when a street matches the same governorate', () => {
+    expect(
+      pickPhotonPlace(
+        {
+          features: [
+            {
+              geometry: { coordinates: [31.20513, 29.33166] },
+              properties: {
+                name: 'شارع الحديده',
+                city: 'مدينه الواسطى',
+                state: 'بنى سويف',
+                osm_value: 'residential',
+              },
+            },
+            {
+              geometry: { coordinates: [31.1068, 29.0321] },
+              properties: {
+                name: 'بني سويف الجديدة',
+                state: 'بنى سويف',
+                osm_value: 'city',
+              },
+            },
+          ],
+        },
+        'بني سويف',
+      ),
+    ).toEqual({
+      lat: 29.0321,
+      lon: 31.1068,
+      label: 'بني سويف الجديدة',
     });
   });
 

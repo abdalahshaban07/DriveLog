@@ -148,6 +148,7 @@ type PhotonHit = Coords & {
   county: string;
   district: string;
   locality: string;
+  kind: string;
 };
 
 /** Address words that also exist in 6th of October, so they must not outrank a city name. */
@@ -156,9 +157,52 @@ const GENERIC_PLACE = new Set([
   'خامس',
   'خامسه',
   'مجاوره',
-  'جديد',
-  'جديده',
   'مدينه',
+]);
+
+/** Dropped only when they introduce a block number, as in «الحي الخامس». «التجمع الخامس» stays. */
+const BLOCK_WORD = new Set(['حي', 'مجاوره']);
+
+const BLOCK_ORDINAL = new Set([
+  'اول',
+  'اولي',
+  'ثاني',
+  'ثانيه',
+  'تاني',
+  'تانيه',
+  'ثالث',
+  'ثالثه',
+  'تالت',
+  'تالته',
+  'رابع',
+  'رابعه',
+  'خامس',
+  'خامسه',
+  'سادس',
+  'سادسه',
+  'سابع',
+  'سابعه',
+  'ثامن',
+  'ثامنه',
+  'تامن',
+  'تامنه',
+  'تاسع',
+  'تاسعه',
+  'عاشر',
+  'عاشره',
+]);
+
+const SETTLEMENT = new Set([
+  'city',
+  'town',
+  'suburb',
+  'neighbourhood',
+  'neighborhood',
+  'administrative',
+  'village',
+  'locality',
+  'hamlet',
+  'quarter',
 ]);
 
 function foldArabic(raw: string): string {
@@ -177,7 +221,36 @@ function placeTokens(raw: string): string[] {
   return foldArabic(raw)
     .split(/[^\u0600-\u06FFa-z0-9]+/i)
     .map((token) => token.replace(/^ال/, ''))
-    .filter((token) => token && !GENERIC_PLACE.has(token) && !/^\d+$/.test(token));
+    .filter((token) => token && !GENERIC_PLACE.has(token) && !isNumberToken(token));
+}
+
+function foldToken(raw: string): string {
+  return foldArabic(raw).replace(/^ال/, '');
+}
+
+function isNumberToken(token: string): boolean {
+  return /^[\d\u0660-\u0669]+$/.test(token);
+}
+
+/** «بني سويف الجديده الحي الخامس» → «بني سويف الجديدة». A bare «الخامس» stays. */
+export function shortenPlaceQuery(query: string): string {
+  const words = query.trim().split(/[^\u0600-\u06FFa-z0-9]+/i).filter(Boolean);
+  const kept: string[] = [];
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i]!;
+    if (BLOCK_WORD.has(foldToken(word))) {
+      const next = words[i + 1];
+      if (next) {
+        const folded = foldToken(next);
+        if (BLOCK_ORDINAL.has(folded) || isNumberToken(folded)) {
+          i += 1;
+        }
+      }
+      continue;
+    }
+    kept.push(word.endsWith('ه') ? `${word.slice(0, -1)}ة` : word);
+  }
+  return kept.join(' ').trim() || query.trim();
 }
 
 function photonText(value: unknown): string {
@@ -217,6 +290,7 @@ function photonHits(raw: unknown): PhotonHit[] {
       county: photonText(props['county']),
       district: photonText(props['district']),
       locality: photonText(props['locality']),
+      kind: photonText(props['osm_value']) || photonText(props['type']),
     });
   }
   return hits;
@@ -239,7 +313,22 @@ function photonScore(query: string[], hit: PhotonHit): number {
   return score;
 }
 
+function isSettlement(hit: PhotonHit): boolean {
+  return SETTLEMENT.has(hit.kind);
+}
+
+function coversQuery(tokens: string[], hit: PhotonHit): boolean {
+  if (!tokens.length) {
+    return false;
+  }
+  const name = new Set(placeTokens(hit.name));
+  return tokens.every((token) => name.has(token));
+}
+
 function photonLabel(hit: PhotonHit): string {
+  if (isSettlement(hit) && hit.name) {
+    return hit.name;
+  }
   const state = hit.state;
   const city = hit.city;
   if (state && city && foldArabic(state) !== foldArabic(city)) {
@@ -248,7 +337,7 @@ function photonLabel(hit: PhotonHit): string {
   return state || city || hit.name;
 }
 
-/** First hit when nothing distinctive matches. Otherwise the highest score; ties keep Photon order. */
+/** First hit when nothing distinctive matches. Otherwise the highest score; ties keep Photon order, then a city over a street. */
 export function pickPhotonPlace(raw: unknown, query: string): GeocodedPlace | null {
   const hits = photonHits(raw);
   const first = hits[0];
@@ -258,11 +347,16 @@ export function pickPhotonPlace(raw: unknown, query: string): GeocodedPlace | nu
   const tokens = placeTokens(query);
   let best = first;
   let bestScore = photonScore(tokens, first);
+  let bestCovers = coversQuery(tokens, best);
   for (const hit of hits.slice(1)) {
     const score = photonScore(tokens, hit);
-    if (score > bestScore) {
+    const covers = coversQuery(tokens, hit);
+    const cityBeatsStreet = score === bestScore && score > 0 && isSettlement(hit) && !isSettlement(best);
+    const sameKind = covers === bestCovers;
+    if ((covers && !bestCovers) || (sameKind && (score > bestScore || cityBeatsStreet))) {
       best = hit;
       bestScore = score;
+      bestCovers = covers;
     }
   }
   return { lat: best.lat, lon: best.lon, label: photonLabel(best) };
@@ -285,7 +379,7 @@ export async function geocodePlace(
   query: string,
   lang: 'en' | 'ar' = 'en',
 ): Promise<GeocodedPlace | null> {
-  const q = query.trim();
+  const q = shortenPlaceQuery(query);
   if (!q) {
     return null;
   }
