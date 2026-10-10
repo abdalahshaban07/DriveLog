@@ -2,6 +2,10 @@ import {
   ASSISTANT_HISTORY_LIMIT,
   ASSISTANT_THINKING_MAX_TOKENS,
   FREE_LLM_GATEWAYS,
+  bumpUnorouterCursor,
+  readUnorouterCursor,
+  unorouterGateways,
+  type FreeLlmGateway,
 } from '../domain/free-llm-gateways';
 import {
   forcedAdvisorRead,
@@ -81,24 +85,27 @@ function browserMayReachGateway(): boolean {
   return typeof navigator === 'undefined' || navigator.onLine !== false;
 }
 
-async function tryRemoteChat(
-  snapshot: CoachSnapshot,
-  question: string,
-  lang: 'en' | 'ar',
-  history: readonly ChatMessage[],
-): Promise<string | null> {
-  const messages: OpenAiChatMessage[] = [
-    { role: 'system', content: buildSystemPrompt(lang, snapshot) },
-    ...trimHistory(history),
-    { role: 'user', content: question },
-  ];
+type ChainResult = {
+  reply: string | null;
+  sawHttp: boolean;
+  tried: number;
+  unauthorized: boolean;
+};
 
+async function tryChain(
+  gateways: readonly FreeLlmGateway[],
+  messages: readonly OpenAiChatMessage[],
+  lang: 'en' | 'ar',
+  apiKey?: string,
+): Promise<ChainResult> {
   const skipBaseUrls = new Set<string>();
   let sawHttp = false;
+  let tried = 0;
   let reply: string | null = null;
 
-  for (const gw of FREE_LLM_GATEWAYS) {
+  for (const gw of gateways) {
     if (skipBaseUrls.has(gw.baseUrl)) continue;
+    tried += 1;
     const thinking = gw.id === 'llm7-glm';
     const controller = new AbortController();
     const timer = setTimeout(
@@ -112,6 +119,7 @@ async function tryRemoteChat(
         messages,
         maxTokens: thinking ? ASSISTANT_THINKING_MAX_TOKENS : undefined,
         reasoningEffort: thinking ? 'low' : undefined,
+        apiKey,
         signal: controller.signal,
       });
       sawHttp = true;
@@ -121,6 +129,9 @@ async function tryRemoteChat(
         break;
       }
     } catch (err) {
+      if (err instanceof OpenAiChatError && err.status === 401) {
+        return { reply: null, sawHttp: true, tried, unauthorized: true };
+      }
       if (err instanceof OpenAiChatError && err.code === 'network') {
         skipBaseUrls.add(gw.baseUrl);
       } else if (err instanceof OpenAiChatError && err.status != null) {
@@ -131,11 +142,58 @@ async function tryRemoteChat(
     }
   }
 
+  return { reply, sawHttp, tried, unauthorized: false };
+}
+
+function coachMessages(
+  snapshot: CoachSnapshot,
+  question: string,
+  lang: 'en' | 'ar',
+  history: readonly ChatMessage[],
+): OpenAiChatMessage[] {
+  return [
+    { role: 'system', content: buildSystemPrompt(lang, snapshot) },
+    ...trimHistory(history),
+    { role: 'user', content: question },
+  ];
+}
+
+/** Personal key: rotate :free models. A 401 or a dead chain falls through to keyless. */
+async function tryUnorouter(
+  snapshot: CoachSnapshot,
+  question: string,
+  lang: 'en' | 'ar',
+  history: readonly ChatMessage[],
+  apiKey: string,
+): Promise<string | null> {
+  const storage = typeof localStorage !== 'undefined' ? localStorage : null;
+  const chain = await tryChain(
+    unorouterGateways(readUnorouterCursor(storage)),
+    coachMessages(snapshot, question, lang, history),
+    lang,
+    apiKey,
+  );
+  bumpUnorouterCursor(storage, chain.tried);
+  return chain.reply;
+}
+
+async function tryRemoteChat(
+  snapshot: CoachSnapshot,
+  question: string,
+  lang: 'en' | 'ar',
+  history: readonly ChatMessage[],
+): Promise<string | null> {
+  const chain = await tryChain(
+    FREE_LLM_GATEWAYS,
+    coachMessages(snapshot, question, lang, history),
+    lang,
+  );
+
   // One slot for the whole chain, and only after a reply or an HTTP status.
-  if (reply || sawHttp) {
+  if (chain.reply || chain.sawHttp) {
     recordRemoteAssistantCall();
   }
-  return reply;
+  return chain.reply;
 }
 
 type Translate = (key: string, params?: Record<string, string | number>) => string;
@@ -168,17 +226,19 @@ export async function fetchChatReply(
   const localReply = local();
   if (intentHint || localReply.card) return localReply;
 
-  if (isAssistantOnline(db) && canRemoteAssistantCall() && browserMayReachGateway()) {
-    const remote = await tryRemoteChat(
-      coachSnapshot(loaded.facts, loaded.logs, loaded.totals, loaded.car, asMsg),
-      q,
-      lang,
-      history,
-    );
-    if (remote) {
-      return { text: remote, source: 'remote' };
+  if (isAssistantOnline(db) && browserMayReachGateway()) {
+    const snapshot = coachSnapshot(loaded.facts, loaded.logs, loaded.totals, loaded.car, asMsg);
+    const apiKey = db.settings().assistantApiKey?.trim() ?? '';
+    if (apiKey) {
+      const keyed = await tryUnorouter(snapshot, q, lang, history, apiKey);
+      if (keyed) return { text: keyed, source: 'remote' };
     }
-    return { ...localReply, remoteFailed: true };
+    if (canRemoteAssistantCall()) {
+      const remote = await tryRemoteChat(snapshot, q, lang, history);
+      if (remote) return { text: remote, source: 'remote' };
+      return { ...localReply, remoteFailed: true };
+    }
+    if (apiKey) return { ...localReply, remoteFailed: true };
   }
 
   return localReply;

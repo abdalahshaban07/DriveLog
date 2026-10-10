@@ -8,6 +8,7 @@ export class TextField {
   readonly label = input.required<string>();
   readonly value = model('');
   readonly type = input('text');
+  readonly autocomplete = input<string | null>(null);
   readonly multiline = input(false);
   readonly error = input('');
   readonly touch = output<void>();

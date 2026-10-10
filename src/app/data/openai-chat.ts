@@ -21,7 +21,7 @@ type ChatCompletionsBody = {
   error?: { message?: string; code?: string };
 };
 
-/** POST {baseUrl}/chat/completions — no Authorization (keyless free gateways). */
+/** POST {baseUrl}/chat/completions. Authorization only when `apiKey` is set. */
 export async function fetchOpenAiChat(input: {
   baseUrl: string;
   model: string;
@@ -29,15 +29,19 @@ export async function fetchOpenAiChat(input: {
   maxTokens?: number;
   /** GLM-5.3 only. Thinking stays on; this keeps it short. */
   reasoningEffort?: 'low' | 'high';
+  apiKey?: string;
   signal?: AbortSignal;
 }): Promise<string> {
   const base = input.baseUrl.replace(/\/+$/, '');
   const url = `${base}/chat/completions`;
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const key = input.apiKey?.trim();
+  if (key) headers['Authorization'] = `Bearer ${key}`;
   let res: Response;
   try {
     res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         model: input.model,
         messages: input.messages,

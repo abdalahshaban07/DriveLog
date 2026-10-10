@@ -252,6 +252,13 @@
         <span class="switch__track" aria-hidden="true"></span>
       </span>
     </label>
+    <app-text-field
+      [label]="i18n.t('settings.assistantApiKey')"
+      [value]="assistantKey()"
+      type="password"
+      autocomplete="off"
+      (valueChange)="onAssistantKey($event)"
+    />
     <p class="line line--hint">{{ i18n.t('settings.assistantHint') }}</p>
   </section>
 

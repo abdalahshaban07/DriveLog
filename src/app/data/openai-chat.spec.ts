@@ -116,6 +116,28 @@ describe('openai-chat', () => {
     expect(body.chat_template_kwargs).toEqual({ reasoning_effort: 'low' });
   });
 
+  it('sends Authorization only when a key is set', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: 'ok' } }] }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await fetchOpenAiChat({
+      baseUrl: 'https://api.unorouter.com/v1',
+      model: 'k2-horizon:free',
+      apiKey: ' sk-test-key-1234 ',
+      messages: [{ role: 'user', content: 'hi' }],
+    });
+
+    const init = fetchMock.mock.calls[0]![1] as RequestInit;
+    expect(init.headers).toEqual({
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer sk-test-key-1234',
+    });
+    expect(JSON.parse(init.body as string).model).toBe('k2-horizon:free');
+  });
+
   it('maps an abort to timeout, not a dead host', async () => {
     vi.stubGlobal(
       'fetch',

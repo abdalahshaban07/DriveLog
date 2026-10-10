@@ -336,7 +336,10 @@ export interface Settings {
    * Off forces local coach only.
    */
   assistantEnabled?: boolean;
-  /** @deprecated Unused — zero-key gateways; discarded on import. */
+  /**
+   * UnoRouter key, stored on this device only. Export and import drop it.
+   * Empty keeps the keyless gateways.
+   */
   assistantApiKey?: string;
   /** @deprecated Unused — zero-key gateways; discarded on import. */
   assistantBaseUrl?: string;
