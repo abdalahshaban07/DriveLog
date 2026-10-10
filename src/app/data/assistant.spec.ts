@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ASSISTANT_THINKING_MAX_TOKENS,
   FREE_LLM_GATEWAYS,
-  UNOROUTER_FREE_MODELS,
-  readUnorouterCursor,
+  freeGatewaysFrom,
+  readFreeLlmCursor,
 } from '../domain/free-llm-gateways';
 import { ASSISTANT_RATE_DAY, ASSISTANT_RATE_HOUR } from './assistant-rate-limit';
 import { fetchChatReply, usableCoachText, type ChatMessage } from './assistant';
@@ -18,9 +18,9 @@ function hourCount(): number {
   return o.hourCount ?? 0;
 }
 
-function mockDb(online = true, car: boolean = true, apiKey?: string): Db {
+function mockDb(online = true, car: boolean = true): Db {
   return {
-    settings: () => ({ assistantEnabled: online, currency: 'EGP', assistantApiKey: apiKey }),
+    settings: () => ({ assistantEnabled: online, currency: 'EGP' }),
     car: () =>
       car
         ? {
@@ -290,69 +290,21 @@ describe('fetchChatReply', () => {
     expect(fetchMock).toHaveBeenCalledOnce();
   });
 
-  it('rotates UnoRouter :free models and skips the device cap', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(httpStatus(429))
-      .mockResolvedValueOnce(okChat('remote-ok'));
-    vi.stubGlobal('fetch', fetchMock);
-    const now = new Date();
-    const hourKey = `${now.getUTCFullYear()}-${now.getUTCMonth()}-${now.getUTCDate()}-${now.getUTCHours()}`;
-    const dayKey = `${now.getUTCFullYear()}-${now.getUTCMonth()}-${now.getUTCDate()}`;
-    localStorage.setItem(
-      RATE_KEY,
-      JSON.stringify({
-        hourKey,
-        hourCount: ASSISTANT_RATE_HOUR,
-        dayKey,
-        dayCount: ASSISTANT_RATE_DAY,
-      }),
-    );
-
-    const reply = await fetchChatReply(
-      mockDb(true, true, 'sk-test-key-1234'),
-      'fuel',
-      'en',
-      (k) => k,
-    );
-
-    expect(reply).toEqual({ text: 'remote-ok', source: 'remote' });
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    const models = fetchMock.mock.calls.map((call) => {
-      const init = call[1] as RequestInit;
-      expect(init.headers).toMatchObject({ Authorization: 'Bearer sk-test-key-1234' });
-      expect(String(call[0])).toBe('https://api.unorouter.com/v1/chat/completions');
-      return (JSON.parse(init.body as string) as { model: string }).model;
-    });
-    expect(models).toEqual([UNOROUTER_FREE_MODELS[0], UNOROUTER_FREE_MODELS[1]]);
-    expect(readUnorouterCursor(localStorage)).toBe(2);
-    expect(hourCount()).toBe(ASSISTANT_RATE_HOUR);
-  });
-
-  it('drops a bad UnoRouter key and uses the keyless gateway', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(httpStatus(401))
-      .mockResolvedValueOnce(okChat('remote-ok'));
+  it('starts the next question on the next keyless model', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okChat('remote-ok'));
     vi.stubGlobal('fetch', fetchMock);
 
-    const reply = await fetchChatReply(
-      mockDb(true, true, 'sk-test-key-1234'),
-      'fuel',
-      'en',
-      (k) => k,
-    );
+    await fetchChatReply(mockDb(true), 'fuel', 'en', (k) => k);
+    await fetchChatReply(mockDb(true), 'fuel again', 'en', (k) => k);
 
-    expect(reply).toEqual({ text: 'remote-ok', source: 'remote' });
-    expect(fetchMock.mock.calls.map((call) => String(call[0]))).toEqual([
-      'https://api.unorouter.com/v1/chat/completions',
-      'https://api.llm7.io/v1/chat/completions',
-    ]);
-    const secondHeaders = (fetchMock.mock.calls[1]![1] as RequestInit).headers as Record<
-      string,
-      string
-    >;
-    expect(secondHeaders['Authorization']).toBeUndefined();
+    const modelAt = (call: number) =>
+      (JSON.parse((fetchMock.mock.calls[call]![1] as RequestInit).body as string) as { model: string })
+        .model;
+    expect(modelAt(0)).toBe(freeGatewaysFrom(0)[0]!.model);
+    expect(modelAt(1)).toBe(freeGatewaysFrom(1)[0]!.model);
+    expect(readFreeLlmCursor(localStorage)).toBe(2);
+    const headers = (fetchMock.mock.calls[0]![1] as RequestInit).headers as Record<string, string>;
+    expect(headers['Authorization']).toBeUndefined();
   });
 
   it('tries the next model on the same host after a timeout', async () => {

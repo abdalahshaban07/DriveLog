@@ -317,13 +317,6 @@ function isLook(v: unknown): v is Look {
   return (LOOKS as readonly string[]).includes(String(v));
 }
 
-function cleanAssistantKey(raw: unknown): string | undefined {
-  if (typeof raw !== 'string') return undefined;
-  const key = raw.trim();
-  if (key.length < 8 || key.length > 500) return undefined;
-  return key;
-}
-
 export function normalizeSettings(raw: unknown): Settings {
   const o = raw as Settings;
   const soon =
@@ -348,9 +341,8 @@ export function normalizeSettings(raw: unknown): Settings {
     firstRealFillAt: o.firstRealFillAt ? String(o.firstRealFillAt) : undefined,
     firstDueAt: o.firstDueAt ? String(o.firstDueAt) : undefined,
     customMaintenanceTypes: normalizeCustomTypes(o.customMaintenanceTypes),
-    // Persist online toggle and the on-device UnoRouter key. Backups still drop the key.
+    // Persist online toggle; discard legacy BYOK key fields.
     assistantEnabled: o.assistantEnabled === false ? false : true,
-    assistantApiKey: cleanAssistantKey(o.assistantApiKey),
     soonThresholdRatio: Number.isFinite(soon) ? soon : DEFAULT_SOON_THRESHOLD,
     notifyMaintenance: o.notifyMaintenance === false ? false : true,
     notifyBudget: o.notifyBudget === false ? false : true,

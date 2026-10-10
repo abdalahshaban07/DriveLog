@@ -15,8 +15,7 @@ type FeatureGroup = {
  * SSOT for /settings/features — keep in sync with shipped surfaces
  * (routes, history PDF export, zero-key Smart Advisor). Health/budget are
  * local math — not cloud LLM / not BYOK. Assistant uses free public
- * gateways with Settings toggle + local fallback. An optional UnoRouter
- * key rotates :free models; empty key stays keyless.
+ * gateways with Settings toggle + local fallback — no API key.
  */
 export const FEATURE_CATALOG: readonly FeatureGroup[] = [
   {

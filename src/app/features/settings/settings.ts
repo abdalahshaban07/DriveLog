@@ -72,7 +72,6 @@ export class SettingsPage {
   readonly remindersEnabled = computed(() => this.db.settings().remindersEnabled === true);
   /** Online AI default on when undefined. */
   readonly assistantOnline = computed(() => this.db.settings().assistantEnabled !== false);
-  readonly assistantKey = signal(this.db.settings().assistantApiKey ?? '');
   readonly notifyMaintenance = computed(() => this.db.settings().notifyMaintenance !== false);
   readonly notifyBudget = computed(() => this.db.settings().notifyBudget !== false);
   readonly notifyForecast = computed(() => this.db.settings().notifyForecast !== false);
@@ -176,12 +175,6 @@ export class SettingsPage {
   async onAssistantOnline(event: Event): Promise<void> {
     const on = (event.target as HTMLInputElement).checked;
     await this.db.updateSettings({ assistantEnabled: on });
-  }
-
-  async onAssistantKey(value: string): Promise<void> {
-    this.assistantKey.set(value);
-    const key = value.trim();
-    await this.db.updateSettings({ assistantApiKey: key || undefined });
   }
 
   async onNotifyFlag(

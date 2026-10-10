@@ -221,7 +221,7 @@ export const en = {
   'features.exportPdf.body': 'Share or download fill-up and maintenance reports.',
   'features.assistant.title': 'Smart Advisor',
   'features.assistant.body':
-    'Optional online coach via free public gateways — no API key required. A UnoRouter key in Settings rotates extra free models. Falls back on-device when off, limited, or unreachable.',
+    'Optional online coach via free public gateways — no API key. Toggle in Settings; falls back to on-device answers when off, limited, or unreachable.',
   'features.health.title': 'Vehicle Health',
   'features.health.body': 'Part status, routine checks, and attention items from your local logs.',
   'features.budget.title': 'Maintenance budget',
@@ -567,7 +567,7 @@ export const en = {
   'help.s.around.2': 'Location is used only when you open the map.',
   'help.q.advisor': 'What is Smart Advisor?',
   'help.a.advisor':
-    'A coach that reads your local logs. With the Settings toggle on, it uses free public gateways, or rotates UnoRouter free models when a key is saved. Off, rate-limited, or offline, it falls back to local tips.',
+    'A coach that reads your local logs. With the Settings toggle on, it can use free public gateways. Off, rate-limited, or offline, it falls back to local tips. No API key.',
   'help.s.advisor.1': 'Open it from More, or switch it off in Settings.',
   'help.s.advisor.2': 'It is not mechanical advice.',
   'help.q.vault': 'Where do I keep papers?',
@@ -835,7 +835,7 @@ export const en = {
   'assistant.localOnly': 'Online assistant is off — using on-device answers.',
   'assistant.sourceRemote': 'Answer from free online coach.',
   'assistant.privacy':
-    'Online mode sends a short vehicle summary (no VIN) to a free gateway. It may be logged. Turn off in Settings to stay on-device.',
+    'Online mode sends a short vehicle summary (no VIN) to a free public gateway; it may be logged. Turn off in Settings to stay on-device.',
   'assistant.openSettings': 'Open Settings',
   'assistant.emptyChat': 'Ask a quick question or type below.',
   'assistant.local.noCar': 'Add a vehicle first to get personalized answers.',
@@ -884,11 +884,11 @@ export const en = {
   'settings.err.odometerFloor': 'Odometer cannot be lower than logged readings',
   'settings.assistantSection': 'AI assistant',
   'settings.assistantEnabled': 'Use online assistant',
-  'settings.assistantApiKey': 'UnoRouter API key',
+  'settings.assistantApiKey': 'API key',
   'settings.assistantBaseUrl': 'API base URL',
   'settings.assistantModel': 'Model',
   'settings.assistantHint':
-    'Empty key uses free public gateways. A UnoRouter key rotates free models, about one request a minute each. Vehicle summary may leave this device. Off = local answers only.',
+    'Uses free public gateways with no API key. Vehicle summary may leave this device. Off = local answers only.',
   'setup.plate': 'Plate number (optional)',
   'setup.license': 'License expiry (optional)',
   'setup.registration': 'Registration expiry (optional)',
