@@ -23,6 +23,7 @@ import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { ConfirmBar } from '../../ui/confirm-bar';
 import { PageHeader } from '../../ui/page-header';
+import { PageLine } from '../../ui/page-line/page-line';
 import { PeriodRange } from '../../ui/period-range';
 import { FUEL_TABS, SectionTabs } from '../../ui/section-tabs/section-tabs';
 import { SelectField } from '../../ui/select-field';
@@ -41,7 +42,7 @@ type TypeFilter = EnergyKind | 'all';
 @Component({
   selector: 'app-fill-up-history',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, SectionTabs, RouterLink, PeriodRange, SelectField, ConfirmBar],
+  imports: [PageHeader, PageLine, SectionTabs, RouterLink, PeriodRange, SelectField, ConfirmBar],
   templateUrl: './fill-up-history.html',
   styleUrl: './fill-up-history.scss',
 })

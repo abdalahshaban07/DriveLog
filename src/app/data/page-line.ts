@@ -24,7 +24,7 @@ import { isAssistantOnline, usableCoachText } from './assistant';
 import type { Db } from './db';
 import { fetchOpenAiChat, OpenAiChatError } from './openai-chat';
 
-const CACHE_KEY = 'drivelog.page-line.v1';
+const CACHE_KEY = 'drivelog.page-line.v2';
 const TIMEOUT_MS = 8_000;
 const THINKING_TIMEOUT_MS = 15_000;
 
@@ -112,7 +112,7 @@ export async function polishPageLine(input: {
   signal?: AbortSignal;
 }): Promise<string> {
   const storage = typeof localStorage !== 'undefined' ? localStorage : null;
-  const cached = readCached(storage, input.page, input.lang, input.day);
+  const cached = readCached(storage, input.page, input.lang, input.day, input.source);
   if (cached) return cached;
 
   const skip = inUnitTest();
@@ -123,7 +123,7 @@ export async function polishPageLine(input: {
     !canRemoteAssistantCall(storage)
   ) {
     if (!skip && isAssistantOnline(input.db) && browserOnline() && !canRemoteAssistantCall(storage)) {
-      writeCached(storage, input.page, input.lang, input.day, input.source);
+      writeCached(storage, input.page, input.lang, input.day, input.source, input.source);
     }
     return input.source;
   }
@@ -156,12 +156,12 @@ export async function polishPageLine(input: {
     const text = usableCoachText(raw, input.lang);
     const line = text ? firstSentence(text) : '';
     const next = line && rewriteKeepsFacts(input.source, line) ? line : input.source;
-    writeCached(storage, input.page, input.lang, input.day, next);
+    writeCached(storage, input.page, input.lang, input.day, input.source, next);
     return next;
   } catch (err) {
     if (input.signal?.aborted) return input.source;
     if (err instanceof OpenAiChatError && err.status != null) recordRemoteAssistantCall(storage);
-    writeCached(storage, input.page, input.lang, input.day, input.source);
+    writeCached(storage, input.page, input.lang, input.day, input.source, input.source);
     return input.source;
   } finally {
     clearTimeout(timer);
@@ -185,8 +185,8 @@ function browserOnline(): boolean {
   return typeof navigator === 'undefined' || navigator.onLine !== false;
 }
 
-function cacheSlot(page: PageLineId, lang: 'en' | 'ar'): string {
-  return `${page}:${lang}`;
+function cacheSlot(page: PageLineId, lang: 'en' | 'ar', source: string): string {
+  return `${page}:${lang}:${source}`;
 }
 
 function readCached(
@@ -194,8 +194,9 @@ function readCached(
   page: PageLineId,
   lang: 'en' | 'ar',
   day: string,
+  source: string,
 ): string | null {
-  const entry = readAll(storage)[cacheSlot(page, lang)];
+  const entry = readAll(storage)[cacheSlot(page, lang, source)];
   return entry?.day === day && entry.text ? entry.text : null;
 }
 
@@ -204,12 +205,13 @@ function writeCached(
   page: PageLineId,
   lang: 'en' | 'ar',
   day: string,
+  source: string,
   text: string,
 ): void {
   if (!storage) return;
   try {
     const all = readAll(storage);
-    all[cacheSlot(page, lang)] = { day, text };
+    all[cacheSlot(page, lang, source)] = { day, text };
     storage.setItem(CACHE_KEY, JSON.stringify(all));
   } catch {
     // private mode / quota

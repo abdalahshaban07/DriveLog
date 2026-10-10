@@ -1,5 +1,7 @@
 <div class="stack history-page">
-  <app-page-header [title]="i18n.t('history.title')" />
+  <app-page-header [title]="i18n.t('history.title')">
+    <app-page-line page="fuel" />
+  </app-page-header>
   <app-section-tabs [tabs]="tabs" [ariaLabel]="i18n.t('nav.fuel')" />
 
   <div class="history-filter">

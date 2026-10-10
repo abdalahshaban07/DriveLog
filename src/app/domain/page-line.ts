@@ -57,6 +57,8 @@ export type PageLineFact =
   | { id: 'homeBoth'; label: string }
   | { id: 'homeUse' }
   | { id: 'homeDue'; label: string }
+  | { id: 'homeBetter' }
+  | { id: 'homeFlat' }
   | { id: 'fuelCadence'; interval: number; days: number }
   | { id: 'fuelToday'; interval: number }
   | { id: 'fuelUse' }
@@ -65,6 +67,7 @@ export type PageLineFact =
   | { id: 'charts'; month: string }
   | { id: 'reportsFuel' }
   | { id: 'reportsMaint' }
+  | { id: 'reportsEven' }
   | { id: 'maintPair'; a: string; b: string }
   | { id: 'upcoming'; count: number; name: string }
   | { id: 'upcomingOne'; name: string }
@@ -125,6 +128,10 @@ export function pageLineSentence(
       return { key: 'pageLine.homeUse' };
     case 'homeDue':
       return { key: 'pageLine.homeDue', params: { label: fact.label } };
+    case 'homeBetter':
+      return { key: 'pageLine.homeBetter' };
+    case 'homeFlat':
+      return { key: 'pageLine.homeFlat' };
     case 'fuelCadence':
       return {
         key: 'pageLine.fuelCadence',
@@ -144,6 +151,8 @@ export function pageLineSentence(
       return { key: 'pageLine.reportsFuel' };
     case 'reportsMaint':
       return { key: 'pageLine.reportsMaint' };
+    case 'reportsEven':
+      return { key: 'pageLine.reportsEven' };
     case 'maintPair':
       return { key: 'pageLine.maintPair', params: { a: fact.a, b: fact.b } };
     case 'upcoming':
@@ -187,10 +196,12 @@ export function rewriteKeepsFacts(source: string, next: string): boolean {
   if (!line || line.length > 180) return false;
   const allowed = new Set(numericTokens(source));
   if (!numericTokens(line).every((n) => allowed.has(n))) return false;
-  const words = contentWords(source);
-  if (!words.length) return true;
-  const hit = words.filter((word) => line.includes(word)).length;
-  return hit / words.length >= 0.5;
+  const sourceWords = contentWords(source);
+  const nextWords = contentWords(line);
+  if (!sourceWords.length) return nextWords.length === 0;
+  const allowedWords = new Set(sourceWords);
+  if (nextWords.some((word) => !allowedWords.has(word))) return false;
+  return sourceWords.every((word) => line.includes(word));
 }
 
 export function firstSentence(text: string): string {
@@ -200,12 +211,14 @@ export function firstSentence(text: string): string {
 }
 
 function homeFact(bag: PageLineBag): PageLineFact | null {
-  const worse = tankEconomyVsAvg(bag.fills)?.direction === 'worse';
+  const vs = tankEconomyVsAvg(bag.fills);
   const due = urgentDue(bag);
-  if (worse && due) return { id: 'homeBoth', label: due };
-  if (worse) return { id: 'homeUse' };
+  if (vs?.direction === 'worse' && due) return { id: 'homeBoth', label: due };
+  if (vs?.direction === 'worse') return { id: 'homeUse' };
   if (due) return { id: 'homeDue', label: due };
-  return null;
+  if (vs?.direction === 'better') return { id: 'homeBetter' };
+  if (vs?.direction === 'flat') return { id: 'homeFlat' };
+  return fuelFact(bag);
 }
 
 function fuelFact(bag: PageLineBag): PageLineFact | null {
@@ -251,11 +264,12 @@ function chartsFact(bag: PageLineBag): PageLineFact | null {
 }
 
 function reportsFact(bag: PageLineBag): PageLineFact | null {
-  const { reportFuel: fuel, reportMaint: maint, reportTotal: total } = bag;
-  if (total <= 0 || fuel <= 0 || maint <= 0) return null;
-  if (fuel > total * 0.5 && fuel >= maint * 1.5) return { id: 'reportsFuel' };
-  if (maint > total * 0.5 && maint >= fuel * 1.5) return { id: 'reportsMaint' };
-  return null;
+  const { reportFuel: fuel, reportMaint: maint } = bag;
+  if (fuel <= 0 && maint <= 0) return null;
+  if (fuel > 0 && maint > 0 && fuel < maint * 1.25 && maint < fuel * 1.25) {
+    return { id: 'reportsEven' };
+  }
+  return fuel >= maint ? { id: 'reportsFuel' } : { id: 'reportsMaint' };
 }
 
 function maintFact(bag: PageLineBag): PageLineFact | null {

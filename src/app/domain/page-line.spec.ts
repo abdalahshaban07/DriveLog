@@ -71,6 +71,10 @@ describe('pageLineFact', () => {
     expect(pageLineFact('home', bag())).toBeNull();
   });
 
+  it('keeps a dashboard line when consumption is in the usual range', () => {
+    expect(pageLineFact('home', bag({ fills: flatFills }))).toEqual({ id: 'homeFlat' });
+  });
+
   it('combines higher consumption with the next due item', () => {
     const fact = pageLineFact(
       'home',
@@ -255,7 +259,10 @@ describe('pageLineFact', () => {
     ).toEqual({ id: 'reportsFuel' });
     expect(
       pageLineFact('reports', bag({ reportFuel: 55, reportMaint: 45, reportTotal: 100 })),
-    ).toBeNull();
+    ).toEqual({ id: 'reportsEven' });
+    expect(pageLineFact('reports', bag({ reportFuel: 40, reportMaint: 0, reportTotal: 40 }))).toEqual({
+      id: 'reportsFuel',
+    });
   });
 });
 
@@ -270,6 +277,12 @@ describe('rewriteKeepsFacts', () => {
       rewriteKeepsFacts(
         'لو الزيت اتأجل، السقف يستحمل.',
         'لو الزيت لم ينفع، الملك إ بط argitar.',
+      ),
+    ).toBe(false);
+    expect(
+      rewriteKeepsFacts(
+        'زيت المحرك وتيل الفرامل قربوا من بعض، اعملهم في زيارة واحدة.',
+        'اجة الزيت وزيت المحرك عقبوها كدا لكن في زيارة واحدة.',
       ),
     ).toBe(false);
   });

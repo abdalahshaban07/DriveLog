@@ -3,7 +3,9 @@
     [title]="i18n.t('history.maintTitle')"
     [showBack]="true"
     (back)="router.navigateByUrl('/more')"
-  />
+  >
+    <app-page-line page="maintenance" />
+  </app-page-header>
   <app-section-tabs
     [tabs]="sectionTabs"
     [ariaLabel]="i18n.t('history.maintTitle')"
