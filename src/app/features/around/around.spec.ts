@@ -163,8 +163,10 @@ describe('AroundPage', () => {
     const fixture = TestBed.createComponent(AroundPage);
     fixture.detectChanges();
     await fixture.componentInstance.useMyLocation();
+    fixture.detectChanges();
     expect(fixture.componentInstance.origin()).toEqual({ lat: 30.04, lon: 31.23 });
-    expect(fixture.componentInstance.approx()).toBe(false);
+    expect(fixture.nativeElement.querySelector('iframe')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.around-place')).toBeNull();
   });
 
   it('opens an approximate map when the browser blocks GPS', async () => {
@@ -181,8 +183,10 @@ describe('AroundPage', () => {
     const fixture = TestBed.createComponent(AroundPage);
     fixture.detectChanges();
     await fixture.componentInstance.useMyLocation();
-    expect(fixture.componentInstance.approx()).toBe(true);
+    fixture.detectChanges();
     expect(fixture.componentInstance.origin()).toEqual({ lat: 29.07, lon: 31.09 });
+    expect(fixture.nativeElement.querySelector('iframe')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.around-place')).toBeNull();
     expect(fixture.componentInstance.gpsError()).toBe('');
   });
 

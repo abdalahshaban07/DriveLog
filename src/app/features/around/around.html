@@ -24,9 +24,7 @@
   </div>
 
   @if (mapSrc(); as src) {
-    @if (approx()) {
-      <p class="around-place">{{ i18n.t('around.approx') }}</p>
-    } @else if (placeLabel()) {
+    @if (placeLabel()) {
       <p class="around-place">{{ i18n.t('around.place', { place: placeLabel() }) }}</p>
     }
     @for (frame of [src]; track frame) {

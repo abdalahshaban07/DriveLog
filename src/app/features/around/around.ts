@@ -63,7 +63,6 @@ export class AroundPage {
   readonly areaText = signal('');
   readonly areaError = signal('');
   readonly placeLabel = signal('');
-  readonly approx = signal(false);
   readonly origin = signal<{ lat: number; lon: number } | null>(null);
 
   readonly mapSrc = computed((): string => {
@@ -86,7 +85,6 @@ export class AroundPage {
   changePlace(): void {
     this.origin.set(null);
     this.placeLabel.set('');
-    this.approx.set(false);
     this.gpsError.set('');
   }
 
@@ -109,7 +107,6 @@ export class AroundPage {
         return;
       }
       this.placeLabel.set(place.label);
-      this.approx.set(false);
       this.origin.set({ lat: place.lat, lon: place.lon });
     } catch {
       this.gpsError.set(this.i18n.t('home.nearbyUnavailable'));
@@ -135,7 +132,6 @@ export class AroundPage {
         return;
       }
       this.placeLabel.set('');
-      this.approx.set(!precise);
       this.origin.set(coords);
     } catch {
       this.gpsError.set(this.i18n.t('home.nearbyUnavailable'));
