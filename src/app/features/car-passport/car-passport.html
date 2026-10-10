@@ -3,7 +3,9 @@
     [title]="i18n.t('passport.title')"
     [showBack]="true"
     (back)="router.navigateByUrl('/more')"
-  />
+  >
+    <app-page-line page="passport" />
+  </app-page-header>
 
   @if (!car()) {
     <p class="empty-state">{{ i18n.t('passport.noCar') }}</p>

@@ -1,5 +1,7 @@
 <div class="stack page-narrow maint">
-  <app-page-header [title]="i18n.t('maint.title')" />
+  <app-page-header [title]="i18n.t('maint.title')">
+    <app-page-line page="maintenance" />
+  </app-page-header>
   <app-section-tabs
     [tabs]="sectionTabs"
     [ariaLabel]="i18n.t('maint.title')"

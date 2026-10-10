@@ -52,6 +52,7 @@ import {
 } from '../../domain/setup-checklist';
 import { buildReportBrief, recurringBreakdownCount } from '../../domain/smart-reports';
 import { rangeBoundsForPreset, type HistoryRangePreset } from '../../domain/export-history';
+import type { PageLineId } from '../../domain/page-line';
 import { homeHealthSummary } from '../../domain/vehicle-facts';
 import { I18n } from '../../i18n/i18n';
 import { HealthRow } from '../../ui/health-row/health-row';
@@ -61,6 +62,7 @@ import { BarChart } from '../../ui/charts/bar-chart';
 import { LineChart } from '../../ui/charts/line-chart';
 import { DonutChart, type DonutSlice } from '../../ui/charts/donut-chart';
 import { PageHeader } from '../../ui/page-header';
+import { PageLine } from '../../ui/page-line/page-line';
 import { PeriodRange } from '../../ui/period-range';
 import { InstallCard } from './cards/install-card/install-card';
 import { QuickLog } from './cards/quick-log/quick-log';
@@ -105,6 +107,7 @@ interface PaperLine {
     QuickLog,
     HealthRow,
     WeatherTipCard,
+    PageLine,
   ],
   templateUrl: './home.html',
   styleUrl: './home.scss',
@@ -118,6 +121,21 @@ export class HomePage {
   private readonly glanceStrip = viewChild<ElementRef<HTMLElement>>('glanceStrip');
 
   readonly view = signal<HomeView>('dashboard');
+  readonly linePage = computed((): PageLineId => {
+    const view = this.view();
+    switch (view) {
+      case 'dashboard':
+        return 'home';
+      case 'reports':
+        return 'reports';
+      case 'charts':
+        return 'charts';
+      default: {
+        const _never: never = view;
+        return _never;
+      }
+    }
+  });
   readonly chartRangePreset = signal<HistoryRangePreset>('3months');
   readonly chartFrom = signal('');
   readonly chartTo = signal('');

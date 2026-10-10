@@ -13,6 +13,7 @@ import { nextExpiringDoc, type DocUrgency } from '../../domain/vehicle-docs';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { PageHeader } from '../../ui/page-header';
+import { PageLine } from '../../ui/page-line/page-line';
 import { PrimaryButton } from '../../ui/primary-button';
 
 /** Short currency label for passport PDF (avoids Intl BiDi mess). */
@@ -26,7 +27,7 @@ function pdfCurrencyLabel(code: string, lang: string): string {
 @Component({
   selector: 'app-car-passport',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, PrimaryButton, RouterLink],
+  imports: [PageHeader, PageLine, PrimaryButton, RouterLink],
   templateUrl: './car-passport.html',
   styleUrl: './car-passport.scss',
 })

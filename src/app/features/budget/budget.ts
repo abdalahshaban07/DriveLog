@@ -19,6 +19,7 @@ import { homeHealthSummary, todayDateOnly } from '../../domain/vehicle-facts';
 import type { MsgKey } from '../../i18n/en';
 import { I18n } from '../../i18n/i18n';
 import { PageHeader } from '../../ui/page-header';
+import { PageLine } from '../../ui/page-line/page-line';
 import { PrimaryButton } from '../../ui/primary-button';
 import { NumericField } from '../../ui/numeric-field';
 import { budgetPicture, type BudgetRung } from './budget-picture';
@@ -26,7 +27,7 @@ import { budgetPicture, type BudgetRung } from './budget-picture';
 @Component({
   selector: 'app-budget',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, PrimaryButton, NumericField],
+  imports: [PageHeader, PageLine, PrimaryButton, NumericField],
   templateUrl: './budget.html',
   styleUrl: './budget.scss',
 })

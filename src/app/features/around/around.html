@@ -1,5 +1,7 @@
 <div class="stack around-page" [class.around-page--map]="mapUrl()">
-  <app-page-header [title]="i18n.t('around.title')" [subtitle]="i18n.t('around.subtitle')" />
+  <app-page-header [title]="i18n.t('around.title')" [subtitle]="i18n.t('around.subtitle')">
+    <app-page-line page="around" />
+  </app-page-header>
   <app-section-tabs [tabs]="tabs" [ariaLabel]="i18n.t('nav.fuel')" />
 
   <div class="seg" role="group" [attr.aria-label]="i18n.t('home.nearby')">

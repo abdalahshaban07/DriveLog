@@ -13,13 +13,14 @@ import { hasExpiredDocs } from '../../domain/vehicle-docs';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { PageHeader } from '../../ui/page-header';
+import { PageLine } from '../../ui/page-line/page-line';
 import { PrimaryButton } from '../../ui/primary-button';
 import { TextField } from '../../ui/text-field';
 
 @Component({
   selector: 'app-pre-trip',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, PrimaryButton, TextField],
+  imports: [PageHeader, PageLine, PrimaryButton, TextField],
   templateUrl: './pre-trip.html',
   styleUrl: './pre-trip.scss',
 })

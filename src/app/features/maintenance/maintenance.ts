@@ -30,6 +30,7 @@ import { ConfirmBar } from '../../ui/confirm-bar';
 import { DateField } from '../../ui/date-field';
 import { NumericField } from '../../ui/numeric-field';
 import { PageHeader } from '../../ui/page-header';
+import { PageLine } from '../../ui/page-line/page-line';
 import { PrimaryButton } from '../../ui/primary-button';
 import { SectionTabs, type SectionTab } from '../../ui/section-tabs/section-tabs';
 import { SelectField } from '../../ui/select-field';
@@ -40,6 +41,7 @@ import { TextField } from '../../ui/text-field';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     PageHeader,
+    PageLine,
     SectionTabs,
     TextField,
     NumericField,

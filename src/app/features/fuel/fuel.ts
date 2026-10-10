@@ -8,6 +8,7 @@ import type { FuelGrade } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { PageHeader } from '../../ui/page-header';
+import { PageLine } from '../../ui/page-line/page-line';
 import { FUEL_TABS, SectionTabs } from '../../ui/section-tabs/section-tabs';
 
 type GradeFilter = FuelGrade | 'all';
@@ -25,7 +26,7 @@ const GRADE_ORDER: readonly FuelGrade[] = [
 @Component({
   selector: 'app-fuel',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, RouterLink, SectionTabs],
+  imports: [PageHeader, PageLine, RouterLink, SectionTabs],
   templateUrl: './fuel.html',
   styleUrl: './fuel.scss',
 })

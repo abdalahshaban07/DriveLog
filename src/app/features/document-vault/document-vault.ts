@@ -24,6 +24,7 @@ import type { MsgKey } from '../../i18n/en';
 import { ConfirmBar } from '../../ui/confirm-bar';
 import { DateField } from '../../ui/date-field';
 import { PageHeader } from '../../ui/page-header';
+import { PageLine } from '../../ui/page-line/page-line';
 import { PrimaryButton } from '../../ui/primary-button';
 import { TextField } from '../../ui/text-field';
 
@@ -44,7 +45,7 @@ const DAY_UNIT: Record<VaultDayTone, MsgKey> = {
 @Component({
   selector: 'app-document-vault',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgTemplateOutlet, PageHeader, TextField, DateField, PrimaryButton, ConfirmBar],
+  imports: [NgTemplateOutlet, PageHeader, PageLine, TextField, DateField, PrimaryButton, ConfirmBar],
   templateUrl: './document-vault.html',
   styleUrl: './document-vault.scss',
 })

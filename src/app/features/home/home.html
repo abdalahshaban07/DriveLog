@@ -1,5 +1,11 @@
 <div class="stack home">
   <app-page-header [title]="i18n.t('app.name')" [subtitle]="headerLine()">
+    <app-page-line
+      [page]="linePage()"
+      [fuelSpend]="totals().fuel"
+      [maintSpend]="totals().maintenance"
+      [totalSpend]="totals().total"
+    />
     @if (view() === 'dashboard') {
       <app-weather-tip [weather]="weather()" [busy]="weatherBusy()" />
     }

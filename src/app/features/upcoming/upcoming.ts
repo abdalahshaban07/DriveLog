@@ -9,11 +9,12 @@ import type { MsgKey } from '../../i18n/en';
 import { I18n } from '../../i18n/i18n';
 import { DueRow } from '../../ui/due-row';
 import { PageHeader } from '../../ui/page-header';
+import { PageLine } from '../../ui/page-line/page-line';
 
 @Component({
   selector: 'app-upcoming',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, RouterLink, DueRow],
+  imports: [PageHeader, PageLine, RouterLink, DueRow],
   templateUrl: './upcoming.html',
   styleUrl: './upcoming.scss',
 })

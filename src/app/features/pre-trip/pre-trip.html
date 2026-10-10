@@ -4,7 +4,9 @@
     [subtitle]="i18n.t('preTrip.lead')"
     [showBack]="true"
     (back)="router.navigateByUrl('/more')"
-  />
+  >
+    <app-page-line page="pretrip" />
+  </app-page-header>
 
   @if (docsExpired()) {
     <p class="pre-trip__warn" role="status">{{ i18n.t('preTrip.docsExpired') }}</p>

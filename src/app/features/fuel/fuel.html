@@ -1,5 +1,7 @@
 <div class="stack fuel">
-  <app-page-header [title]="i18n.t('fuel.title')" />
+  <app-page-header [title]="i18n.t('fuel.title')">
+    <app-page-line page="fuel" />
+  </app-page-header>
   <app-section-tabs [tabs]="tabs" [ariaLabel]="i18n.t('nav.fuel')" />
 
   @if (gradeOptions().length) {

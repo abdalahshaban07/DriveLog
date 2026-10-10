@@ -3,6 +3,7 @@ import { DomSanitizer, type SafeResourceUrl } from '@angular/platform-browser';
 import { coarseCoords, geocodePlace } from '../../data/remote';
 import { I18n } from '../../i18n/i18n';
 import { PageHeader } from '../../ui/page-header';
+import { PageLine } from '../../ui/page-line/page-line';
 import { PrimaryButton } from '../../ui/primary-button';
 import { TextField } from '../../ui/text-field';
 import { FUEL_TABS, SectionTabs } from '../../ui/section-tabs/section-tabs';
@@ -48,7 +49,7 @@ function fixFromPosition(geo: Geolocation): Promise<{ lat: number; lon: number }
 @Component({
   selector: 'app-around-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, PrimaryButton, TextField, SectionTabs],
+  imports: [PageHeader, PageLine, PrimaryButton, TextField, SectionTabs],
   templateUrl: './around.html',
   styleUrl: './around.scss',
 })

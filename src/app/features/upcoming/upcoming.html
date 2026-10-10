@@ -4,7 +4,9 @@
     [subtitle]="i18n.t('upcoming.lead')"
     [showBack]="true"
     (back)="back()"
-  />
+  >
+    <app-page-line page="upcoming" />
+  </app-page-header>
 
   @if (items().length) {
     <ul class="upcoming__list">

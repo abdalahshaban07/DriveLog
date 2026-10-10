@@ -3,7 +3,9 @@
     [title]="i18n.t('vault.title')"
     [showBack]="true"
     (back)="router.navigateByUrl('/more')"
-  />
+  >
+    <app-page-line page="vault" />
+  </app-page-header>
 
   <section class="vault-hero card card--paper" [attr.aria-label]="i18n.t('vault.glance')">
     <p class="vault-hero__kicker">{{ i18n.t('vault.glance') }}</p>
