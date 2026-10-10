@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
@@ -9,35 +9,69 @@ describe('aroundMapEmbedUrl', () => {
   it('centers a fuel search without an API key', () => {
     const url = aroundMapEmbedUrl({ lat: 30.0444, lon: 31.2357 }, 'fuel', 'ar');
     expect(url).toBe(
-      'https://maps.google.com/maps?q=%D9%85%D8%AD%D8%B7%D8%A9%20%D8%A8%D9%86%D8%B2%D9%8A%D9%86&ll=30.0444,31.2357&z=14&hl=ar&t=m&output=embed',
+      'https://maps.google.com/maps?q=%D9%85%D8%AD%D8%B7%D8%A7%D8%AA%20%D8%A8%D9%86%D8%B2%D9%8A%D9%86&ll=30.0444,31.2357&z=12&hl=ar&t=m&output=embed',
     );
     expect(url).not.toContain('key=');
   });
 
-  it('keeps a named area inside the search', () => {
-    const url = aroundMapEmbedUrl(
-      { lat: 29.03, lon: 31.1 },
-      'fuel',
-      'ar',
-      14,
-      'بني سويف الجديدة',
-    );
-    expect(url).toContain(encodeURIComponent('محطة بنزين في بني سويف الجديدة'));
+  it('keeps the camera on the coordinates and the query on the category', () => {
+    const url = aroundMapEmbedUrl({ lat: 29.03, lon: 31.1 }, 'fuel', 'ar');
+    expect(url).toContain(encodeURIComponent('محطات بنزين'));
+    expect(url).not.toContain(encodeURIComponent('في'));
     expect(url).toContain('ll=29.03,31.1');
+    expect(url).toContain('z=12');
     expect(url).toContain('t=m');
   });
 
   it('switches the query for charging stations', () => {
-    const url = aroundMapEmbedUrl({ lat: 30, lon: 31 }, 'charge', 'en', 14);
-    expect(url).toContain('q=EV%20charging%20station');
+    const url = aroundMapEmbedUrl({ lat: 30, lon: 31 }, 'charge', 'en', 12);
+    expect(url).toContain('q=EV%20charging%20stations');
     expect(url).toContain('ll=30,31');
-    expect(url).toContain('z=14');
+    expect(url).toContain('z=12');
     expect(url).toContain('t=m');
     expect(url).toContain('hl=en');
   });
 });
 
+function here(lat: number, lon: number): GeolocationPosition {
+  return {
+    coords: {
+      latitude: lat,
+      longitude: lon,
+      accuracy: 20,
+      altitude: null,
+      altitudeAccuracy: null,
+      heading: null,
+      speed: null,
+      toJSON() {
+        return {};
+      },
+    },
+    timestamp: 0,
+    toJSON() {
+      return {};
+    },
+  };
+}
+
+function stubGeo(getCurrentPosition: Geolocation['getCurrentPosition']): void {
+  Object.defineProperty(navigator, 'geolocation', {
+    configurable: true,
+    value: {
+      getCurrentPosition,
+      watchPosition() {
+        return 0;
+      },
+      clearWatch() {},
+    },
+  });
+}
+
 describe('AroundPage', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AroundPage],
@@ -80,12 +114,13 @@ describe('AroundPage', () => {
     const frame = fixture.nativeElement.querySelector('iframe') as HTMLIFrameElement;
     expect(frame.getAttribute('src')).toContain('output=embed');
     expect(frame.getAttribute('src')).toContain('ll=30.0444,31.2357');
-    expect(frame.getAttribute('src')).toContain('gas%20station');
+    expect(frame.getAttribute('src')).toContain('gas%20stations');
+    expect(frame.getAttribute('src')).toContain('z=12');
 
     fixture.componentInstance.setNearbyKind('charge');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('iframe').getAttribute('src')).toContain(
-      'EV%20charging%20station',
+      'EV%20charging%20stations',
     );
   });
 
@@ -107,13 +142,48 @@ describe('AroundPage', () => {
     expect(fixture.componentInstance.gpsError()).toBe('');
   });
 
-  it('stays on the finder when location is denied', async () => {
+  it('stays on the finder when location and the coarse fix both fail', async () => {
+    stubGeo((_ok, err) => {
+      err?.({ code: 1, message: 'denied' } as GeolocationPositionError);
+    });
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')));
     const fixture = TestBed.createComponent(AroundPage);
     fixture.detectChanges();
     await fixture.componentInstance.useMyLocation();
+    fixture.detectChanges();
     expect(fixture.componentInstance.origin()).toBeNull();
     expect(fixture.componentInstance.gpsError()).toBe('around.gpsDenied');
     expect(fixture.nativeElement.querySelector('iframe')).toBeNull();
+  });
+
+  it('opens the map from a GPS fix without calling it approximate', async () => {
+    stubGeo((ok) => {
+      ok(here(30.04, 31.23));
+    });
+    const fixture = TestBed.createComponent(AroundPage);
+    fixture.detectChanges();
+    await fixture.componentInstance.useMyLocation();
+    expect(fixture.componentInstance.origin()).toEqual({ lat: 30.04, lon: 31.23 });
+    expect(fixture.componentInstance.approx()).toBe(false);
+  });
+
+  it('opens an approximate map when the browser blocks GPS', async () => {
+    stubGeo((_ok, err) => {
+      err?.({ code: 1, message: 'denied' } as GeolocationPositionError);
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ latitude: '29.07', longitude: '31.09' }),
+      }),
+    );
+    const fixture = TestBed.createComponent(AroundPage);
+    fixture.detectChanges();
+    await fixture.componentInstance.useMyLocation();
+    expect(fixture.componentInstance.approx()).toBe(true);
+    expect(fixture.componentInstance.origin()).toEqual({ lat: 29.07, lon: 31.09 });
+    expect(fixture.componentInstance.gpsError()).toBe('');
   });
 
   it('does not search a blank area name', async () => {

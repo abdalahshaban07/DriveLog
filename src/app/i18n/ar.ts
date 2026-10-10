@@ -430,6 +430,7 @@ export const ar: Record<MsgKey, string> = {
   'around.mapTitle': 'خريطة المحطات القريبة',
   'around.changePlace': 'غيّر المكان',
   'around.gpsDenied': 'المتصفح منع الموقع. اسمح بيه من إعدادات الموقع، أو ابحث باسم المنطقة.',
+  'around.approx': 'موقع تقريبي. للموقع الدقيق: القفل جنب العنوان ← الأذونات ← الموقع.',
   'around.useLocation': 'استخدم موقعي',
   'around.retry': 'حاول تاني',
   'around.cached': 'السيرفر مش متاح. دي آخر نتيجة نجحنا نجيبها.',

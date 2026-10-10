@@ -1,22 +1,22 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DomSanitizer, type SafeResourceUrl } from '@angular/platform-browser';
-import { geocodePlace, getCoords } from '../../data/remote';
+import { coarseCoords, geocodePlace } from '../../data/remote';
 import { I18n } from '../../i18n/i18n';
 import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
 import { TextField } from '../../ui/text-field';
 import { FUEL_TABS, SectionTabs } from '../../ui/section-tabs/section-tabs';
 
-export const AROUND_MAP_ZOOM = 14;
+export const AROUND_MAP_ZOOM = 12;
 
 type AroundKind = 'fuel' | 'charge';
 
 function mapQuery(kind: AroundKind, lang: 'en' | 'ar'): string {
   switch (kind) {
     case 'fuel':
-      return lang === 'ar' ? 'محطة بنزين' : 'gas station';
+      return lang === 'ar' ? 'محطات بنزين' : 'gas stations';
     case 'charge':
-      return lang === 'ar' ? 'محطة شحن سيارات' : 'EV charging station';
+      return lang === 'ar' ? 'محطات شحن سيارات' : 'EV charging stations';
     default: {
       const _never: never = kind;
       return _never;
@@ -24,18 +24,25 @@ function mapQuery(kind: AroundKind, lang: 'en' | 'ar'): string {
   }
 }
 
-/** Keyless Google embed. `ll` keeps the camera on the place; `t=m` stays on the road map where the pins sit. */
+/** Keyless Google embed. Plural `q` plus `ll` and a wide zoom is what fills a phone iframe with pins. */
 export function aroundMapEmbedUrl(
   origin: { lat: number; lon: number },
   kind: AroundKind,
   lang: 'en' | 'ar',
   zoom = AROUND_MAP_ZOOM,
-  place = '',
 ): string {
-  const base = mapQuery(kind, lang);
-  const named = place.trim();
-  const q = named ? (lang === 'ar' ? `${base} في ${named}` : `${base} in ${named}`) : base;
-  return `https://maps.google.com/maps?q=${encodeURIComponent(q)}&ll=${origin.lat},${origin.lon}&z=${zoom}&hl=${lang}&t=m&output=embed`;
+  return `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery(kind, lang))}&ll=${origin.lat},${origin.lon}&z=${zoom}&hl=${lang}&t=m&output=embed`;
+}
+
+/** Must be called in the click turn, before any signal write, or mobile skips the prompt. */
+function fixFromPosition(geo: Geolocation): Promise<{ lat: number; lon: number } | null> {
+  return new Promise((resolve) => {
+    geo.getCurrentPosition(
+      (pos) => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+      () => resolve(null),
+      { enableHighAccuracy: false, timeout: 12_000, maximumAge: 60_000 },
+    );
+  });
 }
 
 @Component({
@@ -56,6 +63,7 @@ export class AroundPage {
   readonly areaText = signal('');
   readonly areaError = signal('');
   readonly placeLabel = signal('');
+  readonly approx = signal(false);
   readonly origin = signal<{ lat: number; lon: number } | null>(null);
 
   readonly mapSrc = computed((): string => {
@@ -63,7 +71,7 @@ export class AroundPage {
     if (!origin) {
       return '';
     }
-    return aroundMapEmbedUrl(origin, this.kind(), this.i18n.language(), AROUND_MAP_ZOOM, this.placeLabel());
+    return aroundMapEmbedUrl(origin, this.kind(), this.i18n.language());
   });
 
   readonly mapUrl = computed((): SafeResourceUrl | null => {
@@ -78,6 +86,7 @@ export class AroundPage {
   changePlace(): void {
     this.origin.set(null);
     this.placeLabel.set('');
+    this.approx.set(false);
     this.gpsError.set('');
   }
 
@@ -100,6 +109,7 @@ export class AroundPage {
         return;
       }
       this.placeLabel.set(place.label);
+      this.approx.set(false);
       this.origin.set({ lat: place.lat, lon: place.lon });
     } catch {
       this.gpsError.set(this.i18n.t('home.nearbyUnavailable'));
@@ -112,16 +122,20 @@ export class AroundPage {
     if (this.locating()) {
       return;
     }
+    const geo = navigator.geolocation;
+    const pending = geo ? fixFromPosition(geo) : Promise.resolve(null);
     this.locating.set(true);
     this.gpsError.set('');
     this.areaError.set('');
     try {
-      const coords = await getCoords();
+      const precise = await pending;
+      const coords = precise ?? (await coarseCoords());
       if (!coords) {
         this.gpsError.set(this.i18n.t('around.gpsDenied'));
         return;
       }
       this.placeLabel.set('');
+      this.approx.set(!precise);
       this.origin.set(coords);
     } catch {
       this.gpsError.set(this.i18n.t('home.nearbyUnavailable'));
