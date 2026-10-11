@@ -1032,7 +1032,11 @@ export const en = {
   'health.score': 'Score',
   'health.insight.title': 'Health insight',
   'health.insight.refresh': 'Refresh insight',
-  'health.insight.onDevice': 'On-device summary only',
+  'health.insight.onDevice': 'On-device summary',
+  'health.insight.attention': 'Start with {names}.',
+  'health.insight.next': 'Next to watch: {name}.',
+  'health.insight.quiet': 'Tracking only for now, with no due date.',
+  'health.insight.empty': 'Log a service or turn a part on for a useful glance.',
   'health.insight.prompt':
     'Write 1–3 short sentences prioritizing what needs attention on this car. Use only the JSON facts. No VIN. Be practical.',
   'health.insight.sourceRemote': 'Insight from free online coach (cached today)',

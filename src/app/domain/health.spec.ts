@@ -6,7 +6,9 @@ import {
   attentionCount,
   buildHealthItems,
   healthScore,
+  joinHealthNames,
   lifeRemainingPct,
+  localHealthGlance,
   sectionForStatus,
 } from './vehicle-health';
 import {
@@ -258,5 +260,22 @@ describe('health presentation', () => {
     ).toBe(28);
     expect(lifeRemainingPct({ remainingKm: -40, part: { intervalKm: 1_000 } })).toBe(0);
     expect(lifeRemainingPct({ remainingKm: 100, part: {} })).toBeNull();
+  });
+
+  it('names the worst parts, else the next one', () => {
+    expect(
+      localHealthGlance({ attention: ['Oil', 'Filter', 'Brakes'], next: 'Tires', total: 4 }, 'en'),
+    ).toEqual({ kind: 'attention', names: 'Oil and Filter' });
+    expect(localHealthGlance({ attention: [], next: 'Tires', total: 2 }, 'ar')).toEqual({
+      kind: 'next',
+      name: 'Tires',
+    });
+    expect(localHealthGlance({ attention: [], next: null, total: 1 }, 'en')).toEqual({
+      kind: 'quiet',
+    });
+    expect(localHealthGlance({ attention: [], next: null, total: 0 }, 'en')).toEqual({
+      kind: 'empty',
+    });
+    expect(joinHealthNames(['زيت', 'فلتر'], 'ar')).toBe('زيت وفلتر');
   });
 });
