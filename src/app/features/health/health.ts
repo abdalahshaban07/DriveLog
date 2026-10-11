@@ -133,7 +133,11 @@ export class HealthPage {
     this.i18n.language();
     const attention = [...g.attention].sort((a, b) => severity(a.status) - severity(b.status));
     const soon = g.upcoming.slice(0, 3);
-    const later = rankedParts([...g.healthy, ...g.tracking]).slice(0, 3);
+    const later = rankedParts(
+      [...g.healthy, ...g.tracking].filter(
+        (item) => item.remainingKm != null || item.remainingMonths != null,
+      ),
+    ).slice(0, 2);
     const watch = soon.length ? null : (later[0] ?? null);
     const also = soon.length ? later.slice(0, 2) : later.slice(1);
     return packHealthInsight({

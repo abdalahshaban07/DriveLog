@@ -1040,9 +1040,9 @@ export const en = {
   'health.insight.quiet': 'Tracking only for now, with no due date.',
   'health.insight.empty': 'Log a service or turn a part on for a useful glance.',
   'health.insight.system':
-    'You are the DriveLog coach. Reply in two or three short sentences: what is urgent, what comes after it, and one concrete step. Use only the user lines. "Left" means that distance is still ahead. Do not call something fine when a line says to inspect it. Do not invent a number or mention a chassis number. Do not say something was replaced unless a line says that. Do not add headings. Reply with the text only.',
+    'You are the DriveLog coach. Reply in two or three short sentences: what is urgent, what comes after it, and one concrete step. Use only the user lines. "Left" means that distance is still ahead. Do not call something fine when a line says to inspect it. Repeat the numbers that are written. Do not add a number that is not written or mention a chassis number. Do not say something was replaced unless a line says that. Do not add headings. Reply with the text only.',
   'health.insight.prompt':
-    'Write two or three short sentences: what is urgent, what comes after, and one step to take today. Only the lines below are allowed. Do not add a number of your own or mention a chassis number.',
+    'Write two or three short sentences: what is urgent, what comes after, and one step to take today. Only the lines below are allowed. Repeat the numbers that are written. Do not add a number that is not written or mention a chassis number.',
   'health.insight.factsUrgent': 'Urgent',
   'health.insight.factsNext': 'Later',
   'health.insight.factsNone': 'none',
