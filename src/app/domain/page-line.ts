@@ -24,6 +24,13 @@ export const PAGE_LINE_IDS = [
 
 export type PageLineId = (typeof PAGE_LINE_IDS)[number];
 
+export type PageLineHealth = {
+  label: string;
+  urgency: 'overdue' | 'dueSoon' | 'later';
+  remainingKm?: number;
+  dueDate?: DateOnly;
+};
+
 /** License line only inside this window (includes overdue). */
 const LICENSE_WINDOW_DAYS = 45;
 const TIRE_STALE_DAYS = 30;
@@ -42,8 +49,15 @@ export interface PageLineBag {
   /** Latest pre-trip date where tires were checked. Missing = never. */
   tireCheckedOn?: DateOnly;
   dues: readonly DueItem[];
-  /** Same rows the Coming up page lists. */
-  upcoming: readonly { label: string; status: DueStatus }[];
+  /** Same rows the Coming up page lists. Remaining km and date are set only when the row has them. */
+  upcoming: readonly {
+    label: string;
+    status: DueStatus;
+    remainingKm?: number;
+    dueDate?: DateOnly;
+  }[];
+  /** Active health parts. Empty when the car has none. */
+  health: readonly PageLineHealth[];
   odometer: number;
   reportFuel: number;
   reportMaint: number;
@@ -87,7 +101,10 @@ export type PageLineFact =
   | { id: 'healthOver'; name: string }
   | { id: 'healthOverCount'; count: number; name: string }
   | { id: 'healthSoon'; name: string }
-  | { id: 'healthSoonCount'; count: number; name: string };
+  | { id: 'healthSoonCount'; count: number; name: string }
+  | { id: 'healthNextKm'; name: string; km: number }
+  | { id: 'healthNextDate'; name: string; date: string }
+  | { id: 'healthNext'; name: string };
 
 export function pageLineFact(page: PageLineId, bag: PageLineBag): PageLineFact | null {
   switch (page) {
@@ -204,6 +221,12 @@ export function pageLineSentence(
         key: 'pageLine.healthSoonCount',
         params: { count: fact.count, name: fact.name },
       };
+    case 'healthNextKm':
+      return { key: 'pageLine.healthNextKm', params: { name: fact.name, km: fact.km } };
+    case 'healthNextDate':
+      return { key: 'pageLine.healthNextDate', params: { name: fact.name, date: fact.date } };
+    case 'healthNext':
+      return { key: 'pageLine.healthNext', params: { name: fact.name } };
     default: {
       const _never: never = fact;
       return _never;
@@ -382,6 +405,22 @@ function budgetFact(bag: PageLineBag): PageLineFact | null {
 }
 
 function healthFact(bag: PageLineBag): PageLineFact | null {
+  const fromUpcoming = upcomingHealth(bag);
+  if (fromUpcoming) return fromUpcoming;
+  const healthOver = bag.health.filter((row) => row.urgency === 'overdue' && row.label.trim());
+  const healthSoon = bag.health.filter((row) => row.urgency === 'dueSoon' && row.label.trim());
+  if (healthOver.length > 1) {
+    return { id: 'healthOverCount', count: healthOver.length, name: healthOver[0]!.label.trim() };
+  }
+  if (healthOver.length === 1) return { id: 'healthOver', name: healthOver[0]!.label.trim() };
+  if (healthSoon.length === 1) return { id: 'healthSoon', name: healthSoon[0]!.label.trim() };
+  if (healthSoon.length > 1) {
+    return { id: 'healthSoonCount', count: healthSoon.length, name: healthSoon[0]!.label.trim() };
+  }
+  return calmHealth(bag);
+}
+
+function upcomingHealth(bag: PageLineBag): PageLineFact | null {
   const urgent = bag.upcoming.filter(
     (row) => (row.status === 'overdue' || row.status === 'dueSoon') && row.label.trim(),
   );
@@ -392,6 +431,46 @@ function healthFact(bag: PageLineBag): PageLineFact | null {
   if (overdue.length === 1) return { id: 'healthOver', name };
   if (urgent.length === 1) return { id: 'healthSoon', name };
   return { id: 'healthSoonCount', count: urgent.length, name };
+}
+
+/** Next part when nothing is overdue or due soon. Numbers come only from the bag. */
+function calmHealth(bag: PageLineBag): PageLineFact | null {
+  const candidates = [
+    ...bag.health
+      .filter((row) => row.urgency === 'later' && row.label.trim())
+      .map((row) => ({
+        label: row.label.trim(),
+        remainingKm: row.remainingKm,
+        dueDate: row.dueDate,
+      })),
+    ...bag.upcoming
+      .filter((row) => row.status === 'future' && row.label.trim())
+      .map((row) => ({
+        label: row.label.trim(),
+        remainingKm: row.remainingKm,
+        dueDate: row.dueDate,
+      })),
+  ];
+  if (!candidates.length) return null;
+  const withKm = candidates.flatMap((row) => {
+    const km = nonNegativeKm(row.remainingKm);
+    return km == null ? [] : [{ row, km }];
+  });
+  if (withKm.length) {
+    const best = withKm.reduce((a, b) => (a.km <= b.km ? a : b));
+    return { id: 'healthNextKm', name: best.row.label, km: best.km };
+  }
+  const withDate = candidates.filter((row) => row.dueDate);
+  if (withDate.length) {
+    const best = [...withDate].sort((a, b) => a.dueDate!.localeCompare(b.dueDate!))[0]!;
+    return { id: 'healthNextDate', name: best.label, date: best.dueDate! };
+  }
+  return { id: 'healthNext', name: candidates[0]!.label };
+}
+
+function nonNegativeKm(value: number | undefined): number | null {
+  if (value == null || !Number.isFinite(value) || value < 0) return null;
+  return Math.round(value);
 }
 
 function passportFact(bag: PageLineBag): PageLineFact | null {

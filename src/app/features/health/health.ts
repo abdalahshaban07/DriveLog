@@ -6,15 +6,17 @@ import {
   signal,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { fetchChatReply, isAssistantOnline, usableCoachText } from '../../data/assistant';
+import { fetchFreeCoachText, isAssistantOnline, usableCoachText } from '../../data/assistant';
 import { Db } from '../../data/db';
 import { todayDateOnly } from '../../domain/dues';
 import { partDefinitionLabel } from '../../domain/part-name';
 import { homeHealthSummary } from '../../domain/vehicle-facts';
 import {
   healthScore,
-  localHealthGlance,
+  joinHealthNames,
+  packHealthInsight,
   sectionForStatus,
+  type HealthFactInput,
   type HealthItem,
 } from '../../domain/vehicle-health';
 import type { MsgKey } from '../../i18n/en';
@@ -40,6 +42,7 @@ export class HealthPage {
   readonly insight = signal('');
   readonly insightBusy = signal(false);
   readonly insightSource = signal<'local' | 'ai'>('local');
+  private insightToken = 0;
 
   readonly online = computed(() => isAssistantOnline(this.db));
 
@@ -125,32 +128,52 @@ export class HealthPage {
   /** Remote coach text when we have it. The card always has localInsight underneath. */
   readonly shownInsight = computed(() => this.insight().trim() || this.localInsight());
 
-  readonly localInsight = computed(() => {
+  readonly insightPack = computed(() => {
     const g = this.grouped();
+    this.i18n.language();
+    const attention = [...g.attention].sort((a, b) => severity(a.status) - severity(b.status));
+    const soon = g.upcoming.slice(0, 3);
+    const later = rankedParts([...g.healthy, ...g.tracking]).slice(0, 3);
+    const watch = soon.length ? null : (later[0] ?? null);
+    const also = soon.length ? later.slice(0, 2) : later.slice(1);
+    return packHealthInsight({
+      attention: attention.slice(0, 4).map((item) => this.factInput(item)),
+      upcoming: soon.map((item) => this.factInput(item)),
+      watch: watch ? this.factInput(watch) : null,
+      also: also.map((item) => this.factInput(item)),
+      total: g.attention.length + g.upcoming.length + g.healthy.length + g.tracking.length,
+      urgentLabel: this.i18n.t('health.insight.factsUrgent'),
+      nextLabel: this.i18n.t('health.insight.factsNext'),
+      noneLabel: this.i18n.t('health.insight.factsNone'),
+    });
+  });
+
+  readonly localInsight = computed(() => {
+    const pack = this.insightPack();
     const lang = this.i18n.language();
-    const attention = [...g.attention]
-      .sort((a, b) => severity(a.status) - severity(b.status))
-      .map((item) => this.partLabel(item));
-    const next = this.nextUp();
-    const glance = localHealthGlance(
-      {
-        attention,
-        next: next && sectionForStatus(next.status) !== 'attention' ? this.partLabel(next) : null,
-        total: g.attention.length + g.upcoming.length + g.healthy.length + g.tracking.length,
-      },
-      lang,
-    );
-    switch (glance.kind) {
-      case 'attention':
-        return this.i18n.t('health.insight.attention', { names: glance.names });
+    switch (pack.kind) {
+      case 'attention': {
+        const head = this.i18n.t('health.insight.attention', {
+          details: joinHealthNames(pack.urgent, lang),
+        });
+        return pack.next
+          ? `${head} ${this.i18n.t('health.insight.follow', { detail: pack.next })}`
+          : head;
+      }
       case 'next':
-        return this.i18n.t('health.insight.next', { name: glance.name });
+        return pack.lines
+          .map((detail, index) =>
+            index === 0
+              ? this.i18n.t('health.insight.next', { detail })
+              : this.i18n.t('health.insight.part', { detail }),
+          )
+          .join('\n');
       case 'quiet':
         return this.i18n.t('health.insight.quiet');
       case 'empty':
         return this.i18n.t('health.insight.empty');
       default: {
-        const _never: never = glance;
+        const _never: never = pack;
         return _never;
       }
     }
@@ -168,52 +191,106 @@ export class HealthPage {
     return partDefinitionLabel(item.part, (key) => this.i18n.t(key as MsgKey));
   }
 
+  factInput(item: HealthItem): HealthFactInput {
+    return {
+      name: this.partLabel(item),
+      status: this.i18n.t(healthStatusKey(item.status)),
+      remain: this.factRemain(item),
+    };
+  }
+
+  factRemain(item: HealthItem): string {
+    if (item.remainingKm != null) {
+      return this.i18n.t('health.insight.remainKm', { n: Math.round(item.remainingKm) });
+    }
+    if (item.remainingMonths != null) {
+      return this.i18n.t('health.insight.remainMonths', { n: item.remainingMonths });
+    }
+    return this.i18n.t('health.insight.noRemain');
+  }
+
   async loadInsight(force = true): Promise<void> {
+    const token = ++this.insightToken;
     if (!this.online()) {
       this.insight.set('');
       this.insightSource.set('local');
+      this.insightBusy.set(false);
       return;
     }
 
     const today = todayDateOnly();
     const settings = this.db.settings();
     const lang = this.i18n.language();
-    const triedToday = !force && settings.healthInsightDay === today;
-    const cached = triedToday ? usableCoachText(settings.healthInsightText ?? '', lang) : null;
+    const cached =
+      !force && settings.healthInsightDay === today
+        ? usableCoachText(settings.healthInsightText ?? '', lang)
+        : null;
     if (cached) {
       this.insight.set(cached);
       this.insightSource.set('ai');
       return;
     }
-    // ponytail: a failed day is cached so opening Health doesn't burn the free coach slot again. Refresh forces another try.
-    if (triedToday) return;
+
+    const pack = this.insightPack();
+    // Keep the local summary on screen while the coach answers. A miss is not stored.
+    this.insight.set('');
+    this.insightSource.set('local');
+    if (pack.kind === 'empty') return;
 
     this.insightBusy.set(true);
     try {
-      const question = this.i18n.t('health.insight.prompt');
-      const reply = await fetchChatReply(this.db, question, lang, (key, params) =>
-        this.i18n.t(key as MsgKey, params),
-      );
-      const remote = reply.source === 'remote' ? usableCoachText(reply.text, lang) : null;
-      if (remote) {
-        this.insight.set(remote);
-        this.insightSource.set('ai');
-        await this.db.updateSettings({
-          healthInsightText: remote,
-          healthInsightDay: today,
-        });
-      } else {
-        this.insight.set('');
-        this.insightSource.set('local');
-        await this.db.updateSettings({
-          healthInsightText: undefined,
-          healthInsightDay: today,
-        });
-      }
+      const user = `${this.i18n.t('health.insight.prompt')}\n\n${pack.facts}`;
+      const raw = await fetchFreeCoachText(lang, this.i18n.t('health.insight.system'), user);
+      if (token !== this.insightToken) return;
+      const remote = raw ? usableCoachText(raw, lang) : null;
+      if (!remote) return;
+      this.insight.set(remote);
+      this.insightSource.set('ai');
+      await this.db.updateSettings({
+        healthInsightText: remote,
+        healthInsightDay: today,
+      });
+    } catch {
+      // The local summary is already on screen. A miss is not stored.
     } finally {
-      this.insightBusy.set(false);
+      if (token === this.insightToken) this.insightBusy.set(false);
     }
   }
+}
+
+function healthStatusKey(status: HealthItem['status']): MsgKey {
+  switch (status) {
+    case 'good':
+      return 'health.status.good';
+    case 'soon':
+      return 'health.status.soon';
+    case 'due':
+      return 'health.status.due';
+    case 'overdue':
+      return 'health.status.overdue';
+    case 'inspect':
+      return 'health.status.inspect';
+    case 'unknown':
+      return 'health.status.unknown';
+    case 'critical':
+      return 'health.status.critical';
+    default: {
+      const _never: never = status;
+      return _never;
+    }
+  }
+}
+
+/** Nearest remaining distance first. Parts with no figure stay last and are not given one. */
+function rankedParts(items: readonly HealthItem[]): HealthItem[] {
+  const byKm = items
+    .filter((item) => item.remainingKm != null)
+    .sort((a, b) => a.remainingKm! - b.remainingKm!);
+  const byMonths = items
+    .filter((item) => item.remainingKm == null && item.remainingMonths != null)
+    .sort((a, b) => a.remainingMonths! - b.remainingMonths!);
+  const rest = items.filter((item) => item.remainingKm == null && item.remainingMonths == null);
+  return [...byKm, ...byMonths, ...rest];
 }
 
 function severity(status: HealthItem['status']): number {

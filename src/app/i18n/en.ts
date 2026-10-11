@@ -1033,12 +1033,22 @@ export const en = {
   'health.insight.title': 'Health insight',
   'health.insight.refresh': 'Refresh insight',
   'health.insight.onDevice': 'On-device summary',
-  'health.insight.attention': 'Start with {names}.',
-  'health.insight.next': 'Next to watch: {name}.',
+  'health.insight.attention': 'Start with {details}.',
+  'health.insight.next': 'Next to watch: {detail}.',
+  'health.insight.part': '{detail}.',
+  'health.insight.follow': 'After that, {detail}.',
   'health.insight.quiet': 'Tracking only for now, with no due date.',
   'health.insight.empty': 'Log a service or turn a part on for a useful glance.',
+  'health.insight.system':
+    'You are the DriveLog coach. Reply in two or three short sentences: what is urgent, what comes after it, and one concrete step. Use only the user lines. "Left" means that distance is still ahead. Do not call something fine when a line says to inspect it. Do not invent a number or mention a chassis number. Do not say something was replaced unless a line says that. Do not add headings. Reply with the text only.',
   'health.insight.prompt':
-    'Write 1–3 short sentences prioritizing what needs attention on this car. Use only the JSON facts. No VIN. Be practical.',
+    'Write two or three short sentences: what is urgent, what comes after, and one step to take today. Only the lines below are allowed. Do not add a number of your own or mention a chassis number.',
+  'health.insight.factsUrgent': 'Urgent',
+  'health.insight.factsNext': 'Later',
+  'health.insight.factsNone': 'none',
+  'health.insight.remainKm': '{n} km left',
+  'health.insight.remainMonths': '{n} mo left',
+  'health.insight.noRemain': 'no remaining distance recorded',
   'health.insight.sourceRemote': 'Insight from free online coach (cached today)',
   'health.glance.attention': 'Due',
   'health.glance.upcoming': 'Soon',
@@ -1345,6 +1355,9 @@ export const en = {
   'pageLine.healthOverCount': '{count} are overdue. The important one is {name}.',
   'pageLine.healthSoon': '{name} is due soon.',
   'pageLine.healthSoonCount': '{count} are due soon. The important one is {name}.',
+  'pageLine.healthNextKm': 'Nothing urgent. Next is {name}, with {km} km left.',
+  'pageLine.healthNextDate': 'Nothing urgent. Next is {name}, due {date}.',
+  'pageLine.healthNext': 'Nothing urgent. Next is {name}.',
 } as const;
 
 export type MsgKey = keyof typeof en;

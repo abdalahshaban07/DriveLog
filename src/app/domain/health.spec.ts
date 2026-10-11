@@ -1,14 +1,18 @@
 import { describe, expect, it } from 'vitest';
+import { ar } from '../i18n/ar';
+import { en } from '../i18n/en';
+import { detectAdvisorIntent } from './advisor-intent';
 import { calcIntervalStatus, worseStatus, roundKm500 } from './maintenance-calc';
 import { estimateIntervalFromHistory } from './history-analyzer';
 import { measurementThresholdStatus } from './measurement-intel';
 import {
   attentionCount,
   buildHealthItems,
+  healthFactLine,
   healthScore,
   joinHealthNames,
   lifeRemainingPct,
-  localHealthGlance,
+  packHealthInsight,
   sectionForStatus,
 } from './vehicle-health';
 import {
@@ -262,20 +266,87 @@ describe('health presentation', () => {
     expect(lifeRemainingPct({ remainingKm: 100, part: {} })).toBeNull();
   });
 
-  it('names the worst parts, else the next one', () => {
-    expect(
-      localHealthGlance({ attention: ['Oil', 'Filter', 'Brakes'], next: 'Tires', total: 4 }, 'en'),
-    ).toEqual({ kind: 'attention', names: 'Oil and Filter' });
-    expect(localHealthGlance({ attention: [], next: 'Tires', total: 2 }, 'ar')).toEqual({
+  it('packs urgent status and remaining distance, else the next fact', () => {
+    const labels = { urgentLabel: 'مستعجل', nextLabel: 'بعده', noneLabel: 'مفيش' };
+    expect(healthFactLine({ name: 'فلتر التكييف', status: 'مستحق', remain: '0 كم' })).toBe(
+      'فلتر التكييف — مستحق — 0 كم',
+    );
+    expect(healthFactLine({ name: 'البطارية', status: 'مش معروف', remain: '' })).toBe(
+      'البطارية — مش معروف',
+    );
+    const packed = packHealthInsight({
+      attention: [
+        { name: 'فلتر التكييف', status: 'مستحق', remain: '0 كم' },
+        { name: 'زيت المحرك', status: 'متأخر', remain: '200 كم' },
+        { name: ' ', status: 'مستحق', remain: '1 كم' },
+      ],
+      upcoming: [{ name: 'البطارية', status: 'قريب', remain: '2 شهر' }],
+      watch: { name: 'مياه الردياتير', status: 'كويس', remain: '3000 كم' },
+      total: 4,
+      ...labels,
+    });
+    expect(packed.kind).toBe('attention');
+    if (packed.kind !== 'attention') return;
+    expect(packed.urgent).toEqual([
+      'فلتر التكييف — مستحق — 0 كم',
+      'زيت المحرك — متأخر — 200 كم',
+    ]);
+    expect(packed.next).toBe('البطارية — قريب — 2 شهر');
+    expect(packed.facts).toBe(
+      [
+        'مستعجل',
+        '- فلتر التكييف — مستحق — 0 كم',
+        '- زيت المحرك — متأخر — 200 كم',
+        'بعده',
+        '- البطارية — قريب — 2 شهر',
+      ].join('\n'),
+    );
+    expect(packed.facts).not.toMatch(/VIN|اولوي|priorit/i);
+    expect(`${en['health.insight.prompt']}\n${en['health.insight.system']}`).not.toMatch(
+      /priorit|VIN/i,
+    );
+    expect(`${ar['health.insight.prompt']}\n${ar['health.insight.system']}`).not.toMatch(/اولوي|VIN/);
+    expect(detectAdvisorIntent(en['health.insight.prompt'])).toBe('UNSUPPORTED');
+    expect(detectAdvisorIntent(ar['health.insight.prompt'])).toBe('UNSUPPORTED');
+
+    const nextOnly = packHealthInsight({
+      attention: [],
+      upcoming: [],
+      watch: { name: 'فلتر التكييف', status: 'كويس', remain: '3168 كم' },
+      total: 2,
+      urgentLabel: 'Urgent',
+      nextLabel: 'Later',
+      noneLabel: 'none',
+    });
+    expect(nextOnly).toMatchObject({
       kind: 'next',
-      name: 'Tires',
+      next: 'فلتر التكييف — كويس — 3168 كم',
+      lines: ['فلتر التكييف — كويس — 3168 كم'],
     });
-    expect(localHealthGlance({ attention: [], next: null, total: 1 }, 'en')).toEqual({
-      kind: 'quiet',
+    const withAlso = packHealthInsight({
+      attention: [],
+      upcoming: [],
+      watch: { name: 'فلتر التكييف', status: 'كويس', remain: '3168 كم' },
+      also: [{ name: 'زيت المحرك', status: 'كويس', remain: '8000 كم' }],
+      total: 2,
+      urgentLabel: 'Urgent',
+      nextLabel: 'Later',
+      noneLabel: 'none',
     });
-    expect(localHealthGlance({ attention: [], next: null, total: 0 }, 'en')).toEqual({
-      kind: 'empty',
-    });
+    expect(withAlso.kind).toBe('next');
+    if (withAlso.kind === 'next') {
+      expect(withAlso.lines).toEqual([
+        'فلتر التكييف — كويس — 3168 كم',
+        'زيت المحرك — كويس — 8000 كم',
+      ]);
+      expect(withAlso.facts).toContain('زيت المحرك — كويس — 8000 كم');
+    }
+    expect(packHealthInsight({ attention: [], upcoming: [], watch: null, total: 1, ...labels }).kind).toBe(
+      'quiet',
+    );
+    expect(packHealthInsight({ attention: [], upcoming: [], watch: null, total: 0, ...labels }).kind).toBe(
+      'empty',
+    );
     expect(joinHealthNames(['زيت', 'فلتر'], 'ar')).toBe('زيت وفلتر');
   });
 });

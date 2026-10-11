@@ -6,7 +6,8 @@ import {
   readFreeLlmCursor,
   ASSISTANT_THINKING_MAX_TOKENS,
 } from '../domain/free-llm-gateways';
-import { dueItemLabel } from '../domain/part-name';
+import { dueItemLabel, partDefinitionLabel } from '../domain/part-name';
+import { buildHealthItems } from '../domain/vehicle-health';
 import {
   firstSentence,
   pageLineFact,
@@ -18,7 +19,13 @@ import {
 import { remainingMonthlyMaintenanceBudget } from '../domain/budget-engine';
 import { vaultExpiryForKind } from '../domain/vehicle-docs';
 import type { MsgKey } from '../i18n/en';
-import type { Maintenance, PartDefinition, PreTripCheck, VehicleDocument } from '../domain/models';
+import type {
+  HealthStatus,
+  Maintenance,
+  PartDefinition,
+  PreTripCheck,
+  VehicleDocument,
+} from '../domain/models';
 import { canRemoteAssistantCall, recordRemoteAssistantCall } from './assistant-rate-limit';
 import { isAssistantOnline, usableCoachText } from './assistant';
 import type { Db } from './db';
@@ -73,7 +80,32 @@ export function pageLineBag(
         }).map((item) => ({
           status: item.status,
           label: upcomingLabel(item, maintenance, parts, t),
+          ...(item.dueKm != null ? { remainingKm: item.dueKm - car.currentOdometer } : {}),
+          ...(item.dueDate ? { dueDate: item.dueDate } : {}),
         }))
+      : [],
+    health: car
+      ? buildHealthItems({
+          car,
+          today,
+          maintenance,
+          customParts: db.parts(),
+          overrides: db.partOverrides(),
+          settings,
+        }).flatMap((item) => {
+          const label = partDefinitionLabel(item.part, t).trim();
+          if (!label) return [];
+          return [
+            {
+              label,
+              urgency: healthUrgency(item.status),
+              ...(item.remainingKm != null && Number.isFinite(item.remainingKm)
+                ? { remainingKm: item.remainingKm }
+                : {}),
+              ...(item.dueDate ? { dueDate: item.dueDate } : {}),
+            },
+          ];
+        })
       : [],
     reportFuel: report.fuel,
     reportMaint: report.maintenance,
@@ -244,6 +276,25 @@ function latestTireCheck(checks: readonly PreTripCheck[]): string | undefined {
 }
 
 export type PageLineReport = { fuel: number; maintenance: number; total: number };
+
+function healthUrgency(status: HealthStatus): 'overdue' | 'dueSoon' | 'later' {
+  switch (status) {
+    case 'critical':
+    case 'overdue':
+      return 'overdue';
+    case 'due':
+    case 'inspect':
+    case 'soon':
+      return 'dueSoon';
+    case 'good':
+    case 'unknown':
+      return 'later';
+    default: {
+      const _never: never = status;
+      return _never;
+    }
+  }
+}
 
 function upcomingLabel(
   item: UpcomingItem,

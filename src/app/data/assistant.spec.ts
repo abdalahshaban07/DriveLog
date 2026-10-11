@@ -6,7 +6,7 @@ import {
   readFreeLlmCursor,
 } from '../domain/free-llm-gateways';
 import { ASSISTANT_RATE_DAY, ASSISTANT_RATE_HOUR } from './assistant-rate-limit';
-import { fetchChatReply, usableCoachText, type ChatMessage } from './assistant';
+import { fetchChatReply, fetchFreeCoachText, usableCoachText, type ChatMessage } from './assistant';
 import type { Db } from './db';
 
 const RATE_KEY = 'drivelog.assistant.rate.v1';
@@ -321,6 +321,45 @@ describe('fetchChatReply', () => {
       'https://api.llm7.io/v1/chat/completions',
       'https://api.llm7.io/v1/chat/completions',
     ]);
+  });
+});
+
+describe('fetchFreeCoachText', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
+
+  it('calls the gateway when the lines name a part', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(okChat('فلتر التكييف مستحق. ابدأ بيه النهارده. وبعد كده البطارية.'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const text = await fetchFreeCoachText(
+      'ar',
+      'مدرب',
+      'مستعجل\n- فلتر التكييف — مستحق — 0 كم\nبعده\n- زيت المحرك — قريب — 400 كم',
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [, init] = fetchMock.mock.calls[0]!;
+    const sent = JSON.parse((init as RequestInit).body as string) as {
+      messages: { content: string }[];
+    };
+    const user = sent.messages.map((message) => message.content).join('\n');
+    expect(user).toContain('فلتر التكييف — مستحق — 0 كم');
+    expect(user).not.toMatch(/VIN/);
+    expect(text).toContain('فلتر التكييف');
+  });
+
+  it('drops a non-Arabic reply', async () => {
+    vi.stubGlobal('fetch', async () => okChat('Check the cabin filter and the battery today.'));
+    await expect(fetchFreeCoachText('ar', 'coach', 'مستعجل\n- فلتر')).resolves.toBeNull();
   });
 });
 

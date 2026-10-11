@@ -148,18 +148,12 @@ function coachMessages(
   ];
 }
 
-async function tryRemoteChat(
-  snapshot: CoachSnapshot,
-  question: string,
+async function runFreeCoach(
   lang: 'en' | 'ar',
-  history: readonly ChatMessage[],
+  messages: readonly OpenAiChatMessage[],
 ): Promise<string | null> {
   const storage = typeof localStorage !== 'undefined' ? localStorage : null;
-  const chain = await tryChain(
-    freeGatewaysFrom(readFreeLlmCursor(storage)),
-    coachMessages(snapshot, question, lang, history),
-    lang,
-  );
+  const chain = await tryChain(freeGatewaysFrom(readFreeLlmCursor(storage)), messages, lang);
   bumpFreeLlmCursor(storage);
 
   // One slot for the whole chain, and only after a reply or an HTTP status.
@@ -167,6 +161,33 @@ async function tryRemoteChat(
     recordRemoteAssistantCall();
   }
   return chain.reply;
+}
+
+async function tryRemoteChat(
+  snapshot: CoachSnapshot,
+  question: string,
+  lang: 'en' | 'ar',
+  history: readonly ChatMessage[],
+): Promise<string | null> {
+  return runFreeCoach(lang, coachMessages(snapshot, question, lang, history));
+}
+
+/**
+ * Same free gateway chain as Ask DriveLog, without the local intent card.
+ * Health lines name parts (زيت، فلتر) that fetchChatReply would answer on-device.
+ */
+export async function fetchFreeCoachText(
+  lang: 'en' | 'ar',
+  system: string,
+  user: string,
+): Promise<string | null> {
+  const text = user.trim();
+  if (!system.trim() || !text) return null;
+  if (!canRemoteAssistantCall() || !browserMayReachGateway()) return null;
+  return runFreeCoach(lang, [
+    { role: 'system', content: system },
+    { role: 'user', content: text },
+  ]);
 }
 
 type Translate = (key: string, params?: Record<string, string | number>) => string;

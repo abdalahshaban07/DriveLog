@@ -413,22 +413,64 @@ export function lifeRemainingPct(item: {
   return Math.max(0, Math.min(100, Math.round(ratio * 100)));
 }
 
-export type LocalHealthGlance =
-  | { kind: 'attention'; names: string }
-  | { kind: 'next'; name: string }
-  | { kind: 'quiet' }
+export type HealthFactInput = {
+  name: string;
+  status: string;
+  remain: string;
+};
+
+/** One part the coach may restate: name, status word, and remaining distance when we have it. */
+export function healthFactLine(fact: HealthFactInput): string {
+  const name = fact.name.trim();
+  if (!name) return '';
+  const status = fact.status.trim();
+  const remain = fact.remain.trim();
+  if (status && remain) return `${name} — ${status} — ${remain}`;
+  if (status) return `${name} — ${status}`;
+  if (remain) return `${name} — ${remain}`;
+  return name;
+}
+
+export type PackedHealthInsight =
+  | { kind: 'attention'; urgent: readonly string[]; next: string | null; facts: string }
+  | { kind: 'next'; next: string; lines: readonly string[]; facts: string }
+  | { kind: 'quiet'; facts: string }
   | { kind: 'empty' };
 
-/** On-device sentence for the health card. Attention names are already worst-first. */
-export function localHealthGlance(
-  input: { attention: readonly string[]; next: string | null; total: number },
-  lang: 'en' | 'ar',
-): LocalHealthGlance {
+/**
+ * Worst two attention lines for the on-device card, plus the fact block sent to the coach.
+ * Attention lines are already worst-first. `watch` is the nearest later part when nothing is upcoming.
+ * `also` adds more later parts (status and remaining) without repeating `watch`.
+ */
+export function packHealthInsight(input: {
+  attention: readonly HealthFactInput[];
+  upcoming: readonly HealthFactInput[];
+  watch: HealthFactInput | null;
+  also?: readonly HealthFactInput[];
+  total: number;
+  urgentLabel: string;
+  nextLabel: string;
+  noneLabel: string;
+}): PackedHealthInsight {
   if (input.total === 0) return { kind: 'empty' };
-  const names = input.attention.slice(0, 2).filter((name) => name.trim());
-  if (names.length) return { kind: 'attention', names: joinHealthNames(names, lang) };
-  if (input.next?.trim()) return { kind: 'next', name: input.next.trim() };
-  return { kind: 'quiet' };
+  const urgentAll = input.attention.map(healthFactLine).filter(Boolean);
+  const urgent = urgentAll.slice(0, 2);
+  const later = input.upcoming.map(healthFactLine).filter(Boolean).slice(0, 3);
+  const watch = input.watch ? healthFactLine(input.watch) : '';
+  const extra = (input.also ?? []).map(healthFactLine).filter(Boolean);
+  const nextLines = [...(later.length ? later : watch ? [watch] : []), ...extra].slice(0, 4);
+  const next = nextLines[0] ?? null;
+  const facts = [
+    input.urgentLabel,
+    ...(urgentAll.length
+      ? urgentAll.slice(0, 4).map((line) => `- ${line}`)
+      : [`- ${input.noneLabel}`]),
+    input.nextLabel,
+    ...(nextLines.length ? nextLines.map((line) => `- ${line}`) : [`- ${input.noneLabel}`]),
+  ].join('\n');
+  if (urgent.length) return { kind: 'attention', urgent, next, facts };
+  if (next) return { kind: 'next', next, lines: nextLines, facts };
+  return { kind: 'quiet', facts };
 }
 
 export function joinHealthNames(names: readonly string[], lang: 'en' | 'ar'): string {

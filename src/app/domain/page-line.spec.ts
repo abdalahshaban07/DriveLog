@@ -43,6 +43,7 @@ function bag(partial: Partial<PageLineBag> = {}): PageLineBag {
     breakdowns: [],
     dues: [],
     upcoming: [],
+    health: [],
     odometer: 0,
     reportFuel: 0,
     reportMaint: 0,
@@ -253,11 +254,54 @@ describe('pageLineFact', () => {
     ).toEqual({ id: 'charts', month: '2026-08' });
   });
 
-  it('names the overdue item on health and hides a quiet car', () => {
+  it('names the overdue item on health and still names the next part when nothing is urgent', () => {
     expect(pageLineFact('health', bag())).toBeNull();
     expect(
       pageLineFact('health', bag({ upcoming: [{ label: 'الكاوتش', status: 'future' }] })),
-    ).toBeNull();
+    ).toEqual({ id: 'healthNext', name: 'الكاوتش' });
+    expect(
+      pageLineFact(
+        'health',
+        bag({
+          upcoming: [{ label: 'فلتر التكييف', status: 'future', remainingKm: 3168 }],
+        }),
+      ),
+    ).toEqual({ id: 'healthNextKm', name: 'فلتر التكييف', km: 3168 });
+    expect(
+      pageLineFact(
+        'health',
+        bag({
+          upcoming: [{ label: 'الرخصة', status: 'future', dueDate: '2027-04-01' }],
+        }),
+      ),
+    ).toEqual({ id: 'healthNextDate', name: 'الرخصة', date: '2027-04-01' });
+    expect(
+      pageLineFact(
+        'health',
+        bag({
+          health: [
+            { label: 'زيت المحرك', urgency: 'later', remainingKm: 8000 },
+            { label: 'فلتر التكييف', urgency: 'later', remainingKm: 3168, dueDate: '2027-06-01' },
+          ],
+        }),
+      ),
+    ).toEqual({ id: 'healthNextKm', name: 'فلتر التكييف', km: 3168 });
+    expect(
+      pageLineFact(
+        'health',
+        bag({
+          health: [
+            { label: 'فلتر التكييف', urgency: 'overdue' },
+            { label: 'البطارية', urgency: 'dueSoon' },
+          ],
+        }),
+      ),
+    ).toEqual({ id: 'healthOver', name: 'فلتر التكييف' });
+    const calm = pageLineSentence({ id: 'healthNextKm', name: 'فلتر التكييف', km: 3168 }, 'ar');
+    expect(calm.key).toBe('pageLine.healthNextKm');
+    expect(ar['pageLine.healthNextKm']).toBe('مفيش حاجة مستعجلة. أقرب متابعة {name}، فاضل {km} كم.');
+    expect(ar['pageLine.healthNext']).toContain('{name}');
+    expect(ar['pageLine.healthNextKm']).not.toMatch(/\d/);
     expect(
       pageLineFact('health', bag({ upcoming: [{ label: 'زيت المحرك', status: 'overdue' }] })),
     ).toEqual({ id: 'healthOver', name: 'زيت المحرك' });
