@@ -1341,6 +1341,10 @@ export const en = {
   'pageLine.budget': 'If the oil change waits, the monthly cap still holds.',
   'pageLine.passport': 'The last service was {months} months ago.',
   'pageLine.passportOne': 'The last service was a month ago.',
+  'pageLine.healthOver': '{name} is overdue.',
+  'pageLine.healthOverCount': '{count} are overdue. The important one is {name}.',
+  'pageLine.healthSoon': '{name} is due soon.',
+  'pageLine.healthSoonCount': '{count} are due soon. The important one is {name}.',
 } as const;
 
 export type MsgKey = keyof typeof en;
