@@ -412,3 +412,27 @@ export function lifeRemainingPct(item: {
   const ratio = Math.max(0, item.remainingKm) / span;
   return Math.max(0, Math.min(100, Math.round(ratio * 100)));
 }
+
+export type LocalHealthGlance =
+  | { kind: 'attention'; names: string }
+  | { kind: 'next'; name: string }
+  | { kind: 'quiet' }
+  | { kind: 'empty' };
+
+/** On-device sentence for the health card. Attention names are already worst-first. */
+export function localHealthGlance(
+  input: { attention: readonly string[]; next: string | null; total: number },
+  lang: 'en' | 'ar',
+): LocalHealthGlance {
+  if (input.total === 0) return { kind: 'empty' };
+  const names = input.attention.slice(0, 2).filter((name) => name.trim());
+  if (names.length) return { kind: 'attention', names: joinHealthNames(names, lang) };
+  if (input.next?.trim()) return { kind: 'next', name: input.next.trim() };
+  return { kind: 'quiet' };
+}
+
+export function joinHealthNames(names: readonly string[], lang: 'en' | 'ar'): string {
+  if (names.length <= 1) return names[0] ?? '';
+  const [a, b] = names;
+  return lang === 'ar' ? `${a} و${b}` : `${a} and ${b}`;
+}

@@ -59,7 +59,9 @@
             [attr.aria-pressed]="focus() === sec.key"
             (click)="toggleFocus(sec.key)"
           >
-            <span class="health__count-num">{{ i18n.formatNumber(grouped()[sec.key].length) }}</span>
+            <span class="health__count-num">{{
+              i18n.formatNumber(grouped()[sec.key].length)
+            }}</span>
             <span class="health__count-label">{{ i18n.t(sec.glance) }}</span>
           </button>
         </li>
@@ -67,30 +69,35 @@
     </ul>
   </section>
 
-  <section class="card health__insight" [attr.aria-label]="i18n.t('health.insight.title')">
-    <div class="health__insight-head">
-      <p class="health__insight-label">{{ i18n.t('health.insight.title') }}</p>
+  <section
+    class="card card--paper health__insight"
+    [attr.aria-label]="i18n.t('health.insight.title')"
+  >
+    <p class="health__insight-label">
+      <span class="health__pip" aria-hidden="true"></span>
+      {{ i18n.t('health.insight.title') }}
+    </p>
+    <p class="health__insight-text" aria-live="polite">{{ shownInsight() }}</p>
+    <div class="health__insight-foot">
+      <p class="health__insight-hint">
+        {{
+          insightSource() === 'ai' && insight()
+            ? i18n.t('health.insight.sourceRemote')
+            : i18n.t('health.insight.onDevice')
+        }}
+      </p>
       @if (online()) {
         <button
           type="button"
           class="health__insight-refresh"
           [disabled]="insightBusy()"
+          [attr.aria-busy]="insightBusy()"
           (click)="loadInsight(true)"
         >
           {{ i18n.t('health.insight.refresh') }}
         </button>
       }
     </div>
-    @if (insightBusy()) {
-      <p class="health__insight-text">{{ i18n.t('common.loading') }}</p>
-    } @else if (insight()) {
-      <p class="health__insight-text">{{ insight() }}</p>
-      <p class="health__insight-hint">{{ i18n.t('health.insight.sourceRemote') }}</p>
-    } @else {
-      <p class="health__insight-text health__insight-text--muted">
-        {{ i18n.t('health.insight.onDevice') }}
-      </p>
-    }
   </section>
 
   <div class="health__actions">

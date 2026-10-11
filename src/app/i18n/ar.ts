@@ -1019,7 +1019,11 @@ export const ar: Record<MsgKey, string> = {
   'health.score': 'التقييم',
   'health.insight.title': 'لمحة الصحة',
   'health.insight.refresh': 'حدّث اللمحة',
-  'health.insight.onDevice': 'ملخص على الجهاز فقط',
+  'health.insight.onDevice': 'ملخص على الجهاز',
+  'health.insight.attention': 'ابدأ ب{names}.',
+  'health.insight.next': 'أقرب متابعة: {name}.',
+  'health.insight.quiet': 'متابعة بس دلوقتي، من غير ميعاد.',
+  'health.insight.empty': 'سجّل صيانة أو فعّل قطعة عشان اللمحة تبقى مفيدة.',
   'health.insight.prompt':
     'اكتب جملة لثلاث جمل قصيرة ترتّب أولويات الاهتمام بالعربية دي. استخدم بس حقائق JSON. من غير VIN. كن عملي.',
   'health.insight.sourceRemote': 'لمحة من المدرب الأونلاين المجاني (محفوظة لليوم)',

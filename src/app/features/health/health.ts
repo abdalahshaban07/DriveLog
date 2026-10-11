@@ -13,6 +13,7 @@ import { partDefinitionLabel } from '../../domain/part-name';
 import { homeHealthSummary } from '../../domain/vehicle-facts';
 import {
   healthScore,
+  localHealthGlance,
   sectionForStatus,
   type HealthItem,
 } from '../../domain/vehicle-health';
@@ -120,6 +121,40 @@ export class HealthPage {
     );
   });
 
+  /** Remote coach text when we have it. The card always has localInsight underneath. */
+  readonly shownInsight = computed(() => this.insight().trim() || this.localInsight());
+
+  readonly localInsight = computed(() => {
+    const g = this.grouped();
+    const lang = this.i18n.language();
+    const attention = [...g.attention]
+      .sort((a, b) => severity(a.status) - severity(b.status))
+      .map((item) => this.partLabel(item));
+    const next = this.nextUp();
+    const glance = localHealthGlance(
+      {
+        attention,
+        next: next && sectionForStatus(next.status) !== 'attention' ? this.partLabel(next) : null,
+        total: g.attention.length + g.upcoming.length + g.healthy.length + g.tracking.length,
+      },
+      lang,
+    );
+    switch (glance.kind) {
+      case 'attention':
+        return this.i18n.t('health.insight.attention', { names: glance.names });
+      case 'next':
+        return this.i18n.t('health.insight.next', { name: glance.name });
+      case 'quiet':
+        return this.i18n.t('health.insight.quiet');
+      case 'empty':
+        return this.i18n.t('health.insight.empty');
+      default: {
+        const _never: never = glance;
+        return _never;
+      }
+    }
+  });
+
   constructor() {
     void this.loadInsight(false);
   }
@@ -133,51 +168,72 @@ export class HealthPage {
   }
 
   async loadInsight(force = true): Promise<void> {
-    this.insightBusy.set(true);
+    if (!this.online()) {
+      this.insight.set('');
+      this.insightSource.set('local');
+      return;
+    }
+
     const today = todayDateOnly();
     const settings = this.db.settings();
+    const lang = this.i18n.language();
+    const triedToday = !force && settings.healthInsightDay === today;
+    const cached = triedToday ? usableCoachText(settings.healthInsightText ?? '', lang) : null;
+    if (cached) {
+      this.insight.set(cached);
+      this.insightSource.set('ai');
+      return;
+    }
+    // ponytail: a failed day is cached so opening Health doesn't burn the free coach slot again. Refresh forces another try.
+    if (triedToday) return;
 
+    this.insightBusy.set(true);
     try {
-      const cached =
-        !force &&
-        this.online() &&
-        settings.healthInsightText &&
-        settings.healthInsightDay === today
-          ? usableCoachText(settings.healthInsightText, this.i18n.language())
-          : null;
-      if (cached) {
-        this.insight.set(cached);
-        this.insightSource.set('ai');
-        return;
-      }
-
-      if (!this.online()) {
-        this.insight.set('');
-        this.insightSource.set('local');
-        return;
-      }
-
       const question = this.i18n.t('health.insight.prompt');
-      const reply = await fetchChatReply(
-        this.db,
-        question,
-        this.i18n.language(),
-        (key, params) => this.i18n.t(key as MsgKey, params),
+      const reply = await fetchChatReply(this.db, question, lang, (key, params) =>
+        this.i18n.t(key as MsgKey, params),
       );
-      if (reply.source === 'remote' && reply.text.trim()) {
-        const text = reply.text.trim();
-        this.insight.set(text);
+      const remote = reply.source === 'remote' ? usableCoachText(reply.text, lang) : null;
+      if (remote) {
+        this.insight.set(remote);
         this.insightSource.set('ai');
         await this.db.updateSettings({
-          healthInsightText: text,
+          healthInsightText: remote,
           healthInsightDay: today,
         });
       } else {
         this.insight.set('');
         this.insightSource.set('local');
+        await this.db.updateSettings({
+          healthInsightText: undefined,
+          healthInsightDay: today,
+        });
       }
     } finally {
       this.insightBusy.set(false);
+    }
+  }
+}
+
+function severity(status: HealthItem['status']): number {
+  switch (status) {
+    case 'critical':
+      return 0;
+    case 'overdue':
+      return 1;
+    case 'due':
+      return 2;
+    case 'inspect':
+      return 3;
+    case 'soon':
+      return 4;
+    case 'unknown':
+      return 5;
+    case 'good':
+      return 6;
+    default: {
+      const _never: never = status;
+      return _never;
     }
   }
 }
