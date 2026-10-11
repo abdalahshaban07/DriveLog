@@ -3,7 +3,9 @@
     [title]="i18n.t('health.title')"
     [showBack]="true"
     (back)="router.navigateByUrl('/more')"
-  />
+  >
+    <app-page-line page="health" />
+  </app-page-header>
 
   <section class="card card--paper health__hero" [attr.aria-label]="i18n.t('health.title')">
     <div class="health__hero-top" [class.health__hero-top--solo]="score() == null">

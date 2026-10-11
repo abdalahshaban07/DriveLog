@@ -253,6 +253,46 @@ describe('pageLineFact', () => {
     ).toEqual({ id: 'charts', month: '2026-08' });
   });
 
+  it('names the overdue item on health and hides a quiet car', () => {
+    expect(pageLineFact('health', bag())).toBeNull();
+    expect(
+      pageLineFact('health', bag({ upcoming: [{ label: 'الكاوتش', status: 'future' }] })),
+    ).toBeNull();
+    expect(
+      pageLineFact('health', bag({ upcoming: [{ label: 'زيت المحرك', status: 'overdue' }] })),
+    ).toEqual({ id: 'healthOver', name: 'زيت المحرك' });
+    expect(
+      pageLineFact(
+        'health',
+        bag({
+          upcoming: [
+            { label: 'زيت المحرك', status: 'overdue' },
+            { label: 'الفرامل', status: 'overdue' },
+            { label: 'الرخصة', status: 'dueSoon' },
+          ],
+        }),
+      ),
+    ).toEqual({ id: 'healthOverCount', count: 2, name: 'زيت المحرك' });
+    expect(
+      pageLineFact('health', bag({ upcoming: [{ label: 'الفرامل', status: 'dueSoon' }] })),
+    ).toEqual({ id: 'healthSoon', name: 'الفرامل' });
+    expect(
+      pageLineFact(
+        'health',
+        bag({
+          upcoming: [
+            { label: 'الفرامل', status: 'dueSoon' },
+            { label: 'الرخصة', status: 'dueSoon' },
+          ],
+        }),
+      ),
+    ).toEqual({ id: 'healthSoonCount', count: 2, name: 'الفرامل' });
+    expect(pageLineSentence({ id: 'healthOver', name: 'زيت المحرك' }, 'ar').key).toBe(
+      'pageLine.healthOver',
+    );
+    expect(ar['pageLine.healthOver']).toBe('{name} متأخر.');
+  });
+
   it('names the spend leader only when it clearly leads', () => {
     expect(
       pageLineFact('reports', bag({ reportFuel: 80, reportMaint: 20, reportTotal: 100 })),

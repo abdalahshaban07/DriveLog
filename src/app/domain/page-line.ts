@@ -19,6 +19,7 @@ export const PAGE_LINE_IDS = [
   'breakdowns',
   'budget',
   'passport',
+  'health',
 ] as const;
 
 export type PageLineId = (typeof PAGE_LINE_IDS)[number];
@@ -82,7 +83,11 @@ export type PageLineFact =
   | { id: 'breakdownRepeat' }
   | { id: 'budget' }
   | { id: 'passport'; months: number }
-  | { id: 'passportOne' };
+  | { id: 'passportOne' }
+  | { id: 'healthOver'; name: string }
+  | { id: 'healthOverCount'; count: number; name: string }
+  | { id: 'healthSoon'; name: string }
+  | { id: 'healthSoonCount'; count: number; name: string };
 
 export function pageLineFact(page: PageLineId, bag: PageLineBag): PageLineFact | null {
   switch (page) {
@@ -110,6 +115,8 @@ export function pageLineFact(page: PageLineId, bag: PageLineBag): PageLineFact |
       return budgetFact(bag);
     case 'passport':
       return passportFact(bag);
+    case 'health':
+      return healthFact(bag);
     default: {
       const _never: never = page;
       return _never;
@@ -183,6 +190,20 @@ export function pageLineSentence(
       return { key: 'pageLine.passport', params: { months: fact.months } };
     case 'passportOne':
       return { key: 'pageLine.passportOne' };
+    case 'healthOver':
+      return { key: 'pageLine.healthOver', params: { name: fact.name } };
+    case 'healthOverCount':
+      return {
+        key: 'pageLine.healthOverCount',
+        params: { count: fact.count, name: fact.name },
+      };
+    case 'healthSoon':
+      return { key: 'pageLine.healthSoon', params: { name: fact.name } };
+    case 'healthSoonCount':
+      return {
+        key: 'pageLine.healthSoonCount',
+        params: { count: fact.count, name: fact.name },
+      };
     default: {
       const _never: never = fact;
       return _never;
@@ -358,6 +379,19 @@ function budgetFact(bag: PageLineBag): PageLineFact | null {
       d.labelKey === 'maintenance.type.oil' && (d.status === 'overdue' || d.status === 'dueSoon'),
   );
   return oil ? { id: 'budget' } : null;
+}
+
+function healthFact(bag: PageLineBag): PageLineFact | null {
+  const urgent = bag.upcoming.filter(
+    (row) => (row.status === 'overdue' || row.status === 'dueSoon') && row.label.trim(),
+  );
+  const overdue = urgent.filter((row) => row.status === 'overdue');
+  const name = (overdue[0] ?? urgent[0])?.label.trim();
+  if (!name) return null;
+  if (overdue.length > 1) return { id: 'healthOverCount', count: overdue.length, name };
+  if (overdue.length === 1) return { id: 'healthOver', name };
+  if (urgent.length === 1) return { id: 'healthSoon', name };
+  return { id: 'healthSoonCount', count: urgent.length, name };
 }
 
 function passportFact(bag: PageLineBag): PageLineFact | null {

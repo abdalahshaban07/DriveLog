@@ -1327,4 +1327,8 @@ export const ar: Record<MsgKey, string> = {
   'pageLine.budget': 'لو الزيت اتأجل، السقف يستحمل.',
   'pageLine.passport': 'آخر خدمة من {months} شهور.',
   'pageLine.passportOne': 'آخر خدمة من شهر.',
+  'pageLine.healthOver': '{name} متأخر.',
+  'pageLine.healthOverCount': '{count} متأخرين، أهمهم {name}.',
+  'pageLine.healthSoon': '{name} قرب ميعاده.',
+  'pageLine.healthSoonCount': '{count} قربوا، أهمهم {name}.',
 } as const;
