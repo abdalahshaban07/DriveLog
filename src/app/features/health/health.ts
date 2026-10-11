@@ -20,6 +20,7 @@ import {
 import type { MsgKey } from '../../i18n/en';
 import { I18n } from '../../i18n/i18n';
 import { PageHeader } from '../../ui/page-header';
+import { PageLine } from '../../ui/page-line/page-line';
 import { HealthRow } from '../../ui/health-row/health-row';
 
 type HealthSectionKey = 'attention' | 'upcoming' | 'healthy' | 'tracking';
@@ -27,7 +28,7 @@ type HealthSectionKey = 'attention' | 'upcoming' | 'healthy' | 'tracking';
 @Component({
   selector: 'app-health',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PageHeader, HealthRow, RouterLink],
+  imports: [PageHeader, PageLine, HealthRow, RouterLink],
   templateUrl: './health.html',
   styleUrl: './health.scss',
 })
