@@ -316,6 +316,10 @@ describe('HomePage', () => {
     const facts = fixture.nativeElement.querySelector('.fuel-use__facts')?.textContent ?? '';
     expect(facts).toContain('home.useDistance');
     expect(facts).toContain('home.useLiters');
+    expect(fixture.nativeElement.querySelector('.fuel-use__window')?.textContent).toBe(
+      'home.useWindow',
+    );
+    expect(fixture.componentInstance.fuelUse()?.currentEnd).toBe(stamp(now));
     const order = [...fixture.nativeElement.querySelectorAll(
       '.pulse, app-weather-tip, app-quick-log, .needs, .coming, .month-outlook, .vehicle-status',
     )].map((node: Element) => node.tagName === 'APP-WEATHER-TIP' || node.tagName === 'APP-QUICK-LOG'

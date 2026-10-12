@@ -5,6 +5,8 @@
       [fuelSpend]="totals().fuel"
       [maintSpend]="totals().maintenance"
       [totalSpend]="totals().total"
+      [periodFrom]="chartsLineFrom()"
+      [periodTo]="chartsLineTo()"
     />
     @if (view() === 'dashboard') {
       <app-weather-tip [weather]="weather()" [busy]="weatherBusy()" />
@@ -300,6 +302,7 @@
             @if (fuelUseWhy(); as why) {
               <p class="fuel-use__why">{{ why }}</p>
               @if (fuelUse(); as use) {
+                <p class="fuel-use__window">{{ fuelUseWindow() }}</p>
                 <p class="fuel-use__facts">
                   @if (use.km > 0 && use.previousKm > 0) {
                     <span class="fuel-use__fact">

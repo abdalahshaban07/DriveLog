@@ -30,6 +30,9 @@ export class PageLine {
   readonly fuelSpend = input(0);
   readonly maintSpend = input(0);
   readonly totalSpend = input(0);
+  /** Charts filter. Null keeps the default scan. Empty string leaves that side open. */
+  readonly periodFrom = input<string | null>(null);
+  readonly periodTo = input<string | null>(null);
 
   private readonly db = inject(Db);
   private readonly i18n = inject(I18n);
@@ -39,11 +42,17 @@ export class PageLine {
     effect((onCleanup) => {
       const page = this.page();
       const lang = this.i18n.language();
+      const periodFrom = this.periodFrom();
+      const periodTo = this.periodTo();
       const bag = pageLineBag(this.db, (key, params) => this.i18n.t(key as MsgKey, params), {
         fuel: this.fuelSpend(),
         maintenance: this.maintSpend(),
         total: this.totalSpend(),
       });
+      if (periodFrom != null || periodTo != null) {
+        bag.chartsFrom = periodFrom ?? '';
+        bag.chartsTo = periodTo ?? '';
+      }
       const local = localPageLine(page, bag, (key, params) => this.i18n.t(key, params), lang);
       this.text.set(local);
       if (!local) return;

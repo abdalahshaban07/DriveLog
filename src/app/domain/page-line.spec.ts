@@ -254,6 +254,42 @@ describe('pageLineFact', () => {
     ).toEqual({ id: 'charts', month: '2026-08' });
   });
 
+  it('names a maintenance rise only inside the charts filter', () => {
+    const data = {
+      today: '2026-10-10',
+      fills: [
+        fill({ id: 'j', odometer: 1, liters: 10, cost: 100, tankFull: true, date: '2026-07-02' }),
+        fill({ id: 'a', odometer: 2, liters: 10, cost: 50, tankFull: true, date: '2026-08-02' }),
+        fill({ id: 'o', odometer: 3, liters: 10, cost: 40, tankFull: true, date: '2026-10-02' }),
+      ],
+      maintenance: [maint({ id: 'm', type: 'brakes', date: '2026-08-15', cost: 400 })],
+    };
+    expect(pageLineFact('charts', bag(data))).toEqual({ id: 'charts', month: '2026-08' });
+    expect(
+      pageLineFact('charts', bag({ ...data, chartsFrom: '2026-10-01', chartsTo: '2026-10-10' })),
+    ).toBeNull();
+    expect(
+      pageLineFact('charts', bag({ ...data, chartsFrom: '2026-01-01', chartsTo: '2026-10-10' })),
+    ).toEqual({ id: 'charts', month: '2026-08' });
+    expect(
+      pageLineFact('charts', bag({ ...data, chartsFrom: '', chartsTo: '' })),
+    ).toEqual({ id: 'charts', month: '2026-08' });
+    expect(
+      pageLineFact(
+        'charts',
+        bag({
+          ...data,
+          chartsFrom: '2026-10-01',
+          chartsTo: '2026-10-10',
+          maintenance: [
+            maint({ id: 'm', type: 'brakes', date: '2026-08-15', cost: 400 }),
+            maint({ id: 'oct', type: 'oil', date: '2026-10-04', cost: 900 }),
+          ],
+        }),
+      ),
+    ).toEqual({ id: 'charts', month: '2026-10' });
+  });
+
   it('names the overdue item on health and still names the next part when nothing is urgent', () => {
     expect(pageLineFact('health', bag())).toBeNull();
     expect(

@@ -21,6 +21,7 @@ export const ar: Record<MsgKey, string> = {
   'home.useDistance': 'المسافة',
   'home.useLiters': 'اللترات',
   'home.useVersus': 'مقابل',
+  'home.useWindow': '١–{day} {month} مقابل ١–{prevDay} {prevMonth}',
   'home.useWhy.down.distance': 'الاستهلاك قل لأنك مشيت مسافة أقصر.',
   'home.useWhy.up.distance': 'الاستهلاك زاد لأنك مشيت مسافة أطول.',
   'home.useWhy.down.rate': 'الاستهلاك قل لأن كل ١٠٠ كم أخدت بنزين أقل.',

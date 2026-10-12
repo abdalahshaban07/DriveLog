@@ -173,6 +173,8 @@ describe('economy', () => {
       reason: 'distance',
       l100: 7.5,
       previousL100: 7.6,
+      currentEnd: '2026-03-10',
+      previousEnd: '2026-02-10',
     });
 
     const farther = fuelUseCompare(
@@ -246,7 +248,13 @@ describe('economy', () => {
       [trip('feb', '2026-02-28', 15, 100, 1100), trip('mar', '2026-03-31', 15, 100, 1200)],
       monthEnd,
     );
-    expect(throughFebruary).toMatchObject({ liters: 15, previousLiters: 15, tone: 'same' });
+    expect(throughFebruary).toMatchObject({
+      liters: 15,
+      previousLiters: 15,
+      tone: 'same',
+      currentEnd: '2026-03-31',
+      previousEnd: '2026-02-28',
+    });
   });
 
   it('tankEconomyVsAvg compares latest to prior average', async () => {

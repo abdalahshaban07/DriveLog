@@ -306,6 +306,12 @@ export class HomePage {
   readonly chartWindow = computed((): DateWindow =>
     historyWindow(this.chartRangePreset(), this.chartFrom(), this.chartTo()),
   );
+  readonly chartsLineFrom = computed((): string | null =>
+    this.linePage() === 'charts' ? (this.chartWindow().from ?? '') : null,
+  );
+  readonly chartsLineTo = computed((): string | null =>
+    this.linePage() === 'charts' ? (this.chartWindow().to ?? '') : null,
+  );
   readonly economySeries = computed(() => economyTrend(this.db.fillUps(), this.chartWindow()));
   readonly economyValues = computed(() => this.economySeries().map((p) => p.value));
   readonly economyLabels = computed(() =>
@@ -823,6 +829,21 @@ export class HomePage {
       return null;
     }
     return this.i18n.t(fuelUseWhyKey(use.direction, use.reason));
+  }
+
+  /** Same-day window the distance and liter lines are comparing. */
+  fuelUseWindow(): string | null {
+    const use = this.fuelUse();
+    if (!use) {
+      return null;
+    }
+    const month = (iso: string) => this.i18n.formatDate(iso, { month: 'long' });
+    return this.i18n.t('home.useWindow', {
+      day: Number(use.currentEnd.slice(8, 10)),
+      month: month(use.currentEnd),
+      prevDay: Number(use.previousEnd.slice(8, 10)),
+      prevMonth: month(use.previousEnd),
+    });
   }
 
   fuelUseKm(value: number): string {

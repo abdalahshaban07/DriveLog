@@ -316,6 +316,9 @@ export type FuelUseCompare = {
   tone: 'up' | 'down' | 'same';
   direction: 'up' | 'down' | null;
   reason: FuelUseReason | null;
+  /** Last day of each same-length window (this month, then last month). */
+  currentEnd: string;
+  previousEnd: string;
 };
 
 function dateOnly(date: Date): string {
@@ -450,6 +453,8 @@ export function fuelUseCompare(
     tone,
     direction: tone === 'same' ? null : tone,
     reason,
+    currentEnd: windows.currentEnd,
+    previousEnd: windows.previousEnd,
   };
 }
 

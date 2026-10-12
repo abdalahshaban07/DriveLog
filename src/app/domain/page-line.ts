@@ -62,6 +62,12 @@ export interface PageLineBag {
   reportFuel: number;
   reportMaint: number;
   reportTotal: number;
+  /**
+   * Charts filter, inclusive. Absent keeps the last-3-months scan.
+   * Empty string leaves that side open.
+   */
+  chartsFrom?: string;
+  chartsTo?: string;
   /** Null when the car has no monthly cap. */
   budgetRemaining: number | null;
   labelDue: (item: DueItem) => string;
@@ -284,7 +290,12 @@ function fuelFact(bag: PageLineBag): PageLineFact | null {
 }
 
 function chartsFact(bag: PageLineBag): PageLineFact | null {
-  const from = threeMonthStart(bag.today);
+  const scoped = bag.chartsFrom != null || bag.chartsTo != null;
+  // ponytail: the named month follows the filter; the month before it can sit outside, and spend is the whole month.
+  const fromMonth = scoped
+    ? (bag.chartsFrom ? bag.chartsFrom.slice(0, 7) : '')
+    : threeMonthStart(bag.today).slice(0, 7);
+  const toMonth = scoped && bag.chartsTo ? bag.chartsTo.slice(0, 7) : '';
   const fuel = new Map<string, number>();
   const maint = new Map<string, number>();
   for (const row of bag.fills) addMonth(fuel, row.date, row.cost);
@@ -293,7 +304,8 @@ function chartsFact(bag: PageLineBag): PageLineFact | null {
   let best: { month: string; total: number } | null = null;
   for (let i = 1; i < months.length; i++) {
     const month = months[i]!;
-    if (month < from.slice(0, 7)) continue;
+    if (fromMonth && month < fromMonth) continue;
+    if (toMonth && month > toMonth) continue;
     const prev = months[i - 1]!;
     const fuelCost = fuel.get(month) ?? 0;
     const maintCost = maint.get(month) ?? 0;

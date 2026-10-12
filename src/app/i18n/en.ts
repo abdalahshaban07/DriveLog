@@ -19,6 +19,7 @@ export const en = {
   'home.useDistance': 'Distance',
   'home.useLiters': 'Liters',
   'home.useVersus': 'vs',
+  'home.useWindow': '1–{day} {month} vs 1–{prevDay} {prevMonth}',
   'home.useWhy.down.distance': 'Fuel use fell because you drove a shorter distance.',
   'home.useWhy.up.distance': 'Fuel use rose because you drove farther.',
   'home.useWhy.down.rate': 'Fuel use fell because each 100 km took less fuel.',
