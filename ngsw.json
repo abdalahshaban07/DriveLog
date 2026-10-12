@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1791840653501,
+  "timestamp": 1791840758037,
   "index": "/DriveLog/index.html",
   "assetGroups": [
     {
@@ -12,7 +12,6 @@
       },
       "urls": [
         "/DriveLog/chunk-4gKdmQx12.js",
-        "/DriveLog/chunk-B7-wOV0a.js",
         "/DriveLog/chunk-B89v_wRG.js",
         "/DriveLog/chunk-B9avzOzG.js",
         "/DriveLog/chunk-BSYZjX9E2.js",
@@ -25,7 +24,6 @@
         "/DriveLog/chunk-C7u4wuWM.js",
         "/DriveLog/chunk-C86zhvaO.js",
         "/DriveLog/chunk-CD_ztlWL.js",
-        "/DriveLog/chunk-CEHpumPP.js",
         "/DriveLog/chunk-CFoB0WEf.js",
         "/DriveLog/chunk-CH2AwF-02.js",
         "/DriveLog/chunk-CO6Q8Ct8.js",
@@ -99,6 +97,19 @@
         "/DriveLog/screenshots/narrow-home-en.png",
         "/DriveLog/screenshots/narrow-maintenance-ar.png",
         "/DriveLog/screenshots/wide-home.png"
+      ],
+      "patterns": []
+    },
+    {
+      "name": "ocr",
+      "installMode": "lazy",
+      "updateMode": "lazy",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "urls": [
+        "/DriveLog/chunk-B7-wOV0a.js",
+        "/DriveLog/chunk-CEHpumPP.js"
       ],
       "patterns": []
     }
