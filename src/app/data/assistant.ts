@@ -1,6 +1,7 @@
 import {
   ASSISTANT_HISTORY_LIMIT,
   ASSISTANT_THINKING_MAX_TOKENS,
+  FREE_LLM_API_KEY,
   bumpFreeLlmCursor,
   freeGatewaysFrom,
   readFreeLlmCursor,
@@ -26,8 +27,9 @@ import { canRemoteAssistantCall, recordRemoteAssistantCall } from './assistant-r
 import type { Db } from './db';
 import { fetchOpenAiChat, OpenAiChatError, type OpenAiChatMessage } from './openai-chat';
 
-const GATEWAY_TIMEOUT_MS = 8_000;
-const THINKING_GATEWAY_TIMEOUT_MS = 15_000;
+const GATEWAY_TIMEOUT_MS = 15_000;
+/** Wait out a short 429. A longer Retry-After moves on so the question does not stall. */
+const RETRY_WAIT_CAP_S = 15;
 
 const REDACTED = 'redacted_' + 'thinking';
 const THINK = 'th' + 'ink';
@@ -51,11 +53,28 @@ export function usableCoachText(raw: string, lang: 'en' | 'ar'): string | null {
 }
 
 function mostlyArabic(text: string): boolean {
+  if (/[^\p{Script=Arabic}\p{Script=Latin}\p{N}\p{P}\p{Z}\p{S}\p{M}\p{Cf}]/u.test(text)) {
+    return false;
+  }
   const arabic = text.match(/\p{Script=Arabic}/gu)?.length ?? 0;
   const latin = text.match(/\p{Script=Latin}/gu)?.length ?? 0;
   if (arabic === 0) return false;
   const longLatin = text.match(/\p{Script=Latin}{4,}/gu)?.length ?? 0;
   return longLatin < 3 && arabic / (arabic + latin) >= 0.75;
+}
+
+function waitSeconds(seconds: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, seconds * 1000);
+    signal?.addEventListener(
+      'abort',
+      () => {
+        clearTimeout(timer);
+        resolve();
+      },
+      { once: true },
+    );
+  });
 }
 
 export interface ChatMessage {
@@ -93,26 +112,26 @@ async function tryChain(
   gateways: readonly FreeLlmGateway[],
   messages: readonly OpenAiChatMessage[],
   lang: 'en' | 'ar',
+  signal?: AbortSignal,
 ): Promise<ChainResult> {
   const skipBaseUrls = new Set<string>();
   let sawHttp = false;
   let reply: string | null = null;
 
   for (const gw of gateways) {
-    if (skipBaseUrls.has(gw.baseUrl)) continue;
-    const thinking = gw.id === 'llm7-glm';
+    if (signal?.aborted || skipBaseUrls.has(gw.baseUrl)) continue;
     const controller = new AbortController();
-    const timer = setTimeout(
-      () => controller.abort(),
-      thinking ? THINKING_GATEWAY_TIMEOUT_MS : GATEWAY_TIMEOUT_MS,
-    );
+    const onAbort = () => controller.abort();
+    signal?.addEventListener('abort', onAbort);
+    const timer = setTimeout(() => controller.abort(), GATEWAY_TIMEOUT_MS);
     try {
       const raw = await fetchOpenAiChat({
         baseUrl: gw.baseUrl,
         model: gw.model,
         messages,
-        maxTokens: thinking ? ASSISTANT_THINKING_MAX_TOKENS : undefined,
-        reasoningEffort: thinking ? 'low' : undefined,
+        apiKey: FREE_LLM_API_KEY,
+        maxTokens: ASSISTANT_THINKING_MAX_TOKENS,
+        reasoningEffort: 'low',
         signal: controller.signal,
       });
       sawHttp = true;
@@ -122,13 +141,19 @@ async function tryChain(
         break;
       }
     } catch (err) {
+      if (signal?.aborted) break;
       if (err instanceof OpenAiChatError && err.code === 'network') {
         skipBaseUrls.add(gw.baseUrl);
       } else if (err instanceof OpenAiChatError && err.status != null) {
         sawHttp = true;
+        const wait = err.retryAfter;
+        if (err.status === 429 && wait != null && wait <= RETRY_WAIT_CAP_S) {
+          await waitSeconds(wait, signal);
+        }
       }
     } finally {
       clearTimeout(timer);
+      signal?.removeEventListener('abort', onAbort);
     }
   }
 
@@ -148,15 +173,21 @@ function coachMessages(
   ];
 }
 
-async function runFreeCoach(
+/** Walk the free-model list. One device slot after a reply or any HTTP status. */
+export async function fetchFreeChain(
   lang: 'en' | 'ar',
   messages: readonly OpenAiChatMessage[],
+  signal?: AbortSignal,
 ): Promise<string | null> {
   const storage = typeof localStorage !== 'undefined' ? localStorage : null;
-  const chain = await tryChain(freeGatewaysFrom(readFreeLlmCursor(storage)), messages, lang);
+  const chain = await tryChain(
+    freeGatewaysFrom(readFreeLlmCursor(storage)),
+    messages,
+    lang,
+    signal,
+  );
   bumpFreeLlmCursor(storage);
 
-  // One slot for the whole chain, and only after a reply or an HTTP status.
   if (chain.reply || chain.sawHttp) {
     recordRemoteAssistantCall();
   }
@@ -169,7 +200,7 @@ async function tryRemoteChat(
   lang: 'en' | 'ar',
   history: readonly ChatMessage[],
 ): Promise<string | null> {
-  return runFreeCoach(lang, coachMessages(snapshot, question, lang, history));
+  return fetchFreeChain(lang, coachMessages(snapshot, question, lang, history));
 }
 
 /**
@@ -184,7 +215,7 @@ export async function fetchFreeCoachText(
   const text = user.trim();
   if (!system.trim() || !text) return null;
   if (!canRemoteAssistantCall() || !browserMayReachGateway()) return null;
-  return runFreeCoach(lang, [
+  return fetchFreeChain(lang, [
     { role: 'system', content: system },
     { role: 'user', content: text },
   ]);

@@ -1,11 +1,10 @@
 /**
- * Keyless OpenAI-compatible free gateways. No API key.
- * LLM7 allows browser CORS (`*`). Kilo may not. Chain falls through on
- * CORS / 429 / model unavailable — no Cloudflare Worker proxy.
+ * UnoRouter free chat models behind one app key. Each model allows about one
+ * request per minute, so a question walks the list from the saved cursor and
+ * stops at the first usable reply.
  *
- * ponytail: static list of models that answered with no Authorization on
- * 2026-10-10. One question starts at the next LLM7 model so a shared
- * per-model cap does not stall the coach. Kilo stays last as the other host.
+ * ponytail: static list picked 2026-10-12 from the free text catalog (success
+ * at least 85%, uptime at least 95%). Swap an id when a model leaves the catalog.
  */
 
 export type FreeLlmGateway = {
@@ -14,34 +13,19 @@ export type FreeLlmGateway = {
   readonly model: string;
 };
 
-const LLM7 = 'https://api.llm7.io/v1';
+const UNOROUTER = 'https://api.unorouter.com/v1';
+
+/** Shared app key. Shipped in the client; every install uses the same minute cap. */
+export const FREE_LLM_API_KEY =
+  'sk-r4RRw1RTFukrlPHKFieeVgMGbhDezTzMyXmYMqSt5MDbcS9E';
 
 export const FREE_LLM_GATEWAYS: readonly FreeLlmGateway[] = [
-  {
-    id: 'llm7-glm',
-    baseUrl: LLM7,
-    model: 'GLM-5.3-Flash',
-  },
-  {
-    id: 'llm7-mistral',
-    baseUrl: LLM7,
-    model: 'mistral-Nemo-Instruct-2407',
-  },
-  {
-    id: 'llm7-gpt-oss',
-    baseUrl: LLM7,
-    model: 'gpt-oss:20b',
-  },
-  {
-    id: 'llm7-nemotron',
-    baseUrl: LLM7,
-    model: 'nemotron-3-nano:30b',
-  },
-  {
-    id: 'kilo-auto',
-    baseUrl: 'https://api.kilo.ai/api/gateway',
-    model: 'kilo-auto/free',
-  },
+  { id: 'k2-horizon', baseUrl: UNOROUTER, model: 'k2-horizon:free' },
+  { id: 'typhoon', baseUrl: UNOROUTER, model: 'typhoon-v2.5-30b-a3b-instruct:free' },
+  { id: 'nemotron-super', baseUrl: UNOROUTER, model: 'nemotron-3-super-120b-a12b:free' },
+  { id: 'gpt-oss-20b', baseUrl: UNOROUTER, model: 'gpt-oss-20b:free' },
+  { id: 'nemotron-lightning', baseUrl: UNOROUTER, model: 'nemotron-3.5-lightning-30b-a3b:free' },
+  { id: 'apertus', baseUrl: UNOROUTER, model: 'apertus-v1.5-70b:free' },
 ] as const;
 
 const CURSOR_KEY = 'drivelog.free-llm.cursor';
@@ -61,17 +45,15 @@ export function bumpFreeLlmCursor(storage: Storage | null): void {
   }
 }
 
-/** Two LLM7 models from `start`, then Kilo. A dead host is skipped by the caller. */
+/** Every model, starting at `start` and wrapping. A dead host is skipped by the caller. */
 export function freeGatewaysFrom(start: number): readonly FreeLlmGateway[] {
-  const llm7 = FREE_LLM_GATEWAYS.filter((g) => g.baseUrl === LLM7);
-  const kilo = FREE_LLM_GATEWAYS.find((g) => g.id === 'kilo-auto');
-  const n = llm7.length;
+  const n = FREE_LLM_GATEWAYS.length;
+  if (n === 0) return [];
   const i = ((Math.floor(start) % n) + n) % n;
-  const picked = [llm7[i]!, llm7[(i + 1) % n]!];
-  return kilo ? [...picked, kilo] : picked;
+  return [...FREE_LLM_GATEWAYS.slice(i), ...FREE_LLM_GATEWAYS.slice(0, i)];
 }
 
 export const ASSISTANT_MAX_TOKENS = 220;
-/** GLM-5.3 thinks before answering; 220 tokens dies inside the thought. */
+/** These models think before answering; 220 tokens dies inside the thought. */
 export const ASSISTANT_THINKING_MAX_TOKENS = 640;
 export const ASSISTANT_HISTORY_LIMIT = 6;

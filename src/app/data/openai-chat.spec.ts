@@ -45,8 +45,8 @@ describe('assistant-rate-limit', () => {
   });
 
   it('enforces day cap', () => {
-    // Stay on the same UTC day: 5 hours × 8/hour = 40.
-    for (let h = 0; h < 5; h++) {
+    // Stay on the same UTC day: 4 hours × 30/hour = 120.
+    for (let h = 0; h < ASSISTANT_RATE_DAY / ASSISTANT_RATE_HOUR; h++) {
       const t = new Date(Date.UTC(2026, 8, 24, h, 0, 0));
       for (let i = 0; i < ASSISTANT_RATE_HOUR; i++) {
         expect(canRemoteAssistantCall(storage, t)).toBe(true);
@@ -160,5 +160,25 @@ describe('openai-chat', () => {
         messages: [{ role: 'user', content: 'hi' }],
       }),
     ).rejects.toMatchObject({ status: 429 });
+  });
+
+  it('keeps a short Retry-After on the error', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 429,
+        headers: { get: (name: string) => (name === 'Retry-After' ? '12' : null) },
+        json: async () => ({ error: { message: 'rate', code: 'rate' } }),
+      }),
+    );
+    await expect(
+      fetchOpenAiChat({
+        baseUrl: 'https://api.unorouter.com/v1',
+        model: 'k2-horizon:free',
+        apiKey: 'sk-test',
+        messages: [{ role: 'user', content: 'hi' }],
+      }),
+    ).rejects.toMatchObject({ status: 429, retryAfter: 12 });
   });
 });
