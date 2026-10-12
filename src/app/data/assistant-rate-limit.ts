@@ -1,7 +1,7 @@
-/** Device-side throttle for keyless remote LLM (protects shared free IP quotas). */
+/** Per-phone cap so one install cannot sit on the shared UnoRouter key. */
 
-export const ASSISTANT_RATE_HOUR = 8;
-export const ASSISTANT_RATE_DAY = 40;
+export const ASSISTANT_RATE_HOUR = 30;
+export const ASSISTANT_RATE_DAY = 120;
 
 const STORAGE_KEY = 'drivelog.assistant.rate.v1';
 

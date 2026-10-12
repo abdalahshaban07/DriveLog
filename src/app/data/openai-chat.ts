@@ -10,10 +10,20 @@ export class OpenAiChatError extends Error {
     message: string,
     readonly status?: number,
     readonly code?: string,
+    readonly retryAfter?: number,
   ) {
     super(message);
     this.name = 'OpenAiChatError';
   }
+}
+
+function retryAfterSeconds(header: string | null): number | undefined {
+  if (!header) return undefined;
+  const seconds = Number(header);
+  if (Number.isFinite(seconds) && seconds >= 0) return seconds;
+  const when = Date.parse(header);
+  if (Number.isNaN(when)) return undefined;
+  return Math.max(0, (when - Date.now()) / 1000);
 }
 
 type ChatCompletionsBody = {
@@ -21,13 +31,14 @@ type ChatCompletionsBody = {
   error?: { message?: string; code?: string };
 };
 
-/** POST {baseUrl}/chat/completions — no Authorization (keyless free gateways). */
+/** POST {baseUrl}/chat/completions. Sends Authorization when a key is set. */
 export async function fetchOpenAiChat(input: {
   baseUrl: string;
   model: string;
   messages: readonly OpenAiChatMessage[];
+  apiKey?: string;
   maxTokens?: number;
-  /** GLM-5.3 only. Thinking stays on; this keeps it short. */
+  /** Thinking stays on; this keeps it short. */
   reasoningEffort?: 'low' | 'high';
   signal?: AbortSignal;
 }): Promise<string> {
@@ -37,7 +48,10 @@ export async function fetchOpenAiChat(input: {
   try {
     res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(input.apiKey ? { Authorization: `Bearer ${input.apiKey}` } : {}),
+      },
       body: JSON.stringify({
         model: input.model,
         messages: input.messages,
@@ -66,10 +80,13 @@ export async function fetchOpenAiChat(input: {
   }
 
   if (!res.ok) {
+    const retryHeader =
+      typeof res.headers?.get === 'function' ? res.headers.get('Retry-After') : null;
     throw new OpenAiChatError(
       body.error?.message ?? `HTTP ${res.status}`,
       res.status,
       body.error?.code ?? 'http_error',
+      retryAfterSeconds(retryHeader),
     );
   }
 

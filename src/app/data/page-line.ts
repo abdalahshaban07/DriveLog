@@ -1,11 +1,7 @@
 import { buildDueItems, todayDateOnly } from '../domain/dues';
 import { buildUpcoming, type UpcomingItem } from '../domain/upcoming';
-import {
-  bumpFreeLlmCursor,
-  freeGatewaysFrom,
-  readFreeLlmCursor,
-  ASSISTANT_THINKING_MAX_TOKENS,
-} from '../domain/free-llm-gateways';
+import { canRemoteAssistantCall } from './assistant-rate-limit';
+import { fetchFreeChain, isAssistantOnline, usableCoachText } from './assistant';
 import { dueItemLabel, partDefinitionLabel } from '../domain/part-name';
 import { buildHealthItems } from '../domain/vehicle-health';
 import {
@@ -26,14 +22,9 @@ import type {
   PreTripCheck,
   VehicleDocument,
 } from '../domain/models';
-import { canRemoteAssistantCall, recordRemoteAssistantCall } from './assistant-rate-limit';
-import { isAssistantOnline, usableCoachText } from './assistant';
 import type { Db } from './db';
-import { fetchOpenAiChat, OpenAiChatError } from './openai-chat';
 
 const CACHE_KEY = 'drivelog.page-line.v2';
-const TIMEOUT_MS = 8_000;
-const THINKING_TIMEOUT_MS = 15_000;
 
 type CacheEntry = { day: string; text: string };
 
@@ -131,8 +122,8 @@ export function localPageLine(
 }
 
 /**
- * One free model, once per page per day. The local sentence stays when the
- * model is off, offline, capped, or unusable.
+ * Free-model chain, once per page per day. The local sentence stays when the
+ * coach is off, offline, capped, or unusable.
  * ponytail: unit tests set VITEST, so they never call the gateway.
  */
 export async function polishPageLine(input: {
@@ -160,45 +151,20 @@ export async function polishPageLine(input: {
     return input.source;
   }
 
-  const gw = freeGatewaysFrom(readFreeLlmCursor(storage))[0];
-  bumpFreeLlmCursor(storage);
-  if (!gw) return input.source;
-
-  const thinking = gw.id === 'llm7-glm';
-  const controller = new AbortController();
-  const onAbort = () => controller.abort();
-  input.signal?.addEventListener('abort', onAbort);
-  const timer = setTimeout(
-    () => controller.abort(),
-    thinking ? THINKING_TIMEOUT_MS : TIMEOUT_MS,
+  const raw = await fetchFreeChain(
+    input.lang,
+    [
+      { role: 'system', content: systemPrompt(input.lang) },
+      { role: 'user', content: input.source },
+    ],
+    input.signal,
   );
-  try {
-    const raw = await fetchOpenAiChat({
-      baseUrl: gw.baseUrl,
-      model: gw.model,
-      messages: [
-        { role: 'system', content: systemPrompt(input.lang) },
-        { role: 'user', content: input.source },
-      ],
-      maxTokens: thinking ? ASSISTANT_THINKING_MAX_TOKENS : 80,
-      reasoningEffort: thinking ? 'low' : undefined,
-      signal: controller.signal,
-    });
-    recordRemoteAssistantCall(storage);
-    const text = usableCoachText(raw, input.lang);
-    const line = text ? firstSentence(text) : '';
-    const next = line && rewriteKeepsFacts(input.source, line) ? line : input.source;
-    writeCached(storage, input.page, input.lang, input.day, input.source, next);
-    return next;
-  } catch (err) {
-    if (input.signal?.aborted) return input.source;
-    if (err instanceof OpenAiChatError && err.status != null) recordRemoteAssistantCall(storage);
-    writeCached(storage, input.page, input.lang, input.day, input.source, input.source);
-    return input.source;
-  } finally {
-    clearTimeout(timer);
-    input.signal?.removeEventListener('abort', onAbort);
-  }
+  if (input.signal?.aborted) return input.source;
+  const text = raw ? usableCoachText(raw, input.lang) : null;
+  const line = text ? firstSentence(text) : '';
+  const next = line && rewriteKeepsFacts(input.source, line) ? line : input.source;
+  writeCached(storage, input.page, input.lang, input.day, input.source, next);
+  return next;
 }
 
 function systemPrompt(lang: 'en' | 'ar'): string {

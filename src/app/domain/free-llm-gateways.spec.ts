@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ASSISTANT_MAX_TOKENS,
   ASSISTANT_THINKING_MAX_TOKENS,
+  FREE_LLM_API_KEY,
   FREE_LLM_GATEWAYS,
   bumpFreeLlmCursor,
   freeGatewaysFrom,
@@ -9,33 +10,41 @@ import {
 } from './free-llm-gateways';
 
 describe('free-llm-gateways', () => {
-  it('rotates keyless LLM7 models and keeps Kilo last', () => {
+  it('rotates every UnoRouter model from the cursor', () => {
     expect(FREE_LLM_GATEWAYS.map((g) => g.id)).toEqual([
-      'llm7-glm',
-      'llm7-mistral',
-      'llm7-gpt-oss',
-      'llm7-nemotron',
-      'kilo-auto',
+      'k2-horizon',
+      'typhoon',
+      'nemotron-super',
+      'gpt-oss-20b',
+      'nemotron-lightning',
+      'apertus',
     ]);
     expect(FREE_LLM_GATEWAYS.map((g) => g.model)).toEqual([
-      'GLM-5.3-Flash',
-      'mistral-Nemo-Instruct-2407',
-      'gpt-oss:20b',
-      'nemotron-3-nano:30b',
-      'kilo-auto/free',
+      'k2-horizon:free',
+      'typhoon-v2.5-30b-a3b-instruct:free',
+      'nemotron-3-super-120b-a12b:free',
+      'gpt-oss-20b:free',
+      'nemotron-3.5-lightning-30b-a3b:free',
+      'apertus-v1.5-70b:free',
     ]);
     expect(freeGatewaysFrom(0).map((g) => g.id)).toEqual([
-      'llm7-glm',
-      'llm7-mistral',
-      'kilo-auto',
+      'k2-horizon',
+      'typhoon',
+      'nemotron-super',
+      'gpt-oss-20b',
+      'nemotron-lightning',
+      'apertus',
     ]);
-    expect(freeGatewaysFrom(3).map((g) => g.id)).toEqual([
-      'llm7-nemotron',
-      'llm7-glm',
-      'kilo-auto',
+    expect(freeGatewaysFrom(4).map((g) => g.id)).toEqual([
+      'nemotron-lightning',
+      'apertus',
+      'k2-horizon',
+      'typhoon',
+      'nemotron-super',
+      'gpt-oss-20b',
     ]);
-    expect(FREE_LLM_GATEWAYS[0]!.baseUrl).toContain('llm7.io');
-    expect(FREE_LLM_GATEWAYS.at(-1)!.baseUrl).toContain('kilo.ai');
+    expect(FREE_LLM_GATEWAYS.every((g) => g.baseUrl.includes('unorouter.com'))).toBe(true);
+    expect(FREE_LLM_API_KEY.startsWith('sk-')).toBe(true);
     expect(ASSISTANT_MAX_TOKENS).toBe(220);
     expect(ASSISTANT_THINKING_MAX_TOKENS).toBeGreaterThan(ASSISTANT_MAX_TOKENS);
 
@@ -53,6 +62,6 @@ describe('free-llm-gateways', () => {
     expect(readFreeLlmCursor(storage)).toBe(0);
     bumpFreeLlmCursor(storage);
     expect(readFreeLlmCursor(storage)).toBe(1);
-    expect(freeGatewaysFrom(readFreeLlmCursor(storage))[0]!.id).toBe('llm7-mistral');
+    expect(freeGatewaysFrom(readFreeLlmCursor(storage))[0]!.id).toBe('typhoon');
   });
 });

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ASSISTANT_THINKING_MAX_TOKENS,
+  FREE_LLM_API_KEY,
   FREE_LLM_GATEWAYS,
   freeGatewaysFrom,
   readFreeLlmCursor,
@@ -50,10 +51,11 @@ function okChat(content: string) {
   };
 }
 
-function httpStatus(status: number) {
+function httpStatus(status: number, retryAfter?: string) {
   return {
     ok: false,
     status,
+    headers: { get: (name: string) => (name === 'Retry-After' ? (retryAfter ?? null) : null) },
     json: async () => ({ error: { message: `HTTP ${status}` } }),
   };
 }
@@ -146,10 +148,7 @@ describe('fetchChatReply', () => {
 
     expect(reply.source).toBe('local');
     const urls = fetchMock.mock.calls.map((call) => String(call[0]));
-    expect(urls).toEqual([
-      'https://api.llm7.io/v1/chat/completions',
-      'https://api.kilo.ai/api/gateway/chat/completions',
-    ]);
+    expect(urls).toEqual(['https://api.unorouter.com/v1/chat/completions']);
     expect(reply.text.startsWith('L:')).toBe(true);
     expect(hourCount()).toBe(0);
   });
@@ -157,7 +156,7 @@ describe('fetchChatReply', () => {
   it('records one rate hit when HTTP 429 is followed by a reply', async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(httpStatus(429))
+      .mockResolvedValueOnce(httpStatus(429, '0'))
       .mockResolvedValueOnce(okChat('remote-ok'));
     vi.stubGlobal('fetch', fetchMock);
 
@@ -271,9 +270,9 @@ describe('fetchChatReply', () => {
       max_tokens: number;
       reasoning_effort?: string;
     };
-    expect(second.model).toBe('mistral-Nemo-Instruct-2407');
-    expect(second.max_tokens).toBe(220);
-    expect(second.reasoning_effort).toBeUndefined();
+    expect(second.model).toBe(freeGatewaysFrom(0)[1]!.model);
+    expect(second.max_tokens).toBe(ASSISTANT_THINKING_MAX_TOKENS);
+    expect(second.reasoning_effort).toBe('low');
   });
 
   it('strips a leaked thought and still accepts the Arabic answer', async () => {
@@ -304,7 +303,7 @@ describe('fetchChatReply', () => {
     expect(modelAt(1)).toBe(freeGatewaysFrom(1)[0]!.model);
     expect(readFreeLlmCursor(localStorage)).toBe(2);
     const headers = (fetchMock.mock.calls[0]![1] as RequestInit).headers as Record<string, string>;
-    expect(headers['Authorization']).toBeUndefined();
+    expect(headers['Authorization']).toBe(`Bearer ${FREE_LLM_API_KEY}`);
   });
 
   it('tries the next model on the same host after a timeout', async () => {
@@ -318,8 +317,8 @@ describe('fetchChatReply', () => {
 
     expect(reply).toEqual({ text: 'remote-ok', source: 'remote' });
     expect(fetchMock.mock.calls.map((call) => String(call[0]))).toEqual([
-      'https://api.llm7.io/v1/chat/completions',
-      'https://api.llm7.io/v1/chat/completions',
+      'https://api.unorouter.com/v1/chat/completions',
+      'https://api.unorouter.com/v1/chat/completions',
     ]);
   });
 });
@@ -371,6 +370,7 @@ describe('usableCoachText', () => {
     expect(usableCoachText('خلي التنك مليان لما تعبّي عشان الحساب يطلع مظبوط.', 'ar')).toContain(
       'التنك',
     );
+    expect(usableCoachText('ما هذه शहर سنة؟', 'ar')).toBeNull();
     expect(usableCoachText('Check tire pressure.', 'en')).toBe('Check tire pressure.');
   });
 });
