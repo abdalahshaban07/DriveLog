@@ -132,19 +132,10 @@ export class HealthPage {
     const g = this.grouped();
     this.i18n.language();
     const attention = [...g.attention].sort((a, b) => severity(a.status) - severity(b.status));
-    const soon = g.upcoming.slice(0, 3);
-    const later = rankedParts(
-      [...g.healthy, ...g.tracking].filter(
-        (item) => item.remainingKm != null || item.remainingMonths != null,
-      ),
-    ).slice(0, 2);
-    const watch = soon.length ? null : (later[0] ?? null);
-    const also = soon.length ? later.slice(0, 2) : later.slice(1);
     return packHealthInsight({
       attention: attention.slice(0, 4).map((item) => this.factInput(item)),
-      upcoming: soon.map((item) => this.factInput(item)),
-      watch: watch ? this.factInput(watch) : null,
-      also: also.map((item) => this.factInput(item)),
+      upcoming: g.upcoming.slice(0, 3).map((item) => this.factInput(item)),
+      watch: null,
       total: g.attention.length + g.upcoming.length + g.healthy.length + g.tracking.length,
       urgentLabel: this.i18n.t('health.insight.factsUrgent'),
       nextLabel: this.i18n.t('health.insight.factsNext'),
@@ -173,7 +164,9 @@ export class HealthPage {
           )
           .join('\n');
       case 'quiet':
-        return this.i18n.t('health.insight.quiet');
+        return this.grouped().healthy.length
+          ? this.i18n.t('health.summary.ok')
+          : this.i18n.t('health.insight.quiet');
       case 'empty':
         return this.i18n.t('health.insight.empty');
       default: {
@@ -223,10 +216,11 @@ export class HealthPage {
     }
 
     const today = todayDateOnly();
+    const cacheDay = `${today}:v2`;
     const settings = this.db.settings();
     const lang = this.i18n.language();
     const cached =
-      !force && settings.healthInsightDay === today
+      !force && settings.healthInsightDay === cacheDay
         ? usableCoachText(settings.healthInsightText ?? '', lang)
         : null;
     if (cached) {
@@ -252,7 +246,7 @@ export class HealthPage {
       this.insightSource.set('ai');
       await this.db.updateSettings({
         healthInsightText: remote,
-        healthInsightDay: today,
+        healthInsightDay: cacheDay,
       });
     } catch {
       // The local summary is already on screen. A miss is not stored.
@@ -283,18 +277,6 @@ function healthStatusKey(status: HealthItem['status']): MsgKey {
       return _never;
     }
   }
-}
-
-/** Nearest remaining distance first. Parts with no figure stay last and are not given one. */
-function rankedParts(items: readonly HealthItem[]): HealthItem[] {
-  const byKm = items
-    .filter((item) => item.remainingKm != null)
-    .sort((a, b) => a.remainingKm! - b.remainingKm!);
-  const byMonths = items
-    .filter((item) => item.remainingKm == null && item.remainingMonths != null)
-    .sort((a, b) => a.remainingMonths! - b.remainingMonths!);
-  const rest = items.filter((item) => item.remainingKm == null && item.remainingMonths == null);
-  return [...byKm, ...byMonths, ...rest];
 }
 
 function severity(status: HealthItem['status']): number {
