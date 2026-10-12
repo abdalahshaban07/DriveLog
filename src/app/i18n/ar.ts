@@ -813,6 +813,7 @@ export const ar: Record<MsgKey, string> = {
   'assistant.card.noneSoon': 'مفيش حاجة مستحقة قريب.',
   'assistant.card.reserveBasis': 'مبني على التكاليف الجاية.',
   'assistant.card.logHint': 'سجّل آخر خدمة عشان الحالة تبان.',
+  'assistant.card.notRecorded': 'مش متسجل',
   'assistant.card.liter': 'لتر',
   'assistant.chat': 'محادثة',
   'assistant.input': 'رسالتك',

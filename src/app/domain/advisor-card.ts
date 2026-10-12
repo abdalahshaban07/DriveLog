@@ -11,6 +11,7 @@ import {
   SYSTEM_BRAKE_DISCS_ID,
   SYSTEM_BRAKE_PADS_ID,
   SYSTEM_ENGINE_OIL_ID,
+  SYSTEM_PART_CATALOG,
   SYSTEM_TIRES_ID,
 } from './part-catalog';
 import {
@@ -217,6 +218,100 @@ export function buildAnswerCard(
       return _e;
     }
   }
+}
+
+const NAMED_PART_INTENTS = new Set<AdvisorRead['intent']>([
+  'MAINTENANCE_PRIORITY',
+  'PART_STATUS',
+  'PART_HISTORY',
+  'UNSUPPORTED',
+]);
+
+/** Spoken forms that are not inside the catalog label. */
+const SPOKEN_PART: { id: string; re: RegExp }[] = [
+  { id: 'sys-spark-plugs', re: /بوجي|بواجي|spark/ },
+];
+
+const CLASSIC_PART_IDS = new Set<string>([
+  SYSTEM_ENGINE_OIL_ID,
+  SYSTEM_TIRES_ID,
+  SYSTEM_BRAKE_PADS_ID,
+  SYSTEM_BRAKE_DISCS_ID,
+]);
+
+/**
+ * A catalog part named in the question, other than oil, tires, and brakes.
+ * History-only parts answer from the log. No row means not recorded.
+ */
+export function namedPartCard(
+  question: string,
+  read: AdvisorRead,
+  facts: AdvisorFacts,
+  logs: CoachLogs,
+  t: Translate,
+  format: CardFormat = PLAIN,
+): AnswerCard | null {
+  if (!NAMED_PART_INTENTS.has(read.intent)) return null;
+  const part = matchNamedPart(question, facts.healthItems, t);
+  if (!part) return null;
+  const item = facts.healthItems.find((row) => row.partDefinitionId === part.id);
+  const name = catalogLabel(part, t);
+  const hit = logs.services?.find((row) => row.partDefinitionId === part.id);
+  const date = hit?.date ?? item?.lastServiceDate;
+  const odo = hit?.odometer ?? item?.lastServiceOdo;
+  if (item && item.status !== 'unknown') {
+    return {
+      kicker: name,
+      figure: t(statusKey(item.status)),
+      lines: partLines(item, hit, t, format),
+    };
+  }
+  if (date && odo != null) {
+    return {
+      kicker: name,
+      figure: format.date(date),
+      lines: [
+        {
+          label: t('assistant.card.lastChange'),
+          value: `${format.date(date)} · ${km(t, format, odo)}`,
+        },
+      ],
+      note: t('health.reason.trackingOnly'),
+    };
+  }
+  return { kicker: name, figure: t('assistant.card.notRecorded'), lines: [] };
+}
+
+type NamedPart = { id: string; labelKey?: string; name?: string };
+
+function catalogLabel(part: NamedPart, t: Translate): string {
+  const name = part.name?.trim();
+  if (name) return name;
+  if (part.labelKey) return t(part.labelKey as MsgKey);
+  return part.id;
+}
+
+function matchNamedPart(
+  question: string,
+  items: readonly HealthItem[],
+  t: Translate,
+): NamedPart | undefined {
+  const text = normalizeAdvisorText(question);
+  const byId = new Map<string, NamedPart>();
+  for (const part of SYSTEM_PART_CATALOG) byId.set(part.id, part);
+  for (const item of items) byId.set(item.partDefinitionId, item.part);
+  let best: { part: NamedPart; score: number } | undefined;
+  for (const part of byId.values()) {
+    if (CLASSIC_PART_IDS.has(part.id)) continue;
+    const label = normalizeAdvisorText(catalogLabel(part, t));
+    const bare = label.replace(/^ال/, '');
+    const needle = bare.length >= 3 ? bare : label;
+    if (needle.length < 3 || !text.includes(needle)) continue;
+    if (!best || needle.length > best.score) best = { part, score: needle.length };
+  }
+  if (best) return best.part;
+  const spoken = SPOKEN_PART.find((rule) => rule.re.test(text));
+  return spoken ? byId.get(spoken.id) : undefined;
 }
 
 function money(logs: CoachLogs, format: CardFormat, value: number): string {

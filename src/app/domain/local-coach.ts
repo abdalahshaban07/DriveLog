@@ -7,7 +7,13 @@ import {
   type AdvisorPart,
   type AdvisorRead,
 } from './advisor-intent';
-import { buildAnswerCard, cardText, type AnswerCard, type CardFormat } from './advisor-card';
+import {
+  buildAnswerCard,
+  cardText,
+  namedPartCard,
+  type AnswerCard,
+  type CardFormat,
+} from './advisor-card';
 import { currencyWord } from './currencies';
 import { computeEconomySegments, computePerFillSegments, fuelUseCompare } from './economy';
 import type { PeriodTotals } from './expense-period';
@@ -162,6 +168,7 @@ export function buildCoachLogs(
     name: (record.otherLabel ?? '').trim(),
     date: record.date,
     odometer: record.odometer,
+    partDefinitionId: record.partDefinitionId,
   }));
   const lastBreak = newest(breakdowns)[0];
   const spends: CoachSpendHit[] = [
@@ -568,7 +575,9 @@ export function localCoachAnswer(
   format?: CardFormat,
 ): CoachReply {
   const read = asRead(question, intentHint);
-  const card = buildAnswerCard(read, facts, logs, t, format);
+  const card =
+    namedPartCard(question, read, facts, logs, t, format) ??
+    buildAnswerCard(read, facts, logs, t, format);
   if (card) return { text: cardText(card), source: 'local', card };
   const answer = askLocal(question, facts, logs, t, read);
   const text = `${t(answer.titleKey)} ${t(answer.bodyKey, answer.params)}`.trim();

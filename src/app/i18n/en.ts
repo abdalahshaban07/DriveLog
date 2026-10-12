@@ -825,6 +825,7 @@ export const en = {
   'assistant.card.noneSoon': 'Nothing is due soon.',
   'assistant.card.reserveBasis': 'Based on upcoming costs.',
   'assistant.card.logHint': 'Log the last service to show a status.',
+  'assistant.card.notRecorded': 'Not recorded',
   'assistant.card.liter': 'L',
   'assistant.chat': 'Chat',
   'assistant.input': 'Your message',
