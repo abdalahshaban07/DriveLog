@@ -7,11 +7,14 @@ import {
   faqQueryMatch,
   faqSuggests,
   markFaqQuery,
+  namedPartCard,
 } from './advisor-card';
+import { localCoachAnswer } from './local-coach';
 import { SYSTEM_ENGINE_OIL_ID } from './part-catalog';
 import type { PartDefinition } from './models';
 import type { AdvisorFacts, CoachLogs } from './smart-advisor';
 import type { HealthItem } from './vehicle-health';
+import { ar } from '../i18n/ar';
 import type { MsgKey } from '../i18n/en';
 
 const t = (key: MsgKey, params?: Record<string, string | number>) =>
@@ -221,5 +224,150 @@ describe('faq search', () => {
       t,
     );
     expect(card).toBeNull();
+  });
+});
+
+const arT = (key: MsgKey, params?: Record<string, string | number>) =>
+  params ? `${ar[key]} ${Object.values(params).join(' ')}` : ar[key];
+
+function plugs(over: Partial<HealthItem> = {}): HealthItem {
+  const part: PartDefinition = {
+    id: 'sys-spark-plugs',
+    labelKey: 'parts.sparkPlugs',
+    category: 'ENGINE',
+    source: 'system',
+    trackingMode: 'history',
+    active: true,
+    createdAt: '2026-01-01',
+    updatedAt: '2026-01-01',
+  };
+  return {
+    partDefinitionId: 'sys-spark-plugs',
+    part,
+    status: 'unknown',
+    reasons: ['health.reason.trackingOnly'],
+    confidence: 'low',
+    primarySource: 'UNKNOWN',
+    sources: [],
+    ...over,
+  };
+}
+
+describe('namedPartCard', () => {
+  it('answers spark plugs from the log, including the spoken plural', () => {
+    const card = namedPartCard(
+      'أمتي اغير البوجيهات',
+      { intent: 'MAINTENANCE_PRIORITY', window: 'period' },
+      facts({ healthItems: [plugs()] }),
+      logs({
+        services: [
+          {
+            kind: 'other',
+            name: '',
+            date: '2026-07-29',
+            odometer: 32000,
+            partDefinitionId: 'sys-spark-plugs',
+          },
+        ],
+      }),
+      arT,
+    );
+    expect(card).toMatchObject({
+      kicker: 'البواجي',
+      figure: '2026-07-29',
+      note: 'متابعة بس - مفيش فترة محددة',
+    });
+    expect(card?.lines[0]?.value).toContain('32000');
+    expect(cardText(card!)).not.toContain('مش متسجل');
+  });
+
+  it('says not recorded when that part has no log row', () => {
+    const card = namedPartCard(
+      'أمتي اغير البواجي',
+      { intent: 'MAINTENANCE_PRIORITY', window: 'period' },
+      facts(),
+      logs(),
+      arT,
+    );
+    expect(card).toMatchObject({ kicker: 'البواجي', figure: 'مش متسجل', lines: [] });
+  });
+
+  it('shows status and remaining distance when the part has a schedule', () => {
+    const scheduled = plugs({
+      partDefinitionId: 'sys-timing-belt',
+      status: 'soon',
+      remainingKm: 4000,
+      lastServiceDate: '2026-01-02',
+      lastServiceOdo: 10000,
+      part: {
+        ...plugs().part,
+        id: 'sys-timing-belt',
+        labelKey: 'parts.timingBelt',
+        trackingMode: 'interval',
+        userIntervalKm: 60000,
+      },
+    });
+    const card = namedPartCard(
+      'امتي اغير سير التوقيت',
+      { intent: 'PART_STATUS', window: 'period' },
+      facts({ healthItems: [scheduled] }),
+      logs(),
+      arT,
+    );
+    expect(card?.kicker).toBe('سير التوقيت');
+    expect(card?.figure).toBe('قريب');
+    expect(card?.lines.map((line) => line.label)).toEqual(['الباقي', 'آخر تغيير', 'المعاد']);
+    expect(card?.note).toBeUndefined();
+  });
+
+  it('picks the longer catalog name over a shorter one', () => {
+    const card = namedPartCard(
+      'امتي اغير سير التوقيت',
+      { intent: 'MAINTENANCE_PRIORITY', window: 'period' },
+      facts(),
+      logs(),
+      arT,
+    );
+    expect(card?.kicker).toBe('سير التوقيت');
+    expect(card?.figure).toBe('مش متسجل');
+  });
+
+  it('keeps oil on its own card and still names the oil filter', () => {
+    const oilReply = localCoachAnswer('أمتي اغير الزيت', facts({ healthItems: [oil()] }), logs(), arT);
+    expect(oilReply.card?.kicker).toBe('زيت المحرك');
+    expect(oilReply.card?.figure).toBe(ar['health.status.soon']);
+
+    const filterReply = localCoachAnswer(
+      'أمتي اغير فلتر الزيت',
+      facts({ healthItems: [oil(), plugs()] }),
+      logs({
+        services: [
+          {
+            kind: 'other',
+            name: '',
+            date: '2026-05-09',
+            odometer: 28000,
+            partDefinitionId: 'sys-oil-filter',
+          },
+        ],
+      }),
+      arT,
+    );
+    expect(filterReply.card?.kicker).toBe('فلتر الزيت');
+    expect(filterReply.card?.figure).toBe('2026-05-09');
+  });
+
+  it('leaves advice and spending questions off the part card', () => {
+    const read = { intent: 'COACH_ADVICE' as const, window: 'period' as const };
+    expect(
+      namedPartCard('ازاي اغير البوجيهات', read, facts({ healthItems: [plugs()] }), logs(), arT),
+    ).toBeNull();
+    const spend = localCoachAnswer(
+      'صرفت كام',
+      facts({ healthItems: [plugs()] }),
+      logs({ periodTotal: 100, spendFuel: 100, spendMaintenance: 0, spendBreakdown: 0, spendOther: 0 }),
+      arT,
+    );
+    expect(spend.card?.kicker).not.toBe('البواجي');
   });
 });

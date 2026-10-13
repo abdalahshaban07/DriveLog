@@ -40,6 +40,7 @@ export type CoachServiceHit = {
   name: string;
   date: string;
   odometer: number;
+  partDefinitionId?: string;
 };
 
 export type CoachSpendHit = {

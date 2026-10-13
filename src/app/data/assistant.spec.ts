@@ -70,6 +70,35 @@ describe('fetchChatReply', () => {
     localStorage.clear();
   });
 
+  it('answers a logged catalog part locally and does not call the model', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okChat('مش متسجل'));
+    vi.stubGlobal('fetch', fetchMock);
+    const db = mockDb(true);
+    Object.assign(db, {
+      maintenance: () => [
+        {
+          id: 'm1',
+          carId: 'c1',
+          type: 'other',
+          partDefinitionId: 'sys-spark-plugs',
+          recordType: 'service',
+          odometer: 32000,
+          date: '2026-07-29',
+          cost: 1750,
+          createdAt: '2026-07-29T00:00:00.000Z',
+        },
+      ],
+    });
+
+    const reply = await fetchChatReply(db, 'أمتي اغير البوجيهات', 'ar', (k) => k);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(reply.source).toBe('local');
+    expect(reply.card?.figure).toBe('2026-07-29');
+    expect(reply.card?.lines[0]?.value).toContain('32000');
+    expect(reply.text).not.toContain('مش متسجل');
+  });
+
   it('answers الصرف from the local month card and does not call the model', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
