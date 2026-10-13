@@ -1,77 +1,154 @@
-.around-place {
+.around-place,
+.around-approx {
   margin: 0;
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+.around-approx {
+  padding: var(--space-2) var(--space-3);
+  border-inline-start: 2px solid var(--fuel);
+  border-radius: calc(var(--radius) - 6px);
+  background: var(--fill-well);
+  font-size: 0.85rem;
 }
 
 .around-radar {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
-  padding: var(--space-5);
+  padding: var(--space-5) var(--space-4);
 }
 
-.around-radar__scope {
-  display: block;
+/* Map ---------------------------------------------------------------- */
+
+.around-map {
+  position: relative;
   width: min(100%, 22rem);
   margin-inline: auto;
   aspect-ratio: 1;
-  border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--cta) 8%, var(--well)) 0%, var(--well) 70%);
+}
+
+.around-map__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
   overflow: visible;
 }
 
-.around-radar__ring,
-.around-radar__axis {
+.around-map__rim,
+.around-map__ring {
   fill: none;
   stroke: var(--hairline);
-  stroke-width: 0.4;
+  stroke-width: 0.35;
 }
 
-.around-radar__ring:last-of-type {
-  stroke: color-mix(in srgb, var(--cta) 35%, var(--hairline));
+.around-map__rim {
+  fill: color-mix(in srgb, var(--cta) 5%, var(--well));
+  stroke: color-mix(in srgb, var(--muted) 30%, transparent);
 }
 
-.around-radar__scale,
-.around-radar__north {
-  fill: var(--muted);
-  font-size: 3.2px;
-  font-weight: 600;
+.around-map__ring {
+  stroke-dasharray: 0.8 1.6;
 }
 
-.around-radar__route {
+.around-map__casing,
+.around-map__road,
+.around-map__flow {
   fill: none;
+  stroke-linecap: round;
+}
+
+.around-map__casing {
+  stroke: color-mix(in srgb, var(--cta) 35%, var(--bg));
+  stroke-width: 4.2;
+}
+
+.around-map__road {
+  stroke: var(--cta);
+  stroke-width: 2.4;
+  filter: drop-shadow(0 0 1.6px color-mix(in srgb, var(--cta) 70%, transparent));
+}
+
+.around-map__flow {
+  stroke: color-mix(in srgb, var(--cta) 40%, var(--paper));
+  stroke-width: 0.7;
+  stroke-dasharray: 1.6 2.4;
+}
+
+.around-map__pin {
+  fill: color-mix(in srgb, var(--muted) 70%, var(--well));
+}
+
+.around-map__pin-hole {
+  fill: var(--well);
+}
+
+.around-map__pin--on {
+  fill: var(--fuel);
+  filter: drop-shadow(0 0 1.4px var(--fuel));
+}
+
+.around-map__you {
+  fill: var(--text);
   stroke: var(--cta);
   stroke-width: 0.9;
-  stroke-linecap: round;
-  stroke-dasharray: 2 1.6;
 }
 
-.around-radar__dot {
-  fill: color-mix(in srgb, var(--fuel) 55%, var(--muted));
+.around-map__label,
+.around-map__chip,
+.around-map__you-label {
+  position: absolute;
+  white-space: nowrap;
+  pointer-events: none;
+  font-size: 0.7rem;
+  line-height: 1.2;
 }
 
-.around-radar__dot--on {
-  fill: var(--fuel);
-  stroke: var(--surface);
-  stroke-width: 0.8;
+.around-map__label {
+  max-width: 12ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transform: translate(-50%, 0.2rem);
+  color: var(--muted);
 }
 
-.around-radar__you {
-  fill: var(--text);
-  stroke: var(--surface);
-  stroke-width: 0.8;
+.around-map__label--on {
+  color: var(--fuel);
+  font-weight: 700;
 }
 
-.around-radar__note,
-.around-source {
+.around-map__chip {
+  transform: translate(-50%, -50%);
+  padding: 0.2rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--cta) 55%, transparent);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  box-shadow: var(--shadow-soft);
+}
+
+.around-map__you-label {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, 0.85rem);
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* States ------------------------------------------------------------- */
+
+.around-note,
+.around-updated {
   margin: 0;
   color: var(--muted);
   font-size: 0.85rem;
   text-align: center;
 }
 
-.around-source {
+.around-updated {
   font-size: 0.75rem;
 }
 
@@ -79,89 +156,140 @@
   height: 4.5rem;
 }
 
-.around-pick {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--space-3);
-  align-items: center;
-  padding: var(--space-3) var(--space-4);
-  border-radius: calc(var(--radius) - 4px);
-  background: var(--fill-well);
-}
-
-.around-pick__text {
-  min-width: 0;
-}
-
-.around-pick__name,
-.around-pick__meta {
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
-.around-pick__name {
-  font-weight: 700;
-}
-
-.around-pick__meta {
-  color: var(--muted);
-  font-size: 0.85rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.around-pick__go {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--tap);
-  padding-inline: var(--space-4);
-  border-radius: var(--radius);
-  background: var(--cta-surface, var(--fuel));
-  color: var(--cta-text);
-  font-weight: 700;
-  text-decoration: none;
-}
+/* Station cards ------------------------------------------------------ */
 
 .around-list {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.around-list__row {
-  display: flex;
+.around-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
+  min-width: 0;
+  border: 1px solid var(--hairline);
+  border-radius: calc(var(--radius) - 2px);
+  background: var(--fill-well);
+}
+
+.around-card--on {
+  border-color: var(--fuel);
+  box-shadow: 0 0 0 1px var(--fuel), 0 0 14px -4px var(--glow, transparent);
+}
+
+.around-card__pick {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: var(--space-3);
-  width: 100%;
+  align-items: center;
   min-width: 0;
   min-height: var(--tap);
-  padding-inline: var(--space-2);
+  padding-block: var(--space-3);
+  padding-inline: var(--space-3) var(--space-2);
   border: 0;
-  border-block-end: 1px solid var(--hairline);
+  border-radius: inherit;
   background: transparent;
   color: var(--text);
   font: inherit;
   text-align: start;
 }
 
-.around-list__row--on {
-  color: var(--fuel);
-  font-weight: 700;
+.around-card__icon {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--muted) 14%, transparent);
+  color: var(--muted);
 }
 
-.around-list__name {
+.around-card--on .around-card__icon {
+  background: color-mix(in srgb, var(--fuel) 18%, transparent);
+  color: var(--fuel);
+}
+
+.around-card__icon svg,
+.around-card__go svg,
+.around-card__check svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.around-card__text {
+  display: grid;
   min-width: 0;
+}
+
+.around-card__name,
+.around-card__meta {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-align: start;
 }
 
-.around-list__km {
-  flex-shrink: 0;
+.around-card__name {
+  font-weight: 700;
+}
+
+.around-card__meta {
   color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.around-card__km {
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 14%, transparent);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.around-card--on .around-card__km {
+  background: color-mix(in srgb, var(--fuel) 18%, transparent);
+  color: var(--fuel);
+}
+
+.around-card__go {
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  color: var(--fuel);
+}
+
+.around-card__check {
+  position: absolute;
+  inset-block-start: -0.45rem;
+  inset-inline-end: -0.45rem;
+  display: grid;
+  place-items: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 50%;
+  background: var(--cta-surface, var(--fuel));
+  color: var(--cta-text);
+}
+
+.around-card__check svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  stroke-width: 2.6;
 }
 
 .around-more,
@@ -179,9 +307,12 @@
 .around-google {
   display: inline-flex;
   align-items: center;
+  font-size: 0.85rem;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+/* Finder ------------------------------------------------------------- */
 
 .around-finder {
   display: grid;
@@ -273,19 +404,19 @@
     animation-delay: 0.7s;
   }
 
-  .around-radar__scope--busy .around-radar__ring {
+  .around-map--busy .around-map__ring {
     animation: around-pulse 2.8s var(--ease) infinite;
     transform-origin: 50% 50%;
   }
 
-  .around-radar__route {
-    animation: around-route 1.2s linear infinite;
+  .around-map__flow {
+    animation: around-flow 1.4s linear infinite;
   }
 }
 
-@keyframes around-route {
+@keyframes around-flow {
   to {
-    stroke-dashoffset: -3.6;
+    stroke-dashoffset: -4;
   }
 }
 

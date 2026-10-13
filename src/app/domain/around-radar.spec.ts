@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { approxDriveMinutes, radarCurve, radarPoint, radarRangeKm } from './around-radar';
+import { approxDriveMinutes, radarPoint, radarRangeKm, radarSnake } from './around-radar';
 
 const cairo = { lat: 30.04, lon: 31.23 };
 
@@ -28,9 +28,13 @@ describe('radarRangeKm', () => {
   });
 });
 
-describe('radarCurve', () => {
-  it('starts at the centre and ends at the station', () => {
-    expect(radarCurve({ x: 80, y: 50 })).toBe('M50 50 Q65 56.6 80 50');
+describe('radarSnake', () => {
+  it('runs an S from the centre to the station along the longer axis', () => {
+    expect(radarSnake({ x: 80, y: 40 })).toEqual({
+      d: 'M50 50 C71 50 59 40 80 40',
+      mid: { x: 65, y: 45 },
+    });
+    expect(radarSnake({ x: 45, y: 10 }).d).toBe('M50 50 C50 22 45 38 45 10');
   });
 });
 
