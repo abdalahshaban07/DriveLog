@@ -30,14 +30,21 @@ export function radarRangeKm(distancesKm: readonly number[]): number {
   return [2, 5, 10, 20, 50].find((km) => far <= km) ?? Math.ceil(far);
 }
 
-/** Quadratic bend from the centre to a point, so the route reads as a road, not a ruler line. */
-export function radarCurve(to: RadarXY): string {
-  const dx = to.x - RADAR_CENTER;
-  const dy = to.y - RADAR_CENTER;
-  const bend = 0.22;
-  const cx = round(RADAR_CENTER + dx / 2 - dy * bend);
-  const cy = round(RADAR_CENTER + dy / 2 + dx * bend);
-  return `M${RADAR_CENTER} ${RADAR_CENTER} Q${cx} ${cy} ${to.x} ${to.y}`;
+/**
+ * S-shaped road from the centre to a point: leaves and arrives along the longer axis.
+ * `mid` is the curve's halfway point, where the time chip sits.
+ */
+export function radarSnake(to: RadarXY): { d: string; mid: RadarXY } {
+  const c = RADAR_CENTER;
+  const dx = to.x - c;
+  const dy = to.y - c;
+  const flat = Math.abs(dx) >= Math.abs(dy);
+  const p1 = flat ? { x: round(c + dx * 0.7), y: c } : { x: c, y: round(c + dy * 0.7) };
+  const p2 = flat ? { x: round(to.x - dx * 0.7), y: to.y } : { x: to.x, y: round(to.y - dy * 0.7) };
+  return {
+    d: `M${c} ${c} C${p1.x} ${p1.y} ${p2.x} ${p2.y} ${to.x} ${to.y}`,
+    mid: { x: round((c + 3 * p1.x + 3 * p2.x + to.x) / 8), y: round((c + 3 * p1.y + 3 * p2.y + to.y) / 8) },
+  };
 }
 
 /** Road ≈ 1.3× straight line at ~30 km/h city speed. Shown as approximate. */

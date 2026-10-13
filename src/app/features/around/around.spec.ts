@@ -58,18 +58,30 @@ function here(lat: number, lon: number): GeolocationPosition {
   };
 }
 
-function stubGeo(getCurrentPosition: Geolocation['getCurrentPosition']): void {
+type Answer = (ok: PositionCallback, err?: PositionErrorCallback | null) => void;
+
+function stubGeo(answer: Answer | undefined): void {
   Object.defineProperty(navigator, 'geolocation', {
     configurable: true,
-    value: {
-      getCurrentPosition,
-      watchPosition() {
-        return 0;
+    value: answer && {
+      getCurrentPosition: answer,
+      watchPosition(ok: PositionCallback, err?: PositionErrorCallback | null) {
+        answer(ok, err);
+        return 1;
       },
       clearWatch() {},
     },
   });
 }
+
+function stubPermission(state: PermissionState | undefined): void {
+  Object.defineProperty(navigator, 'permissions', {
+    configurable: true,
+    value: state && { query: async () => ({ state }) },
+  });
+}
+
+const deny: Answer = (_ok, err) => err?.({ code: 1, message: 'denied' } as GeolocationPositionError);
 
 describe('AroundPage', () => {
   afterEach(() => {
@@ -77,6 +89,8 @@ describe('AroundPage', () => {
   });
 
   beforeEach(async () => {
+    stubGeo(undefined);
+    stubPermission(undefined);
     await TestBed.configureTestingModule({
       imports: [AroundPage],
       providers: [
@@ -118,18 +132,21 @@ describe('AroundPage', () => {
     await fixture.componentInstance.loadStations();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.querySelectorAll('.around-radar__dot')).toHaveLength(2);
-    expect(el.querySelector('.around-pick__name')?.textContent).toContain('Shell Tahrir');
-    expect(el.querySelector('.around-radar__route')).toBeTruthy();
-    expect(el.querySelector('.around-pick__go')?.getAttribute('href')).toContain(
+    expect(el.querySelectorAll('.around-map__pin')).toHaveLength(2);
+    expect(el.querySelector('.around-card--on .around-card__name')?.textContent).toContain('Shell Tahrir');
+    expect(el.querySelector('.around-map__road')).toBeTruthy();
+    expect(el.querySelector('.around-map__chip')?.textContent).toContain('around.eta');
+    expect(el.querySelector('.around-map__label--on')?.textContent).toBe('Shell');
+    expect(el.querySelector('.around-card__go')?.getAttribute('href')).toContain(
       'origin=30.04,31.23&destination=30.05,31.24',
     );
+    expect(el.querySelector('.around-updated')?.textContent).toContain('around.updated');
 
     fixture.componentInstance.setNearbyKind('charge');
     await fixture.componentInstance.loadStations();
     fixture.detectChanges();
-    expect(el.querySelectorAll('.around-radar__dot')).toHaveLength(1);
-    expect(el.querySelector('.around-pick__name')?.textContent).toContain('Mall EV');
+    expect(el.querySelectorAll('.around-map__pin')).toHaveLength(1);
+    expect(el.querySelector('.around-card--on .around-card__name')?.textContent).toContain('Mall EV');
   });
 
   it('moves the route when another station is picked from the list', async () => {
@@ -138,11 +155,15 @@ describe('AroundPage', () => {
     fixture.componentInstance.origin.set({ lat: 30.04, lon: 31.23 });
     await fixture.componentInstance.loadStations();
     fixture.detectChanges();
-    const rows = fixture.nativeElement.querySelectorAll('.around-list__row') as NodeListOf<HTMLButtonElement>;
-    rows[1]!.click();
+    const cards = fixture.nativeElement.querySelectorAll('.around-card__pick') as NodeListOf<HTMLButtonElement>;
+    const firstRoute = fixture.nativeElement.querySelector('.around-map__road')?.getAttribute('d');
+    cards[1]!.click();
     fixture.detectChanges();
-    expect(rows[1]!.getAttribute('aria-pressed')).toBe('true');
-    expect(fixture.nativeElement.querySelector('.around-pick__name')?.textContent).toContain('Total Ramses');
+    expect(cards[1]!.getAttribute('aria-pressed')).toBe('true');
+    expect(fixture.nativeElement.querySelector('.around-card--on .around-card__name')?.textContent).toContain(
+      'Total Ramses',
+    );
+    expect(fixture.nativeElement.querySelector('.around-map__road')?.getAttribute('d')).not.toBe(firstRoute);
   });
 
   it('shows an empty state and the Google fallback when nothing is near', async () => {
@@ -167,19 +188,38 @@ describe('AroundPage', () => {
     expect(fixture.nativeElement.querySelector('.around-finder')).toBeTruthy();
   });
 
-  it('does not request location until the CTA is used', async () => {
+  it('asks for GPS on open and uses the exact device fix', async () => {
+    stubGeo((ok) => ok(here(30.0444, 31.2357)));
+    stubPermission('prompt');
+    stubFetch();
     const fixture = TestBed.createComponent(AroundPage);
+    await vi.waitFor(() => expect(fixture.componentInstance.origin()).toEqual({ lat: 30.0444, lon: 31.2357 }));
+    expect(fixture.componentInstance.approx()).toBe(false);
+  });
+
+  it('stays on the finder without the IP fallback when GPS fails on open', async () => {
+    stubGeo(deny);
+    stubFetch({ latitude: '29.07', longitude: '31.09' });
+    const fixture = TestBed.createComponent(AroundPage);
+    await fixture.whenStable();
+    await new Promise((r) => setTimeout(r));
+    expect(fixture.componentInstance.origin()).toBeNull();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('shows the blocked message on open when permission is denied', async () => {
+    stubGeo(deny);
+    stubPermission('denied');
+    const fixture = TestBed.createComponent(AroundPage);
+    await vi.waitFor(() => expect(fixture.componentInstance.gpsError()).toBe('around.gpsDenied'));
     fixture.detectChanges();
-    expect(fixture.componentInstance.locating()).toBe(false);
-    expect(fixture.componentInstance.gpsError()).toBe('');
+    expect(fixture.nativeElement.querySelector('.around-finder [role=alert]')).toBeTruthy();
   });
 
   it('stays on the finder when location and the coarse fix both fail', async () => {
-    stubGeo((_ok, err) => {
-      err?.({ code: 1, message: 'denied' } as GeolocationPositionError);
-    });
     stubFetch(null, null);
     const fixture = TestBed.createComponent(AroundPage);
+    stubGeo(deny);
     fixture.detectChanges();
     await fixture.componentInstance.useMyLocation();
     fixture.detectChanges();
@@ -188,32 +228,29 @@ describe('AroundPage', () => {
     expect(fixture.nativeElement.querySelector('.around-radar')).toBeNull();
   });
 
-  it('opens the radar from a GPS fix without an area label', async () => {
-    stubGeo((ok) => {
-      ok(here(30.04, 31.23));
-    });
-    stubFetch();
+  it('opens the radar at the exact GPS fix, with no area label or approx note', async () => {
+    stubFetch({ latitude: '29.07', longitude: '31.09' });
     const fixture = TestBed.createComponent(AroundPage);
+    stubGeo((ok) => ok(here(30.0444, 31.2357)));
     fixture.detectChanges();
     await fixture.componentInstance.useMyLocation();
     fixture.detectChanges();
-    expect(fixture.componentInstance.origin()).toEqual({ lat: 30.04, lon: 31.23 });
+    expect(fixture.componentInstance.origin()).toEqual({ lat: 30.0444, lon: 31.2357 });
     expect(fixture.nativeElement.querySelector('.around-radar')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('.around-place')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.around-approx')).toBeNull();
   });
 
-  it('opens the radar from the coarse fix when the browser blocks GPS', async () => {
-    stubGeo((_ok, err) => {
-      err?.({ code: 1, message: 'denied' } as GeolocationPositionError);
-    });
+  it('falls back to the coarse fix with an approx note when the browser blocks GPS', async () => {
     stubFetch({ latitude: '29.07', longitude: '31.09' });
     const fixture = TestBed.createComponent(AroundPage);
+    stubGeo(deny);
     fixture.detectChanges();
     await fixture.componentInstance.useMyLocation();
     fixture.detectChanges();
     expect(fixture.componentInstance.origin()).toEqual({ lat: 29.07, lon: 31.09 });
     expect(fixture.nativeElement.querySelector('.around-radar')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('.around-place')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.around-approx')?.textContent).toContain('around.approx');
     expect(fixture.componentInstance.gpsError()).toBe('');
   });
 
