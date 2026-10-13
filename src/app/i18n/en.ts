@@ -465,7 +465,7 @@ export const en = {
   'around.showAll': 'Show all ({count})',
   'around.showLess': 'Show fewer',
   'around.seeOnGoogle': 'See more on Google Maps',
-  'around.updated': 'Updated {date}',
+  'around.updated': 'Station list updated {date} · refreshed monthly',
   'common.m': 'm',
   'more.title': 'More',
   'more.lead': 'Records, tools, and support for this car.',

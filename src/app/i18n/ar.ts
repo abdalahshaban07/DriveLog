@@ -460,7 +460,7 @@ export const ar: Record<MsgKey, string> = {
   'around.showAll': 'اعرض {count} أماكن',
   'around.showLess': 'اعرض أقل',
   'around.seeOnGoogle': 'شوف أكتر على خرائط جوجل',
-  'around.updated': 'آخر تحديث {date}',
+  'around.updated': 'قائمة المحطات اتحدّثت {date} · بتتحدّث كل شهر',
   'common.m': 'م',
   'more.title': 'المزيد',
   'more.lead': 'السجلات والأدوات والدعم للعربية دي.',

@@ -101,6 +101,7 @@ describe('AroundPage', () => {
             t: (k: string) => k,
             formatNumber: (n: number) => String(n),
             formatUnit: (n: number, unit: string) => `${n} ${unit}`,
+            formatDate: (d: string) => `long:${d}`,
             language: () => 'en' as const,
             dir: () => 'ltr' as const,
           },
