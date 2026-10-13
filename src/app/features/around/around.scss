@@ -1,29 +1,186 @@
-.around-page--map {
-  flex: 1;
-  min-height: calc(100dvh - var(--nav-height) - var(--space-5) - var(--space-6));
-}
-
 .around-place {
   margin: 0;
   color: var(--muted);
   font-size: 0.9rem;
 }
 
-.around-map-frame {
-  flex: 1 1 auto;
-  display: flex;
-  min-height: 24rem;
-  overflow: hidden;
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius);
-  background: var(--well);
+.around-radar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  padding: var(--space-5);
 }
 
-.around-map {
-  flex: 1 1 auto;
+.around-radar__scope {
+  display: block;
+  width: min(100%, 22rem);
+  margin-inline: auto;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--cta) 8%, var(--well)) 0%, var(--well) 70%);
+  overflow: visible;
+}
+
+.around-radar__ring,
+.around-radar__axis {
+  fill: none;
+  stroke: var(--hairline);
+  stroke-width: 0.4;
+}
+
+.around-radar__ring:last-of-type {
+  stroke: color-mix(in srgb, var(--cta) 35%, var(--hairline));
+}
+
+.around-radar__scale,
+.around-radar__north {
+  fill: var(--muted);
+  font-size: 3.2px;
+  font-weight: 600;
+}
+
+.around-radar__route {
+  fill: none;
+  stroke: var(--cta);
+  stroke-width: 0.9;
+  stroke-linecap: round;
+  stroke-dasharray: 2 1.6;
+}
+
+.around-radar__dot {
+  fill: color-mix(in srgb, var(--fuel) 55%, var(--muted));
+}
+
+.around-radar__dot--on {
+  fill: var(--fuel);
+  stroke: var(--surface);
+  stroke-width: 0.8;
+}
+
+.around-radar__you {
+  fill: var(--text);
+  stroke: var(--surface);
+  stroke-width: 0.8;
+}
+
+.around-radar__note,
+.around-source {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.around-source {
+  font-size: 0.75rem;
+}
+
+.around-radar__skeleton {
+  height: 4.5rem;
+}
+
+.around-pick {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border-radius: calc(var(--radius) - 4px);
+  background: var(--fill-well);
+}
+
+.around-pick__text {
+  min-width: 0;
+}
+
+.around-pick__name,
+.around-pick__meta {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.around-pick__name {
+  font-weight: 700;
+}
+
+.around-pick__meta {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.around-pick__go {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding-inline: var(--space-4);
+  border-radius: var(--radius);
+  background: var(--cta-surface, var(--fuel));
+  color: var(--cta-text);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.around-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.around-list__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
   width: 100%;
-  min-height: 24rem;
+  min-width: 0;
+  min-height: var(--tap);
+  padding-inline: var(--space-2);
   border: 0;
+  border-block-end: 1px solid var(--hairline);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: start;
+}
+
+.around-list__row--on {
+  color: var(--fuel);
+  font-weight: 700;
+}
+
+.around-list__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.around-list__km {
+  flex-shrink: 0;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.around-more,
+.around-google {
+  justify-self: center;
+  min-height: var(--tap);
+  padding-inline: var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--fuel);
+  font: inherit;
+  font-weight: 600;
+}
+
+.around-google {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .around-finder {
@@ -114,6 +271,21 @@
 
   .around-finder__ring:nth-child(3) {
     animation-delay: 0.7s;
+  }
+
+  .around-radar__scope--busy .around-radar__ring {
+    animation: around-pulse 2.8s var(--ease) infinite;
+    transform-origin: 50% 50%;
+  }
+
+  .around-radar__route {
+    animation: around-route 1.2s linear infinite;
+  }
+}
+
+@keyframes around-route {
+  to {
+    stroke-dashoffset: -3.6;
   }
 }
 

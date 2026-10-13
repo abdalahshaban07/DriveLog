@@ -1,4 +1,4 @@
-<div class="stack around-page" [class.around-page--map]="mapUrl()">
+<div class="stack around-page">
   <app-page-header [title]="i18n.t('around.title')" [subtitle]="i18n.t('around.subtitle')">
     <app-page-line page="around" />
   </app-page-header>
@@ -25,21 +25,113 @@
     </button>
   </div>
 
-  @if (mapSrc(); as src) {
+  @if (origin()) {
     @if (placeLabel()) {
       <p class="around-place">{{ i18n.t('around.place', { place: placeLabel() }) }}</p>
     }
-    @for (frame of [src]; track frame) {
-      <div class="around-map-frame">
-        <iframe
-          class="around-map"
-          [title]="i18n.t('around.mapTitle')"
-          [src]="mapUrl()"
-          referrerpolicy="no-referrer-when-downgrade"
-          allowfullscreen
-        ></iframe>
-      </div>
-    }
+    <section class="card around-radar" role="status" aria-live="polite">
+      <svg
+        class="around-radar__scope"
+        [class.around-radar__scope--busy]="loadState() === 'loading'"
+        viewBox="0 0 100 100"
+        role="img"
+        [attr.aria-label]="i18n.t('around.mapTitle')"
+      >
+        @for (r of rings; track r) {
+          <circle class="around-radar__ring" [attr.cx]="center" [attr.cy]="center" [attr.r]="r" />
+        }
+        <line class="around-radar__axis" x1="50" y1="4" x2="50" y2="96" />
+        <line class="around-radar__axis" x1="4" y1="50" x2="96" y2="50" />
+        @if (loadState() === 'ready' && stations().length) {
+          <text class="around-radar__scale" x="50" y="3" text-anchor="middle">{{ i18n.formatUnit(rangeKm(), 'common.km', 0) }}</text>
+          <text class="around-radar__north" x="96" y="7" text-anchor="end">{{ i18n.t('around.north') }}</text>
+          @if (route()) {
+            <path class="around-radar__route" [attr.d]="route()" />
+          }
+          @for (dot of dots(); track dot.id) {
+            <circle
+              class="around-radar__dot"
+              [class.around-radar__dot--on]="dot.on"
+              [attr.cx]="dot.x"
+              [attr.cy]="dot.y"
+              [attr.r]="dot.on ? 3.2 : 2"
+            />
+          }
+        }
+        <circle class="around-radar__you" [attr.cx]="center" [attr.cy]="center" r="2.4" />
+      </svg>
+
+      @switch (loadState()) {
+        @case ('loading') {
+          <p class="around-radar__note">{{ i18n.t('around.loading') }}</p>
+          <div class="skeleton around-radar__skeleton"></div>
+        }
+        @case ('error') {
+          <p class="error-state" role="alert">{{ i18n.t('home.nearbyUnavailable') }}</p>
+          <app-primary-button
+            [label]="i18n.t('around.retry')"
+            tone="quiet"
+            [stretch]="true"
+            (pressed)="loadStations()"
+          />
+        }
+        @case ('ready') {
+          @if (selected(); as s) {
+            <div class="around-pick">
+              <div class="around-pick__text">
+                <p class="around-pick__name"><bdi>{{ s.name }}</bdi></p>
+                <p class="around-pick__meta">
+                  @for (part of meta(s); track $index) {
+                    @if (!$first) {
+                      ·
+                    }
+                    <bdi>{{ part }}</bdi>
+                  }
+                </p>
+              </div>
+              <a
+                class="around-pick__go"
+                [href]="directionsUrl()"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {{ i18n.t('around.directions') }}
+              </a>
+            </div>
+
+            <ul class="around-list" role="list">
+              @for (st of listed(); track st.id) {
+                <li>
+                  <button
+                    type="button"
+                    class="around-list__row"
+                    [class.around-list__row--on]="st.id === s.id"
+                    [attr.aria-pressed]="st.id === s.id"
+                    (click)="select(st.id)"
+                  >
+                    <span class="around-list__name" dir="auto">{{ st.name }}</span>
+                    <span class="around-list__km">{{ km(st.distanceKm) }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+            @if (stations().length > listed().length || showAll()) {
+              <button type="button" class="around-more" (click)="showAll.set(!showAll())">
+                {{ showAll() ? i18n.t('around.showLess') : i18n.t('around.showAll', { count: stations().length }) }}
+              </button>
+            }
+          } @else {
+            <p class="empty-state">{{ i18n.t('home.nearbyEmpty') }}</p>
+          }
+          <a class="around-google" [href]="googleUrl()" target="_blank" rel="noopener noreferrer">
+            {{ i18n.t('around.seeOnGoogle') }}
+          </a>
+          @if (updated(); as date) {
+            <p class="around-source">{{ i18n.t('around.source', { date: date }) }}</p>
+          }
+        }
+      }
+    </section>
     <app-primary-button
       [label]="i18n.t('around.changePlace')"
       tone="quiet"

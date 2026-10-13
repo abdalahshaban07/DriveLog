@@ -1,0 +1,37 @@
+name: Refresh station data
+
+on:
+  schedule:
+    - cron: '0 3 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bake:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: pip install duckdb
+
+      - name: Latest Overture release
+        run: |
+          rel=$(curl -s https://stac.overturemaps.org/catalog.json | python -c "import json,sys; print(json.load(sys.stdin)['latest'])" || true)
+          echo "OVERTURE_RELEASE=${rel:-2026-09-23.1}" >> "$GITHUB_ENV"
+
+      - run: python scripts/build-eg-data.py
+
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          branch: chore-station-data
+          commit-message: 'chore(data): refresh Egypt station snapshot'
+          title: 'chore(data): refresh Egypt station snapshot'
+          body: Monthly bake from Ministry of Petroleum, Emarat Misr, Overture Maps and Open Charge Map.
+          add-paths: public/data/*.json

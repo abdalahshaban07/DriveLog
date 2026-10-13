@@ -2,7 +2,7 @@ import { countryFromCurrency } from './country';
 import { suggestMaintenanceDues } from './interval';
 import { weatherKind } from './weather';
 import type { Maintenance } from './models';
-import { parseCountryFuelPrices, parseNearbyPoi, parseWeather } from '../data/remote';
+import { parseCountryFuelPrices, parseWeather, stationsNear } from '../data/remote';
 import { isOpenNow } from './opening-hours';
 
 function assert(cond: unknown, msg: string): void {
@@ -68,52 +68,21 @@ export function runPhase2SelfCheck(): void {
   assert(egApi?.solar === 15.75 && egApi.diesel == null, 'EG diesel→solar');
   assert(egApi?.gasoline92 === 19 && egApi.gasoline95 === 21, 'EG gasoline/premium');
 
-  const pois = parseNearbyPoi(
+  const pois = stationsNear(
     {
-      elements: [
-        {
-          id: 1,
-          lat: 30.05,
-          lon: 31.24,
-          tags: {
-            amenity: 'fuel',
-            name: 'Shell',
-            brand: 'Shell',
-            opening_hours: '24/7',
-            'addr:city': 'Cairo',
-          },
-        },
-        {
-          id: 2,
-          lat: 30.06,
-          lon: 31.25,
-          tags: {
-            amenity: 'charging_station',
-            name: 'EV Hub',
-            'socket:ccs': 'yes',
-            'socket:type2': 'yes',
-          },
-        },
-        {
-          id: 3,
-          type: 'way',
-          center: { lat: 30.045, lon: 31.235 },
-          tags: { amenity: 'fuel', name: 'Total', brand: 'Total' },
-        },
+      updated: '2026-10-01',
+      fuel: [
+        [30.05, 31.24, 'Shell Tahrir', 'Shell'],
+        [30.6, 31.6, 'Far away', null],
       ],
+      charge: [[30.045, 31.235, '', 'Infinity EV', 60]],
     },
     { lat: 30.04, lon: 31.23 },
+    15,
   );
-  assert(pois.length === 3 && pois.some((p) => p.id === 3), 'overpass way center');
-  assert(pois[0]!.kind === 'fuel', 'overpass poi');
-  const shell = pois.find((p) => p.id === 1);
-  assert(shell?.openNow === true && shell.addressLine === 'Cairo', 'overpass open/addr');
-  const ev = pois.find((p) => p.id === 2);
-  assert(
-    ev?.connectors?.some((c) => c.type === 'CCS') &&
-      ev.connectors?.some((c) => c.type === 'Type 2'),
-    'overpass sockets',
-  );
+  assert(pois.length === 2 && pois[0]!.kind === 'charge', 'stations near, nearest first');
+  assert(pois[0]!.name === 'Infinity EV' && pois[0]!.detail === '60 kW', 'charger network + kW');
+  assert(pois[1]!.brand === 'Shell', 'fuel brand');
 
   assert(isOpenNow('24/7') === true, 'opening 24/7');
   assert(isOpenNow('Mo-Fr 08:00-12:00,13:00-18:00') === null, 'opening complex');

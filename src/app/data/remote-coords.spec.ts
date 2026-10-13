@@ -2,14 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   mapsSearchUrl,
   parseIpCoords,
-  parsePhotonPoint,
-  photonSearchUrl,
-  pickPhotonPlace,
-  shortenPlaceQuery,
-  readAroundCache,
   readCoords,
-  writeAroundCache,
-  type AroundCache,
+  searchAreas,
+  shortenPlaceQuery,
+  type AreaRow,
+  type StationsFile,
 } from './remote';
 
 function position(lat: number, lon: number): GeolocationPosition {
@@ -95,20 +92,6 @@ describe('readCoords', () => {
   });
 });
 
-describe('parsePhotonPoint', () => {
-  it('reads lon, lat from the first feature', () => {
-    expect(
-      parsePhotonPoint({
-        features: [{ geometry: { coordinates: [31.34, 30.05] } }],
-      }),
-    ).toEqual({ lat: 30.05, lon: 31.34 });
-  });
-
-  it('returns null when the payload has no point', () => {
-    expect(parsePhotonPoint({ features: [] })).toBeNull();
-    expect(parsePhotonPoint(null)).toBeNull();
-  });
-});
 
 describe('parseIpCoords', () => {
   it('reads string latitude and longitude', () => {
@@ -125,39 +108,6 @@ describe('parseIpCoords', () => {
   });
 });
 
-describe('photonSearchUrl', () => {
-  it('does not send lang=ar', () => {
-    const url = photonSearchUrl('القاهره', 'ar');
-    expect(url).toContain('lang=default');
-    expect(url).not.toContain('lang=ar');
-    expect(url).toContain('limit=8');
-    expect(url).toContain('bbox=24.7%2C22%2C36.9%2C31.7');
-  });
-});
-
-const beniSuefHits = {
-  features: [
-    {
-      geometry: { coordinates: [30.923149, 29.9397396] },
-      properties: {
-        name: 'مدرسة 6 أكتوبر الأبتدائية الجديدة',
-        city: 'مدينة 6 أكتوبر',
-        district: 'الحى الخامس',
-        locality: 'المجاورة 3',
-        state: 'الجيزة',
-      },
-    },
-    {
-      geometry: { coordinates: [31.1244432, 29.0409555] },
-      properties: {
-        name: 'محور الجامعه',
-        city: 'New Bani Suef City',
-        locality: 'المجاورة 3',
-        state: 'بنى سويف',
-      },
-    },
-  ],
-};
 
 describe('shortenPlaceQuery', () => {
   it('drops the block words and restores ة', () => {
@@ -174,88 +124,50 @@ describe('shortenPlaceQuery', () => {
   });
 });
 
-describe('pickPhotonPlace', () => {
-  it('prefers بني سويف over the 6th of October school', () => {
-    expect(
-      pickPhotonPlace(beniSuefHits, 'بني سويف الجديده الحي الخامس المجاوره الخامسه'),
-    ).toEqual({
-      lat: 29.0409555,
-      lon: 31.1244432,
-      label: 'بنى سويف · New Bani Suef City',
+const areas: AreaRow[] = [
+  ['نصر', 'Nasr', 27.52, 32.08],
+  ['القاهره الجديدة', 'New Cairo', 29.99, 31.42],
+  ['بنى سويف الجديده', 'New Beni suef', 28.97, 31.05],
+  ['بني سويف', 'Beni Suef', 29.07, 31.09],
+  ['', 'Nasr City', 30.03, 31.36],
+];
+
+const stations: StationsFile = {
+  updated: '2026-10-01',
+  fuel: [
+    [30.06, 31.34, 'مصر للبترول مدينة نصر', 'Misr Petroleum'],
+    [30.04, 31.36, 'توتال - مدينه نصر', 'TotalEnergies'],
+  ],
+  charge: [],
+};
+
+describe('searchAreas', () => {
+  it('matches a district by its Arabic name, ignoring ة/ه and the block number', () => {
+    expect(searchAreas(areas, stations, 'بني سويف الجديدة الحي الخامس', 'ar')).toEqual({
+      lat: 28.97,
+      lon: 31.05,
+      label: 'بنى سويف الجديده',
     });
   });
 
-  it('keeps the city whose name is the query, not a road inside it', () => {
-    expect(
-      pickPhotonPlace(
-        {
-          features: [
-            {
-              geometry: { coordinates: [31.8704, 28.9355] },
-              properties: {
-                name: 'طريق الزعفرانه, بنى سويف',
-                city: 'بني سويف الجديدة',
-                state: 'بنى سويف',
-                osm_value: 'motorway',
-              },
-            },
-            {
-              geometry: { coordinates: [31.1068, 29.0321] },
-              properties: {
-                name: 'بني سويف الجديدة',
-                state: 'بنى سويف',
-                osm_value: 'city',
-              },
-            },
-          ],
-        },
-        'بني سويف الجديدة',
-      ),
-    ).toEqual({
-      lat: 29.0321,
-      lon: 31.1068,
-      label: 'بني سويف الجديدة',
-    });
+  it('prefers the shorter exact name and labels in English', () => {
+    expect(searchAreas(areas, stations, 'beni suef', 'en')?.label).toBe('Beni Suef');
+    expect(searchAreas(areas, stations, 'Nasr City', 'en')?.lat).toBe(30.03);
   });
 
-  it('prefers the city when a street matches the same governorate', () => {
-    expect(
-      pickPhotonPlace(
-        {
-          features: [
-            {
-              geometry: { coordinates: [31.20513, 29.33166] },
-              properties: {
-                name: 'شارع الحديده',
-                city: 'مدينه الواسطى',
-                state: 'بنى سويف',
-                osm_value: 'residential',
-              },
-            },
-            {
-              geometry: { coordinates: [31.1068, 29.0321] },
-              properties: {
-                name: 'بني سويف الجديدة',
-                state: 'بنى سويف',
-                osm_value: 'city',
-              },
-            },
-          ],
-        },
-        'بني سويف',
-      ),
-    ).toEqual({
-      lat: 29.0321,
-      lon: 31.1068,
-      label: 'بني سويف الجديدة',
-    });
+  it('falls back to station names before a looser district hit', () => {
+    const place = searchAreas(areas, stations, 'مدينة نصر', 'ar');
+    expect(place?.label).toBe('مدينة نصر');
+    expect(place?.lat).toBeCloseTo(30.05);
+    expect(place?.lon).toBeCloseTo(31.35);
   });
 
-  it('keeps the first hit when nothing distinctive matches', () => {
-    expect(pickPhotonPlace(beniSuefHits, 'zzzz')?.lat).toBe(29.9397396);
-    expect(pickPhotonPlace({ features: [] }, 'بني سويف')).toBeNull();
+  it('returns null when nothing matches', () => {
+    expect(searchAreas(areas, stations, 'zzzz', 'en')).toBeNull();
+    expect(searchAreas(areas, null, '  ', 'ar')).toBeNull();
   });
 });
+
 
 describe('mapsSearchUrl', () => {
   it('routes from the search point to the station', () => {
@@ -264,39 +176,5 @@ describe('mapsSearchUrl', () => {
     ).toBe(
       'https://www.google.com/maps/dir/?api=1&origin=29.0409555,31.1244432&destination=29.05,31.13&hl=ar',
     );
-  });
-});
-
-describe('around cache', () => {
-  it('roundtrips the last station list and rejects junk', () => {
-    const storage = new Map<string, string>();
-    const memory = {
-      getItem: (key: string) => storage.get(key) ?? null,
-      setItem: (key: string, value: string) => {
-        storage.set(key, value);
-      },
-    } as Storage;
-    const saved: AroundCache = {
-      lat: 30.04,
-      lon: 31.24,
-      radiusKm: 8,
-      savedAt: 1,
-      items: [
-        {
-          id: 1,
-          kind: 'fuel',
-          name: 'توتال',
-          lat: 30.05,
-          lon: 31.25,
-          distanceKm: 0.4,
-        },
-      ],
-    };
-    writeAroundCache(saved, memory);
-    expect(readAroundCache(memory)).toEqual(saved);
-    writeAroundCache({ ...saved, items: [] }, memory);
-    expect(readAroundCache(memory)).toEqual(saved);
-    memory.setItem('drivelog.around.v1', '{');
-    expect(readAroundCache(memory)).toBeNull();
   });
 });

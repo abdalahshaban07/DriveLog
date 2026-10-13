@@ -1,6 +1,4 @@
 import { parsePublicHolidays, type PublicHoliday } from '../domain/holidays';
-import { isOpenNow } from '../domain/opening-hours';
-
 const TIMEOUT_MS = 8000;
 const PRICE_CACHE_KEY = 'drivelog.fuelPrices.v2';
 const PRICE_TTL_MS = 6 * 60 * 60 * 1000;
@@ -27,14 +25,14 @@ export type CountryFuelPrices = {
   gasoline: number | null;
 };
 
-/** Overpass search radii (m). Expand until results, cap 50 km. */
-const NEARBY_RADII_M = [5_000, 15_000, 30_000, 50_000] as const;
+/** Local station snapshot under the app base href, so it works on GitHub Pages and offline. */
+const DATA_DIR = 'data/';
+const DATA_TIMEOUT_MS = 15_000;
 
-const OVERPASS_ENDPOINTS = [
-  'https://overpass-api.de/api/interpreter',
-  'https://overpass.kumi.systems/api/interpreter',
-  'https://overpass.openstreetmap.fr/api/interpreter',
-] as const;
+/** Fill-up suggestion radii (km). Expand until results, cap 50 km. */
+const NEARBY_RADII_KM = [5, 15, 30, 50] as const;
+const NEARBY_LIMIT = 20;
+const AROUND_LIMIT = 40;
 
 export type NearbyConnector = {
   type: string;
@@ -136,32 +134,7 @@ export function readCoords(geo: Geolocation): Promise<Coords | null> {
   return attemptCoords(geo, 0);
 }
 
-/** Photon GeoJSON: coordinates are [lon, lat]. No key. */
-export function parsePhotonPoint(raw: unknown): Coords | null {
-  const hit = photonHits(raw)[0];
-  return hit ? { lat: hit.lat, lon: hit.lon } : null;
-}
-
 export type GeocodedPlace = Coords & { label: string };
-
-type PhotonHit = Coords & {
-  name: string;
-  city: string;
-  state: string;
-  county: string;
-  district: string;
-  locality: string;
-  kind: string;
-};
-
-/** Address words that also exist in 6th of October, so they must not outrank a city name. */
-const GENERIC_PLACE = new Set([
-  'حي',
-  'خامس',
-  'خامسه',
-  'مجاوره',
-  'مدينه',
-]);
 
 /** Dropped only when they introduce a block number, as in «الحي الخامس». «التجمع الخامس» stays. */
 const BLOCK_WORD = new Set(['حي', 'مجاوره']);
@@ -195,19 +168,6 @@ const BLOCK_ORDINAL = new Set([
   'عاشره',
 ]);
 
-const SETTLEMENT = new Set([
-  'city',
-  'town',
-  'suburb',
-  'neighbourhood',
-  'neighborhood',
-  'administrative',
-  'village',
-  'locality',
-  'hamlet',
-  'quarter',
-]);
-
 function foldArabic(raw: string): string {
   return raw
     .normalize('NFKD')
@@ -220,19 +180,19 @@ function foldArabic(raw: string): string {
     .toLowerCase();
 }
 
-function placeTokens(raw: string): string[] {
-  return foldArabic(raw)
-    .split(/[^\u0600-\u06FFa-z0-9]+/i)
-    .map((token) => token.replace(/^ال/, ''))
-    .filter((token) => token && !GENERIC_PLACE.has(token) && !isNumberToken(token));
-}
-
 function foldToken(raw: string): string {
   return foldArabic(raw).replace(/^ال/, '');
 }
 
 function isNumberToken(token: string): boolean {
   return /^[\d\u0660-\u0669]+$/.test(token);
+}
+
+function placeTokens(raw: string): string[] {
+  return foldArabic(raw)
+    .split(/[^\u0600-\u06FFa-z0-9]+/i)
+    .map((token) => token.replace(/^ال/, ''))
+    .filter(Boolean);
 }
 
 /** «بني سويف الجديده الحي الخامس» → «بني سويف الجديدة». A bare «الخامس» stays. */
@@ -256,137 +216,85 @@ export function shortenPlaceQuery(query: string): string {
   return kept.join(' ').trim() || query.trim();
 }
 
-function photonText(value: unknown): string {
-  return typeof value === 'string' ? value.trim() : '';
+/** [arabic, english, lat, lon]. Hand-entered neighbourhoods, Ministry of Petroleum districts, geoBoundaries counties. */
+export type AreaRow = [string, string, number, number];
+
+/** 3 same words, 2 query is part of the name, 1 name is part of the query. */
+function areaScore(query: string[], name: string): number {
+  const words = placeTokens(name);
+  if (!words.length || !query.length) {
+    return 0;
+  }
+  const inName = query.every((token) => words.includes(token));
+  const inQuery = words.every((token) => query.includes(token));
+  return inName && inQuery ? 3 : inName ? 2 : inQuery ? 1 : 0;
 }
 
-function photonHits(raw: unknown): PhotonHit[] {
-  if (!raw || typeof raw !== 'object') {
-    return [];
-  }
-  const features = (raw as { features?: unknown }).features;
-  if (!Array.isArray(features)) {
-    return [];
-  }
-  const hits: PhotonHit[] = [];
-  for (const feature of features) {
-    if (!feature || typeof feature !== 'object') {
-      continue;
-    }
-    const coordinates = (feature as { geometry?: { coordinates?: unknown } }).geometry
-      ?.coordinates;
-    if (!Array.isArray(coordinates) || coordinates.length < 2) {
-      continue;
-    }
-    const lon = Number(coordinates[0]);
-    const lat = Number(coordinates[1]);
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-      continue;
-    }
-    const props = (feature as { properties?: Record<string, unknown> }).properties ?? {};
-    hits.push({
-      lat,
-      lon,
-      name: photonText(props['name']),
-      city: photonText(props['city']),
-      state: photonText(props['state']),
-      county: photonText(props['county']),
-      district: photonText(props['district']),
-      locality: photonText(props['locality']),
-      kind: photonText(props['osm_value']) || photonText(props['type']),
-    });
-  }
-  return hits;
-}
-
-function photonScore(query: string[], hit: PhotonHit): number {
-  const region = new Set([...placeTokens(hit.state), ...placeTokens(hit.county), ...placeTokens(hit.city)]);
-  const near = new Set([...placeTokens(hit.district), ...placeTokens(hit.locality)]);
-  const name = new Set(placeTokens(hit.name));
-  let score = 0;
-  for (const token of query) {
-    if (region.has(token)) {
-      score += 3;
-    } else if (near.has(token)) {
-      score += 2;
-    } else if (name.has(token)) {
-      score += 1;
-    }
-  }
-  return score;
-}
-
-function isSettlement(hit: PhotonHit): boolean {
-  return SETTLEMENT.has(hit.kind);
-}
-
-function coversQuery(tokens: string[], hit: PhotonHit): boolean {
+/**
+ * Local search, no network: a district name, else the stations whose names mention the place.
+ * ponytail: linear scan over ~600 areas + ~3k stations; fine on a phone, index if the files grow 10×.
+ */
+export function searchAreas(
+  areas: readonly AreaRow[],
+  stations: StationsFile | null,
+  query: string,
+  lang: 'en' | 'ar',
+): GeocodedPlace | null {
+  const q = shortenPlaceQuery(query);
+  const tokens = placeTokens(q);
   if (!tokens.length) {
-    return false;
-  }
-  const name = new Set(placeTokens(hit.name));
-  return tokens.every((token) => name.has(token));
-}
-
-function photonLabel(hit: PhotonHit): string {
-  if (isSettlement(hit) && hit.name) {
-    return hit.name;
-  }
-  const state = hit.state;
-  const city = hit.city;
-  if (state && city && foldArabic(state) !== foldArabic(city)) {
-    return `${state} · ${city}`;
-  }
-  return state || city || hit.name;
-}
-
-/** First hit when nothing distinctive matches. Otherwise the highest score; ties keep Photon order, then a city over a street. */
-export function pickPhotonPlace(raw: unknown, query: string): GeocodedPlace | null {
-  const hits = photonHits(raw);
-  const first = hits[0];
-  if (!first) {
     return null;
   }
-  const tokens = placeTokens(query);
-  let best = first;
-  let bestScore = photonScore(tokens, first);
-  let bestCovers = coversQuery(tokens, best);
-  for (const hit of hits.slice(1)) {
-    const score = photonScore(tokens, hit);
-    const covers = coversQuery(tokens, hit);
-    const cityBeatsStreet = score === bestScore && score > 0 && isSettlement(hit) && !isSettlement(best);
-    const sameKind = covers === bestCovers;
-    if ((covers && !bestCovers) || (sameKind && (score > bestScore || cityBeatsStreet))) {
-      best = hit;
+  let best: AreaRow | null = null;
+  let bestScore = 0;
+  for (const row of areas) {
+    const score = Math.max(areaScore(tokens, row[0]), areaScore(tokens, row[1]));
+    const shorter = best && score === bestScore && placeTokens(row[0] || row[1]).length < placeTokens(best[0] || best[1]).length;
+    if (score > bestScore || shorter) {
+      best = row;
       bestScore = score;
-      bestCovers = covers;
     }
   }
-  return { lat: best.lat, lon: best.lon, label: photonLabel(best) };
+  const label = (row: AreaRow) => (lang === 'ar' ? row[0] || row[1] : row[1] || row[0]);
+  if (best && bestScore >= 2) {
+    return { lat: best[2], lon: best[3], label: label(best) };
+  }
+  const hits = [...(stations?.fuel ?? []), ...(stations?.charge ?? [])].filter(
+    (row) => areaScore(tokens, row[2]) === 2,
+  );
+  if (hits.length) {
+    return {
+      lat: hits.reduce((sum, row) => sum + row[0], 0) / hits.length,
+      lon: hits.reduce((sum, row) => sum + row[1], 0) / hits.length,
+      label: q,
+    };
+  }
+  // A one-word district inside a longer query («نصر» in «مدينة نصر») is usually a different town.
+  return best && placeTokens(best[0] || best[1]).length > 1
+    ? { lat: best[2], lon: best[3], label: label(best) }
+    : null;
 }
 
-/** Egypt only, so a name like المعادي cannot resolve abroad. minLon,minLat,maxLon,maxLat. */
-const EGYPT_BBOX = '24.7,22,36.9,31.7';
+let areasFile: Promise<AreaRow[] | null> | null = null;
 
-/** Photon rejects lang=ar (400). Arabic queries still match with default. */
-export function photonSearchUrl(query: string, lang: 'en' | 'ar'): string {
-  return `https://photon.komoot.io/api/?${new URLSearchParams({
-    q: query.trim(),
-    limit: '8',
-    lang: lang === 'en' ? 'en' : 'default',
-    bbox: EGYPT_BBOX,
-  })}`;
+function loadAreas(): Promise<AreaRow[] | null> {
+  areasFile ??= fetchJson(`${DATA_DIR}eg-areas.json`, undefined, DATA_TIMEOUT_MS).then((raw) => {
+    const areas = (raw as { areas?: unknown } | null)?.areas;
+    if (!Array.isArray(areas)) {
+      areasFile = null;
+      return null;
+    }
+    return areas as AreaRow[];
+  });
+  return areasFile;
 }
 
 export async function geocodePlace(
   query: string,
   lang: 'en' | 'ar' = 'en',
 ): Promise<GeocodedPlace | null> {
-  const q = shortenPlaceQuery(query);
-  if (!q) {
-    return null;
-  }
-  return pickPhotonPlace(await fetchJson(photonSearchUrl(q, lang)), q);
+  const [areas, stations] = await Promise.all([loadAreas(), loadStations()]);
+  return searchAreas(areas ?? [], stations, query, lang);
 }
 
 export function getCoords(): Promise<Coords | null> {
@@ -576,278 +484,98 @@ function haversineKm(a: Coords, b: Coords): number {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-function addressFromOsmTags(tags: Record<string, string>): string | undefined {
-  const parts = [
-    tags['addr:suburb'],
-    tags['addr:neighbourhood'],
-    tags['addr:city'],
-    tags['addr:state'],
-    tags['addr:province'],
-  ].filter((p) => p && String(p).trim());
-  const uniq = [...new Set(parts.map((p) => String(p).trim()))];
-  return uniq.length ? uniq.join(' · ') : undefined;
-}
+/** Baked by scripts/build-eg-data.py. fuel: [lat, lon, name, brand]; charge: [lat, lon, name, network, maxKw]. */
+export type StationsFile = {
+  updated: string;
+  fuel: [number, number, string, string | null][];
+  charge: [number, number, string, string | null, number | null][];
+};
 
-function connectorsFromOsmTags(tags: Record<string, string>): NearbyConnector[] | undefined {
-  const out: NearbyConnector[] = [];
-  const push = (type: string, countRaw?: string) => {
-    const count = countRaw ? Number(countRaw) : undefined;
-    out.push({
-      type,
-      count: Number.isFinite(count) ? count : undefined,
-      speed: 'medium',
-    });
-  };
-  if (tags['socket:type2'] === 'yes' || tags['socket:type2']) {
-    push('Type 2', tags['socket:type2'] !== 'yes' ? tags['socket:type2'] : undefined);
-  }
-  if (tags['socket:ccs'] === 'yes' || tags['socket:ccs'] || tags['socket:type2_combo'] === 'yes') {
-    push('CCS', tags['socket:ccs'] !== 'yes' ? tags['socket:ccs'] : undefined);
-  }
-  if (tags['socket:chademo'] === 'yes' || tags['socket:chademo']) {
-    push(
-      'CHAdeMO',
-      tags['socket:chademo'] !== 'yes' ? tags['socket:chademo'] : undefined,
-    );
-  }
-  if (!out.length && tags['capacity']) {
-    const n = Number(tags['capacity']);
-    if (Number.isFinite(n) && n > 0) {
-      out.push({ type: 'EV', count: n, speed: 'medium' });
+let stationsFile: Promise<StationsFile | null> | null = null;
+
+function loadStations(): Promise<StationsFile | null> {
+  stationsFile ??= fetchJson(`${DATA_DIR}eg-stations.json`, undefined, DATA_TIMEOUT_MS).then((raw) => {
+    const file = raw as Partial<StationsFile> | null;
+    if (!file || !Array.isArray(file.fuel) || !Array.isArray(file.charge)) {
+      stationsFile = null;
+      return null;
     }
-  }
-  return out.length ? out : undefined;
+    return file as StationsFile;
+  });
+  return stationsFile;
 }
 
-export function parseNearbyPoi(
-  raw: unknown,
+/** Date the station snapshot was baked, for the source line. */
+export async function stationsUpdated(): Promise<string | null> {
+  return (await loadStations())?.updated ?? null;
+}
+
+const CHARGE_ID_OFFSET = 1_000_000;
+
+export function stationsNear(
+  file: StationsFile,
   origin: Coords,
-  now: Date = new Date(),
+  radiusKm: number,
+  limit = NEARBY_LIMIT,
+  kind?: 'fuel' | 'charge',
 ): NearbyPoi[] {
-  if (!raw || typeof raw !== 'object') {
-    return [];
-  }
-  const elements = (raw as { elements?: unknown }).elements;
-  if (!Array.isArray(elements)) {
-    return [];
-  }
   const list: NearbyPoi[] = [];
-  for (const el of elements) {
-    if (!el || typeof el !== 'object') {
-      continue;
+  // ponytail: full scan of ~3k rows per search; cheap next to a network call.
+  (kind === 'charge' ? [] : file.fuel).forEach(([lat, lon, name, brand], i) => {
+    const distanceKm = haversineKm(origin, { lat, lon });
+    if (distanceKm <= radiusKm) {
+      list.push({ id: i, kind: 'fuel', name: name || brand || 'Gas station', lat, lon, distanceKm, brand: brand ?? undefined });
     }
-    const e = el as Record<string, unknown>;
-    const center = e['center'] as { lat?: unknown; lon?: unknown } | undefined;
-    const lat = Number(e['lat'] ?? center?.lat);
-    const lon = Number(e['lon'] ?? center?.lon);
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-      continue;
+  });
+  (kind === 'fuel' ? [] : file.charge).forEach(([lat, lon, name, network, maxKw], i) => {
+    const distanceKm = haversineKm(origin, { lat, lon });
+    if (distanceKm <= radiusKm) {
+      list.push({
+        id: CHARGE_ID_OFFSET + i,
+        kind: 'charge',
+        name: name || network || 'Charger',
+        lat,
+        lon,
+        distanceKm,
+        brand: network ?? undefined,
+        detail: maxKw ? `${maxKw} kW` : undefined,
+      });
     }
-    const tags = (e['tags'] ?? {}) as Record<string, string>;
-    const amenity = tags['amenity'];
-    const kind: 'fuel' | 'charge' | null =
-      amenity === 'fuel' || tags['shop'] === 'fuel'
-        ? 'fuel'
-        : amenity === 'charging_station'
-          ? 'charge'
-          : null;
-    if (!kind) {
-      continue;
-    }
-    const name =
-      tags['name'] ||
-      tags['brand'] ||
-      tags['operator'] ||
-      (kind === 'fuel' ? 'Gas station' : 'Charger');
-    const openingHours = tags['opening_hours']?.trim() || undefined;
-    const connectors =
-      kind === 'charge' ? connectorsFromOsmTags(tags) : undefined;
-    const detail =
-      kind === 'fuel'
-        ? [tags['fuel:diesel'] === 'yes' ? 'diesel' : '', tags['fuel:octane_95'] === 'yes' ? '95' : '']
-            .filter(Boolean)
-            .join(' · ') || undefined
-        : connectors?.[0]?.type;
-    list.push({
-      id: Number(e['id']),
-      kind,
-      name,
-      lat,
-      lon,
-      distanceKm: haversineKm(origin, { lat, lon }),
-      brand: tags['brand'] || tags['operator'],
-      detail,
-      addressLine: addressFromOsmTags(tags),
-      openingHours,
-      openNow: isOpenNow(openingHours, now),
-      connectors,
-    });
-  }
-  return list.sort((a, b) => a.distanceKm - b.distanceKm).slice(0, 20);
+  });
+  return list.sort((a, b) => a.distanceKm - b.distanceKm).slice(0, limit);
 }
 
 export async function nearbyPoi(
   origin: Coords,
   preferKind?: 'fuel' | 'charge',
 ): Promise<NearbyPoi[]> {
+  const file = await loadStations();
+  if (!file) {
+    return [];
+  }
   let last: NearbyPoi[] = [];
-  for (const radiusM of NEARBY_RADII_M) {
-    const got = await fetchNearbyAt(origin, radiusM);
-    if (got == null) {
-      continue;
-    }
-    last = got;
-    const hit = preferKind
-      ? last.filter((p) => p.kind === preferKind)
-      : last;
-    if (hit.length) {
+  for (const radiusKm of NEARBY_RADII_KM) {
+    last = stationsNear(file, origin, radiusKm);
+    if (last.some((p) => !preferKind || p.kind === preferKind)) {
       return last;
     }
   }
   return last;
 }
 
-/** Around page: one user radius. Fetch fail throws; empty JSON is []. */
+/** Around page: one user radius, doubled once when empty. Missing data file throws. */
 export async function nearbyAround(
   origin: Coords,
   radiusKm = 15,
+  kind?: 'fuel' | 'charge',
 ): Promise<NearbyPoi[]> {
-  const km = Number.isFinite(radiusKm)
-    ? Math.min(300, Math.max(1, Math.round(radiusKm)))
-    : 15;
-  const first = await fetchAroundAt(origin, km);
-  if (first == null) {
+  const file = await loadStations();
+  if (!file) {
     throw new Error('nearby-unavailable');
   }
-  if (first.length || km >= 300) {
-    return first;
-  }
-  const retryKm = Math.min(300, km * 2);
-  if (retryKm === km) {
-    return first;
-  }
-  const retry = await fetchAroundAt(origin, retryKm);
-  return retry ?? first;
-}
-
-async function fetchAroundAt(
-  origin: Coords,
-  radiusKm: number,
-): Promise<NearbyPoi[] | null> {
-  return fetchNearbyAt(origin, radiusKm * 1000);
-}
-
-function overpassAroundQuery(
-  origin: Coords,
-  radiusM: number,
-  element: 'node' | 'way',
-): string {
-  const around = `(around:${radiusM},${origin.lat},${origin.lon})`;
-  return `[out:json][timeout:20];(
-${element}["amenity"="fuel"]${around};
-${element}["shop"="fuel"]${around};
-${element}["amenity"="charging_station"]${around};
-);out tags center;`;
-}
-
-async function fetchOverpass(query: string): Promise<unknown | null> {
-  const body = `data=${encodeURIComponent(query)}`;
-  for (const url of OVERPASS_ENDPOINTS) {
-    const raw = await fetchJson(
-      url,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body,
-      },
-      12_000,
-    );
-    if (raw != null) {
-      return raw;
-    }
-  }
-  return null;
-}
-
-function overpassElements(raw: unknown): unknown[] {
-  if (!raw || typeof raw !== 'object') {
-    return [];
-  }
-  const elements = (raw as { elements?: unknown }).elements;
-  return Array.isArray(elements) ? elements : [];
-}
-
-async function fetchNearbyAt(
-  origin: Coords,
-  radiusM: number,
-): Promise<NearbyPoi[] | null> {
-  // Nodes first. A combined node+way query is what the public servers drop.
-  const nodes = await fetchOverpass(overpassAroundQuery(origin, radiusM, 'node'));
-  if (nodes == null) {
-    return null;
-  }
-  const fromNodes = parseNearbyPoi(nodes, origin);
-  if (fromNodes.length) {
-    return fromNodes;
-  }
-  const ways = await fetchOverpass(overpassAroundQuery(origin, radiusM, 'way'));
-  if (ways == null) {
-    return fromNodes;
-  }
-  return parseNearbyPoi(
-    { elements: [...overpassElements(nodes), ...overpassElements(ways)] },
-    origin,
-  );
-}
-
-const AROUND_CACHE_KEY = 'drivelog.around.v1';
-
-export type AroundCache = {
-  lat: number;
-  lon: number;
-  radiusKm: number;
-  items: NearbyPoi[];
-  savedAt: number;
-  /** Area we understood, when the search was by name. */
-  label?: string;
-};
-
-export function readAroundCache(
-  storage: Storage | null = typeof localStorage !== 'undefined' ? localStorage : null,
-): AroundCache | null {
-  if (!storage) {
-    return null;
-  }
-  try {
-    const raw = storage.getItem(AROUND_CACHE_KEY);
-    if (!raw) {
-      return null;
-    }
-    const parsed = JSON.parse(raw) as AroundCache;
-    if (!parsed || !Array.isArray(parsed.items) || !parsed.items.length) {
-      return null;
-    }
-    if (!Number.isFinite(parsed.lat) || !Number.isFinite(parsed.lon)) {
-      return null;
-    }
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-export function writeAroundCache(
-  cache: AroundCache,
-  storage: Storage | null = typeof localStorage !== 'undefined' ? localStorage : null,
-): void {
-  if (!storage || !cache.items.length) {
-    return;
-  }
-  try {
-    storage.setItem(AROUND_CACHE_KEY, JSON.stringify(cache));
-  } catch {
-    // ponytail: private mode can throw; the list on screen still shows
-  }
+  const km = Number.isFinite(radiusKm) ? Math.min(300, Math.max(1, Math.round(radiusKm))) : 15;
+  const first = stationsNear(file, origin, km, AROUND_LIMIT, kind);
+  return first.length ? first : stationsNear(file, origin, Math.min(300, km * 2), AROUND_LIMIT, kind);
 }
 
 export function mapsSearchUrl(
