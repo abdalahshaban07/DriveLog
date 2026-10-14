@@ -1,9 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
-import { fuelBillWhy, TANK_ECONOMY_FLAT_PCT, type FuelBillReason } from '../../domain/economy';
-import { fuelBoard, sparklineGeometry } from '../../domain/fuel-dashboard';
-import { contextualFuelTipKey } from '../../domain/fuel-tips';
+import {
+  EFFICIENCY_WORSE_THRESHOLD,
+  fuelBillWhy,
+  TANK_ECONOMY_FLAT_PCT,
+  type FuelBillReason,
+} from '../../domain/economy';
+import { fuelBoard, SPARK_H, SPARK_W, sparklineGeometry } from '../../domain/fuel-dashboard';
+import { FUEL_GLIMPSE_COUNT, fuelGlimpse, type FuelGlimpse } from '../../domain/fuel-glimpse';
 import type { FuelGrade } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
@@ -63,7 +68,9 @@ export class FuelPage {
 
   readonly board = computed(() => fuelBoard(this.db.fillUps(), this.activeGrade()));
 
-  readonly spark = computed(() => sparklineGeometry(this.board().series));
+  readonly spark = computed(() =>
+    sparklineGeometry(this.board().series, SPARK_W, SPARK_H, this.board().overallL100),
+  );
 
   readonly filtered = computed(() => {
     const grade = this.activeGrade();
@@ -84,20 +91,9 @@ export class FuelPage {
 
   readonly hasFills = computed(() => this.filtered().length > 0);
 
-  readonly recent = computed(() => this.filtered().slice(0, 4));
+  readonly recent = computed(() => this.filtered().slice(0, FUEL_GLIMPSE_COUNT));
 
-  /** A tip that only restates the economy line stays off the page. */
-  readonly tipKey = computed((): MsgKey | null => {
-    const key = contextualFuelTipKey(this.db);
-    if (
-      key === 'fuel.tip.betterThanUsual' ||
-      key === 'fuel.tip.worseThanUsual' ||
-      key === 'fuel.tip.highConsumption'
-    ) {
-      return null;
-    }
-    return key;
-  });
+  readonly glimpse = computed(() => fuelGlimpse(this.filtered()));
 
   onGrade(value: GradeFilter): void {
     this.grade.set(value);
@@ -133,20 +129,22 @@ export class FuelPage {
     return pct > 0 ? 'up' : 'down';
   }
 
-  spendDeltaLabel(): string {
+  billLine(): string | null {
     const tone = this.spendTone();
     if (tone === 'none') {
-      return this.i18n.t('home.monthFuelDelta.none');
+      return null;
     }
     if (tone === 'flat') {
-      return this.i18n.t('home.monthFuelDelta.same');
+      return this.i18n.t('fuel.billLine.flat');
     }
-    const abs = this.i18n.formatNumber(Math.abs(this.board().deltaPct ?? 0), {
+    const pct = this.i18n.formatNumber(Math.abs(this.board().deltaPct ?? 0), {
       maximumFractionDigits: 0,
     });
-    return tone === 'up'
-      ? this.i18n.t('home.monthFuelDelta.up', { pct: abs })
-      : this.i18n.t('home.monthFuelDelta.down', { pct: `-${abs}` });
+    const why = this.billWhyKey();
+    if (!why) {
+      return this.i18n.t(tone === 'up' ? 'fuel.billLine.up' : 'fuel.billLine.down', { pct });
+    }
+    return this.i18n.t(why, { pct });
   }
 
   economyTone(): EconomyTone {
@@ -160,20 +158,40 @@ export class FuelPage {
     return pct > 0 ? 'worse' : 'better';
   }
 
-  economyCaption(): string | null {
+  economyLine(): string {
+    const board = this.board();
+    const value = this.formatL100(board.lastL100 ?? board.overallL100);
     const tone = this.economyTone();
     if (tone === 'none') {
-      return null;
+      return this.i18n.t('fuel.economyLine', { value });
     }
     if (tone === 'flat') {
-      return this.i18n.t('fuel.vsUsualFlat');
+      return this.i18n.t('fuel.economyLineFlat', { value });
     }
-    const abs = this.i18n.formatNumber(Math.abs(this.board().economyDeltaPct ?? 0), {
+    const pct = this.i18n.formatNumber(Math.abs(board.economyDeltaPct ?? 0), {
       maximumFractionDigits: 0,
     });
-    return tone === 'worse'
-      ? this.i18n.t('fuel.vsUsualWorse', { pct: abs })
-      : this.i18n.t('fuel.vsUsualBetter', { pct: abs });
+    return this.i18n.t(tone === 'worse' ? 'fuel.economyLineWorse' : 'fuel.economyLineBetter', {
+      value,
+      pct,
+    });
+  }
+
+  formatKm(value: number): string {
+    return this.i18n.formatNumber(value, { maximumFractionDigits: value >= 10 ? 0 : 1 });
+  }
+
+  thirsty(l100: number): boolean {
+    const usual = this.board().overallL100;
+    return usual != null && usual > 0 && l100 > usual * (1 + EFFICIENCY_WORSE_THRESHOLD);
+  }
+
+  glimpseLine(): string | null {
+    const glimpse = this.glimpse();
+    if (!glimpse) {
+      return null;
+    }
+    return glimpseText(glimpse, this.i18n);
   }
 }
 
@@ -200,13 +218,13 @@ function billWhyMessageKey(direction: 'up' | 'down', reason: FuelBillReason): Ms
   if (direction === 'up') {
     switch (reason) {
       case 'price':
-        return 'fuel.billWhy.up.price';
+        return 'fuel.billLine.up.price';
       case 'distance':
-        return 'fuel.billWhy.up.distance';
+        return 'fuel.billLine.up.distance';
       case 'consumption':
-        return 'fuel.billWhy.up.consumption';
+        return 'fuel.billLine.up.consumption';
       case 'liters':
-        return 'fuel.billWhy.up.liters';
+        return 'fuel.billLine.up.liters';
       default: {
         const exhaustive: never = reason;
         return exhaustive;
@@ -215,15 +233,65 @@ function billWhyMessageKey(direction: 'up' | 'down', reason: FuelBillReason): Ms
   }
   switch (reason) {
     case 'price':
-      return 'fuel.billWhy.down.price';
+      return 'fuel.billLine.down.price';
     case 'distance':
-      return 'fuel.billWhy.down.distance';
+      return 'fuel.billLine.down.distance';
     case 'consumption':
-      return 'fuel.billWhy.down.consumption';
+      return 'fuel.billLine.down.consumption';
     case 'liters':
-      return 'fuel.billWhy.down.liters';
+      return 'fuel.billLine.down.liters';
     default: {
       const exhaustive: never = reason;
+      return exhaustive;
+    }
+  }
+}
+
+function glimpseText(glimpse: FuelGlimpse, i18n: I18n): string {
+  switch (glimpse.kind) {
+    case 'rhythm':
+      return i18n.t('fuel.glimpse.rhythm', {
+        recent: glimpse.recentDays,
+        usual: glimpse.usualDays,
+      });
+    case 'spend':
+      return i18n.t('fuel.glimpse.spend', {
+        date: i18n.formatDate(glimpse.date, { day: 'numeric', month: 'long' }),
+        pct: i18n.formatNumber(glimpse.sharePct, { maximumFractionDigits: 0 }),
+        count: glimpse.count,
+      });
+    case 'consumption':
+      return i18n.t(
+        glimpse.direction === 'higher' ? 'fuel.glimpse.useHigher' : 'fuel.glimpse.useLower',
+        {
+          count: glimpse.count,
+          delta: i18n.formatNumber(glimpse.deltaL100, {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1,
+          }),
+        },
+      );
+    case 'price':
+      return i18n.t('fuel.glimpse.price', {
+        now: i18n.formatNumber(glimpse.now, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }),
+        then: i18n.formatNumber(glimpse.then, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }),
+      });
+    case 'steady':
+      return i18n.t('fuel.glimpse.steady', {
+        count: glimpse.count,
+        l100: i18n.formatNumber(glimpse.l100, {
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1,
+        }),
+      });
+    default: {
+      const exhaustive: never = glimpse;
       return exhaustive;
     }
   }

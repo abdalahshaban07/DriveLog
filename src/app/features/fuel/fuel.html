@@ -27,26 +27,13 @@
     role="status"
     [attr.aria-label]="i18n.t('fuel.monthSpend')"
   >
-    <div class="ledger__head">
-      <p class="ledger__label">{{ i18n.t('fuel.monthSpend') }}</p>
-      <p class="ledger__vs">{{ i18n.t('fuel.vsLastMonth') }}</p>
-    </div>
+    <p class="ledger__label">{{ i18n.t('fuel.monthSpend') }}</p>
     <span class="ledger__tick" aria-hidden="true"></span>
-    <div class="ledger__hero">
-      <strong class="ledger__amount" [class.metric--ghost]="!hasFills() && b.monthSpend === 0">
-        {{ formatMoney(b.monthSpend) }}
-      </strong>
-      <span
-        class="delta"
-        dir="ltr"
-        [class.delta--up]="spendTone() === 'up'"
-        [class.delta--down]="spendTone() === 'down'"
-      >
-        {{ spendDeltaLabel() }}
-      </span>
-    </div>
-    @if (billWhyKey(); as whyKey) {
-      <p class="ledger__why">{{ i18n.t(whyKey) }}</p>
+    <strong class="ledger__amount" [class.metric--ghost]="!hasFills() && b.monthSpend === 0">
+      {{ formatMoney(b.monthSpend) }}
+    </strong>
+    @if (billLine(); as line) {
+      <p class="ledger__line">{{ line }}</p>
     }
     <div class="ledger__stats">
       <div>
@@ -72,103 +59,102 @@
           }
         </strong>
       </div>
+      <div>
+        <span class="ledger__label">{{ i18n.t('fuel.monthFills') }}</span>
+        <strong [class.metric--ghost]="!hasFills()">
+          @if (hasFills()) {
+            <bdi dir="ltr">{{ i18n.formatNumber(b.monthCount, { maximumFractionDigits: 0 }) }}</bdi>
+          } @else {
+            —
+          }
+        </strong>
+      </div>
     </div>
   </section>
 
   <section class="board card" [attr.aria-label]="i18n.t('fuel.economy')">
-    <div class="board__head">
-      <h2 class="kicker">{{ i18n.t('fuel.economy') }}</h2>
-      @if (economyCaption(); as caption) {
+    <div class="board__row" [class.board__row--solo]="!spark()">
+      <div class="board__copy">
+        <h2 class="kicker">{{ i18n.t('fuel.economy') }}</h2>
         <p
-          class="board__caption"
-          [class.board__caption--better]="economyTone() === 'better'"
-          [class.board__caption--worse]="economyTone() === 'worse'"
+          class="board__line"
+          [class.metric--ghost]="b.lastL100 == null && b.overallL100 == null"
+          [class.board__line--better]="economyTone() === 'better'"
+          [class.board__line--worse]="economyTone() === 'worse'"
         >
-          {{ caption }}
+          {{ economyLine() }}
         </p>
+      </div>
+      @if (spark(); as s) {
+        <div class="spark-wrap spark-wrap--slim">
+          <svg
+            class="spark"
+            viewBox="0 0 320 76"
+            preserveAspectRatio="none"
+            role="img"
+            [attr.aria-label]="i18n.t('fuel.trend')"
+          >
+            @if (s.referenceY != null) {
+              <line
+                class="spark__ref"
+                x1="10"
+                [attr.y1]="s.referenceY"
+                [attr.x2]="s.width - 10"
+                [attr.y2]="s.referenceY"
+                vector-effect="non-scaling-stroke"
+              />
+            }
+            <path class="spark__area" [attr.d]="s.area" />
+            <path class="spark__line" [attr.d]="s.line" vector-effect="non-scaling-stroke" />
+          </svg>
+          <span
+            class="spark__dot"
+            aria-hidden="true"
+            [style.left.%]="(s.x / s.width) * 100"
+            [style.top.%]="(s.y / s.height) * 100"
+          ></span>
+        </div>
       }
     </div>
-    @if (spark(); as s) {
-      <div class="spark-wrap">
-        <svg
-          class="spark"
-          viewBox="0 0 320 76"
-          preserveAspectRatio="none"
-          role="img"
-          [attr.aria-label]="i18n.t('fuel.trend')"
-        >
-          <path class="spark__area" [attr.d]="s.area" />
-          <path class="spark__line" [attr.d]="s.line" vector-effect="non-scaling-stroke" />
-        </svg>
-        <span
-          class="spark__dot"
-          aria-hidden="true"
-          [style.left.%]="(s.x / s.width) * 100"
-          [style.top.%]="(s.y / s.height) * 100"
-        ></span>
-      </div>
-    }
-    <div class="compare">
-      <div class="compare__col compare__col--last">
-        <span class="kicker">{{ i18n.t('fuel.last') }}</span>
-        <strong class="compare__value" [class.metric--ghost]="b.lastL100 == null">
-          <bdi dir="ltr">{{ formatL100(b.lastL100) }}</bdi>
-        </strong>
-        <span class="compare__unit">
-          <span>{{ i18n.t('fuel.per100Lead') }}</span>
-          <bdi dir="ltr">{{ i18n.formatNumber(100, { maximumFractionDigits: 0 }) }}</bdi>
-          <span>{{ i18n.t('common.km') }}</span>
-        </span>
-      </div>
-      <div class="compare__col">
-        <span class="kicker">{{ i18n.t('fuel.overall') }}</span>
-        <strong class="compare__value" [class.metric--ghost]="b.overallL100 == null">
-          <bdi dir="ltr">{{ formatL100(b.overallL100) }}</bdi>
-        </strong>
-        <span class="compare__unit">
-          <span>{{ i18n.t('fuel.per100Lead') }}</span>
-          <bdi dir="ltr">{{ i18n.formatNumber(100, { maximumFractionDigits: 0 }) }}</bdi>
-          <span>{{ i18n.t('common.km') }}</span>
-        </span>
-      </div>
-    </div>
   </section>
+
+  @if (glimpseLine(); as line) {
+    <section class="tip card" role="status" [attr.aria-label]="i18n.t('fuel.glimpseLabel')">
+      <p class="tip__label">{{ i18n.t('fuel.glimpseLabel') }}</p>
+      <p class="tip__text">{{ line }}</p>
+    </section>
+  }
 
   @if (recent().length) {
     <section class="log card" [attr.aria-label]="i18n.t('fuel.recent')">
       <div class="recent__list recent__list--flat">
-        @for (row of recent(); track row.id; let first = $first) {
-          <a
-            class="recent__row"
-            [class.recent__row--last]="first"
-            [routerLink]="['/fill-up']"
-            [queryParams]="{ id: row.id }"
-            [attr.aria-label]="first ? i18n.t('fuel.lastFillStrip') : null"
-          >
+        @for (row of recent(); track row.id) {
+          <a class="recent__row" [routerLink]="['/fill-up']" [queryParams]="{ id: row.id }">
             <span class="recent__when">
-              @if (first) {
-                <span class="recent__mark">{{ i18n.t('fuel.last') }}</span>
-              }
               <strong>{{ i18n.formatDate(row.date, { day: 'numeric' }) }}</strong>
               <span>{{ i18n.formatDate(row.date, { month: 'short' }) }}</span>
             </span>
-            <span class="recent__mid">
-              <span class="recent__liters">
+            <strong class="recent__cost">{{ formatMoney(row.cost) }}</strong>
+            <span class="recent__meta">
+              <span>
                 <bdi dir="ltr">{{
                   i18n.formatNumber(row.liters, { maximumFractionDigits: 1 })
                 }}</bdi>
-                <span>{{ i18n.t('common.liters') }}</span>
+                {{ i18n.t('common.liters') }}
               </span>
+              @if (row.distanceKm != null && row.distanceKm > 0) {
+                <span>
+                  <bdi dir="ltr">{{ formatKm(row.distanceKm) }}</bdi>
+                  {{ i18n.t('common.km') }}
+                </span>
+              }
               @if (rowL100(row.id); as l100) {
-                <span class="recent__eco">
+                <span class="recent__eco" [class.recent__eco--high]="thirsty(l100)">
                   <bdi dir="ltr">{{ formatL100(l100) }}</bdi>
-                  <span>{{ i18n.t('fuel.per100Lead') }}</span>
-                  <bdi dir="ltr">{{ i18n.formatNumber(100, { maximumFractionDigits: 0 }) }}</bdi>
-                  <span>{{ i18n.t('common.km') }}</span>
+                  {{ i18n.t('fuel.lPer100') }}
                 </span>
               }
             </span>
-            <strong class="recent__cost">{{ formatMoney(row.cost) }}</strong>
           </a>
         }
       </div>
@@ -177,13 +163,6 @@
         <span>{{ i18n.t('fuel.seeHistory') }}</span>
         <span class="recent__go" aria-hidden="true">→</span>
       </a>
-    </section>
-  }
-
-  @if (tipKey(); as key) {
-    <section class="tip card" role="status">
-      <p class="tip__label">{{ i18n.t('fuel.tipLabel') }}</p>
-      <p class="tip__text">{{ i18n.t(key) }}</p>
     </section>
   }
 
