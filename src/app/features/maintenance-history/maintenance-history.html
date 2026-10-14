@@ -4,12 +4,15 @@
     [showBack]="true"
     (back)="router.navigateByUrl('/more')"
   >
-    <app-page-line page="maintenance" />
+    <app-page-line
+      page="maintLog"
+      [periodFrom]="activeRange().from ?? ''"
+      [periodTo]="activeRange().to ?? ''"
+      [periodLabel]="linePeriod()"
+      [service]="activeType() === 'all' ? '' : activeType()"
+    />
   </app-page-header>
-  <app-section-tabs
-    [tabs]="sectionTabs"
-    [ariaLabel]="i18n.t('history.maintTitle')"
-  />
+  <app-section-tabs [tabs]="sectionTabs" [ariaLabel]="i18n.t('history.maintTitle')" />
 
   <div class="history-filter">
     <app-period-range
@@ -40,7 +43,9 @@
       <div class="history-sheet__facts">
         <div>
           <span class="history-sheet__label">{{ i18n.t('history.amount') }}</span>
-          <strong><bdi dir="ltr">{{ formatMoney(totals.total) }}</bdi></strong>
+          <strong
+            ><bdi dir="ltr">{{ formatMoney(totals.total) }}</bdi></strong
+          >
         </div>
         <div>
           <span class="history-sheet__label">{{ i18n.t('history.recordCount') }}</span>

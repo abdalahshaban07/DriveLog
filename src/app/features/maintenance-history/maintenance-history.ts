@@ -10,6 +10,7 @@ import {
   type HistoryRangePreset,
 } from '../../domain/export-history';
 import { todayDateOnly } from '../../domain/dues';
+import { pageLinePeriod } from '../../domain/page-line';
 import { historyTypeLabel, maintenanceRecordLabel } from '../../domain/part-name';
 import { MAINTENANCE_TYPES } from '../../domain/models';
 import type { Maintenance } from '../../domain/models';
@@ -46,6 +47,12 @@ export class MaintenanceHistoryPage {
   readonly shareBusy = signal(false);
   readonly shareError = signal('');
   readonly pendingDelete = signal<string | null>(null);
+
+  readonly linePeriod = computed(() =>
+    pageLinePeriod(this.rangePreset(), this.fromDate(), this.toDate(), (key, params) =>
+      this.i18n.t(key, params),
+    ),
+  );
 
   readonly activeRange = computed(() => {
     const preset = this.rangePreset();
@@ -93,9 +100,7 @@ export class MaintenanceHistoryPage {
     })),
   ]);
 
-  readonly rows = computed(() =>
-    filterMaintenance(this.rangedRows(), { type: this.activeType() }),
-  );
+  readonly rows = computed(() => filterMaintenance(this.rangedRows(), { type: this.activeType() }));
 
   readonly groupedRows = computed(() => {
     const groups = new Map<string, Maintenance[]>();

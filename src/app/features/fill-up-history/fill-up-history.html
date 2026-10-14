@@ -1,6 +1,14 @@
 <div class="stack history-page">
   <app-page-header [title]="i18n.t('history.title')">
-    <app-page-line page="fuel" />
+    <app-page-line
+      page="fuelLog"
+      [periodFrom]="activeRange().from ?? ''"
+      [periodTo]="activeRange().to ?? ''"
+      [periodLabel]="linePeriod()"
+      [grade]="lineGrade()"
+      [gradeLabel]="lineGradeLabel()"
+      [energy]="activeType()"
+    />
   </app-page-header>
   <app-section-tabs [tabs]="tabs" [ariaLabel]="i18n.t('nav.fuel')" />
 
@@ -42,13 +50,17 @@
       <div class="history-sheet__facts">
         <div>
           <span class="history-sheet__label">{{ i18n.t('history.amount') }}</span>
-          <strong><bdi dir="ltr">{{ formatMoney(totals.total) }}</bdi></strong>
+          <strong
+            ><bdi dir="ltr">{{ formatMoney(totals.total) }}</bdi></strong
+          >
         </div>
         @if (totals.liters > 0) {
           <div>
             <span class="history-sheet__label">{{ i18n.t('fillUp.liters') }}</span>
             <strong>
-              <bdi dir="ltr">{{ i18n.formatNumber(totals.liters, { maximumFractionDigits: 1 }) }}</bdi>
+              <bdi dir="ltr">{{
+                i18n.formatNumber(totals.liters, { maximumFractionDigits: 1 })
+              }}</bdi>
             </strong>
           </div>
         }
@@ -102,19 +114,25 @@
               <p class="history-month__secondary">
                 @if (group.liters > 0) {
                   <span>
-                    <bdi dir="ltr">{{ i18n.formatNumber(group.liters, { maximumFractionDigits: 1 }) }}</bdi>
+                    <bdi dir="ltr">{{
+                      i18n.formatNumber(group.liters, { maximumFractionDigits: 1 })
+                    }}</bdi>
                     {{ i18n.t('common.liters') }}
                   </span>
                 }
                 @if (group.km != null) {
                   <span>
-                    <bdi dir="ltr">{{ i18n.formatNumber(group.km, { maximumFractionDigits: 0 }) }}</bdi>
+                    <bdi dir="ltr">{{
+                      i18n.formatNumber(group.km, { maximumFractionDigits: 0 })
+                    }}</bdi>
                     {{ i18n.t('common.km') }}
                   </span>
                 }
                 @if (group.kWh > 0) {
                   <span>
-                    <bdi dir="ltr">{{ i18n.formatNumber(group.kWh, { maximumFractionDigits: 1 }) }}</bdi>
+                    <bdi dir="ltr">{{
+                      i18n.formatNumber(group.kWh, { maximumFractionDigits: 1 })
+                    }}</bdi>
                     {{ i18n.t('history.type.charge') }}
                   </span>
                 }
@@ -125,11 +143,7 @@
             @for (item of group.items; track item.row.id) {
               <li class="history-ledger__row">
                 <div class="history-ledger__card">
-                  <button
-                    type="button"
-                    class="history-ledger__link"
-                    (click)="editRow(item)"
-                  >
+                  <button type="button" class="history-ledger__link" (click)="editRow(item)">
                     <div class="history-ledger__main">
                       <span class="history-day">
                         <strong>{{ dayNumber(item.row.date) }}</strong>
@@ -141,30 +155,40 @@
                         }
                         @if (item.kind === 'fuel') {
                           <span class="history-liters">
-                            <bdi dir="ltr">{{ i18n.formatNumber(item.row.liters, { maximumFractionDigits: 1 }) }}</bdi>
+                            <bdi dir="ltr">{{
+                              i18n.formatNumber(item.row.liters, { maximumFractionDigits: 1 })
+                            }}</bdi>
                             <span>{{ i18n.t('common.liters') }}</span>
                             @if (item.row.fuelGrade) {
-                              <span class="chip chip--fuel">{{ gradeLabel(item.row.fuelGrade) }}</span>
+                              <span class="chip chip--fuel">{{
+                                gradeLabel(item.row.fuelGrade)
+                              }}</span>
                             }
                           </span>
                           @if (l100(item.row); as rate) {
                             <span class="history-eco">
                               <bdi dir="ltr">{{ formatL100(rate) }}</bdi>
                               <span>{{ i18n.t('fuel.per100Lead') }}</span>
-                              <bdi dir="ltr">{{ i18n.formatNumber(100, { maximumFractionDigits: 0 }) }}</bdi>
+                              <bdi dir="ltr">{{
+                                i18n.formatNumber(100, { maximumFractionDigits: 0 })
+                              }}</bdi>
                               <span>{{ i18n.t('common.km') }}</span>
                             </span>
                           }
                           @if (kmDriven(item.row); as km) {
                             <span class="history-km">
-                              <bdi dir="ltr">{{ i18n.formatNumber(km, { maximumFractionDigits: 0 }) }}</bdi>
+                              <bdi dir="ltr">{{
+                                i18n.formatNumber(km, { maximumFractionDigits: 0 })
+                              }}</bdi>
                               {{ i18n.t('common.km') }}
                             </span>
                           }
                         } @else {
                           <span class="chip chip--charge">{{ i18n.t('history.type.charge') }}</span>
                           <span class="history-liters">
-                            <bdi dir="ltr">{{ i18n.formatNumber(item.row.kWh, { maximumFractionDigits: 1 }) }}</bdi>
+                            <bdi dir="ltr">{{
+                              i18n.formatNumber(item.row.kWh, { maximumFractionDigits: 1 })
+                            }}</bdi>
                           </span>
                           @if (chargeEcoLabel(item.row); as eco) {
                             <span class="history-km">{{ eco }}</span>

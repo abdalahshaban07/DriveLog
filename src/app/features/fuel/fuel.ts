@@ -15,13 +15,7 @@ type GradeFilter = FuelGrade | 'all';
 type SpendTone = 'none' | 'flat' | 'up' | 'down';
 type EconomyTone = 'none' | 'flat' | 'better' | 'worse';
 
-const GRADE_ORDER: readonly FuelGrade[] = [
-  'gasoline92',
-  'gasoline95',
-  'solar',
-  'diesel',
-  'custom',
-];
+const GRADE_ORDER: readonly FuelGrade[] = ['gasoline92', 'gasoline95', 'solar', 'diesel', 'custom'];
 
 @Component({
   selector: 'app-fuel',
@@ -60,6 +54,11 @@ export class FuelPage {
       return selected;
     }
     return 'all';
+  });
+
+  readonly lineGrade = computed((): FuelGrade | '' => {
+    const grade = this.activeGrade();
+    return grade === 'all' ? '' : grade;
   });
 
   readonly board = computed(() => fuelBoard(this.db.fillUps(), this.activeGrade()));
@@ -197,10 +196,7 @@ function gradeLabelKey(grade: FuelGrade): MsgKey {
   }
 }
 
-function billWhyMessageKey(
-  direction: 'up' | 'down',
-  reason: FuelBillReason,
-): MsgKey {
+function billWhyMessageKey(direction: 'up' | 'down', reason: FuelBillReason): MsgKey {
   if (direction === 'up') {
     switch (reason) {
       case 'price':

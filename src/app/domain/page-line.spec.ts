@@ -1,12 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ar } from '../i18n/ar';
 import type { Breakdown, DueItem, FillUp, Maintenance } from './models';
-import {
-  pageLineFact,
-  pageLineSentence,
-  rewriteKeepsFacts,
-  type PageLineBag,
-} from './page-line';
+import { pageLineFact, pageLineSentence, rewriteKeepsFacts, type PageLineBag } from './page-line';
 
 function fill(
   partial: Partial<FillUp> & Pick<FillUp, 'id' | 'odometer' | 'liters' | 'cost' | 'tankFull'>,
@@ -170,16 +165,10 @@ describe('pageLineFact', () => {
 
   it('says insurance only when it ends before the license', () => {
     expect(
-      pageLineFact(
-        'vault',
-        bag({ insuranceExpiry: '2026-11-01', licenseExpiry: '2027-01-01' }),
-      ),
+      pageLineFact('vault', bag({ insuranceExpiry: '2026-11-01', licenseExpiry: '2027-01-01' })),
     ).toEqual({ id: 'vault' });
     expect(
-      pageLineFact(
-        'vault',
-        bag({ insuranceExpiry: '2027-06-01', licenseExpiry: '2027-01-01' }),
-      ),
+      pageLineFact('vault', bag({ insuranceExpiry: '2027-06-01', licenseExpiry: '2027-01-01' })),
     ).toBeNull();
   });
 
@@ -245,8 +234,22 @@ describe('pageLineFact', () => {
         bag({
           today: '2026-10-10',
           fills: [
-            fill({ id: 'j', odometer: 1, liters: 10, cost: 100, tankFull: true, date: '2026-07-02' }),
-            fill({ id: 'a', odometer: 2, liters: 10, cost: 50, tankFull: true, date: '2026-08-02' }),
+            fill({
+              id: 'j',
+              odometer: 1,
+              liters: 10,
+              cost: 100,
+              tankFull: true,
+              date: '2026-07-02',
+            }),
+            fill({
+              id: 'a',
+              odometer: 2,
+              liters: 10,
+              cost: 50,
+              tankFull: true,
+              date: '2026-08-02',
+            }),
           ],
           maintenance: [maint({ id: 'm', type: 'brakes', date: '2026-08-15', cost: 400 })],
         }),
@@ -267,13 +270,14 @@ describe('pageLineFact', () => {
     expect(pageLineFact('charts', bag(data))).toEqual({ id: 'charts', month: '2026-08' });
     expect(
       pageLineFact('charts', bag({ ...data, chartsFrom: '2026-10-01', chartsTo: '2026-10-10' })),
-    ).toBeNull();
+    ).toEqual({ id: 'chartsUse', dir: 'flat', period: '' });
     expect(
       pageLineFact('charts', bag({ ...data, chartsFrom: '2026-01-01', chartsTo: '2026-10-10' })),
     ).toEqual({ id: 'charts', month: '2026-08' });
-    expect(
-      pageLineFact('charts', bag({ ...data, chartsFrom: '', chartsTo: '' })),
-    ).toEqual({ id: 'charts', month: '2026-08' });
+    expect(pageLineFact('charts', bag({ ...data, chartsFrom: '', chartsTo: '' }))).toEqual({
+      id: 'charts',
+      month: '2026-08',
+    });
     expect(
       pageLineFact(
         'charts',
@@ -335,7 +339,9 @@ describe('pageLineFact', () => {
     ).toEqual({ id: 'healthOver', name: 'فلتر التكييف' });
     const calm = pageLineSentence({ id: 'healthNextKm', name: 'فلتر التكييف', km: 3168 }, 'ar');
     expect(calm.key).toBe('pageLine.healthNextKm');
-    expect(ar['pageLine.healthNextKm']).toBe('مفيش حاجة مستعجلة. أقرب متابعة {name}، فاضل {km} كم.');
+    expect(ar['pageLine.healthNextKm']).toBe(
+      'مفيش حاجة مستعجلة. أقرب متابعة {name}، فاضل {km} كم.',
+    );
     expect(ar['pageLine.healthNext']).toContain('{name}');
     expect(ar['pageLine.healthNextKm']).not.toMatch(/\d/);
     expect(
@@ -373,6 +379,187 @@ describe('pageLineFact', () => {
     expect(ar['pageLine.healthOver']).toBe('{name} متأخر.');
   });
 
+  it('follows the fuel log filters', () => {
+    const period = 'آخر ٣ شهور';
+    const lens = { from: '2026-08-01', to: '2026-10-10', period };
+    const priced = [
+      fill({
+        id: 'old',
+        odometer: 1,
+        liters: 10,
+        cost: 100,
+        tankFull: true,
+        date: '2026-07-15',
+        fuelGrade: 'gasoline92',
+      }),
+      fill({
+        id: 'now',
+        odometer: 2,
+        liters: 10,
+        cost: 300,
+        tankFull: true,
+        date: '2026-09-15',
+        fuelGrade: 'gasoline92',
+      }),
+    ];
+    expect(pageLineFact('fuelLog', bag({ fills: priced, lens }))).toEqual({
+      id: 'fuelLogCost',
+      period,
+      dir: 'up',
+    });
+    expect(
+      pageLineFact('fuelLog', bag({ fills: priced, lens: { ...lens, from: '', to: '' } })),
+    ).toEqual({ id: 'fuelLogCount', period, count: 2, liters: 20 });
+    expect(pageLineFact('fuelLog', bag({ lens }))).toBeNull();
+    expect(
+      pageLineFact(
+        'fuelLog',
+        bag({
+          lens: { ...lens, grade: 'gasoline95', gradeLabel: '٩٥' },
+          labelGrade: (grade) => (grade === 'gasoline92' ? '٩٢' : grade),
+          fills: [
+            fill({
+              id: 'a95',
+              odometer: 1,
+              liters: 20,
+              cost: 400,
+              tankFull: true,
+              date: '2026-09-01',
+              fuelGrade: 'gasoline95',
+            }),
+            fill({
+              id: 'a92',
+              odometer: 2,
+              liters: 40,
+              cost: 560,
+              tankFull: true,
+              date: '2026-09-02',
+              fuelGrade: 'gasoline92',
+            }),
+          ],
+        }),
+      ),
+    ).toEqual({ id: 'fuelLogGrade', grade: '٩٥', other: '٩٢', dir: 'up' });
+    expect(
+      pageLineFact(
+        'fuelLog',
+        bag({
+          lens: { ...lens, energy: 'charge' },
+          charges: [
+            {
+              id: 'c1',
+              carId: 'c',
+              odometer: 1,
+              kWh: 10,
+              cost: 40,
+              date: '2026-09-01',
+              createdAt: '2026-09-01T00:00:00.000Z',
+              updatedAt: '2026-09-01T00:00:00.000Z',
+            },
+            {
+              id: 'c2',
+              carId: 'c',
+              odometer: 2,
+              kWh: 12,
+              cost: 50,
+              date: '2026-09-20',
+              createdAt: '2026-09-20T00:00:00.000Z',
+              updatedAt: '2026-09-20T00:00:00.000Z',
+            },
+          ],
+        }),
+      ),
+    ).toEqual({ id: 'fuelLogCharge', period, count: 2, kwh: 22 });
+  });
+
+  it('limits fuel cadence to the selected grade', () => {
+    const graded = flatFills.map((row) => ({ ...row, fuelGrade: 'gasoline95' as const }));
+    expect(
+      pageLineFact(
+        'fuel',
+        bag({ fills: graded, today: '2026-02-08', lens: { grade: 'gasoline95' } }),
+      ),
+    ).toEqual({ id: 'fuelCadence', interval: 14, days: 10 });
+    expect(
+      pageLineFact(
+        'fuel',
+        bag({ fills: graded, today: '2026-02-08', lens: { grade: 'gasoline92' } }),
+      ),
+    ).toBeNull();
+  });
+
+  it('follows the maintenance log filters', () => {
+    const period = 'آخر ٣ شهور';
+    const lens = { from: '2026-08-01', to: '2026-10-10', period };
+    const rows = [
+      maint({ id: 'oil-old', type: 'oil', date: '2026-06-01', cost: 50 }),
+      maint({ id: 'oil-now', type: 'oil', date: '2026-09-01', cost: 400 }),
+      maint({ id: 'brakes', type: 'brakes', date: '2026-09-02', cost: 100 }),
+    ];
+    expect(pageLineFact('maintLog', bag({ maintenance: rows, lens }))).toEqual({
+      id: 'maintLogTop',
+      period,
+      name: 'oil',
+    });
+    expect(
+      pageLineFact('maintLog', bag({ maintenance: rows, lens: { ...lens, service: 'oil' } })),
+    ).toEqual({ id: 'maintLogCost', name: 'oil', dir: 'up' });
+    expect(pageLineFact('maintLog', bag({ lens }))).toBeNull();
+  });
+
+  it('names the report share inside the selected period', () => {
+    const period = 'آخر ٣ شهور';
+    expect(
+      pageLineFact(
+        'reports',
+        bag({ reportFuel: 70, reportMaint: 30, reportTotal: 100, lens: { period } }),
+      ),
+    ).toEqual({ id: 'reportsShare', period, kind: 'fuel', pct: 70 });
+    expect(
+      pageLineFact(
+        'reports',
+        bag({ reportFuel: 40, reportMaint: 60, reportTotal: 100, lens: { period } }),
+      ),
+    ).toEqual({ id: 'reportsShare', period, kind: 'maint', pct: 60 });
+    expect(
+      pageLineFact(
+        'reports',
+        bag({ reportFuel: 55, reportMaint: 45, reportTotal: 100, lens: { period } }),
+      ),
+    ).toEqual({ id: 'reportsEvenPeriod', period });
+  });
+
+  it('says whether chart-period consumption is above usual when no month spiked', () => {
+    expect(
+      pageLineFact(
+        'charts',
+        bag({
+          chartsFrom: '2026-10-01',
+          chartsTo: '2026-10-10',
+          lens: { period: 'الشهر ده' },
+          fills: [
+            fill({
+              id: 'old',
+              odometer: 1,
+              liters: 10,
+              cost: 20,
+              tankFull: true,
+              date: '2026-08-02',
+            }),
+            fill({
+              id: 'now',
+              odometer: 2,
+              liters: 50,
+              cost: 80,
+              tankFull: true,
+              date: '2026-10-02',
+            }),
+          ],
+        }),
+      ),
+    ).toEqual({ id: 'chartsUse', dir: 'worse', period: 'الشهر ده' });
+  });
+
   it('names the spend leader only when it clearly leads', () => {
     expect(
       pageLineFact('reports', bag({ reportFuel: 80, reportMaint: 20, reportTotal: 100 })),
@@ -380,7 +567,9 @@ describe('pageLineFact', () => {
     expect(
       pageLineFact('reports', bag({ reportFuel: 55, reportMaint: 45, reportTotal: 100 })),
     ).toEqual({ id: 'reportsEven' });
-    expect(pageLineFact('reports', bag({ reportFuel: 40, reportMaint: 0, reportTotal: 40 }))).toEqual({
+    expect(
+      pageLineFact('reports', bag({ reportFuel: 40, reportMaint: 0, reportTotal: 40 })),
+    ).toEqual({
       id: 'reportsFuel',
     });
   });
@@ -394,10 +583,7 @@ describe('rewriteKeepsFacts', () => {
 
   it('rejects a rewrite that drops the original words', () => {
     expect(
-      rewriteKeepsFacts(
-        'لو الزيت اتأجل، السقف يستحمل.',
-        'لو الزيت لم ينفع، الملك إ بط argitar.',
-      ),
+      rewriteKeepsFacts('لو الزيت اتأجل، السقف يستحمل.', 'لو الزيت لم ينفع، الملك إ بط argitar.'),
     ).toBe(false);
     expect(
       rewriteKeepsFacts(

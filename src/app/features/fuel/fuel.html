@@ -1,6 +1,6 @@
 <div class="stack fuel">
   <app-page-header [title]="i18n.t('fuel.title')">
-    <app-page-line page="fuel" />
+    <app-page-line page="fuel" [grade]="lineGrade()" />
   </app-page-header>
   <app-section-tabs [tabs]="tabs" [ariaLabel]="i18n.t('nav.fuel')" />
 
@@ -53,7 +53,9 @@
         <span class="ledger__label">{{ i18n.t('fillUp.liters') }}</span>
         <strong [class.metric--ghost]="!hasFills()">
           @if (hasFills()) {
-            <bdi dir="ltr">{{ i18n.formatNumber(b.monthLiters, { maximumFractionDigits: 1 }) }}</bdi>
+            <bdi dir="ltr">{{
+              i18n.formatNumber(b.monthLiters, { maximumFractionDigits: 1 })
+            }}</bdi>
           } @else {
             —.—
           }
@@ -152,7 +154,9 @@
             </span>
             <span class="recent__mid">
               <span class="recent__liters">
-                <bdi dir="ltr">{{ i18n.formatNumber(row.liters, { maximumFractionDigits: 1 }) }}</bdi>
+                <bdi dir="ltr">{{
+                  i18n.formatNumber(row.liters, { maximumFractionDigits: 1 })
+                }}</bdi>
                 <span>{{ i18n.t('common.liters') }}</span>
               </span>
               @if (rowL100(row.id); as l100) {

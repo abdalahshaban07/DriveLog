@@ -52,7 +52,7 @@ import {
 } from '../../domain/setup-checklist';
 import { buildReportBrief, recurringBreakdownCount } from '../../domain/smart-reports';
 import { rangeBoundsForPreset, type HistoryRangePreset } from '../../domain/export-history';
-import type { PageLineId } from '../../domain/page-line';
+import { pageLinePeriod, type PageLineId } from '../../domain/page-line';
 import { homeHealthSummary } from '../../domain/vehicle-facts';
 import { I18n } from '../../i18n/i18n';
 import { HealthRow } from '../../ui/health-row/health-row';
@@ -68,10 +68,7 @@ import { InstallCard } from './cards/install-card/install-card';
 import { QuickLog } from './cards/quick-log/quick-log';
 import { WeatherTipCard } from './cards/weather-tip/weather-tip';
 import { SampleBanner } from './cards/sample-banner/sample-banner';
-import {
-  SetupChecklist,
-  type ChecklistItem,
-} from './cards/setup-checklist/setup-checklist';
+import { SetupChecklist, type ChecklistItem } from './cards/setup-checklist/setup-checklist';
 type HomeView = 'dashboard' | 'reports' | 'charts';
 type AttentionTone = 'soon' | 'overdue';
 type PaperTone = 'plain' | AttentionTone;
@@ -269,7 +266,9 @@ export class HomePage {
     const spec = this.vehicleLine(car);
     const plate = car.plate?.trim();
     const km = `${this.i18n.formatNumber(car.currentOdometer, { maximumFractionDigits: 0 })} ${this.i18n.t('common.km')}`;
-    const name = [car.nickname, spec, plate ? plateRun(plate) : ''].filter((part) => !!part).join(' · ');
+    const name = [car.nickname, spec, plate ? plateRun(plate) : '']
+      .filter((part) => !!part)
+      .join(' · ');
     return `${name} · ${km}`;
   });
   readonly nextDue = computed(() => {
@@ -281,8 +280,7 @@ export class HomePage {
     const vaultCar = {
       ...car,
       licenseExpiry: vaultExpiryForKind(docs, 'license') ?? car.licenseExpiry,
-      registrationExpiry:
-        vaultExpiryForKind(docs, 'registration') ?? car.registrationExpiry,
+      registrationExpiry: vaultExpiryForKind(docs, 'registration') ?? car.registrationExpiry,
     };
     const items = buildDueItems(
       this.db.settings(),
@@ -298,7 +296,8 @@ export class HomePage {
   readonly nudge = computed((): 'checklist' | 'vault' | 'install' | null => {
     if (this.showChecklist()) return 'checklist';
     const nextDoc = this.nextVaultDoc();
-    const alreadyListed = nextDoc != null && this.attention().some((row) => row.id === nextDoc.kind);
+    const alreadyListed =
+      nextDoc != null && this.attention().some((row) => row.id === nextDoc.kind);
     if (nextDoc && !alreadyListed) return 'vault';
     if (this.showInstallCard()) return 'install';
     return null;
@@ -312,11 +311,29 @@ export class HomePage {
   readonly chartsLineTo = computed((): string | null =>
     this.linePage() === 'charts' ? (this.chartWindow().to ?? '') : null,
   );
+  readonly linePeriod = computed(() => {
+    const page = this.linePage();
+    if (page === 'reports') {
+      return pageLinePeriod(
+        this.reportRangePreset(),
+        this.reportFrom(),
+        this.reportTo(),
+        (key, params) => this.i18n.t(key, params),
+      );
+    }
+    if (page === 'charts') {
+      return pageLinePeriod(
+        this.chartRangePreset(),
+        this.chartFrom(),
+        this.chartTo(),
+        (key, params) => this.i18n.t(key, params),
+      );
+    }
+    return '';
+  });
   readonly economySeries = computed(() => economyTrend(this.db.fillUps(), this.chartWindow()));
   readonly economyValues = computed(() => this.economySeries().map((p) => p.value));
-  readonly economyLabels = computed(() =>
-    this.economySeries().map((p) => this.shortDate(p.date)),
-  );
+  readonly economyLabels = computed(() => this.economySeries().map((p) => this.shortDate(p.date)));
   readonly economyLatest = computed(() => this.economySeries().at(-1)?.value ?? null);
   readonly economyDelta = computed(() => seriesDelta(this.economySeries()));
   readonly economyAvg = computed(() => seriesMean(this.economySeries()));
@@ -333,9 +350,7 @@ export class HomePage {
     return values.at(-1)! - values.at(-2)!;
   });
   readonly spendTrendLabels = computed(() =>
-    this.spendTrendEntries().map((e) =>
-      this.i18n.formatDate(`${e.month}-01`, { month: 'short' }),
-    ),
+    this.spendTrendEntries().map((e) => this.i18n.formatDate(`${e.month}-01`, { month: 'short' })),
   );
   readonly fuelGradeShare = computed(() =>
     fuelGradeCostShare(this.db.fillUps(), this.chartWindow()),
@@ -345,22 +360,15 @@ export class HomePage {
   );
   readonly fuelGradeSlices = computed((): DonutSlice[] =>
     this.fuelGradeShare().map((s) => ({
-      label:
-        s.grade === 'unknown'
-          ? this.i18n.t('charts.gradeUnknown')
-          : this.gradeLabel(s.grade),
+      label: s.grade === 'unknown' ? this.i18n.t('charts.gradeUnknown') : this.gradeLabel(s.grade),
       value: s.cost,
       detail: this.formatMoney(s.cost),
     })),
   );
-  readonly distanceEntries = computed(() =>
-    distanceByMonth(this.db.fillUps(), this.chartWindow()),
-  );
+  readonly distanceEntries = computed(() => distanceByMonth(this.db.fillUps(), this.chartWindow()));
   readonly distanceValues = computed(() => this.distanceEntries().map((e) => e.value));
   readonly distanceLabels = computed(() =>
-    this.distanceEntries().map((e) =>
-      this.i18n.formatDate(`${e.month}-01`, { month: 'short' }),
-    ),
+    this.distanceEntries().map((e) => this.i18n.formatDate(`${e.month}-01`, { month: 'short' })),
   );
   readonly distanceTotal = computed(() => this.distanceValues().reduce((sum, v) => sum + v, 0));
   readonly distanceDelta = computed(() => monthDelta(this.distanceValues()));
@@ -452,12 +460,12 @@ export class HomePage {
     }
     this.weatherBusy.set(true);
     try {
-    // GPS often stays blank (denied, or the prompt never finishes). City weather does not need it.
-    const coords = (await coarseCoords()) ?? (await getCoords());
-    if (!coords) {
-      return;
-    }
-    this.weather.set(await currentWeather(coords.lat, coords.lon));
+      // GPS often stays blank (denied, or the prompt never finishes). City weather does not need it.
+      const coords = (await coarseCoords()) ?? (await getCoords());
+      if (!coords) {
+        return;
+      }
+      this.weather.set(await currentWeather(coords.lat, coords.lon));
     } finally {
       this.weatherBusy.set(false);
     }
@@ -717,9 +725,7 @@ export class HomePage {
     }
     const month = this.i18n.formatDate(`${share.prefix}-01`, { month: 'long', year: 'numeric' });
     const car = this.db.car()?.nickname?.trim();
-    const lines = [
-      car ? this.i18n.t('share.monthTitle', { month, car }) : month,
-    ];
+    const lines = [car ? this.i18n.t('share.monthTitle', { month, car }) : month];
     if (share.fillCount) {
       lines.push(this.i18n.t('share.fills', { count: share.fillCount }));
       lines.push(
@@ -969,7 +975,6 @@ export class HomePage {
       await this.db.switchCar(id);
     }
   }
-
 }
 
 function historyWindow(preset: HistoryRangePreset, from: string, to: string): DateWindow {
@@ -1013,10 +1018,7 @@ function seriesMin(points: readonly TrendPoint[]): number | null {
   return Math.min(...points.map((point) => point.value));
 }
 
-function fuelUseWhyKey(
-  direction: 'up' | 'down',
-  reason: FuelUseReason,
-): MsgKey {
+function fuelUseWhyKey(direction: 'up' | 'down', reason: FuelUseReason): MsgKey {
   if (direction === 'up') {
     switch (reason) {
       case 'distance':

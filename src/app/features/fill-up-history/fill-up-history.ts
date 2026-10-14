@@ -17,6 +17,7 @@ import {
   type EnergyKind,
 } from '../../domain/energy-history';
 import { previousFillForCar } from '../../domain/fill-up-distance';
+import { pageLinePeriod } from '../../domain/page-line';
 import { todayDateOnly } from '../../domain/dues';
 import type { ChargeSession, FillUp, FuelGrade } from '../../domain/models';
 import { I18n } from '../../i18n/i18n';
@@ -28,13 +29,7 @@ import { PeriodRange } from '../../ui/period-range';
 import { FUEL_TABS, SectionTabs } from '../../ui/section-tabs/section-tabs';
 import { SelectField } from '../../ui/select-field';
 
-const GRADE_ORDER: readonly FuelGrade[] = [
-  'gasoline92',
-  'gasoline95',
-  'solar',
-  'diesel',
-  'custom',
-];
+const GRADE_ORDER: readonly FuelGrade[] = ['gasoline92', 'gasoline95', 'solar', 'diesel', 'custom'];
 
 type GradeFilter = FuelGrade | 'all';
 type TypeFilter = EnergyKind | 'all';
@@ -96,6 +91,16 @@ export class FillUpHistoryPage {
     return this.presentGrades().includes(selected) ? selected : 'all';
   });
 
+  readonly lineGrade = computed((): FuelGrade | '' => {
+    const grade = this.activeGrade();
+    return grade === 'all' ? '' : grade;
+  });
+
+  readonly lineGradeLabel = computed(() => {
+    const grade = this.lineGrade();
+    return grade ? this.gradeLabel(grade) : '';
+  });
+
   readonly activeType = computed((): TypeFilter =>
     this.showTypeFilter() ? this.typeFilter() : 'all',
   );
@@ -113,6 +118,12 @@ export class FillUpHistoryPage {
       value: c.id,
       label: this.i18n.t(c.labelKey),
     })),
+  );
+
+  readonly linePeriod = computed(() =>
+    pageLinePeriod(this.rangePreset(), this.fromDate(), this.toDate(), (key, params) =>
+      this.i18n.t(key, params),
+    ),
   );
 
   readonly activeRange = computed(() => {

@@ -7,6 +7,7 @@
       [totalSpend]="totals().total"
       [periodFrom]="chartsLineFrom()"
       [periodTo]="chartsLineTo()"
+      [periodLabel]="linePeriod()"
     />
     @if (view() === 'dashboard') {
       <app-weather-tip [weather]="weather()" [busy]="weatherBusy()" />
@@ -36,52 +37,54 @@
     >
       @if (db.cars().length) {
         @if (db.cars().length > 1) {
-        <div class="carousel" [attr.aria-label]="i18n.t('home.carousel.label')">
-          @for (car of db.cars(); track car.id) {
-            <button
-              type="button"
-              class="carousel__chip"
-              [class.carousel__chip--on]="car.id === activeCarId()"
-              (click)="switchCar(car.id)"
-            >
-              <span class="plate__copy">
-                <span class="carousel__name">{{ car.nickname }}</span>
-                @if (vehicleLine(car) || car.tankCapacityLiters) {
-                  <span class="carousel__spec">
-                    @if (vehicleLine(car); as spec) {
-                      {{ spec }}
-                    }
-                    @if (car.tankCapacityLiters) {
-                      @if (vehicleLine(car)) {
-                        ·
+          <div class="carousel" [attr.aria-label]="i18n.t('home.carousel.label')">
+            @for (car of db.cars(); track car.id) {
+              <button
+                type="button"
+                class="carousel__chip"
+                [class.carousel__chip--on]="car.id === activeCarId()"
+                (click)="switchCar(car.id)"
+              >
+                <span class="plate__copy">
+                  <span class="carousel__name">{{ car.nickname }}</span>
+                  @if (vehicleLine(car) || car.tankCapacityLiters) {
+                    <span class="carousel__spec">
+                      @if (vehicleLine(car); as spec) {
+                        {{ spec }}
                       }
-                      {{ i18n.formatUnit(car.tankCapacityLiters, 'common.liters', 0) }}
-                    }
-                  </span>
-                }
-                @if (car.plate?.trim()) {
-                  <span class="plate__tag">{{ car.plate }}</span>
-                }
-                <span class="plate__papers">
-                  @for (paper of paperLines(car); track paper.id) {
-                    <span
-                      class="plate__paper"
-                      [class.plate__paper--soon]="paper.tone === 'soon'"
-                      [class.plate__paper--overdue]="paper.tone === 'overdue'"
-                    >
-                      <span>{{ paper.name }}</span>
-                      <span>{{ paper.value }}</span>
+                      @if (car.tankCapacityLiters) {
+                        @if (vehicleLine(car)) {
+                          ·
+                        }
+                        {{ i18n.formatUnit(car.tankCapacityLiters, 'common.liters', 0) }}
+                      }
                     </span>
                   }
+                  @if (car.plate?.trim()) {
+                    <span class="plate__tag">{{ car.plate }}</span>
+                  }
+                  <span class="plate__papers">
+                    @for (paper of paperLines(car); track paper.id) {
+                      <span
+                        class="plate__paper"
+                        [class.plate__paper--soon]="paper.tone === 'soon'"
+                        [class.plate__paper--overdue]="paper.tone === 'overdue'"
+                      >
+                        <span>{{ paper.name }}</span>
+                        <span>{{ paper.value }}</span>
+                      </span>
+                    }
+                  </span>
                 </span>
-              </span>
-              <span class="plate__odo">
-                <strong>{{ i18n.formatNumber(car.currentOdometer, { maximumFractionDigits: 0 }) }}</strong>
-                <span>{{ i18n.t('common.km') }}</span>
-              </span>
-            </button>
-          }
-        </div>
+                <span class="plate__odo">
+                  <strong>{{
+                    i18n.formatNumber(car.currentOdometer, { maximumFractionDigits: 0 })
+                  }}</strong>
+                  <span>{{ i18n.t('common.km') }}</span>
+                </span>
+              </button>
+            }
+          </div>
         }
 
         @if (sampleMode()) {
@@ -90,10 +93,7 @@
 
         @switch (nudge()) {
           @case ('checklist') {
-            <app-setup-checklist
-              [items]="checklistItems()"
-              (dismiss)="dismissChecklist()"
-            />
+            <app-setup-checklist [items]="checklistItems()" (dismiss)="dismissChecklist()" />
           }
           @case ('vault') {
             @if (nextVaultDoc(); as doc) {
@@ -104,10 +104,7 @@
             }
           }
           @case ('install') {
-            <app-install-card
-              (install)="promptInstall()"
-              (dismiss)="dismissInstallCard()"
-            />
+            <app-install-card (install)="promptInstall()" (dismiss)="dismissInstallCard()" />
           }
         }
 
@@ -124,7 +121,12 @@
               <p class="pulse__figure">
                 <strong [class.metric--ghost]="fuelMetrics().lastL100 == null">
                   @if (fuelMetrics().lastL100 != null) {
-                    {{ i18n.formatNumber(fuelMetrics().lastL100!, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }}
+                    {{
+                      i18n.formatNumber(fuelMetrics().lastL100!, {
+                        minimumFractionDigits: 1,
+                        maximumFractionDigits: 1,
+                      })
+                    }}
                   } @else {
                     —.—
                   }
@@ -139,7 +141,8 @@
                     class="pulse__chip"
                     [class.pulse__chip--better]="economyTone() === 'better'"
                     [class.pulse__chip--worse]="economyTone() === 'worse'"
-                  >{{ caption }}</span>
+                    >{{ caption }}</span
+                  >
                 } @else if (!pulseSpark() && fuelPulse().overallL100 != null) {
                   <span>
                     {{ i18n.t('fuel.overall') }}
@@ -157,7 +160,8 @@
                   <span
                     class="pulse__spark-usual"
                     [style.top.%]="(spark.referenceY / spark.height) * 100"
-                  >{{ i18n.t('home.usual') }}</span>
+                    >{{ i18n.t('home.usual') }}</span
+                  >
                 }
                 <svg
                   class="pulse__spark-svg"
@@ -252,11 +256,17 @@
 
         @if (showMonthOutlook()) {
           @let outlook = monthOutlook();
-          <section class="month-outlook" role="status" [attr.aria-label]="i18n.t('home.monthOutlook')">
+          <section
+            class="month-outlook"
+            role="status"
+            [attr.aria-label]="i18n.t('home.monthOutlook')"
+          >
             <header class="month-outlook__head">
               <h2 class="month-outlook__title">{{ i18n.t('home.monthOutlook') }}</h2>
               <span class="month-outlook__pace">
-                {{ i18n.t('home.monthPace', { day: outlook.elapsedDays, days: outlook.daysInMonth }) }}
+                {{
+                  i18n.t('home.monthPace', { day: outlook.elapsedDays, days: outlook.daysInMonth })
+                }}
               </span>
             </header>
             <div
@@ -265,7 +275,9 @@
               [attr.aria-valuenow]="monthPace(outlook.elapsedDays, outlook.daysInMonth)"
               aria-valuemin="0"
               aria-valuemax="100"
-              [attr.aria-label]="i18n.t('home.monthPace', { day: outlook.elapsedDays, days: outlook.daysInMonth })"
+              [attr.aria-label]="
+                i18n.t('home.monthPace', { day: outlook.elapsedDays, days: outlook.daysInMonth })
+              "
             >
               <span
                 class="month-track__fill"
@@ -296,7 +308,8 @@
                   class="month-outlook__delta"
                   [class.month-outlook__delta--up]="monthVsLast()?.tone === 'up'"
                   [class.month-outlook__delta--down]="monthVsLast()?.tone === 'down'"
-                >{{ i18n.t('home.projectedSpend') }} {{ delta }}</span>
+                  >{{ i18n.t('home.projectedSpend') }} {{ delta }}</span
+                >
               }
             </div>
             @if (fuelUse(); as use) {
@@ -336,7 +349,6 @@
           </section>
         }
       }
-
     </section>
   }
 
@@ -409,7 +421,11 @@
                 </strong>
                 @if (economyVsUsual(); as vs) {
                   <span class="report-spec__hint">
-                    {{ i18n.t('reports.usual', { value: i18n.formatUnit(vs.baselineL100, 'common.lPer100', 1) }) }}
+                    {{
+                      i18n.t('reports.usual', {
+                        value: i18n.formatUnit(vs.baselineL100, 'common.lPer100', 1),
+                      })
+                    }}
                   </span>
                 }
               </li>
@@ -422,9 +438,18 @@
                 </strong>
                 @if (reportBrief().fillCount > 0) {
                   <span class="report-spec__hint">
-                    {{ i18n.t('reports.fills', { count: i18n.formatNumber(reportBrief().fillCount, { maximumFractionDigits: 0 }) }) }}
+                    {{
+                      i18n.t('reports.fills', {
+                        count: i18n.formatNumber(reportBrief().fillCount, {
+                          maximumFractionDigits: 0,
+                        }),
+                      })
+                    }}
                     @if (reportBrief().distanceKm > 0) {
-                      · {{ i18n.formatNumber(reportBrief().distanceKm, { maximumFractionDigits: 0 }) }}
+                      ·
+                      {{
+                        i18n.formatNumber(reportBrief().distanceKm, { maximumFractionDigits: 0 })
+                      }}
                       {{ i18n.t('common.km') }}
                     }
                   </span>
@@ -455,9 +480,7 @@
           }
           @if (reportRepeats() > 0) {
             <p class="report-note">
-              {{
-                i18n.t('reports.breakdown.recurring', { count: reportRepeats() })
-              }}
+              {{ i18n.t('reports.breakdown.recurring', { count: reportRepeats() }) }}
             </p>
           }
         </article>
@@ -549,7 +572,9 @@
                 [labels]="distanceLabels()"
                 [label]="i18n.t('charts.kmDriven')"
               />
-              <p class="chart-card__foot">{{ i18n.t('charts.tripCount', { count: economySeries().length }) }}</p>
+              <p class="chart-card__foot">
+                {{ i18n.t('charts.tripCount', { count: economySeries().length }) }}
+              </p>
             } @else {
               <p class="chart-card__empty">{{ i18n.t('charts.needDistance') }}</p>
             }
@@ -567,50 +592,49 @@
             </div>
           }
           @if (priceMoved()) {
-          <div class="chart-card">
-            <span class="chart-card__label">{{ i18n.t('charts.unitPrice') }}</span>
-            <div class="chart-card__head">
-              <strong class="chart-card__value" [class.metric--ghost]="priceLatest() == null">
-                @if (priceLatest(); as latest) {
-                  {{ formatCostPerKm(latest) }}
-                } @else {
-                  {{ i18n.t('home.monthFuelDelta.none') }}
+            <div class="chart-card">
+              <span class="chart-card__label">{{ i18n.t('charts.unitPrice') }}</span>
+              <div class="chart-card__head">
+                <strong class="chart-card__value" [class.metric--ghost]="priceLatest() == null">
+                  @if (priceLatest(); as latest) {
+                    {{ formatCostPerKm(latest) }}
+                  } @else {
+                    {{ i18n.t('home.monthFuelDelta.none') }}
+                  }
+                </strong>
+                @if (priceDelta(); as delta) {
+                  <span class="chart-card__delta">{{ formatMoneyDelta(delta, 2) }}</span>
                 }
-              </strong>
-              @if (priceDelta(); as delta) {
-                <span class="chart-card__delta">{{ formatMoneyDelta(delta, 2) }}</span>
+              </div>
+              @if (priceValues().length >= 1) {
+                <app-line-chart
+                  [values]="priceValues()"
+                  [labels]="priceLabels()"
+                  [reference]="priceAvg()"
+                  [tickDigits]="2"
+                  [label]="i18n.t('charts.unitPrice')"
+                />
+                @if (priceAvg(); as avg) {
+                  <p class="chart-card__foot">
+                    {{ i18n.t('charts.avgPrice', { amount: formatCostPerKm(avg) }) }}
+                  </p>
+                }
               }
             </div>
-            @if (priceValues().length >= 1) {
-              <app-line-chart
-                [values]="priceValues()"
-                [labels]="priceLabels()"
-                [reference]="priceAvg()"
-                [tickDigits]="2"
-                [label]="i18n.t('charts.unitPrice')"
-              />
-              @if (priceAvg(); as avg) {
-                <p class="chart-card__foot">{{ i18n.t('charts.avgPrice', { amount: formatCostPerKm(avg) }) }}</p>
-              }
-            }
-          </div>
           }
           @if (placeSlices().length > 1) {
-          <div class="chart-card">
-            <span class="chart-card__label">{{ i18n.t('charts.stations') }}</span>
-            <div class="chart-card__head">
-              <strong class="chart-card__value" [class.metric--ghost]="!placeSlices().length">
-                {{ placeSlices()[0]?.label || i18n.t('home.monthFuelDelta.none') }}
-              </strong>
+            <div class="chart-card">
+              <span class="chart-card__label">{{ i18n.t('charts.stations') }}</span>
+              <div class="chart-card__head">
+                <strong class="chart-card__value" [class.metric--ghost]="!placeSlices().length">
+                  {{ placeSlices()[0]?.label || i18n.t('home.monthFuelDelta.none') }}
+                </strong>
+              </div>
+              @if (placeSlices().length) {
+                <app-donut-chart [slices]="placeSlices()" [label]="i18n.t('charts.stations')" />
+                <p class="chart-card__foot">{{ placeSlices()[0]?.detail }}</p>
+              }
             </div>
-            @if (placeSlices().length) {
-              <app-donut-chart
-                [slices]="placeSlices()"
-                [label]="i18n.t('charts.stations')"
-              />
-              <p class="chart-card__foot">{{ placeSlices()[0]?.detail }}</p>
-            }
-          </div>
           }
         </div>
       </section>

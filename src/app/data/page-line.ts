@@ -106,6 +106,8 @@ export function pageLineBag(
       : null,
     labelDue: (item) => dueItemLabel(item, maintenance, parts, t),
     labelMaint: (row) => maintLabel(row, parts, t),
+    charges: db.chargeSessions(),
+    labelGrade: (grade) => t(`fillUp.grade.${grade}`),
   };
 }
 
@@ -145,7 +147,12 @@ export async function polishPageLine(input: {
     !browserOnline() ||
     !canRemoteAssistantCall(storage)
   ) {
-    if (!skip && isAssistantOnline(input.db) && browserOnline() && !canRemoteAssistantCall(storage)) {
+    if (
+      !skip &&
+      isAssistantOnline(input.db) &&
+      browserOnline() &&
+      !canRemoteAssistantCall(storage)
+    ) {
       writeCached(storage, input.page, input.lang, input.day, input.source, input.source);
     }
     return input.source;
@@ -232,12 +239,18 @@ function earliestExpiry(
   docs: readonly VehicleDocument[],
   kind: VehicleDocument['kind'],
 ): string | undefined {
-  const dates = docs.filter((d) => d.kind === kind).map((d) => d.expiryDate).sort();
+  const dates = docs
+    .filter((d) => d.kind === kind)
+    .map((d) => d.expiryDate)
+    .sort();
   return dates[0];
 }
 
 function latestTireCheck(checks: readonly PreTripCheck[]): string | undefined {
-  const dates = checks.filter((c) => c.items.tires).map((c) => c.date).sort();
+  const dates = checks
+    .filter((c) => c.items.tires)
+    .map((c) => c.date)
+    .sort();
   return dates[dates.length - 1];
 }
 
