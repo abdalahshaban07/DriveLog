@@ -1168,10 +1168,18 @@
   text-align: end;
 }
 
-.fuel-use__why {
-  margin: var(--space-3) 0 0;
+.fuel-use {
+  margin-block-start: var(--space-3);
   padding-block-start: var(--space-3);
   border-block-start: 1px solid var(--hairline);
+}
+
+.fuel-use > :first-child {
+  margin-block-start: 0;
+}
+
+.fuel-use__why {
+  margin: 0;
   font-weight: 700;
   line-height: 1.55;
 }

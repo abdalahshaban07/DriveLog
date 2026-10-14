@@ -243,6 +243,21 @@ describe('economy', () => {
 
     expect(fuelUseCompare([trip('b', '2026-03-05', 24, 320, 1830)], now)).toBeNull();
 
+    const afterTheSameDay = fuelUseCompare(
+      [trip('late', '2026-02-20', 39, 510, 1510), trip('now', '2026-03-05', 24, 320, 1830)],
+      now,
+    );
+    expect(afterTheSameDay).toMatchObject({
+      liters: 24,
+      previousLiters: 39,
+      km: 320,
+      previousKm: 510,
+      reason: null,
+      direction: null,
+      currentEnd: '2026-03-10',
+      previousEnd: '2026-02-28',
+    });
+
     const monthEnd = new Date(2026, 2, 31);
     const throughFebruary = fuelUseCompare(
       [trip('feb', '2026-02-28', 15, 100, 1100), trip('mar', '2026-03-31', 15, 100, 1200)],

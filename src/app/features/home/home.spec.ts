@@ -309,7 +309,7 @@ describe('HomePage', () => {
     fuelUseFills.push(row('f-prev', stamp(prev), 39, 510, 1510), row('f-now', stamp(curr), 24, 320, 1830));
     const fixture = TestBed.createComponent(HomePage);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.fuel-use')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('.fuel-use')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('.month-outlook .fuel-use__why')?.textContent).toBe(
       'home.useWhy.down.distance',
     );
@@ -326,6 +326,80 @@ describe('HomePage', () => {
       ? node.tagName.toLowerCase()
       : [...node.classList].find((name) => name !== 'list-reveal') ?? node.tagName);
     expect(order).toEqual(['app-weather-tip', 'pulse', 'app-quick-log', 'month-outlook']);
+  });
+
+  it('shows liters and km when last month fueled after the same day', () => {
+    const now = new Date();
+    const prevEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+    const curr = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const stamp = (date: Date) => {
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const dom = String(date.getDate()).padStart(2, '0');
+      return `${date.getFullYear()}-${month}-${dom}`;
+    };
+    const row = (id: string, date: string, liters: number, distanceKm: number, odometer: number) => ({
+      id,
+      date,
+      liters,
+      cost: liters * 20,
+      odometer,
+      distanceKm,
+      tankFull: true,
+      createdAt: `${date}T00:00:00.000Z`,
+      updatedAt: `${date}T00:00:00.000Z`,
+    });
+    fuelUseFills.push(
+      row('late', stamp(prevEnd), 40, 500, 1500),
+      row('now', stamp(curr), 22, 280, 1780),
+    );
+    const fixture = TestBed.createComponent(HomePage);
+    fixture.detectChanges();
+    const facts = fixture.nativeElement.querySelector('.fuel-use__facts')?.textContent ?? '';
+    expect(facts).toContain('home.useDistance');
+    expect(facts).toContain('280');
+    expect(facts).toContain('500');
+    expect(facts).toContain('home.useLiters');
+    expect(facts).toContain('22');
+    expect(facts).toContain('40');
+    const use = fixture.componentInstance.fuelUse();
+    expect(use?.previousLiters).toBe(40);
+    expect(use?.liters).toBe(22);
+    if (prevEnd.getDate() > now.getDate()) {
+      expect(use?.reason).toBeNull();
+      expect(fixture.nativeElement.querySelector('.fuel-use__why')).toBeFalsy();
+    }
+  });
+
+  it('shows liters and km when consumption barely moved', () => {
+    const now = new Date();
+    const day = Math.min(now.getDate(), 28);
+    const prev = new Date(now.getFullYear(), now.getMonth() - 1, day);
+    const curr = new Date(now.getFullYear(), now.getMonth(), day);
+    const stamp = (date: Date) => {
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const dom = String(date.getDate()).padStart(2, '0');
+      return `${date.getFullYear()}-${month}-${dom}`;
+    };
+    const row = (id: string, date: string, liters: number, distanceKm: number, odometer: number) => ({
+      id,
+      date,
+      liters,
+      cost: liters,
+      odometer,
+      distanceKm,
+      tankFull: true,
+      createdAt: `${date}T00:00:00.000Z`,
+      updatedAt: `${date}T00:00:00.000Z`,
+    });
+    fuelUseFills.push(row('flat-prev', stamp(prev), 30, 400, 1400), row('flat-now', stamp(curr), 30.2, 400, 1800));
+    const fixture = TestBed.createComponent(HomePage);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.fuelUseWhy()).toBeNull();
+    const facts = fixture.nativeElement.querySelector('.fuel-use__facts')?.textContent ?? '';
+    expect(facts).toContain('home.useDistance');
+    expect(facts).toContain('home.useLiters');
+    expect(facts).toContain('30');
+    expect(facts).toContain('400');
   });
 
   it('keeps a future service off the paper list', () => {

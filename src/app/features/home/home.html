@@ -299,12 +299,14 @@
                 >{{ i18n.t('home.projectedSpend') }} {{ delta }}</span>
               }
             </div>
-            @if (fuelUseWhy(); as why) {
-              <p class="fuel-use__why">{{ why }}</p>
-              @if (fuelUse(); as use) {
+            @if (fuelUse(); as use) {
+              <div class="fuel-use">
+                @if (fuelUseWhy(); as why) {
+                  <p class="fuel-use__why">{{ why }}</p>
+                }
                 <p class="fuel-use__window">{{ fuelUseWindow() }}</p>
                 <p class="fuel-use__facts">
-                  @if (use.km > 0 && use.previousKm > 0) {
+                  @if (use.km > 0 || use.previousKm > 0) {
                     <span class="fuel-use__fact">
                       {{ i18n.t('home.useDistance') }}
                       <bdi>{{ fuelUseKm(use.km) }}</bdi>
@@ -321,7 +323,7 @@
                     <bdi>{{ fuelUseLiters(use.previousLiters) }}</bdi>
                   </span>
                 </p>
-              }
+              </div>
             }
             @if (canShareMonth()) {
               <button type="button" class="ghost-btn month-outlook__share" (click)="shareMonth()">

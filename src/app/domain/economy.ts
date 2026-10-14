@@ -403,7 +403,9 @@ function relMoved(before: number, after: number): boolean {
 
 /**
  * Liters so far this month vs the same number of days last month.
- * The sentence names distance, L/100, or both. Hidden when either stretch has no fuel.
+ * If that slice of last month has no fuel, use the whole previous month
+ * and skip the reason — the two stretches are different lengths.
+ * Hidden when either month still has no fuel.
  */
 export function fuelUseCompare(
   fillUps: readonly FillUp[],
@@ -411,14 +413,26 @@ export function fuelUseCompare(
 ): FuelUseCompare | null {
   const windows = sameDayWindows(now);
   const current = windowFuelUse(fillUps, windows.currentStart, windows.currentEnd);
-  const previous = windowFuelUse(fillUps, windows.previousStart, windows.previousEnd);
+  let previous = windowFuelUse(fillUps, windows.previousStart, windows.previousEnd);
+  let previousEnd = windows.previousEnd;
+  let aligned = true;
+  const monthEnd = dateOnly(new Date(now.getFullYear(), now.getMonth(), 0));
+  if (previous.liters <= 0 && monthEnd !== windows.previousEnd) {
+    const full = windowFuelUse(fillUps, windows.previousStart, monthEnd);
+    if (full.liters > 0) {
+      previous = full;
+      previousEnd = monthEnd;
+      aligned = false;
+    }
+  }
   if (current.liters <= 0 || previous.liters <= 0) {
     return null;
   }
   const pct = Math.round(((current.liters - previous.liters) / previous.liters) * 100);
   const tone: FuelUseCompare['tone'] =
     Math.abs(pct) < TANK_ECONOMY_FLAT_PCT ? 'same' : pct > 0 ? 'up' : 'down';
-  const canSplit = current.complete && previous.complete && current.km > 0 && previous.km > 0;
+  const canSplit =
+    aligned && current.complete && previous.complete && current.km > 0 && previous.km > 0;
   let reason: FuelUseReason | null = null;
   if (tone !== 'same' && canSplit) {
     const kmMoved = relMoved(previous.km, current.km);
@@ -451,10 +465,10 @@ export function fuelUseCompare(
     previousL100: l100(previous.liters, previous.km, previous.complete),
     pct,
     tone,
-    direction: tone === 'same' ? null : tone,
+    direction: aligned && tone !== 'same' ? tone : null,
     reason,
     currentEnd: windows.currentEnd,
-    previousEnd: windows.previousEnd,
+    previousEnd,
   };
 }
 
