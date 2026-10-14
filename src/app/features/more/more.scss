@@ -68,8 +68,6 @@
   border: var(--border-width) solid color-mix(in srgb, var(--hairline) 85%, transparent);
   background: var(--fill-surface);
   box-shadow: var(--plate-shadow);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
 }
 
 .panel--feature {
@@ -77,7 +75,6 @@
   border: 0;
   background: transparent;
   box-shadow: none;
-  backdrop-filter: none;
 }
 
 .panel--duo {
@@ -87,7 +84,6 @@
   border: 0;
   background: transparent;
   box-shadow: none;
-  backdrop-filter: none;
 }
 
 .line {

@@ -16,7 +16,7 @@
         {{ i18n.t('shell.offlineShort') }}
       </p>
     }
-    <main #main class="main" [class.main--setup]="!showNav()">
+    <main class="main" [class.main--setup]="!showNav()">
       <router-outlet />
     </main>
     @if (showNav()) {

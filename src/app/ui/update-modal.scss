@@ -61,8 +61,6 @@
   background: var(--fill-surface);
   border: var(--border-width, 1px) solid var(--hairline);
   box-shadow: var(--raise-2, var(--plate-shadow, var(--shadow-soft)));
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
   color: var(--text);
 }
 

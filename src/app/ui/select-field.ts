@@ -64,8 +64,8 @@ export class SelectField {
   });
 
   /**
-   * Move scrim/menu to <body> (or open <dialog>) so card backdrop-filter / .main
-   * overflow cannot trap z-index. Dialog host keeps the menu in the top layer.
+   * Move scrim/menu to <body> (or open <dialog>) so a parent stacking context
+   * cannot trap z-index. Dialog host keeps the menu in the top layer.
    */
   private readonly portalEffect = afterRenderEffect(() => {
     if (!this.opened()) {

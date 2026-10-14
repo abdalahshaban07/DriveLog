@@ -20,8 +20,6 @@
   padding: var(--space-5);
   border-radius: var(--radius);
   background: var(--fill-surface);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
 }
 
 :host(.modal) .bar {
@@ -60,16 +58,12 @@ button {
   font-weight: 600;
   letter-spacing: var(--btn-tracking, 0);
   box-shadow: var(--btn-shadow, none);
-  backdrop-filter: blur(var(--btn-blur, 0px));
-  -webkit-backdrop-filter: blur(var(--btn-blur, 0px));
 }
 .ghost {
   background: transparent;
   color: var(--muted);
   border: 0;
   box-shadow: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
   letter-spacing: 0;
 }
 .secondary {

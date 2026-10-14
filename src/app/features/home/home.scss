@@ -504,8 +504,6 @@
   border: 1px solid var(--hairline, transparent);
   border-block-start: 3px solid color-mix(in srgb, var(--fuel) 72%, transparent);
   box-shadow: var(--raise-1, none);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
 }
 
 .chart-card__head {

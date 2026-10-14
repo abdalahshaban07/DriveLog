@@ -9,8 +9,6 @@
   font-size: 1.05rem;
   letter-spacing: var(--btn-tracking, 0);
   box-shadow: var(--btn-shadow, none);
-  backdrop-filter: blur(var(--btn-blur, 0px));
-  -webkit-backdrop-filter: blur(var(--btn-blur, 0px));
   transition:
     box-shadow var(--motion) var(--ease),
     transform var(--motion) var(--ease),

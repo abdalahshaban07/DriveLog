@@ -9,8 +9,6 @@
   border-radius: var(--tab-track-radius, 0);
   background: var(--tab-track, transparent);
   box-shadow: var(--tab-track-shadow, none);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
   scrollbar-width: none;
   -ms-overflow-style: none;
 }

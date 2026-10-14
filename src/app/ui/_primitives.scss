@@ -15,7 +15,9 @@ body {
   min-height: 100%;
   background-color: var(--bg);
   background-image: var(--mesh-canvas);
-  /* ponytail: no background-attachment:fixed — janks scroll on mobile */
+  /* ponytail: no background-attachment:fixed and no backdrop-filter.
+     Both force main-thread scrolling. Glass looks keep translucent fills.
+     Ceiling: a live blur over the scroller. Upgrade path is a static tint. */
   color: var(--text);
   font-family: 'Outfit', system-ui, 'Segoe UI', Tahoma, 'Noto Sans Arabic', 'Geeza Pro', sans-serif;
   font-weight: 500;
@@ -70,16 +72,12 @@ a {
   background: var(--fill-surface);
   border: var(--border-width) solid color-mix(in srgb, var(--hairline) 85%, transparent);
   box-shadow: var(--plate-shadow);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
 }
 
 .card--dark {
   background: var(--card-dark);
   color: var(--card-dark-text);
   border-color: color-mix(in srgb, var(--card-dark-text) 12%, transparent);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
 }
 
 /* Night Receipt slip — warm paper island on canvas */
@@ -91,8 +89,6 @@ a {
   box-shadow:
     var(--shadow-soft),
     0 0 0 1px color-mix(in srgb, var(--paper-text) 4%, transparent);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
 }
 
 .card--paper .hint,
@@ -116,8 +112,6 @@ a {
   text-decoration: none;
   border: var(--btn-border, var(--border-width) solid transparent);
   box-shadow: var(--btn-shadow, none);
-  backdrop-filter: blur(var(--btn-blur, 0px));
-  -webkit-backdrop-filter: blur(var(--btn-blur, 0px));
   transition:
     box-shadow var(--motion) var(--ease),
     transform var(--motion-fast) var(--ease-out),
@@ -244,8 +238,6 @@ a {
   border-inline-start: 3px solid transparent;
   box-shadow: var(--shadow-soft);
   color: var(--text);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
 }
 
 .due-card--overdue {
@@ -291,8 +283,6 @@ a {
   transition:
     border-color var(--motion) var(--ease),
     box-shadow var(--motion) var(--ease);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
 }
 
 .file-pick {
@@ -395,8 +385,6 @@ textarea.input {
   background: var(--fill-surface);
   box-shadow: var(--shadow-soft);
   color: var(--text);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
 }
 
 .disclosure > summary {

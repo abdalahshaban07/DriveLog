@@ -2,11 +2,9 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  ElementRef,
   afterNextRender,
   inject,
   signal,
-  viewChild,
 } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -34,7 +32,6 @@ export class Shell {
   private readonly install = inject(InstallPwa);
   private readonly holidayReminder = inject(HolidayReminder);
   private readonly healthReminder = inject(HealthReminder);
-  private readonly main = viewChild<ElementRef<HTMLElement>>('main');
 
   readonly updateDismissed = signal(false);
   /** ponytail: browser online flag only — no probe ping */
@@ -81,10 +78,7 @@ export class Shell {
         takeUntilDestroyed(),
       )
       .subscribe(() => {
-        const el = this.main()?.nativeElement;
-        if (el) {
-          el.scrollTop = 0;
-        }
+        document.scrollingElement?.scrollTo(0, 0);
       });
     afterNextRender(() => {
       void this.holidayReminder.check();

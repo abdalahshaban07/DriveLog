@@ -15,6 +15,11 @@
   }
 }
 
+/* Idle titles stay un-named so scroll is not pinned to an extra layer. */
+:active-view-transition h1 {
+  view-transition-name: page-title;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
