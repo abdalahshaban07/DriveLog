@@ -4,14 +4,17 @@
   "short_name": "DriveLog",
   "description": "Fuel, maintenance & reminders / الوقود والصيانة والتذكيرات",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
+  "launch_handler": { "client_mode": "navigate-existing" },
+  "handle_links": "preferred",
   "scope": "./",
   "start_url": "./",
   "theme_color": "#e8ecf1",
   "background_color": "#e8ecf1",
   "lang": "ar",
   "dir": "rtl",
-  "categories": ["utilities", "productivity"],
+  "categories": ["utilities", "productivity", "navigation"],
   "icons": [
     {
       "src": "icons/icon-72x72.png",
@@ -58,6 +61,12 @@
     {
       "src": "icons/icon-512x512.png",
       "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-master.png",
+      "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
     },
@@ -129,6 +138,12 @@
       "name": "Maintenance",
       "short_name": "Maintenance",
       "url": "./maintenance",
+      "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "محطات قريبة",
+      "short_name": "حولي",
+      "url": "./around",
       "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96", "type": "image/png" }]
     }
   ],

@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1792006300382,
+  "timestamp": 1792049321147,
   "index": "/DriveLog/index.html",
   "assetGroups": [
     {
@@ -215,7 +215,7 @@
     "/DriveLog/icons/maskable-512.png": "1c5739ef20c6b2ade04db2a54460766e4ffcb685",
     "/DriveLog/index.html": "59bb4179d6c56cb062577c9bfe627c95bf6b5dad",
     "/DriveLog/main-EMHJOTPX.js": "1d372819cda20f97d87e78a8f5ceb826567ae5f6",
-    "/DriveLog/manifest.webmanifest": "79c4957ec1006608b2a1989c78f989220a0733a0",
+    "/DriveLog/manifest.webmanifest": "83acc408d9c15766c119824ec696428c539f5d23",
     "/DriveLog/screenshots/narrow-charts-ar.png": "f8817f33cdb6ff5c2d17a2c4def5809b5f394155",
     "/DriveLog/screenshots/narrow-fillups-ar.png": "dd0ed5de2932e7d71e315966d1afd6063b667554",
     "/DriveLog/screenshots/narrow-home-ar.png": "64880b70eadd6bb00e29357f418fb0e7def5374b",
