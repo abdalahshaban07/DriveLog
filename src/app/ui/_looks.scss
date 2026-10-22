@@ -15,14 +15,14 @@
 /* ——— Look packs: materials + chrome; text ink stays on data-theme ——— */
 :root,
 html[data-look='receipt'] {
-  /* Night Receipt warm room — theme already sets surfaces; reinforce chrome */
-  --radius: 14px;
-  --raise-1: none;
-  --raise-2: none;
+  /* Night Receipt v3 — layered paper room: soft depth on plates, gradient CTA */
+  --radius: 18px;
+  --raise-1: var(--elev-1);
+  --raise-2: var(--elev-2);
   --bevel-hi: none;
   --bevel-lo: none;
   --press-inset: inset 0 2px 4px color-mix(in srgb, var(--text) 14%, transparent);
-  --plate-shadow: var(--shadow-soft);
+  --plate-shadow: var(--elev-2), var(--panel-glow);
   --border-width: 1px;
   --ink: var(--text);
   --fill-surface: var(--surface);
@@ -32,13 +32,13 @@ html[data-look='receipt'] {
   --glass-edge: transparent;
   --nav-fill: var(--bg);
   --nav-inset: 0px;
-  --cta-surface: var(--cta);
+  --cta-surface: var(--gradient-fuel);
   /* Primary CTA chrome — each look owns these */
-  --btn-bg: var(--cta);
+  --btn-bg: var(--gradient-fuel);
   --btn-border: 0;
   --btn-radius: var(--radius);
-  --btn-shadow: none;
-  --btn-hover-shadow: 0 0 16px var(--glow);
+  --btn-shadow: var(--elev-1);
+  --btn-hover-shadow: 0 0 18px var(--glow), var(--elev-2);
   --btn-press-shadow: var(--press-inset);
   --btn-press-x: 0;
   --btn-press-y: 1px;
@@ -54,7 +54,7 @@ html[data-look='receipt'] {
   --tab-btn-radius: 999px;
   --tab-btn-border: 0;
   --tab-btn-shadow: none;
-  --tab-btn-on-shadow: var(--shadow-soft);
+  --tab-btn-on-shadow: var(--elev-1), var(--panel-glow);
   --tab-underline: transparent;
   --tab-underline-h: 0px;
   --mesh-canvas:
@@ -67,6 +67,11 @@ html[data-look='receipt'] {
       90% 70% at 0% 100%,
       color-mix(in srgb, var(--aura-2) 40%, transparent),
       transparent 50%
+    ),
+    radial-gradient(
+      70% 50% at 50% 30%,
+      color-mix(in srgb, var(--fuel) 14%, transparent),
+      transparent 65%
     );
 }
 

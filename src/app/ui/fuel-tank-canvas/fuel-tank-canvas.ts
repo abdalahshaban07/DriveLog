@@ -47,8 +47,8 @@ const INNER_H = 84;
               <rect x="28" y="18" width="104" height="84" rx="6" />
             </clipPath>
             <linearGradient id="tank-meniscus" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="var(--fuel)" stop-opacity="0.95" />
-              <stop offset="55%" stop-color="var(--fuel)" stop-opacity="0.75" />
+              <stop offset="0%" stop-color="color-mix(in srgb, #f7c45a 45%, var(--fuel))" stop-opacity="0.95" />
+              <stop offset="55%" stop-color="var(--fuel)" stop-opacity="0.78" />
               <stop offset="100%" stop-color="var(--petrol-muted)" stop-opacity="0.9" />
             </linearGradient>
           </defs>

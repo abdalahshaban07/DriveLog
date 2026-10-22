@@ -9,7 +9,10 @@ import {
   downloadFile,
   type HistoryRangePreset,
 } from '../../domain/export-history';
-import { efficiencyBelowBaseline } from '../../domain/economy';
+import {
+  efficiencyBelowBaseline,
+  tankEconomyVsAvg,
+} from '../../domain/economy';
 import { kWhPer100Km } from '../../domain/charge-economy';
 import {
   mergeEnergyHistory,
@@ -55,6 +58,21 @@ export class FillUpHistoryPage {
   readonly shareBusy = signal(false);
   readonly shareError = signal('');
   readonly pendingDelete = signal<{ kind: EnergyKind; id: string } | null>(null);
+
+  /** Usual (distance-weighted) economy for per-fill efficiency tone. */
+  readonly usualL100 = computed(() => tankEconomyVsAvg(this.db.fillUps())?.baselineL100 ?? null);
+
+  ecoTone(fill: FillUp): 'good' | 'bad' | null {
+    const rate = this.l100(fill);
+    const usual = this.usualL100();
+    if (rate == null || usual == null || usual <= 0) {
+      return null;
+    }
+    if (rate <= usual) {
+      return 'good';
+    }
+    return rate >= usual * 1.15 ? 'bad' : null;
+  }
 
   readonly typeChips: { id: TypeFilter; labelKey: MsgKey }[] = [
     { id: 'all', labelKey: 'history.filterAllTypes' },

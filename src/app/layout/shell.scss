@@ -200,7 +200,13 @@
 
 .nav a.active {
   color: var(--cta-text);
-  background: var(--cta);
+  background: var(--gradient-fuel, var(--cta));
+  box-shadow: 0 4px 14px var(--glow), var(--elev-1);
+  font-weight: 700;
+}
+
+.nav a.active svg {
+  stroke-width: 2.1;
 }
 
 .nav a:focus-visible {
@@ -209,15 +215,16 @@
 }
 
 /* Receipt dock: floating plate, amber rail. Other looks keep their own chrome. */
+/* Receipt dock: floating plate, amber rail. Other looks keep their own chrome. */
 :host-context([data-look='receipt']) .nav {
   inset-inline: max(var(--space-3), calc((100% - var(--shell)) / 2 + var(--space-3)));
   bottom: max(var(--space-3), env(safe-area-inset-bottom, 0px));
-  border-radius: 22px;
+  border-radius: 26px;
   border: 1px solid var(--hairline);
   padding-block-end: 0;
-  background-color: color-mix(in srgb, var(--surface) 92%, var(--bg));
+  background-color: color-mix(in srgb, var(--surface) 94%, var(--bg));
   box-shadow:
-    0 12px 32px color-mix(in srgb, #000 22%, transparent),
+    0 16px 40px color-mix(in srgb, #000 26%, transparent),
     var(--plate-shadow);
 }
 
@@ -238,22 +245,17 @@
 }
 
 :host-context([data-look='receipt']) .nav a.active {
-  color: var(--text);
-  background: color-mix(in srgb, var(--cta) 16%, transparent);
+  color: var(--cta-text);
+  background: var(--gradient-fuel, var(--cta));
+  box-shadow: 0 6px 18px var(--glow), var(--elev-2);
 }
 
 :host-context([data-look='receipt']) .nav a.active svg {
-  color: var(--cta);
+  color: inherit;
 }
 
 :host-context([data-look='receipt']) .nav a.active::after {
-  content: '';
-  position: absolute;
-  inset-inline: 28%;
-  bottom: 5px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--cta);
+  content: none;
 }
 
 :host-context([data-theme='contrast']) .nav a.active {

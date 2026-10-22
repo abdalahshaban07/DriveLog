@@ -1,3 +1,4 @@
+/* Night Receipt v3 — warm-charcoal night */
 @mixin dark-theme-vars {
   --petrol: #0e1014;
   --petrol-muted: #8a8278;
@@ -10,15 +11,26 @@
   --paper: #ebe4d8;
   --paper-text: #1a1814;
   --paper-muted: #6b6358;
-  --bg: #07080a;
-  --surface: #12141a;
-  --well: #0a0b0e;
+  --bg: #0a0a08;
+  --surface: #171410;
+  --well: #0e0c09;
   --text: #efeae2;
   --muted: #a39a8c;
   --ok: var(--mint);
   --stop: #f87171;
-  --aura-1: #2a2210;
-  --aura-2: #141018;
+  --aura-1: #33240e;
+  --aura-2: #171310;
+  /* Night Receipt v3 tokens (shared across themes) */
+  --fuel-deep: var(--fuel);
+  --gradient-fuel: var(--cta);
+  --elev-1: 0 1px 2px color-mix(in srgb, #000 44%, transparent),
+    0 4px 14px color-mix(in srgb, #000 32%, transparent);
+  --elev-2: 0 2px 8px color-mix(in srgb, #000 46%, transparent),
+    0 12px 32px color-mix(in srgb, #000 38%, transparent);
+  --elev-3: 0 4px 12px color-mix(in srgb, #000 50%, transparent),
+    0 20px 48px color-mix(in srgb, #000 44%, transparent);
+  --panel-glow: inset 0 1px 0 color-mix(in srgb, #fff 12%, transparent);
+  --paper-edge: 0 10px 30px color-mix(in srgb, #000 38%, transparent);
   --glow: color-mix(in srgb, var(--fuel) 42%, transparent);
   --hairline: color-mix(in srgb, var(--text) 10%, transparent);
   --input-border: color-mix(in srgb, var(--muted) 28%, transparent);
@@ -74,22 +86,39 @@ html[data-theme='light'] {
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --nav-height: calc(var(--tap) + var(--space-4) + var(--space-3) + env(safe-area-inset-bottom, 0px));
-  --type-hero: clamp(2.75rem, 12vw, 3.5rem);
-  --type-title: 1.6rem;
-  --type-metric: 1.375rem;
+  --type-hero: clamp(2.75rem, 12vw, 3.75rem);
+  --type-title: 1.75rem;
+  --type-metric: 1.5rem;
   --type-body: 1rem;
   --type-label: 0.75rem;
   --type-nav: 0.6875rem;
   --shell-wide: 48rem;
-  --bg: #e6dfd2;
-  --surface: #f7f1e6;
-  --well: #ddd4c4;
+  --bg: #e9e1d1;
+  --surface: #fbf5ea;
+  --well: #ded3bf;
   --text: #1a1814;
   --muted: #6b6358;
   --ok: var(--mint);
   --stop: #c44747;
   --aura-1: #dcc9a0;
   --aura-2: #c4b8a4;
+  /* Night Receipt v3 tokens */
+  --fuel-deep: #b45309;
+  --gradient-fuel: linear-gradient(
+    135deg,
+    color-mix(in srgb, #fff 30%, var(--fuel)) 0%,
+    var(--fuel) 48%,
+    var(--fuel-deep) 100%
+  );
+  --elev-1: 0 1px 2px color-mix(in srgb, #1a1814 8%, transparent),
+    0 4px 12px color-mix(in srgb, #1a1814 7%, transparent);
+  --elev-2: 0 2px 6px color-mix(in srgb, #1a1814 10%, transparent),
+    0 10px 26px color-mix(in srgb, #1a1814 9%, transparent);
+  --elev-3: 0 4px 10px color-mix(in srgb, #1a1814 12%, transparent),
+    0 18px 40px color-mix(in srgb, #1a1814 14%, transparent);
+  --panel-glow: inset 0 1px 0 color-mix(in srgb, #fff 60%, transparent);
+  --paper-edge: 0 1px 0 color-mix(in srgb, #fff 70%, transparent),
+    0 10px 28px color-mix(in srgb, #8a7a5c 20%, transparent);
   --glow: color-mix(in srgb, var(--fuel) 28%, transparent);
   --hairline: color-mix(in srgb, #5a5248 22%, transparent);
   --input-border: color-mix(in srgb, var(--muted) 40%, transparent);
@@ -135,9 +164,9 @@ html[data-theme='light'] {
 }
 
 html[data-theme='system'] {
-  --bg: #e6dfd2;
-  --surface: #f7f1e6;
-  --well: #ddd4c4;
+  --bg: #e9e1d1;
+  --surface: #fbf5ea;
+  --well: #ded3bf;
   --text: #1a1814;
   --muted: #6b6358;
   --paper: #fff9f0;
@@ -197,6 +226,14 @@ html[data-theme='contrast'] {
   --input-border: color-mix(in srgb, var(--text) 70%, transparent);
   --well-inset: inset 0 2px 10px color-mix(in srgb, #000 42%, transparent);
   --shadow-soft: none;
+  /* v3 tokens degrade to solid/flat for contrast */
+  --fuel-deep: var(--fuel);
+  --gradient-fuel: var(--fuel);
+  --elev-1: none;
+  --elev-2: none;
+  --elev-3: none;
+  --panel-glow: none;
+  --paper-edge: none;
   --metric-tint: color-mix(in srgb, var(--fuel) 14%, var(--surface));
   --metric-blue: var(--metric-tint);
   --metric-green: var(--metric-tint);
@@ -216,15 +253,31 @@ html[data-theme='dusk'] {
   --paper: #e8e0d2;
   --paper-text: #1a1814;
   --paper-muted: #6b6358;
-  --bg: #0e0c10;
-  --surface: #1a1620;
-  --well: #0a080c;
+  --bg: #100d0e;
+  --surface: #1d1720;
+  --well: #0c0a0e;
   --text: #efeae2;
   --muted: #a39a8c;
   --ok: var(--mint);
   --stop: #f87171;
-  --aura-1: #2a1c28;
-  --aura-2: #181420;
+  --aura-1: #2f1a26;
+  --aura-2: #191320;
+  /* Night Receipt v3 tokens */
+  --fuel-deep: #b45309;
+  --gradient-fuel: linear-gradient(
+    135deg,
+    color-mix(in srgb, #f7c45a 45%, var(--fuel)) 0%,
+    var(--fuel) 50%,
+    var(--fuel-deep) 100%
+  );
+  --elev-1: 0 1px 2px color-mix(in srgb, #000 40%, transparent),
+    0 4px 14px color-mix(in srgb, #000 30%, transparent);
+  --elev-2: 0 2px 8px color-mix(in srgb, #000 44%, transparent),
+    0 12px 32px color-mix(in srgb, #000 36%, transparent);
+  --elev-3: 0 4px 12px color-mix(in srgb, #000 50%, transparent),
+    0 20px 48px color-mix(in srgb, #000 42%, transparent);
+  --panel-glow: inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent);
+  --paper-edge: 0 10px 30px color-mix(in srgb, #000 34%, transparent);
   --glow: color-mix(in srgb, var(--fuel) 38%, transparent);
   --hairline: color-mix(in srgb, var(--text) 12%, transparent);
   --input-border: color-mix(in srgb, var(--muted) 28%, transparent);

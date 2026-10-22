@@ -9,7 +9,7 @@ import { linearScale } from './scale';
   template: `
     @if (points().length >= 1) {
       <svg
-        class="line-chart"
+        class="line-chart line-chart--draw"
         [attr.viewBox]="'0 0 ' + width + ' ' + height"
         preserveAspectRatio="xMidYMid meet"
         role="img"
@@ -45,7 +45,12 @@ import { linearScale } from './scale';
           />
         }
         <polygon class="line-chart__area" [attr.points]="area()" />
-        <polyline class="line-chart__line" fill="none" [attr.points]="polyline()" />
+        <polyline
+          class="line-chart__line"
+          fill="none"
+          pathLength="1"
+          [attr.points]="polyline()"
+        />
         @if (lastPoint(); as dot) {
           <circle class="line-chart__dot" [attr.cx]="dot.x" [attr.cy]="dot.y" r="3.5" />
         }
@@ -86,13 +91,31 @@ import { linearScale } from './scale';
       font-variant-numeric: tabular-nums;
     }
     .line-chart__area {
-      fill: color-mix(in srgb, var(--fuel) 16%, transparent);
+      fill: color-mix(in srgb, var(--fuel) 22%, transparent);
       stroke: none;
+      opacity: 0;
+    }
+    .line-chart--draw .line-chart__area {
+      animation: line-area-in var(--motion-slow, 0.55s) var(--ease-out, ease-out) 0.2s forwards;
+    }
+    @keyframes line-area-in {
+      to {
+        opacity: 1;
+      }
     }
     .line-chart__line {
       stroke: var(--fuel);
-      stroke-width: 2;
+      stroke-width: 2.25;
       vector-effect: non-scaling-stroke;
+      filter: drop-shadow(0 2px 4px var(--glow));
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+      animation: line-draw var(--motion-slow, 0.55s) var(--ease-out, ease-out) forwards;
+    }
+    @keyframes line-draw {
+      to {
+        stroke-dashoffset: 0;
+      }
     }
     .line-chart__ref {
       stroke: var(--muted);
@@ -104,11 +127,23 @@ import { linearScale } from './scale';
       fill: var(--surface, var(--fill-surface));
       stroke: var(--fuel);
       stroke-width: 2;
+      filter: drop-shadow(0 0 3px var(--glow));
     }
     .line-chart--empty {
       height: 9rem;
       border-radius: calc(var(--radius) - 8px);
       background: var(--fill-well);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .line-chart__line {
+        animation: none;
+        stroke-dasharray: none;
+        stroke-dashoffset: 0;
+      }
+      .line-chart__area {
+        animation: none;
+        opacity: 1;
+      }
     }
   `,
 })

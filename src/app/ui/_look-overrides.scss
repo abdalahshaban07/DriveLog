@@ -44,6 +44,14 @@ html[data-look='neo'] .cta:active {
   box-shadow: 1px 1px 0 var(--ink);
 }
 
+/* v3: neo keeps flat ink nav pill — no gradient/glow on active tab */
+html[data-look='neo'] .nav a.active,
+html[data-theme='contrast'][data-look='neo'] .nav a.active {
+  background: var(--cta);
+  box-shadow: none;
+  font-weight: 700;
+}
+
 @media (hover: hover) and (pointer: fine) {
   html[data-look='neo'] .cta:hover {
     box-shadow: var(--raise-2);

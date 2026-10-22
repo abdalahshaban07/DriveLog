@@ -80,14 +80,14 @@ a {
   border-color: color-mix(in srgb, var(--card-dark-text) 12%, transparent);
 }
 
-/* Night Receipt slip — warm paper island on canvas */
+/* Night Receipt v3 slip — warm paper island with lifted paper edge */
 .card--paper,
 .receipt-slip {
   background: var(--fill-paper);
   color: var(--paper-text);
   border: var(--border-width) solid color-mix(in srgb, var(--paper-muted) 28%, transparent);
   box-shadow:
-    var(--shadow-soft),
+    var(--paper-edge, var(--shadow-soft)),
     0 0 0 1px color-mix(in srgb, var(--paper-text) 4%, transparent);
 }
 
@@ -105,7 +105,7 @@ a {
   justify-content: center;
   min-height: var(--tap);
   border-radius: var(--btn-radius, var(--radius));
-  background: var(--btn-bg, var(--cta-surface));
+  background: var(--btn-bg, var(--gradient-fuel, var(--cta-surface)));
   color: var(--cta-text);
   font-weight: 700;
   letter-spacing: var(--btn-tracking, 0);

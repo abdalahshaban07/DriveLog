@@ -100,6 +100,7 @@
   border-radius: var(--radius);
   background: var(--fill-paper);
   color: var(--paper-text);
+  box-shadow: var(--paper-edge, var(--shadow-soft));
 }
 
 .report-hero__kicker,
@@ -290,13 +291,18 @@
   background:
     linear-gradient(
       165deg,
-      color-mix(in srgb, var(--fuel) 22%, transparent) 0%,
+      color-mix(in srgb, var(--fuel) 26%, transparent) 0%,
       transparent 46%
+    ),
+    radial-gradient(
+      90% 90% at 92% 108%,
+      color-mix(in srgb, var(--fuel) 20%, transparent),
+      transparent 55%
     ),
     var(--card-dark);
   color: var(--card-dark-text);
   text-decoration: none;
-  box-shadow: inset 0 3px 0 var(--fuel);
+  box-shadow: var(--panel-glow);
 }
 
 .pulse__hero-copy {
@@ -418,6 +424,7 @@
   stroke-width: 2.25;
   stroke-linecap: round;
   stroke-linejoin: round;
+  filter: drop-shadow(0 2px 4px var(--glow));
 }
 
 .pulse__spark-dot {
@@ -503,7 +510,7 @@
   background: var(--fill-surface, var(--surface));
   border: 1px solid var(--hairline, transparent);
   border-block-start: 3px solid color-mix(in srgb, var(--fuel) 72%, transparent);
-  box-shadow: var(--raise-1, none);
+  box-shadow: var(--plate-shadow);
 }
 
 .chart-card__head {
@@ -573,10 +580,11 @@
   margin-block-start: var(--space-3);
   padding-inline: var(--space-4);
   border-radius: var(--radius);
-  background: var(--cta);
+  background: var(--gradient-fuel, var(--cta));
   color: var(--cta-text);
   font-weight: 700;
   text-decoration: none;
+  box-shadow: var(--btn-shadow, var(--elev-1));
   transition:
     transform var(--motion-fast) var(--ease-out),
     box-shadow var(--motion-fast) var(--ease-out);
@@ -584,7 +592,7 @@
 
 .empty-cta:active {
   transform: translateY(var(--btn-press-y, 1px));
-  box-shadow: var(--btn-press-shadow);
+  box-shadow: var(--btn-press-shadow, var(--press-inset));
 }
 
 .carousel {
@@ -1064,7 +1072,8 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--fuel);
+  background: var(--gradient-fuel, var(--fuel));
+  box-shadow: 0 0 8px var(--glow);
 }
 
 .month-outlook__strip {

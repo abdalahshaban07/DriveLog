@@ -84,7 +84,7 @@ import { I18n } from '../../i18n/i18n';
       align-items: center;
       padding: var(--space-4);
       background: var(--fill-surface);
-      box-shadow: var(--shadow-soft);
+      box-shadow: var(--plate-shadow);
       transition: transform var(--motion-fast) var(--ease-out);
     }
     .health-row--rich:active {
@@ -171,6 +171,7 @@ import { I18n } from '../../i18n/i18n';
       height: 100%;
       border-radius: inherit;
       background: var(--ok);
+      box-shadow: 0 0 6px color-mix(in srgb, currentColor 35%, transparent);
     }
     .health-row__meter-fill[data-status='soon'] {
       background: var(--warn);

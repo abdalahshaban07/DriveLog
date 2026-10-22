@@ -166,7 +166,15 @@
                             }
                           </span>
                           @if (l100(item.row); as rate) {
-                            <span class="history-eco">
+                            <span
+                              class="history-eco"
+                              [class.history-eco--good]="ecoTone(item.row) === 'good'"
+                              [class.history-eco--bad]="ecoTone(item.row) === 'bad'"
+                            >
+                              <span
+                                class="history-eco__dot"
+                                aria-hidden="true"
+                              ></span>
                               <bdi dir="ltr">{{ formatL100(rate) }}</bdi>
                               <span>{{ i18n.t('fuel.per100Lead') }}</span>
                               <bdi dir="ltr">{{

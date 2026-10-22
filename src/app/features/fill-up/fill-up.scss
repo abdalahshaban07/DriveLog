@@ -55,10 +55,11 @@
   min-height: var(--tap);
   padding-inline: var(--space-4);
   border-radius: var(--radius);
-  background: var(--fuel);
+  background: var(--gradient-fuel, var(--fuel));
   color: var(--cta-text);
   font-weight: 700;
   text-decoration: none;
+  box-shadow: var(--btn-shadow, var(--elev-1));
   transition: opacity var(--motion-fast) var(--ease-out);
 }
 
@@ -460,10 +461,11 @@
   padding-inline: var(--space-3);
   border: 0;
   border-radius: var(--radius);
-  background: var(--cta);
+  background: var(--gradient-fuel, var(--cta));
   color: var(--cta-text);
   font-weight: 700;
   cursor: pointer;
+  box-shadow: var(--btn-shadow, var(--elev-1));
 }
 
 .ocr-review {

@@ -220,6 +220,34 @@
   font-size: 0.75rem;
 }
 
+.history-eco__dot {
+  align-self: center;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--muted) 55%, transparent);
+  transform: translateX(2px);
+}
+
+.history-eco--good .history-eco__dot {
+  background: var(--ok);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 22%, transparent);
+}
+
+.history-eco--good {
+  color: var(--ok);
+}
+
+.history-eco--bad .history-eco__dot {
+  background: var(--stop);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--stop) 20%, transparent);
+}
+
+.history-eco--bad {
+  color: var(--stop);
+  font-weight: 700;
+}
+
 .history-ledger__side {
   text-align: end;
 }
