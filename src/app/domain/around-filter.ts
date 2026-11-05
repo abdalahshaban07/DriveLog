@@ -3,9 +3,9 @@ import { connectorSpeed } from './connector-speed';
 
 export { connectorSpeed };
 
-export const AROUND_RADIUS_DEFAULT_KM = 15;
-export const AROUND_RADIUS_MIN_KM = 1;
-export const AROUND_RADIUS_MAX_KM = 300;
+const AROUND_RADIUS_DEFAULT_KM = 15;
+const AROUND_RADIUS_MIN_KM = 1;
+const AROUND_RADIUS_MAX_KM = 300;
 
 export function clampAroundRadiusKm(raw: number): number {
   if (!Number.isFinite(raw)) {

@@ -1398,4 +1398,28 @@ export const ar: Record<MsgKey, string> = {
   'pageLine.chartsBetterPeriod': '{period}: الاستهلاك أقل من عادتك.',
   'pageLine.chartsFlat': 'الاستهلاك في الفترة دي في معدلك.',
   'pageLine.chartsFlatPeriod': '{period}: الاستهلاك في معدلك.',
+
+  // Local coach: human voice — variants, leads, prev month, suggestion chip.
+  'advisor.answer.spendPrev': 'الشهر اللي فات صرفت حوالي {total} {currency}.',
+  'advisor.answer.spendBody_v2': 'العربية دخلت الفترة دي حوالي {total} {currency}.',
+  'advisor.answer.spendSplit_v2':
+    'الـ{car} استهلكت الفترة دي حوالي {total} {currency}: بنزين {fuel}، صيانة {maintenance}، أعطال {breakdown}، مصاريف تانية {other}.',
+  'advisor.answer.spendAll_v2':
+    'من أول ما بدأت: {total} {currency} — منها {fuel} بنزين، {maintenance} صيانة، {breakdown} أعطال، {other} مصاريف تانية.',
+  'advisor.answer.breakdownLast_v2': 'آخر زحمة كانت «{title}» يوم {date}. الإجمالي {count}.',
+  'advisor.answer.breakdownBody_v2': 'عندك {count} أعطال مسجلة — دي حاجة تستاهل المتابعة.',
+  'advisor.answer.maintLogBody_v2': 'سجلت {count} صيانة من أول ما بدأت.',
+  'advisor.answer.partHistoryLast_v2': 'آخر شغل في {part} كان يوم {date} عند {km} كم.',
+  'advisor.answer.partHistoryCount_v2': '{part}: {count} عمليات في السجل.',
+  'advisor.answer.priorityBody_v2': '{part} حالته {status} — ده اللي يتقدّم.',
+  'advisor.answer.partStatusBody_v2': 'حالياً {part} {status}.',
+  'advisor.answer.fuelDelta_v2': 'آخر تنكة {l100} واللي قبلها {prev} — الفرق {delta}.',
+  'advisor.answer.budgetBody_v2': 'الميزانية شكلها {status} الفترة دي.',
+  'advisor.answer.adviceBody_v2': 'عادة صغيرة فرق كبير: بصّ على آخر سجل قبل ما تغيّر أي حاجة.',
+  'advisor.answer.reserveBody_v2': 'المعقول تجهّز حوالي {amount} {currency}.',
+  'advisor.answer.upcomingBody_v2': 'ممكن تحتاج حوالي {amount} {currency} قريب.',
+  'advisor.lead.repeatPart': 'الـ{part} اتخدم أكتر من مرة الفترة دي — خد بالك.',
+  'advisor.lead.secondFault': '{count} أعطال الفترة دي — دي مش صدفة.',
+  'advisor.lead.budgetHigh': 'المصاريف بتسبق الميزانية شوية الشهر ده.',
+  'assistant.suggest.next': 'ممكن تسأل بعد كده:',
 } as const;

@@ -19,7 +19,7 @@ export type AdvisorIntent =
 
 export type AdvisorPart = 'oil' | 'tires' | 'brakes';
 
-export type AdvisorWindow = 'period' | 'all' | 'last';
+export type AdvisorWindow = 'period' | 'all' | 'last' | 'prev';
 
 export type AdvisorRead = {
   intent: AdvisorIntent;
@@ -34,14 +34,17 @@ const RULES: { intent: AdvisorIntent; patterns: RegExp[] }[] = [
   },
   {
     intent: 'AFFORDABILITY',
-    patterns: [/afford/i, /اقدر/],
+    patterns: [/afford/i, /worth it/i, /اقدر/, /اقدر\s*اغير/],
   },
   {
     intent: 'BREAKDOWN',
     patterns: [
       /break/i,
+      /broke\b/i,
       /fault/i,
       /repair/i,
+      /stopped working/i,
+      /won'?t start/i,
       /عطل/,
       /اعطال/,
       /عواطل/,
@@ -49,6 +52,11 @@ const RULES: { intent: AdvisorIntent; patterns: RegExp[] }[] = [
       /صلحت/,
       /تصليح/,
       /خربان/,
+      /خربت/,
+      /بايظ/,
+      /واقفه/,
+      /(عربيه|سياره).{0,6}طالع/,
+      /مش شغال/,
     ],
   },
   {
@@ -59,10 +67,15 @@ const RULES: { intent: AdvisorIntent; patterns: RegExp[] }[] = [
     intent: 'MAINT_LOG',
     patterns: [
       /how much maintenance/i,
+      /how many (services|maintenance|records)/i,
       /maintenance have i logged/i,
       /logged/i,
+      /records? (i|have|on)/i,
       /كام سجل/,
       /سجل\s*صيان/,
+      /كام صيان/,
+      /كم\s*(صيان|سجل|خدمه|تصليح)/,
+      /عدد.{0,6}(سجل|عليها|نقطة|نقطه)/,
     ],
   },
   {
@@ -70,6 +83,8 @@ const RULES: { intent: AdvisorIntent; patterns: RegExp[] }[] = [
     patterns: [
       /priorit/i,
       /what.*(due|first)/i,
+      /which.*first/i,
+      /first service|service.*first/i,
       /اولوي/,
       /اغير\s*الزيت/,
       /غير\s*الزيت/,
@@ -79,23 +94,37 @@ const RULES: { intent: AdvisorIntent; patterns: RegExp[] }[] = [
       /خلص\s*الزيت/,
       /امتي\s*اغير/,
       /امتي\s*غير/,
+      /عايز\s*اغير/,
+      /محتاج\s*اغير/,
+      /ينقص\s*زيت/,
     ],
   },
   {
     intent: 'UPCOMING_MAINTENANCE',
-    patterns: [/upcoming/i, /coming\s*up/i, /قادم/, /جاي/],
+    patterns: [
+      /upcoming/i,
+      /coming\s*up/i,
+      /next service/i,
+      /needs.{0,8}next/i,
+      /قادم/,
+      /جاي/,
+      /جايه/,
+      /قرب/,
+      /هتحتاج/,
+    ],
   },
   {
     intent: 'BUDGET_HEALTH',
-    patterns: [/budget/i, /ميزاني/],
+    patterns: [/budget/i, /ميزاني/, /موازنه/, /خزنه/, /خزنة/, /in budget/i],
   },
   {
     intent: 'FUEL_SPENDING',
     patterns: [
       /economy/i,
       /fuel/i,
-      /consumption/i,
+      /consum\w*/i,
       /mpg/i,
+      /kmpl/i,
       /l\/100/i,
       /بنزين/,
       /وقود/,
@@ -109,6 +138,10 @@ const RULES: { intent: AdvisorIntent; patterns: RegExp[] }[] = [
       /اوفر/,
       /سواقه/,
       /بتاكل/,
+      /محروقات/,
+      /tank\b/i,
+      /بشرب\s*(بنزين)?/,
+      /petrol|\bgas\b/i,
     ],
   },
   {
@@ -119,9 +152,10 @@ const RULES: { intent: AdvisorIntent; patterns: RegExp[] }[] = [
       /expense/i,
       /\bcost\b/i,
       /period/i,
+      /\btotal\b/i,
       /مصروف/,
-      /صرفت/,
       /صرف/,
+      /(?<!ت)سرف/,
       /دفعت/,
       /دفع/,
       /فلوس/,
@@ -129,6 +163,9 @@ const RULES: { intent: AdvisorIntent; patterns: RegExp[] }[] = [
       /كلف/,
       /فتره/,
       /حساب/,
+      /اجماعي?/,
+      /مجموع/,
+      /فاتورة|فاتوره/i,
     ],
   },
   {
@@ -139,6 +176,9 @@ const RULES: { intent: AdvisorIntent; patterns: RegExp[] }[] = [
       /oil/i,
       /tire/i,
       /brake/i,
+      /battery/i,
+      /بطاري[هة]/,
+      /ضغط/,
       /كاوتش/,
       /كوتش/,
       /اطار/,
@@ -180,7 +220,16 @@ const PART_RULES: { part: AdvisorPart; re: RegExp }[] = [
 const PART_SCOPED = new Set<AdvisorIntent>(['PART_STATUS', 'PART_HISTORY', 'MAINTENANCE_PRIORITY']);
 
 function bestIntent(text: string, skip?: ReadonlySet<AdvisorIntent>): AdvisorIntent {
-  let best: { intent: AdvisorIntent; score: number; index: number } | null = null;
+  return scoreAdvisorIntents(text, skip)[0]?.intent ?? 'UNSUPPORTED';
+}
+
+/** Ranked intent scores for the folded text; zero-hit intents are dropped. */
+export function scoreAdvisorIntents(
+  raw: string,
+  skip?: ReadonlySet<AdvisorIntent>,
+): { intent: AdvisorIntent; score: number }[] {
+  const text = normalizeAdvisorText(raw);
+  const scored: { intent: AdvisorIntent; score: number; index: number }[] = [];
   for (let index = 0; index < RULES.length; index++) {
     const rule = RULES[index]!;
     if (skip?.has(rule.intent)) continue;
@@ -189,12 +238,11 @@ function bestIntent(text: string, skip?: ReadonlySet<AdvisorIntent>): AdvisorInt
       const match = text.match(pattern);
       if (match?.[0]) score = Math.max(score, match[0].length);
     }
-    if (score === 0) continue;
-    if (!best || score > best.score || (score === best.score && index < best.index)) {
-      best = { intent: rule.intent, score, index };
-    }
+    if (score > 0) scored.push({ intent: rule.intent, score, index });
   }
-  return best?.intent ?? 'UNSUPPORTED';
+  // Longer match wins; ties fall back to rule order for stable answers.
+  scored.sort((a, b) => b.score - a.score || a.index - b.index);
+  return scored.map(({ intent, score }) => ({ intent, score }));
 }
 
 function detectPart(text: string): AdvisorPart | undefined {
@@ -203,6 +251,8 @@ function detectPart(text: string): AdvisorPart | undefined {
 
 function detectWindow(text: string): AdvisorWindow | undefined {
   const hits: { window: AdvisorWindow; score: number }[] = [];
+  const prev = text.match(/اللي\s*فات|الشهر\s*الماضي|previous|last\s*month/);
+  if (prev?.[0]) hits.push({ window: 'prev', score: prev[0].length + 1 });
   const last = text.match(/اخر|اخير|\blast\b|\blatest\b/);
   if (last?.[0]) hits.push({ window: 'last', score: last[0].length });
   const all = text.match(/كل\s|\ball\b/);
@@ -213,7 +263,7 @@ function detectWindow(text: string): AdvisorWindow | undefined {
   return hits[0]?.window;
 }
 
-export function defaultWindow(intent: AdvisorIntent): AdvisorWindow {
+function defaultWindow(intent: AdvisorIntent): AdvisorWindow {
   switch (intent) {
     case 'PART_HISTORY':
     case 'BREAKDOWN':
@@ -253,10 +303,33 @@ function isFollowUp(text: string): boolean {
   return /^(و|طيب|كمان|برضو|and\b|also\b)/.test(text);
 }
 
-/** «ازاي / أحسّن / نصيحة» asks for a method, not the numbers card. */
-export function isAdviceAsk(raw: string): boolean {
+/** «ازاي احسن/وفر…», «أحسّن», «نصيحة» ask for a method, not the numbers card. */
+function isAdviceAsk(raw: string): boolean {
   const text = normalizeAdvisorText(raw);
-  return /ازاي|احسن|تحسين|نصيح|how (do|can|to)|improve|\btip\b|advice/.test(text);
+  return (
+    /ازاي\s*(احسن|حسن|وفر|اوفر|تقلل|انقص|نظبط|أظبط|اغير|غير|اختار|اعرف)/.test(text) ||
+    /احسن|تحسين|نصيح|راي|ارشد|how (do|can|to)|improve|\btip\b|advice|what should|best way/.test(text)
+  );
+}
+
+/** A spend word next to a part word asks for that part's cost history. */
+const SPEND_WORD = /صرفت|صرف|تكلف|كام|فلوس|how much|cost|paid|spent/i;
+const STATUS_WORD = /حاله|عامل|وضع|status|health|تمام|خربان/i;
+
+function partScopedIntent(intent: AdvisorIntent, text: string, part?: AdvisorPart): AdvisorIntent {
+  const scoped = withPart(intent, text, part);
+  if (scoped !== 'PART_STATUS' || !part) return scoped;
+  if (SPEND_WORD.test(text) && !STATUS_WORD.test(text)) return 'PART_HISTORY';
+  return scoped;
+}
+
+/** A fuel word beside generic spend wording makes it the fuel question. */
+const FUEL_WORD = /petrol|\bgas\b|fuel|بنزين|وقود|استهلاك|بتشرب|بتاكل/;
+
+function scopeIntent(intent: AdvisorIntent, text: string, part?: AdvisorPart): AdvisorIntent {
+  const scoped = partScopedIntent(intent, text, part);
+  if (scoped === 'SPENDING_TREND' && !part && FUEL_WORD.test(text)) return 'FUEL_SPENDING';
+  return scoped;
 }
 
 export function readAdvisor(raw: string, carry?: AdvisorRead | null): AdvisorRead {
@@ -265,19 +338,27 @@ export function readAdvisor(raw: string, carry?: AdvisorRead | null): AdvisorRea
   if (isAdviceAsk(text)) return { intent: 'COACH_ADVICE', window: 'period' };
   const part = detectPart(text);
   const window = detectWindow(text);
-  if (carry && carry.intent !== 'UNSUPPORTED' && isFollowUp(text)) {
+  const carryOn = (intent: AdvisorIntent, partSlot?: AdvisorPart): AdvisorRead => ({
+    intent,
+    part: partSlot,
+    window: window ?? defaultWindow(intent),
+  });
+  if (carry && carry.intent !== 'UNSUPPORTED' && (isFollowUp(text) || window)) {
     const specific = bestIntent(text, part ? new Set(['PART_STATUS']) : undefined);
     if (specific !== 'UNSUPPORTED') {
-      const intent = withPart(specific, text, part ?? carry.part);
-      return { intent, part: part ?? carry.part, window: window ?? defaultWindow(intent) };
+      const intent = scopeIntent(specific, text, part ?? carry.part);
+      return carryOn(intent, part ?? carry.part);
     }
     if (part) {
       const intent = PART_SCOPED.has(carry.intent) ? carry.intent : 'PART_STATUS';
-      return { intent, part, window: window ?? defaultWindow(intent) };
+      return carryOn(intent, part);
     }
-    return { intent: carry.intent, part: carry.part, window: window ?? carry.window };
+    // A bare window shift like «والشهر اللي فات؟» keeps the last intent, new window.
+    if (isFollowUp(text) || window) {
+      return { intent: carry.intent, part: carry.part, window: window ?? carry.window };
+    }
   }
-  const intent = withPart(bestIntent(text), text, part);
+  const intent = scopeIntent(bestIntent(text), text, part);
   return { intent, part, window: window ?? defaultWindow(intent) };
 }
 

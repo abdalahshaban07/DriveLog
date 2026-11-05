@@ -117,7 +117,7 @@ export function monthFuelSpend(
 }
 
 /** Rolling window for Home cost glance (days). */
-export const ROLLING_COST_WINDOW_DAYS = 30;
+const ROLLING_COST_WINDOW_DAYS = 30;
 
 function dateOnlyFromDate(d: Date): string {
   const y = d.getFullYear();
@@ -493,7 +493,7 @@ export function buildFuelCostGlance(
 }
 
 /** Min full segments before below-baseline chip / vs-avg tips can fire. */
-export const EFFICIENCY_BASELINE_MIN_SEGMENTS = 3;
+const EFFICIENCY_BASELINE_MIN_SEGMENTS = 3;
 /** Latest L/100 must be this fraction worse than prior baseline. */
 export const EFFICIENCY_WORSE_THRESHOLD = 0.15;
 /** |deltaPct| below this → flat vs personal average. */

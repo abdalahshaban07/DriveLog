@@ -1,8 +1,9 @@
-import { Component, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { I18n } from '../i18n/i18n';
 
 @Component({
   selector: 'app-page-header',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './page-header.html',
   styleUrl: './page-header.scss',
 })

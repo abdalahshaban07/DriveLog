@@ -1,5 +1,6 @@
 import {
   afterNextRender,
+  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   ElementRef,
@@ -10,6 +11,7 @@ import {
 
 @Component({
   selector: 'app-confirm-bar',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './confirm-bar.html',
   styleUrl: './confirm-bar.scss',
   host: {

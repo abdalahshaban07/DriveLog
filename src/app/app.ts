@@ -10,7 +10,7 @@ import { I18n } from './i18n/i18n';
 import { Shell } from './layout/shell';
 
 export const SPLASH_SESSION_KEY = 'drivelog-splash';
-export const SPLASH_MS = 1200;
+const SPLASH_MS = 1200;
 
 export function shouldShowSplash(
   storage: Pick<Storage, 'getItem'> | null,

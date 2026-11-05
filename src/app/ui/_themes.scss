@@ -27,8 +27,6 @@
     0 4px 14px color-mix(in srgb, #000 32%, transparent);
   --elev-2: 0 2px 8px color-mix(in srgb, #000 46%, transparent),
     0 12px 32px color-mix(in srgb, #000 38%, transparent);
-  --elev-3: 0 4px 12px color-mix(in srgb, #000 50%, transparent),
-    0 20px 48px color-mix(in srgb, #000 44%, transparent);
   --panel-glow: inset 0 1px 0 color-mix(in srgb, #fff 12%, transparent);
   --paper-edge: 0 10px 30px color-mix(in srgb, #000 38%, transparent);
   --glow: color-mix(in srgb, var(--fuel) 42%, transparent);
@@ -37,9 +35,6 @@
   --well-inset: inset 0 2px 10px color-mix(in srgb, #000 42%, transparent);
   --shadow-soft: 0 1px 2px color-mix(in srgb, #000 40%, transparent);
   --metric-tint: color-mix(in srgb, var(--fuel) 12%, var(--surface));
-  --metric-blue: var(--metric-tint);
-  --metric-green: var(--metric-tint);
-  --metric-orange: var(--metric-tint);
   color-scheme: dark;
 }
 
@@ -63,9 +58,6 @@ html[data-theme='light'] {
 
   /* Unified metric tint */
   --metric-tint: color-mix(in srgb, var(--fuel) 10%, var(--surface));
-  --metric-blue: var(--metric-tint);
-  --metric-green: var(--metric-tint);
-  --metric-orange: var(--metric-tint);
 
   --radius: 10px;
   --page-head-gap: var(--space-4);
@@ -84,7 +76,6 @@ html[data-theme='light'] {
   --motion-slow: 400ms;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --nav-height: calc(var(--tap) + var(--space-4) + var(--space-3) + env(safe-area-inset-bottom, 0px));
   --type-hero: clamp(2.75rem, 12vw, 3.75rem);
   --type-title: 1.75rem;
@@ -114,8 +105,6 @@ html[data-theme='light'] {
     0 4px 12px color-mix(in srgb, #1a1814 7%, transparent);
   --elev-2: 0 2px 6px color-mix(in srgb, #1a1814 10%, transparent),
     0 10px 26px color-mix(in srgb, #1a1814 9%, transparent);
-  --elev-3: 0 4px 10px color-mix(in srgb, #1a1814 12%, transparent),
-    0 18px 40px color-mix(in srgb, #1a1814 14%, transparent);
   --panel-glow: inset 0 1px 0 color-mix(in srgb, #fff 60%, transparent);
   --paper-edge: 0 1px 0 color-mix(in srgb, #fff 70%, transparent),
     0 10px 28px color-mix(in srgb, #8a7a5c 20%, transparent);
@@ -136,7 +125,6 @@ html[data-theme='light'] {
   --fill-surface: var(--surface);
   --fill-well: var(--well);
   --fill-paper: var(--paper);
-  --glass-blur: 0px;
   --glass-edge: transparent;
   --mesh-canvas:
     radial-gradient(
@@ -158,8 +146,23 @@ html[data-theme='light'] {
   --btn-press-shadow: inset 0 2px 4px color-mix(in srgb, #1a1814 18%, transparent);
   --btn-press-x: 0;
   --btn-press-y: 1px;
-  --btn-blur: 0px;
   --btn-tracking: 0;
+  /* Nav + dock chrome defaults (receipt floats via html[data-look='receipt']) */
+  --dock-offset: calc(var(--nav-height) + var(--space-2));
+  --main-bottom-pad: calc(var(--nav-height) + var(--space-6));
+  --nav-inline-inset: var(--nav-inset, 0px);
+  --nav-bottom-inset: var(--nav-inset, 0px);
+  --nav-radius: 0px;
+  --nav-edge: none;
+  --nav-top-border: var(--border-width, 1px) solid var(--hairline);
+  --nav-safe-pad: env(safe-area-inset-bottom, 0px);
+  --nav-shadow: var(--plate-shadow);
+  --nav-mesh: var(--mesh-canvas);
+  --nav-inner-min: var(--tap);
+  --nav-link-margin: 0px;
+  --nav-link-radius: calc(var(--radius) - var(--space-3));
+  --nav-cap-radius: 0px;
+  --nav-active-shadow: 0 4px 14px var(--glow), var(--elev-1);
   color-scheme: light;
 }
 
@@ -183,9 +186,6 @@ html[data-theme='system'] {
   --well-inset: inset 0 2px 8px color-mix(in srgb, #1a1814 6%, transparent);
   --shadow-soft: 0 1px 3px color-mix(in srgb, #1a1814 10%, transparent);
   --metric-tint: color-mix(in srgb, var(--fuel) 10%, var(--surface));
-  --metric-blue: var(--metric-tint);
-  --metric-green: var(--metric-tint);
-  --metric-orange: var(--metric-tint);
   color-scheme: light;
 }
 
@@ -231,13 +231,9 @@ html[data-theme='contrast'] {
   --gradient-fuel: var(--fuel);
   --elev-1: none;
   --elev-2: none;
-  --elev-3: none;
   --panel-glow: none;
   --paper-edge: none;
   --metric-tint: color-mix(in srgb, var(--fuel) 14%, var(--surface));
-  --metric-blue: var(--metric-tint);
-  --metric-green: var(--metric-tint);
-  --metric-orange: var(--metric-tint);
   color-scheme: dark;
 }
 
@@ -274,8 +270,6 @@ html[data-theme='dusk'] {
     0 4px 14px color-mix(in srgb, #000 30%, transparent);
   --elev-2: 0 2px 8px color-mix(in srgb, #000 44%, transparent),
     0 12px 32px color-mix(in srgb, #000 36%, transparent);
-  --elev-3: 0 4px 12px color-mix(in srgb, #000 50%, transparent),
-    0 20px 48px color-mix(in srgb, #000 42%, transparent);
   --panel-glow: inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent);
   --paper-edge: 0 10px 30px color-mix(in srgb, #000 34%, transparent);
   --glow: color-mix(in srgb, var(--fuel) 38%, transparent);
@@ -284,8 +278,5 @@ html[data-theme='dusk'] {
   --well-inset: inset 0 2px 10px color-mix(in srgb, #000 42%, transparent);
   --shadow-soft: 0 1px 2px color-mix(in srgb, #000 35%, transparent);
   --metric-tint: color-mix(in srgb, var(--fuel) 10%, var(--surface));
-  --metric-blue: var(--metric-tint);
-  --metric-green: var(--metric-tint);
-  --metric-orange: var(--metric-tint);
   color-scheme: dark;
 }

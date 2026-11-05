@@ -46,20 +46,8 @@
   transform: scale(0.98);
 }
 
-.ledger__head,
-.slip__top,
-.board__head,
-.tip__head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
 
-.ledger__label,
-.slip__label,
-.ledger__vs,
-.tip__label {
+.ledger__label, .tip__label {
   margin: 0;
   font-size: var(--type-label);
   font-weight: 700;
@@ -96,23 +84,9 @@
   color: var(--paper-text);
 }
 
-.ledger__was {
-  margin: var(--space-2) 0 0;
-  font-size: 0.85rem;
-  color: var(--paper-muted);
-  font-variant-numeric: tabular-nums;
-}
 
-.ledger__why {
-  margin: var(--space-2) 0 0;
-  font-size: 0.95rem;
-  font-weight: 600;
-  line-height: 1.4;
-  color: var(--paper-text);
-}
 
-.ledger__stats,
-.slip__meta {
+.ledger__stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-3);
@@ -121,8 +95,7 @@
   border-block-start: 1px dashed color-mix(in srgb, var(--paper-muted) 50%, transparent);
 }
 
-.ledger__stats strong,
-.slip__meta strong {
+.ledger__stats strong {
   display: block;
   margin-block-start: 2px;
   font-size: 1.02rem;
@@ -136,24 +109,8 @@ a.slip {
   text-decoration: none;
 }
 
-.slip__top time {
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--paper-text);
-}
 
-.slip__place {
-  margin: var(--space-2) 0 0;
-  font-weight: 600;
-  color: var(--paper-text);
-}
 
-.slip__tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-block-start: var(--space-2);
-}
 
 .slip .chip {
   background: color-mix(in srgb, var(--paper-text) 8%, transparent);
@@ -165,52 +122,12 @@ a.slip {
   color: var(--paper-text);
 }
 
-.slip__figures {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-4);
-  margin-block-start: var(--space-4);
-}
 
-.slip__figure strong {
-  display: block;
-  margin-block-start: 2px;
-  font-size: clamp(1.45rem, 6.5vw, 2rem);
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1.05;
-  font-variant-numeric: tabular-nums;
-  overflow-wrap: anywhere;
-}
 
-.slip__figure:first-child strong {
-  font-size: clamp(2rem, 8vw, 2.65rem);
-  letter-spacing: -0.04em;
-}
 
-.slip__figure--end {
-  text-align: end;
-}
 
-.slip--empty {
-  display: grid;
-  gap: var(--space-2);
-}
 
-.slip__empty {
-  margin: 0;
-  color: var(--paper-text);
-}
 
-.slip__log {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--tap);
-  color: var(--paper-text);
-  font-weight: 700;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
 
 .board__row {
   display: grid;
@@ -384,38 +301,19 @@ a.slip {
   line-height: 1.45;
 }
 
-.tip__hint {
-  margin: var(--space-2) 0 0;
-  font-size: 0.85rem;
-  color: var(--muted);
-}
 
-.tip__refresh {
-  min-height: var(--tap);
-  padding-inline: var(--space-2);
-  border: 0;
-  background: transparent;
-  color: var(--cta);
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-}
 
 .fuel-dock {
   position: fixed;
   z-index: 90;
   inset-inline: max(var(--space-4), calc((100% - var(--shell)) / 2 + var(--space-4)));
-  bottom: calc(var(--nav-height) + var(--space-1));
+  bottom: var(--dock-offset, calc(var(--nav-height) + var(--space-2)));
   pointer-events: none;
 }
 
 .fuel-log {
   pointer-events: auto;
   border-radius: 999px;
-}
-
-:host-context([data-look='receipt']) .fuel-dock {
-  bottom: calc(max(var(--space-3), env(safe-area-inset-bottom, 0px)) + var(--tap) + var(--space-4));
 }
 
 @media (hover: hover) and (pointer: fine) {

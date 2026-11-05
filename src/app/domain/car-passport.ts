@@ -98,7 +98,7 @@ function latestDated<T extends { date: string; createdAt: string }>(rows: readon
 }
 
 /** Nickname wins; spec line is omitted when it only repeats the title. */
-export function vehicleIdentity(car: Car): { title: string; spec: string; showYear: boolean } {
+function vehicleIdentity(car: Car): { title: string; spec: string; showYear: boolean } {
   const nick = car.nickname.trim();
   const makeModel = [car.make, car.model]
     .map((part) => part?.trim())

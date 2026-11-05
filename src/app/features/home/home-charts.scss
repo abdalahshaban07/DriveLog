@@ -1,0 +1,89 @@
+/* Chart grid for the deferred home charts tab. Mirrors the card rhythm of
+   the reports panel: hairline plate, fuel accent on the top border. */
+.chart-grid {
+  display: grid;
+  gap: var(--space-3);
+  margin-block-end: var(--space-4);
+}
+
+@media (min-width: 840px) {
+  .chart-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.chart-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-height: 14.5rem;
+  padding: var(--space-3);
+  border-radius: calc(var(--radius) + 4px);
+  background: var(--fill-surface, var(--surface));
+  border: 1px solid var(--hairline, transparent);
+  border-block-start: 3px solid color-mix(in srgb, var(--fuel) 72%, transparent);
+  box-shadow: var(--plate-shadow);
+}
+
+.chart-card__label {
+  display: block;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--type-label);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.chart-card__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.chart-card__value {
+  min-width: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.chart-card__delta {
+  flex: 0 0 auto;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--fill-well);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.chart-card__foot {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.chart-card__empty {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  min-height: 9rem;
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: calc(var(--radius) - 8px);
+  background: var(--fill-well);
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  text-align: center;
+}

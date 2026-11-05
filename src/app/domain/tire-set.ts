@@ -1,10 +1,10 @@
 import type { Car, DateOnly, Maintenance } from './models';
 
 /** Legal-ish soft threshold for passenger tread (mm). */
-export const LOW_TREAD_MM = 3;
+const LOW_TREAD_MM = 3;
 
 /** Soft nudge after this many days on one set. */
-export const TIRE_SWAP_DAYS = 180;
+const TIRE_SWAP_DAYS = 180;
 
 export type TireReminder = {
   id: 'tire-swap' | 'tire-tread';

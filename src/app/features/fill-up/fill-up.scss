@@ -1,11 +1,4 @@
-.price-skeleton {
-  opacity: 1;
-  transition: opacity 200ms var(--ease-out);
-}
 
-.grade-fade {
-  animation: grade-in 200ms var(--ease-out);
-}
 
 @keyframes grade-in {
   from {
@@ -17,9 +10,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .grade-fade {
-    animation: none;
-  }
 }
 
 .fill-up {
@@ -80,24 +70,12 @@
   }
 }
 
-.warn-hint,
-.economy-live,
 .tank-hint {
   margin: 0;
   font-size: 0.9rem;
 }
 
-.warn-hint {
-  color: var(--fuel);
-}
 
-.economy-live {
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  font-size: var(--type-metric);
-  letter-spacing: -0.02em;
-  color: var(--paper-text);
-}
 
 .tank-hint {
   color: var(--paper-muted);
@@ -142,10 +120,6 @@
   color: var(--paper-muted);
 }
 
-.console__face {
-  display: grid;
-  gap: var(--space-3);
-}
 
 .console__pair {
   display: grid;
@@ -254,53 +228,6 @@
   overflow-wrap: anywhere;
 }
 
-.scan-row {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.scan-row__actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-2);
-}
-
-.scan-tile {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 42px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--paper-text);
-  font-weight: 700;
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-
-.scan-tile svg {
-  width: 16px;
-  height: 16px;
-  flex: none;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.scan-tile:focus-visible {
-  outline: 2px solid var(--fuel);
-  outline-offset: 2px;
-}
-
-.scan-tile:disabled {
-  opacity: 0.55;
-  cursor: progress;
-}
-
 .station-field__row {
   display: flex;
   gap: var(--space-2);
@@ -392,19 +319,6 @@
   color: var(--muted);
 }
 
-.shared-receipt {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.shared-receipt__img {
-  max-width: 100%;
-  max-height: 220px;
-  object-fit: contain;
-  border-radius: var(--radius);
-  background: var(--well);
-}
-
 .ghost-btn {
   min-height: var(--tap);
   padding-inline: var(--space-3);
@@ -468,35 +382,6 @@
   box-shadow: var(--btn-shadow, var(--elev-1));
 }
 
-.ocr-review {
-  display: grid;
-  gap: var(--space-3);
-}
-
-.ocr-review__title {
-  margin: 0;
-  font-size: 1.05rem;
-}
-
-.ocr-review__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
 .danger {
   min-height: 44px;
   border: 0;
@@ -521,13 +406,9 @@
   position: fixed;
   z-index: 90;
   inset-inline: max(var(--space-4), calc((100% - var(--shell)) / 2 + var(--space-4)));
-  bottom: calc(var(--nav-height) + var(--space-2));
+  bottom: var(--dock-offset, calc(var(--nav-height) + var(--space-2)));
   padding-block: var(--space-2);
   background: color-mix(in srgb, var(--bg) 88%, transparent);
-}
-
-:host-context([data-look='receipt']) .save-wrap {
-  bottom: calc(max(var(--space-3), env(safe-area-inset-bottom, 0px)) + var(--tap) + var(--space-4));
 }
 
 @media (prefers-reduced-motion: reduce) {

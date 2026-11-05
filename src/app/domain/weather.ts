@@ -37,7 +37,3 @@ export function weatherKind(code: number): WeatherKind {
   }
   return 'other';
 }
-
-export function weatherMsgKey(code: number): `weather.${WeatherKind}` {
-  return `weather.${weatherKind(code)}`;
-}

@@ -21,7 +21,7 @@ import type {
   Maintenance,
 } from './models';
 
-export const PAGE_LINE_IDS = [
+const PAGE_LINE_IDS = [
   'home',
   'fuel',
   'around',

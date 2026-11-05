@@ -104,15 +104,7 @@
     }
   </section>
 
-  @if (sharedPreviewUrl(); as imgUrl) {
-    <section class="card shared-receipt" [attr.aria-label]="i18n.t('fillUp.sharedImage')">
-      <p class="hint" role="status">{{ i18n.t('fillUp.sharedImageReady') }}</p>
-      <img class="shared-receipt__img" [src]="imgUrl" alt="" />
-      <button type="button" class="ghost-btn" (click)="clearSharedImage()">
-        {{ i18n.t('fillUp.clearShared') }}
-      </button>
-    </section>
-  }
+  <app-fill-up-ocr-cards />
 
   @if (logMode() === 'fuel' && softStation() && !softStationDismissed()) {
     <section class="card soft-station" role="status" aria-live="polite">
@@ -133,41 +125,6 @@
         </button>
         <button type="button" class="ghost-btn" (click)="dismissSoftStation()">
           {{ i18n.t('fillUp.youreAtDismiss') }}
-        </button>
-      </div>
-    </section>
-  }
-
-  @if (ocrStage() === 'review' && ocrCandidates()) {
-    <section class="card ocr-review" [attr.aria-label]="i18n.t('fillUp.ocrReview')">
-      <h2 class="ocr-review__title">{{ i18n.t('fillUp.ocrReview') }}</h2>
-      <app-numeric-field
-        [label]="i18n.t('fillUp.liters')"
-        [value]="ocrLitersStr()"
-        (valueChange)="setOcrLiters($event)"
-      />
-      <app-numeric-field
-        [label]="i18n.t('fillUp.unitPrice')"
-        [value]="ocrPriceStr()"
-        (valueChange)="setOcrPrice($event)"
-      />
-      <app-numeric-field
-        [label]="i18n.t('fillUp.total')"
-        [value]="ocrTotalStr()"
-        (valueChange)="setOcrTotal($event)"
-      />
-      @if (ocrMath() === true) {
-        <p class="hint" role="status">{{ i18n.t('fillUp.ocrMathOk') }}</p>
-      } @else if (ocrMath() === false) {
-        <p class="error-state" role="alert">{{ i18n.t('fillUp.ocrMathBad') }}</p>
-      }
-      <div class="ocr-review__actions">
-        <app-primary-button
-          [label]="i18n.t('fillUp.ocrApply')"
-          (pressed)="applyOcrPick()"
-        />
-        <button type="button" class="ghost-btn" (click)="discardOcr()">
-          {{ i18n.t('fillUp.ocrDiscard') }}
         </button>
       </div>
     </section>
@@ -326,54 +283,7 @@
 
       <app-text-field [label]="i18n.t('fillUp.note')" [(value)]="note" />
 
-      <div class="scan-row" [attr.aria-busy]="ocrBusy()">
-        <input
-          id="receipt-scan-input"
-          class="sr-only"
-          type="file"
-          accept="image/*"
-          capture="environment"
-          (change)="onScanFile($event)"
-        />
-        <input
-          id="receipt-gallery-input"
-          class="sr-only"
-          type="file"
-          accept="image/*"
-          (change)="onScanFile($event)"
-        />
-        <div class="scan-row__actions">
-          <button
-            type="button"
-            class="scan-tile"
-            [disabled]="ocrBusy()"
-            (click)="scanSharedOrPick()"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M4.5 8.5h3l1.4-2h6.2l1.4 2h3a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18v-8a1.5 1.5 0 0 1 1.5-1.5z"
-              />
-              <circle cx="12" cy="13.2" r="3" />
-            </svg>
-            <span>{{ ocrBusy() ? i18n.t('fillUp.scanBusy') : i18n.t('fillUp.scan') }}</span>
-          </button>
-          <button
-            type="button"
-            class="scan-tile"
-            [disabled]="ocrBusy()"
-            (click)="pickFromGallery()"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="3.5" y="5" width="17" height="14" rx="2" />
-              <path d="M3.5 15.5 7.7 12l3.4 2.6 2.6-1.8 6.8 4.6" />
-            </svg>
-            <span>{{ i18n.t('fillUp.scanGallery') }}</span>
-          </button>
-        </div>
-        @if (ocrError()) {
-          <p class="error-state" role="alert">{{ ocrError() }}</p>
-        }
-      </div>
+      <app-fill-up-scan />
     </section>
   } @else {
     <section class="console card receipt-slip" [attr.aria-label]="i18n.t('charge.title')">

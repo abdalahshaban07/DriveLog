@@ -22,7 +22,7 @@ export type ContactTopic = 'feature' | 'issue' | 'other';
 
 export const CONTACT_EMAIL = 'abdalahshaban129@gmail.com';
 
-export const CONTACT_TOPICS: readonly {
+const CONTACT_TOPICS: readonly {
   value: ContactTopic;
   labelKey: MsgKey;
   bodyKey: MsgKey;
@@ -43,14 +43,14 @@ export type FaqItem = {
   go?: FaqGo;
 };
 
-export const FAQ_GROUPS: readonly { id: FaqGroupId; labelKey: MsgKey }[] = [
+const FAQ_GROUPS: readonly { id: FaqGroupId; labelKey: MsgKey }[] = [
   { id: 'data', labelKey: 'help.group.data' },
   { id: 'log', labelKey: 'help.group.log' },
   { id: 'care', labelKey: 'help.group.care' },
   { id: 'look', labelKey: 'help.group.look' },
 ];
 
-export const FAQ_GO: Record<FaqGo, { labelKey: MsgKey; link: string }> = {
+const FAQ_GO: Record<FaqGo, { labelKey: MsgKey; link: string }> = {
   settings: { labelKey: 'help.go.settings', link: '/settings' },
   fillUp: { labelKey: 'help.go.fillUp', link: '/fill-up' },
   maint: { labelKey: 'help.go.maint', link: '/maintenance' },
@@ -59,7 +59,7 @@ export const FAQ_GO: Record<FaqGo, { labelKey: MsgKey; link: string }> = {
   vault: { labelKey: 'help.go.vault', link: '/vault' },
 };
 
-export const HELP_FAQ: readonly FaqItem[] = [
+const HELP_FAQ: readonly FaqItem[] = [
   {
     q: 'help.q.data',
     a: 'help.a.data',
@@ -145,7 +145,7 @@ export const HELP_FAQ: readonly FaqItem[] = [
   },
 ];
 
-export const LEGAL_SECTIONS: readonly {
+const LEGAL_SECTIONS: readonly {
   id: string;
   headingKey: MsgKey;
   bodyKeys: readonly MsgKey[];
@@ -162,7 +162,7 @@ export const LEGAL_SECTIONS: readonly {
   },
 ];
 
-export const SUPPORT_TABS: SectionTab[] = [
+const SUPPORT_TABS: SectionTab[] = [
   { labelKey: 'support.tab.help', link: '/help' },
   { labelKey: 'support.tab.legal', link: '/legal' },
   { labelKey: 'support.tab.about', link: '/about' },

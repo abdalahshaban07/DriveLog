@@ -74,25 +74,3 @@ export function buildDataQualityTips(
 
   return tips;
 }
-
-/** Exact duplicate key (61A). */
-export function maintenanceDuplicateKey(m: {
-  carId?: string;
-  partDefinitionId?: string;
-  date: string;
-  odometer: number;
-  recordType?: string;
-  cost?: number;
-  currency?: string;
-}): string {
-  const costKey = m.cost == null ? '∅' : String(m.cost);
-  return [
-    m.carId ?? '',
-    m.partDefinitionId ?? '',
-    m.date,
-    m.odometer,
-    m.recordType ?? '',
-    costKey,
-    m.currency ?? '',
-  ].join('|');
-}

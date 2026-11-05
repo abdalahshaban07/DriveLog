@@ -244,7 +244,7 @@ export function lineSpans(text: string, rtl: boolean, extra?: SpanStyle): PdfSpa
  * Each run becomes its own column so the library never reorders them.
  * ponytail: a mixed line does not wrap. Upgrade path: a bidi engine.
  */
-export function flowText(
+function flowText(
   text: string,
   rtl: boolean,
   extra?: SpanStyle & { margin?: number[] },
@@ -270,7 +270,7 @@ export function flowText(
   return { columns: ordered, columnGap: 0, margin };
 }
 
-export function alignOf(rtl: boolean): 'right' | 'left' {
+function alignOf(rtl: boolean): 'right' | 'left' {
   return rtl ? 'right' : 'left';
 }
 

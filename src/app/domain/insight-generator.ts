@@ -171,7 +171,7 @@ function statusUrgency(s: HealthItem['status']): number {
 }
 
 /** Lexicographic ranking (65A). */
-export function rankInsights(insights: readonly Insight[]): Insight[] {
+function rankInsights(insights: readonly Insight[]): Insight[] {
   return [...insights].sort((a, b) => {
     if (a.urgency !== b.urgency) return a.urgency - b.urgency;
     if (a.financialImpact !== b.financialImpact) {

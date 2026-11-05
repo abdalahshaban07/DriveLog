@@ -2,8 +2,17 @@ import { Injectable, computed, effect, signal } from '@angular/core';
 import { Db } from '../data/db';
 import type { Theme } from '../domain/models';
 import { DEFAULT_LOOK } from '../domain/models';
-import { ar } from './ar';
 import { en, type MsgKey } from './en';
+
+type Table = Record<MsgKey, string>;
+
+// Keep the Arabic dictionary out of the initial chunk; en ships eager as the
+// fallback (ar covers every MsgKey, so the fallback only shows pre-load).
+let arLoader: Promise<Table> | null = null;
+function loadArTable(): Promise<Table> {
+  arLoader ??= import('./ar').then((m) => m.ar);
+  return arLoader;
+}
 
 function systemPrefersDark(): boolean {
   return globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
@@ -40,11 +49,15 @@ function themeChrome(resolved: Exclude<Theme, 'system'>): {
 export class I18n {
   private readonly lang = signal<'en' | 'ar'>('ar');
   private readonly systemDark = signal(systemPrefersDark());
+  private readonly arTable = signal<Table | null>(null);
 
   readonly language = this.lang.asReadonly();
   readonly dir = computed(() => (this.lang() === 'ar' ? 'rtl' : 'ltr'));
 
   constructor(private readonly db: Db) {
+    // Warm the lazy Arabic dictionary immediately; views that call t() re-render
+    // via the arTable signal once it lands.
+    loadArTable().then((table) => this.arTable.set(table)).catch(() => undefined);
     globalThis.matchMedia?.('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
       this.systemDark.set(e.matches);
     });
@@ -76,7 +89,7 @@ export class I18n {
   }
 
   t(key: MsgKey, params?: Record<string, string | number>): string {
-    const table = this.lang() === 'ar' ? ar : en;
+    const table = this.lang() === 'ar' ? (this.arTable() ?? en) : en;
     let text: string = table[key] ?? en[key] ?? key;
     const resolved = params ? this.formatParams(params) : undefined;
     if (resolved) {
@@ -151,6 +164,10 @@ export class I18n {
   }
 
   async setLanguage(language: 'en' | 'ar'): Promise<void> {
+    if (language === 'ar') {
+      // Flip to Arabic only once its dictionary has arrived.
+      this.arTable.set(await loadArTable());
+    }
     this.lang.set(language);
     await this.db.updateSettings({ language });
   }

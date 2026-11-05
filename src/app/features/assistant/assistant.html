@@ -116,6 +116,21 @@
       } @else {
         <p class="reply__text">{{ answer.content }}</p>
       }
+      @if (answer.suggestions?.length) {
+        <div class="reply__suggest">
+          <p class="reply__suggest-label">{{ i18n.t('assistant.suggest.next') }}</p>
+          @for (key of answer.suggestions; track key) {
+            <button
+              type="button"
+              class="ask-hit reply__suggest-chip"
+              [disabled]="busy()"
+              (click)="sendSuggestion(key)"
+            >
+              {{ i18n.t(key) }}
+            </button>
+          }
+        </div>
+      }
       @if (answer.source === 'remote') {
         <a class="chat__report" [href]="reportHref(answer.content)">
           {{ i18n.t('assistant.report') }}

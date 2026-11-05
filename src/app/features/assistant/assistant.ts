@@ -17,6 +17,7 @@ import {
   markFaqQuery,
   type AdvisorFaq,
   type AdvisorFaqGroup,
+  type AdvisorFaqKey,
   type AnswerCard,
   type FaqMark,
 } from '../../domain/advisor-card';
@@ -42,6 +43,7 @@ type ShownReply = {
   content: string;
   source: 'local' | 'remote';
   card?: AnswerCard;
+  suggestions?: readonly AdvisorFaqKey[];
 };
 
 @Component({
@@ -185,6 +187,12 @@ export class AssistantPage {
     await this.send(this.i18n.t(item.key), item.read.intent, item.read);
   }
 
+  /** A follow-up chip under the answer sends its ready question. */
+  async sendSuggestion(key: AdvisorFaqKey): Promise<void> {
+    const item = ADVISOR_FAQ.find((faq) => faq.key === key);
+    if (item) await this.sendFaq(item);
+  }
+
   async sendTyped(): Promise<void> {
     const q = this.query().trim();
     if (!q || this.busy()) return;
@@ -269,6 +277,7 @@ export class AssistantPage {
         content: reply.text,
         source: reply.source,
         card: reply.card,
+        suggestions: reply.suggestions,
       });
       this.scrollAnswer();
     } finally {

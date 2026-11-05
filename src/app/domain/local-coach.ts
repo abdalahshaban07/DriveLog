@@ -8,9 +8,12 @@ import {
   type AdvisorRead,
 } from './advisor-intent';
 import {
+  ADVISOR_FAQ,
+  advisorFaqVisible,
   buildAnswerCard,
   cardText,
   namedPartCard,
+  type AdvisorFaqKey,
   type AnswerCard,
   type CardFormat,
 } from './advisor-card';
@@ -27,7 +30,9 @@ import {
 import { buildMonthOutlook, currentMonthSpend } from './recommendations';
 import {
   askLocal,
+  coachLead,
   partLabel,
+  pickVariantKey,
   statusKey,
   type AdvisorFacts,
   type CoachLogs,
@@ -46,6 +51,8 @@ export type CoachReply = {
   card?: AnswerCard;
   /** The online call was attempted and returned nothing. */
   remoteFailed?: boolean;
+  /** Ready FAQ questions to offer as the next tap. */
+  suggestions?: readonly AdvisorFaqKey[];
 };
 
 export type CoachInputs = {
@@ -259,6 +266,7 @@ export function loadCoachInputs(db: Db): CoachInputs | null {
       monthProjected: outlook.projected,
       monthPrevious: outlook.previous,
       fuelUse: fuelUseCompare(fills),
+      carName: car.nickname,
     },
   };
 }
@@ -339,8 +347,8 @@ export function coachPrompt(snapshot: CoachSnapshot, lang: 'en' | 'ar'): string 
         ];
   return [
     ar
-      ? 'أنت مدرب DriveLog لعربيّة واحدة. جاوب بالعامية المصرية، جمل قصيرة، من غير علامات ومن غير إنجليزي.'
-      : "You are DriveLog's coach for one car. Reply in short plain sentences, with no markdown.",
+      ? 'أنت مدرب DriveLog لعربيّة واحدة. جاوب بالعامية المصرية، جمل قصيرة، من غير علامات ومن غير إنجليزي. اسم العربية مرة واحدة بس في أول جملة، ومتكرّروش عليه.'
+      : "You are DriveLog's coach for one car. Reply in short plain sentences, with no markdown. Use the car's name once, in the first sentence.",
     ar
       ? 'استخدم الأسطر دي بس. الرقم 0 معناه صفر، مش إن البيانات ناقصة. قول «مش متسجل» بس لو السطر مكتوب كده. متخترعش تكاليف.'
       : 'Use only the lines below. 0 means zero, not missing data. Say "not recorded" only when a line says that. Do not invent costs.',
@@ -566,6 +574,45 @@ function affordWord(value: CoachSnapshot['affordability'], ar: boolean, missing:
   }
 }
 
+/** Intent → the one follow-up question that usually adds value. */
+const SUGGESTION_BY_INTENT: Partial<Record<AdvisorIntent, AdvisorFaqKey>> = {
+  SPENDING_TREND: 'assistant.faq.economy',
+  FUEL_SPENDING: 'assistant.faq.period',
+  MAINT_LOG: 'assistant.faq.upcoming',
+  PART_HISTORY: 'assistant.faq.oilDue',
+  PART_STATUS: 'assistant.faq.oilLast',
+  MAINTENANCE_PRIORITY: 'assistant.faq.upcoming',
+  UPCOMING_MAINTENANCE: 'assistant.faq.budget',
+  BUDGET_HEALTH: 'assistant.faq.reserve',
+  RECOMMENDED_RESERVE: 'assistant.faq.budget',
+  AFFORDABILITY: 'assistant.faq.reserve',
+  BREAKDOWN: 'assistant.faq.upcoming',
+  COACH_ADVICE: 'assistant.faq.period',
+};
+
+function nextSuggestions(
+  read: AdvisorRead,
+  facts: AdvisorFacts,
+  logs: CoachLogs,
+): readonly AdvisorFaqKey[] {
+  if (read.intent === 'UNSUPPORTED') {
+    const visible = ADVISOR_FAQ.filter((item) => advisorFaqVisible(item, facts, logs));
+    // Name the two closest intents: part signals pull the car-group chips first.
+    const near: AdvisorIntent[] = read.part
+      ? ['PART_HISTORY', 'PART_STATUS']
+      : read.window === 'last'
+        ? ['BREAKDOWN', 'SPENDING_TREND']
+        : [];
+    const ranked = [
+      ...visible.filter((item) => near.includes(item.read.intent)),
+      ...visible.filter((item) => !near.includes(item.read.intent)),
+    ];
+    return ranked.slice(0, 2).map((item) => item.key);
+  }
+  const key = SUGGESTION_BY_INTENT[read.intent];
+  return key ? [key] : [];
+}
+
 export function localCoachAnswer(
   question: string,
   facts: AdvisorFacts,
@@ -575,13 +622,23 @@ export function localCoachAnswer(
   format?: CardFormat,
 ): CoachReply {
   const read = asRead(question, intentHint);
+  const suggestions = nextSuggestions(read, facts, logs);
   const card =
     namedPartCard(question, read, facts, logs, t, format) ??
     buildAnswerCard(read, facts, logs, t, format);
-  if (card) return { text: cardText(card), source: 'local', card };
+  if (card) return { text: cardText(card), source: 'local', card, suggestions };
   const answer = askLocal(question, facts, logs, t, read);
-  const text = `${t(answer.titleKey)} ${t(answer.bodyKey, answer.params)}`.trim();
-  return { text, source: 'local' };
+  const params = logs.carName ? { ...answer.params, car: logs.carName } : answer.params;
+  const bodyKey = pickVariantKey(answer.bodyKey, question, params);
+  const lead = coachLead(read, facts, logs, t);
+  const text = [
+    t(answer.titleKey),
+    lead ? t(lead.key, lead.params) : '',
+    t(bodyKey, params),
+  ]
+    .filter(Boolean)
+    .join(' ');
+  return { text, source: 'local', suggestions };
 }
 
 function asRead(question: string, hint?: AdvisorIntent | AdvisorRead): AdvisorRead {
