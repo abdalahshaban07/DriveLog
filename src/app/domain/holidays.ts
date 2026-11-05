@@ -26,7 +26,7 @@ function daysBetween(a: string, b: string): number {
 }
 
 /** True when a public holiday falls within [today, today+withinDays]. */
-export function holidayWithinDays(
+function holidayWithinDays(
   holidays: readonly PublicHoliday[],
   today: string,
   withinDays: number,

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { HomePage } from './home';
+import { HomeCharts } from './home-charts';
 import { Db } from '../../data/db';
 import { I18n } from '../../i18n/i18n';
 import { InstallPwa } from '../../pwa/install-pwa';
@@ -154,7 +155,7 @@ describe('HomePage', () => {
     expect(fixture.componentInstance.reportRangePreset()).toBe('3months');
   });
 
-  it('keeps the charts tab to the three main trends', () => {
+  it('keeps the charts tab shell outside the deferred grid', () => {
     const fixture = TestBed.createComponent(HomePage);
     fixture.componentInstance.view.set('charts');
     fixture.detectChanges();
@@ -162,10 +163,6 @@ describe('HomePage', () => {
     expect(panel.querySelector('.tab-glance')).toBeFalsy();
     expect(panel.querySelector('.ledger')).toBeFalsy();
     expect(panel.querySelector('.stack-legend')).toBeFalsy();
-    const labels = [...panel.querySelectorAll('.chart-card__label')].map((node: Element) =>
-      node.textContent?.trim(),
-    );
-    expect(labels).toEqual(['charts.periodSpend', 'reports.glance.economy', 'charts.kmDriven']);
     expect(fixture.componentInstance.chartRangePreset()).toBe('3months');
     expect(panel.querySelector('.period-range__label')?.textContent?.trim()).toBe('history.range');
     expect(panel.querySelector('.history-range__btn--on')?.textContent?.trim()).toBe(
@@ -173,6 +170,16 @@ describe('HomePage', () => {
     );
     expect(panel.querySelectorAll('.history-range__btn').length).toBe(4);
     expect(panel.querySelector('.history-filter__dates')).toBeFalsy();
+  });
+
+  it('keeps the charts grid to the three main trends', () => {
+    const fixture = TestBed.createComponent(HomeCharts);
+    fixture.componentRef.setInput('window', { from: undefined, to: undefined });
+    fixture.detectChanges();
+    const labels = [...fixture.nativeElement.querySelectorAll('.chart-card__label')].map(
+      (node: Element) => node.textContent?.trim(),
+    );
+    expect(labels).toEqual(['charts.periodSpend', 'reports.glance.economy', 'charts.kmDriven']);
     expect(fixture.componentInstance.priceMoved()).toBe(false);
   });
 
@@ -211,7 +218,10 @@ describe('HomePage', () => {
     const page = fixture.componentInstance;
     page.view.set('charts');
     fixture.detectChanges();
-    expect(page.spendTotal()).toBe(914);
+    const charts = TestBed.createComponent(HomeCharts);
+    charts.componentRef.setInput('window', page.chartWindow());
+    charts.detectChanges();
+    expect(charts.componentInstance.spendTotal()).toBe(914);
     const customBtn = [...fixture.nativeElement.querySelectorAll('.history-range__btn')].find(
       (node) => node.textContent?.trim() === 'history.rangeCustom',
     ) as HTMLButtonElement;
@@ -221,7 +231,9 @@ describe('HomePage', () => {
     page.chartFrom.set('2020-01-01');
     page.chartTo.set('2020-01-31');
     fixture.detectChanges();
-    expect(page.spendTotal()).toBe(5000);
+    charts.componentRef.setInput('window', page.chartWindow());
+    charts.detectChanges();
+    expect(charts.componentInstance.spendTotal()).toBe(5000);
     expect(fixture.nativeElement.querySelector('.charts-panel .history-filter__dates')).toBeTruthy();
   });
 

@@ -28,7 +28,6 @@ html[data-look='receipt'] {
   --fill-surface: var(--surface);
   --fill-well: var(--well);
   --fill-paper: var(--paper);
-  --glass-blur: 0px;
   --glass-edge: transparent;
   --nav-fill: var(--bg);
   --nav-inset: 0px;
@@ -42,7 +41,6 @@ html[data-look='receipt'] {
   --btn-press-shadow: var(--press-inset);
   --btn-press-x: 0;
   --btn-press-y: 1px;
-  --btn-blur: 0px;
   --btn-tracking: 0;
   --tab-track: var(--fill-well);
   --tab-track-pad: 4px;
@@ -75,6 +73,26 @@ html[data-look='receipt'] {
     );
 }
 
+/* Receipt nav floats as a plate — tokens replace the old shell :host-context rules. */
+html[data-look='receipt'] {
+  --nav-fill: color-mix(in srgb, var(--surface) 94%, var(--bg));
+  --nav-inline-inset: max(var(--space-3), calc((100% - var(--shell)) / 2 + var(--space-3)));
+  --nav-bottom-inset: max(var(--space-3), env(safe-area-inset-bottom, 0px));
+  --nav-radius: 26px;
+  --nav-edge: 1px solid var(--hairline);
+  --nav-safe-pad: 0px;
+  --nav-shadow:
+    0 16px 40px color-mix(in srgb, #000 26%, transparent),
+    var(--plate-shadow);
+  --nav-inner-min: calc(var(--tap) + 8px);
+  --nav-link-margin: 4px;
+  --nav-link-radius: 16px;
+  --nav-cap-radius: 16px;
+  --nav-active-shadow: 0 6px 18px var(--glow), var(--elev-2);
+  --main-bottom-pad: calc(var(--nav-height) + var(--space-6) + var(--space-4));
+  --dock-offset: calc(max(var(--space-3), env(safe-area-inset-bottom, 0px)) + var(--tap) + var(--space-4));
+}
+
 /* Pump Console — cool metal panel (light) */
 html[data-look='skeuo'] {
   --bg: #c8ced6;
@@ -105,7 +123,6 @@ html[data-look='skeuo'] {
   --fill-surface: var(--surface);
   --fill-well: var(--well);
   --fill-paper: var(--paper);
-  --glass-blur: 0px;
   --glass-edge: transparent;
   --nav-fill: var(--bg);
   --nav-inset: 0px;
@@ -123,7 +140,6 @@ html[data-look='skeuo'] {
   --btn-press-shadow: var(--press-inset);
   --btn-press-x: 0;
   --btn-press-y: 2px;
-  --btn-blur: 0px;
   --btn-tracking: 0;
   --tab-track: transparent;
   --tab-track-pad: var(--space-1);
@@ -201,7 +217,6 @@ html[data-look='neu'] {
   --fill-surface: var(--surface);
   --fill-well: var(--well);
   --fill-paper: var(--surface);
-  --glass-blur: 0px;
   --glass-edge: transparent;
   --nav-fill: var(--bg);
   --nav-inset: 0px;
@@ -214,7 +229,6 @@ html[data-look='neu'] {
   --btn-press-shadow: var(--well-inset);
   --btn-press-x: 0;
   --btn-press-y: 1px;
-  --btn-blur: 0px;
   --btn-tracking: 0;
   --mesh-canvas: none;
   --glow: transparent;
@@ -246,6 +260,9 @@ html[data-look='neu'] {
     8px 8px 18px color-mix(in srgb, #000 60%, transparent),
     -5px -5px 12px color-mix(in srgb, #fff 7%, transparent);
   --plate-shadow: var(--shadow-soft);
+  /* Paper plate is clay-dark here; ink flips to the theme text so slips stay readable. */
+  --paper-text: var(--text);
+  --paper-muted: var(--muted);
 }
 
 html[data-theme='contrast'][data-look='neu'] {
@@ -281,9 +298,8 @@ html[data-look='glass'] {
   --fill-surface: color-mix(in srgb, var(--surface) 48%, transparent);
   --fill-well: color-mix(in srgb, var(--well) 58%, transparent);
   --fill-paper: color-mix(in srgb, var(--paper) 72%, transparent);
-  --glass-blur: 22px;
   --glass-edge: color-mix(in srgb, #fff 42%, var(--hairline));
-  --nav-fill: color-mix(in srgb, var(--bg) 45%, transparent);
+  --nav-fill: color-mix(in srgb, var(--surface) 92%, transparent);
   --nav-inset: 0px;
   --cta-surface: color-mix(in srgb, var(--cta) 78%, transparent);
   --btn-bg: var(--cta-surface);
@@ -299,7 +315,6 @@ html[data-look='glass'] {
   --btn-press-shadow: var(--press-inset);
   --btn-press-x: 0;
   --btn-press-y: 1px;
-  --btn-blur: 12px;
   --btn-tracking: 0;
   --tab-track: color-mix(in srgb, var(--surface) 40%, transparent);
   --tab-track-pad: var(--space-1);
@@ -338,7 +353,6 @@ html[data-look='glass'] {
   --fill-surface: color-mix(in srgb, var(--surface) 42%, transparent);
   --fill-well: color-mix(in srgb, var(--well) 52%, transparent);
   --fill-paper: color-mix(in srgb, var(--paper) 78%, transparent);
-  --nav-fill: color-mix(in srgb, var(--bg) 40%, transparent);
 }
 
 /* Cold Spatial — floating frost dock */
@@ -363,10 +377,12 @@ html[data-look='spatial'] {
   --fill-surface: color-mix(in srgb, var(--surface) 55%, transparent);
   --fill-well: color-mix(in srgb, var(--well) 65%, transparent);
   --fill-paper: color-mix(in srgb, var(--surface) 70%, transparent);
-  --glass-blur: 24px;
   --glass-edge: color-mix(in srgb, #fff 40%, var(--hairline));
-  --nav-fill: color-mix(in srgb, var(--surface) 50%, transparent);
+  --nav-fill: color-mix(in srgb, var(--surface) 92%, transparent);
   --nav-inset: 10px;
+  --nav-radius: var(--radius);
+  --nav-edge: var(--border-width) solid var(--glass-edge);
+  --nav-top-border: var(--border-width) solid var(--glass-edge);
   --cta-surface: var(--cta);
   --btn-bg: var(--cta);
   --btn-border: 1px solid color-mix(in srgb, #fff 40%, transparent);
@@ -376,7 +392,6 @@ html[data-look='spatial'] {
   --btn-press-shadow: var(--press-inset);
   --btn-press-x: 0;
   --btn-press-y: 2px;
-  --btn-blur: 8px;
   --btn-tracking: 0.02em;
   --tab-track: color-mix(in srgb, var(--surface) 45%, transparent);
   --tab-track-pad: var(--space-1);
@@ -412,8 +427,7 @@ html[data-look='spatial'] {
   --aura-2: #10141c;
   --fill-surface: color-mix(in srgb, var(--surface) 50%, transparent);
   --fill-well: color-mix(in srgb, var(--well) 60%, transparent);
-  --fill-paper: color-mix(in srgb, var(--surface) 65%, transparent);
-  --nav-fill: color-mix(in srgb, var(--surface) 45%, transparent);
+  --fill-paper: color-mix(in srgb, var(--paper) 78%, transparent);
 }
 
 /* Fuel Stamp neo — hard ink chrome */
@@ -440,7 +454,6 @@ html[data-look='neo'] {
   --fill-surface: var(--surface);
   --fill-well: var(--well);
   --fill-paper: var(--paper);
-  --glass-blur: 0px;
   --glass-edge: transparent;
   --nav-fill: var(--surface);
   --nav-inset: 0px;
@@ -453,7 +466,6 @@ html[data-look='neo'] {
   --btn-press-shadow: 1px 1px 0 var(--ink);
   --btn-press-x: 2px;
   --btn-press-y: 2px;
-  --btn-blur: 0px;
   --btn-tracking: 0.06em;
   --tab-track: transparent;
   --tab-track-pad: 0;
@@ -517,7 +529,6 @@ html[data-look='aurora'] {
   --fill-surface: color-mix(in srgb, var(--surface) 58%, transparent);
   --fill-well: color-mix(in srgb, var(--well) 68%, transparent);
   --fill-paper: color-mix(in srgb, var(--paper) 88%, transparent);
-  --glass-blur: 0px;
   --glass-edge: transparent;
   --nav-fill: color-mix(in srgb, var(--bg) 70%, transparent);
   --nav-inset: 0px;
@@ -535,7 +546,6 @@ html[data-look='aurora'] {
   --btn-press-shadow: var(--press-inset);
   --btn-press-x: 0;
   --btn-press-y: 1px;
-  --btn-blur: 0px;
   --btn-tracking: 0.02em;
   --tab-track: color-mix(in srgb, var(--surface) 50%, transparent);
   --tab-track-pad: var(--space-1);
@@ -606,10 +616,14 @@ html[data-look='plasma'] {
   --fill-surface: rgb(255 255 255 / 0.62);
   --fill-well: rgb(255 255 255 / 0.48);
   --fill-paper: rgb(255 255 255 / 0.78);
-  --glass-blur: 28px;
   --glass-edge: rgb(255 255 255 / 0.55);
-  --nav-fill: rgb(255 255 255 / 0.62);
+  --nav-fill: color-mix(in srgb, var(--surface) 92%, transparent);
   --nav-inset: 12px;
+  --nav-radius: 28px;
+  --nav-clip: hidden;
+  --nav-edge: var(--border-width) solid var(--glass-edge);
+  --nav-top-border: var(--border-width) solid var(--glass-edge);
+  --nav-mesh: none;
   --cta-surface: var(--cta);
   --btn-bg: var(--cta);
   --btn-border: 0;
@@ -619,7 +633,6 @@ html[data-look='plasma'] {
   --btn-press-shadow: var(--press-inset);
   --btn-press-x: 0;
   --btn-press-y: 1px;
-  --btn-blur: 0px;
   --btn-tracking: 0.01em;
   --tab-track: rgb(255 255 255 / 0.45);
   --tab-track-pad: var(--space-1);
@@ -661,9 +674,8 @@ html[data-look='plasma'] {
   --hairline: rgb(238 244 246 / 0.14);
   --fill-surface: rgb(6 16 22 / 0.52);
   --fill-well: rgb(6 16 22 / 0.62);
-  --fill-paper: rgb(20 40 52 / 0.72);
+  --fill-paper: color-mix(in srgb, var(--paper) 82%, transparent);
   --glass-edge: rgb(159 243 228 / 0.35);
-  --nav-fill: rgb(6 16 22 / 0.62);
   --plate-shadow:
     0 12px 32px rgb(0 0 0 / 0.35),
     inset 0 1px 0 rgb(159 243 228 / 0.22);
@@ -680,8 +692,6 @@ html[data-look='plasma'] {
     --fill-surface: var(--surface);
     --fill-well: var(--well);
     --fill-paper: var(--paper);
-    --glass-blur: 0px;
-    --btn-blur: 0px;
     --btn-bg: var(--cta);
     --cta-surface: var(--cta);
     --nav-fill: var(--bg);
@@ -695,8 +705,6 @@ html[data-theme='contrast'][data-look='plasma'] {
   --fill-surface: var(--surface);
   --fill-well: var(--well);
   --fill-paper: var(--paper);
-  --glass-blur: 0px;
-  --btn-blur: 0px;
   --btn-bg: var(--cta);
   --cta-surface: var(--cta);
   --plate-shadow: none;

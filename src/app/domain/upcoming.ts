@@ -9,7 +9,7 @@ import type {
 } from './models';
 
 /** Dated rows inside this window, plus anything already overdue. */
-export const UPCOMING_DAYS = 90;
+const UPCOMING_DAYS = 90;
 
 export type UpcomingItem = {
   id: string;

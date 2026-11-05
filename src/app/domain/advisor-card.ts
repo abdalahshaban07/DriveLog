@@ -328,6 +328,8 @@ function spendCard(
   t: Translate,
   format: CardFormat,
 ): AnswerCard | null {
+  // No prev-month card template exists; the text answer owns that window.
+  if (read.window === 'prev') return null;
   if (read.window === 'last') {
     const last = logs.lastSpend;
     if (!last) return null;

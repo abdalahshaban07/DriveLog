@@ -98,11 +98,6 @@
   flex-wrap: wrap;
 }
 
-.history-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-block-end: var(--space-2);
-}
 
 .history-months {
   display: grid;
@@ -188,24 +183,12 @@
   font-variant-numeric: tabular-nums;
 }
 
-.history-ledger__meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.85rem;
-  color: var(--muted);
-}
 
 .history-ledger__place {
   font-size: 0.85rem;
   color: var(--muted);
 }
 
-.history-skeleton {
-  display: grid;
-  gap: var(--space-2);
-}
 
 .history-skeleton .skeleton--row + .skeleton--row {
   margin-block-start: var(--space-1);

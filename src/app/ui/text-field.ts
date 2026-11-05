@@ -1,7 +1,8 @@
-import { Component, input, model, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 
 @Component({
   selector: 'app-text-field',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './text-field.html',
 })
 export class TextField {

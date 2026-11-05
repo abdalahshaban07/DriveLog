@@ -43,7 +43,7 @@ export function worseStatus(a: HealthStatus, b: HealthStatus): HealthStatus {
 }
 
 /** Add calendar months to YYYY-MM-DD (79A). */
-export function addMonths(date: DateOnly, months: number): DateOnly {
+function addMonths(date: DateOnly, months: number): DateOnly {
   const [y, m, d] = date.split('-').map(Number) as [number, number, number];
   const dt = new Date(Date.UTC(y, m - 1 + months, d));
   const yy = dt.getUTCFullYear();
@@ -52,7 +52,7 @@ export function addMonths(date: DateOnly, months: number): DateOnly {
   return `${yy}-${mm}-${dd}`;
 }
 
-export function monthsBetween(from: DateOnly, to: DateOnly): number {
+function monthsBetween(from: DateOnly, to: DateOnly): number {
   const [y1, m1] = from.split('-').map(Number);
   const [y2, m2] = to.split('-').map(Number);
   return (y2! - y1!) * 12 + (m2! - m1!);

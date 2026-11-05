@@ -1,4 +1,4 @@
-import { Component, input, model, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 
 /** Keep digits and a single decimal point. */
 export function sanitizeDecimal(raw: string): string {
@@ -12,6 +12,7 @@ export function sanitizeDecimal(raw: string): string {
 
 @Component({
   selector: 'app-numeric-field',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './numeric-field.html',
 })
 export class NumericField {

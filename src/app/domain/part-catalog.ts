@@ -7,7 +7,7 @@ export const SYSTEM_ENGINE_OIL_ID = 'sys-engine-oil';
 export const SYSTEM_TIRES_ID = 'sys-tires';
 export const SYSTEM_BRAKE_PADS_ID = 'sys-brake-pads';
 export const SYSTEM_BRAKE_DISCS_ID = 'sys-brake-discs';
-export const SYSTEM_BATTERY_ID = 'sys-battery';
+const SYSTEM_BATTERY_ID = 'sys-battery';
 
 function sys(
   id: string,

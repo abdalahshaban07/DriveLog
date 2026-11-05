@@ -22,17 +22,7 @@ import {
   TANK_ECONOMY_FLAT_PCT,
   type FuelUseReason,
 } from '../../domain/economy';
-import {
-  distanceByMonth,
-  economyTrend,
-  fuelGradeCostShare,
-  placeSpendShare,
-  spendByMonth,
-  spendByMonthEntries,
-  unitPriceTrend,
-  type DateWindow,
-  type TrendPoint,
-} from '../../domain/insights';
+import { type DateWindow } from '../../domain/insights';
 import type {
   Car,
   DueItem,
@@ -58,9 +48,6 @@ import { I18n } from '../../i18n/i18n';
 import { HealthRow } from '../../ui/health-row/health-row';
 import type { MsgKey } from '../../i18n/en';
 import { InstallPwa } from '../../pwa/install-pwa';
-import { BarChart } from '../../ui/charts/bar-chart';
-import { LineChart } from '../../ui/charts/line-chart';
-import { DonutChart, type DonutSlice } from '../../ui/charts/donut-chart';
 import { PageHeader } from '../../ui/page-header';
 import { PageLine } from '../../ui/page-line/page-line';
 import { PeriodRange } from '../../ui/period-range';
@@ -69,6 +56,7 @@ import { QuickLog } from './cards/quick-log/quick-log';
 import { WeatherTipCard } from './cards/weather-tip/weather-tip';
 import { SampleBanner } from './cards/sample-banner/sample-banner';
 import { SetupChecklist, type ChecklistItem } from './cards/setup-checklist/setup-checklist';
+import { HomeCharts } from './home-charts';
 type HomeView = 'dashboard' | 'reports' | 'charts';
 type AttentionTone = 'soon' | 'overdue';
 type PaperTone = 'plain' | AttentionTone;
@@ -94,9 +82,7 @@ interface PaperLine {
   imports: [
     PageHeader,
     RouterLink,
-    BarChart,
-    LineChart,
-    DonutChart,
+    HomeCharts,
     PeriodRange,
     SampleBanner,
     SetupChecklist,
@@ -331,63 +317,6 @@ export class HomePage {
     }
     return '';
   });
-  readonly economySeries = computed(() => economyTrend(this.db.fillUps(), this.chartWindow()));
-  readonly economyValues = computed(() => this.economySeries().map((p) => p.value));
-  readonly economyLabels = computed(() => this.economySeries().map((p) => this.shortDate(p.date)));
-  readonly economyLatest = computed(() => this.economySeries().at(-1)?.value ?? null);
-  readonly economyDelta = computed(() => seriesDelta(this.economySeries()));
-  readonly economyAvg = computed(() => seriesMean(this.economySeries()));
-  readonly spendTrendEntries = computed(() =>
-    spendByMonthEntries(this.db.fillUps(), this.chartWindow()),
-  );
-  readonly spendTrend = computed(() => spendByMonth(this.db.fillUps(), this.chartWindow()));
-  readonly spendTotal = computed(() => this.spendTrend().reduce((sum, v) => sum + v, 0));
-  readonly spendDelta = computed(() => {
-    const values = this.spendTrend();
-    if (values.length < 2) {
-      return null;
-    }
-    return values.at(-1)! - values.at(-2)!;
-  });
-  readonly spendTrendLabels = computed(() =>
-    this.spendTrendEntries().map((e) => this.i18n.formatDate(`${e.month}-01`, { month: 'short' })),
-  );
-  readonly fuelGradeShare = computed(() =>
-    fuelGradeCostShare(this.db.fillUps(), this.chartWindow()),
-  );
-  readonly fuelGradeTotal = computed(() =>
-    this.fuelGradeShare().reduce((sum, s) => sum + s.cost, 0),
-  );
-  readonly fuelGradeSlices = computed((): DonutSlice[] =>
-    this.fuelGradeShare().map((s) => ({
-      label: s.grade === 'unknown' ? this.i18n.t('charts.gradeUnknown') : this.gradeLabel(s.grade),
-      value: s.cost,
-      detail: this.formatMoney(s.cost),
-    })),
-  );
-  readonly distanceEntries = computed(() => distanceByMonth(this.db.fillUps(), this.chartWindow()));
-  readonly distanceValues = computed(() => this.distanceEntries().map((e) => e.value));
-  readonly distanceLabels = computed(() =>
-    this.distanceEntries().map((e) => this.i18n.formatDate(`${e.month}-01`, { month: 'short' })),
-  );
-  readonly distanceTotal = computed(() => this.distanceValues().reduce((sum, v) => sum + v, 0));
-  readonly distanceDelta = computed(() => monthDelta(this.distanceValues()));
-  readonly priceSeries = computed(() => unitPriceTrend(this.db.fillUps(), this.chartWindow()));
-  readonly priceValues = computed(() => this.priceSeries().map((p) => p.value));
-  readonly priceLabels = computed(() => this.priceSeries().map((p) => this.shortDate(p.date)));
-  readonly priceLatest = computed(() => this.priceSeries().at(-1)?.value ?? null);
-  readonly priceDelta = computed(() => seriesDelta(this.priceSeries()));
-  readonly priceAvg = computed(() => seriesMean(this.priceSeries()));
-  readonly priceMoved = computed(() => priceSpread(this.priceValues()));
-  readonly placeShare = computed(() => placeSpendShare(this.db.fillUps(), this.chartWindow()));
-  readonly placeSlices = computed((): DonutSlice[] =>
-    this.placeShare().map((s) => ({
-      label: s.label || this.i18n.t('charts.otherPlaces'),
-      value: s.cost,
-      detail: this.formatMoney(s.cost),
-    })),
-  );
-  readonly economyBest = computed(() => seriesMin(this.economySeries()));
   readonly monthOutlook = computed(() =>
     buildMonthOutlook(
       this.db.fillUps(),
@@ -778,44 +707,6 @@ export class HomePage {
     return this.i18n.formatMoney(value, this.db.settings().currency, 2);
   }
 
-  perMonth(total: number, count: number): string {
-    if (count <= 0) {
-      return '';
-    }
-    return this.i18n.t('charts.perMonth', { amount: this.formatMoney(total / count) });
-  }
-
-  formatSigned(value: number, digits: number): string {
-    return this.formatDelta(value, digits, (abs) =>
-      this.i18n.formatNumber(abs, {
-        minimumFractionDigits: digits,
-        maximumFractionDigits: digits,
-      }),
-    );
-  }
-
-  formatMoneyDelta(value: number, digits = 0): string {
-    return this.formatDelta(value, digits, (abs) =>
-      this.i18n.formatMoney(abs, this.db.settings().currency, digits),
-    );
-  }
-
-  private shortDate(date: string): string {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      return '';
-    }
-    return this.i18n.formatDate(date, { day: 'numeric', month: 'short' });
-  }
-
-  private formatDelta(value: number, digits: number, formatAbs: (abs: number) => string): string {
-    const abs = Math.abs(value);
-    if (abs < 0.5 * 10 ** -digits) {
-      return this.i18n.t('charts.deltaFlat');
-    }
-    const body = formatAbs(abs);
-    return value > 0 ? `+${body}` : `−${body}`;
-  }
-
   /** End-of-month projection compared with last month's total. */
   monthVsLast(): { pct: number; tone: 'up' | 'down' | 'same' } | null {
     const outlook = this.monthOutlook();
@@ -879,13 +770,6 @@ export class HomePage {
       return 0;
     }
     return Math.min(100, Math.max(0, Math.round((elapsedDays / daysInMonth) * 100)));
-  }
-
-  gradeLabel(grade?: string): string {
-    if (!grade) {
-      return '';
-    }
-    return this.i18n.t(`fillUp.grade.${grade}` as MsgKey);
   }
 
   categoryLabel(cat: ExpenseCategory): string {
@@ -985,39 +869,6 @@ function historyWindow(preset: HistoryRangePreset, from: string, to: string): Da
   return { from: bounds.from, to: bounds.to };
 }
 
-function seriesDelta(points: readonly TrendPoint[]): number | null {
-  if (points.length < 2) {
-    return null;
-  }
-  return points.at(-1)!.value - points.at(-2)!.value;
-}
-
-function seriesMean(points: readonly TrendPoint[]): number | null {
-  if (points.length < 2) {
-    return null;
-  }
-  return points.reduce((sum, point) => sum + point.value, 0) / points.length;
-}
-
-function priceSpread(values: readonly number[]): boolean {
-  if (values.length < 2) {
-    return false;
-  }
-  const low = Math.min(...values);
-  const high = Math.max(...values);
-  if (low <= 0) {
-    return high > 0;
-  }
-  return ((high - low) / low) * 100 >= TANK_ECONOMY_FLAT_PCT;
-}
-
-function seriesMin(points: readonly TrendPoint[]): number | null {
-  if (!points.length) {
-    return null;
-  }
-  return Math.min(...points.map((point) => point.value));
-}
-
 function fuelUseWhyKey(direction: 'up' | 'down', reason: FuelUseReason): MsgKey {
   if (direction === 'up') {
     switch (reason) {
@@ -1059,11 +910,4 @@ function fuelUseWhyKey(direction: 'up' | 'down', reason: FuelUseReason): MsgKey 
 function plateRun(plate: string): string {
   const rtl = /[\u0590-\u08FF]/.test(plate);
   return `${rtl ? '\u2067' : '\u2066'}${plate}\u2069`;
-}
-
-function monthDelta(values: readonly number[]): number | null {
-  if (values.length < 2) {
-    return null;
-  }
-  return values.at(-1)! - values.at(-2)!;
 }

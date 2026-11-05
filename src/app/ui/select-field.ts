@@ -1,5 +1,6 @@
 import {
   afterRenderEffect,
+  ChangeDetectionStrategy,
   Component,
   computed,
   DestroyRef,
@@ -22,6 +23,7 @@ type MenuBox = {
 
 @Component({
   selector: 'app-select-field',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './select-field.html',
   styleUrl: './select-field.scss',
   host: {

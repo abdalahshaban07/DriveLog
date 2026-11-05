@@ -34,6 +34,7 @@ function kmPerL(litersPer100: number | null): number | null {
 export function fuelDashboardMetrics(
   fills: readonly FillUp[],
   grade: FuelGrade | 'all' = 'all',
+  now: Date = new Date(),
 ): FuelDashboardMetrics {
   const filtered = filterByGrade(fills, grade);
   const eco = latestEconomy(filtered);
@@ -41,7 +42,7 @@ export function fuelDashboardMetrics(
   const last = eco?.litersPer100Km ?? null;
   return {
     costPerKm: eco?.costPerKm ?? null,
-    monthSpend: monthFuelSpend(filtered),
+    monthSpend: monthFuelSpend(filtered, now),
     overallL100: overall ?? last,
     lastL100: last,
     overallKmPerL: kmPerL(overall ?? last),
@@ -111,7 +112,7 @@ export function fuelBoard(
   now: Date = new Date(),
 ): FuelBoard {
   const filtered = filterByGrade(fills, grade);
-  const metrics = fuelDashboardMetrics(filtered);
+  const metrics = fuelDashboardMetrics(filtered, 'all', now);
   const compare = fuelMonthCompare(filtered, now);
   const segments = segmentsFor(filtered);
   const overall = weightedL100(segments);

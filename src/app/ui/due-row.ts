@@ -1,8 +1,9 @@
-import { Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import type { DueStatus } from '../domain/models';
 
 @Component({
   selector: 'app-due-row',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './due-row.html',
   styleUrl: './due-row.scss',
 })

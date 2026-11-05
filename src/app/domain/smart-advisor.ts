@@ -8,6 +8,7 @@ import {
 import type { Affordability, BudgetHealth } from './budget-engine';
 import type { DataQualityTip } from './data-quality';
 import type { MsgKey } from '../i18n/en';
+import { en } from '../i18n/en';
 import type { HealthStatus } from './models';
 import {
   SYSTEM_BRAKE_DISCS_ID,
@@ -55,6 +56,8 @@ export type CoachLogs = {
   maintenanceCount: number;
   breakdownCount: number;
   lastL100: number | null;
+  /** Active car nickname — personalizes human answers. */
+  carName?: string;
   /** Period split. Absent → the total-only sentence. */
   spendFuel?: number;
   spendMaintenance?: number;
@@ -382,6 +385,12 @@ export function askLocal(
       });
     }
     case 'SPENDING_TREND': {
+      if (read.window === 'prev') {
+        return answer('advisor.answer.spendTitle', 'advisor.answer.spendPrev', {
+          total: Math.round(logs.monthPrevious ?? 0),
+          currency: logs.currency,
+        });
+      }
       if (read.window === 'last' && logs.lastSpend) {
         return answer('advisor.answer.spendTitle', 'advisor.answer.spendLast', {
           label: bucketLabel(logs.lastSpend.bucket, t),
@@ -424,4 +433,60 @@ export function askLocal(
       return _e;
     }
   }
+}
+
+function fnv1a(text: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}
+
+function placeholdersOf(text: string): string[] {
+  return [...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]!);
+}
+
+/**
+ * Deterministic tone rotation: the same question always gets the same wording,
+ * different questions vary. A variant is only used when every placeholder it
+ * needs is present — facts can never be dropped or invented.
+ */
+export function pickVariantKey(
+  base: MsgKey,
+  seed: string,
+  params: Record<string, string | number>,
+): MsgKey {
+  const usable = (key: string): key is MsgKey =>
+    key in en && placeholdersOf(en[key as MsgKey]).every((p) => p in params);
+  const slot = fnv1a(`${seed}|${base}`) % 4;
+  const order = slot === 1 ? ['_v2', '_v3'] : slot === 2 ? ['_v3', '_v2'] : [];
+  for (const suffix of order) {
+    const key = `${base}${suffix}`;
+    if (usable(key)) return key;
+  }
+  return base;
+}
+
+/** One-sentence acknowledgment shown before the numbers for hot intents. */
+export function coachLead(
+  read: AdvisorRead,
+  facts: AdvisorFacts,
+  logs: CoachLogs,
+  t: Translate,
+): { key: MsgKey; params: Record<string, string | number> } | null {
+  if (read.part && (read.intent === 'PART_HISTORY' || read.intent === 'MAINTENANCE_PRIORITY')) {
+    const same = (logs.services ?? []).filter((hit) => hit.kind === read.part);
+    if (same.length >= 2) {
+      return { key: 'advisor.lead.repeatPart', params: { part: partKindLabel(read.part, t) } };
+    }
+  }
+  if (read.intent === 'BREAKDOWN' && logs.breakdownCount >= 2) {
+    return { key: 'advisor.lead.secondFault', params: { count: logs.breakdownCount } };
+  }
+  if (read.intent === 'BUDGET_HEALTH' && (facts.budgetHealth === 'HIGH' || facts.budgetHealth === 'CRITICAL')) {
+    return { key: 'advisor.lead.budgetHigh', params: {} };
+  }
+  return null;
 }

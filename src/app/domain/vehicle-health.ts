@@ -330,7 +330,7 @@ function RANK_STATUS(s: HealthStatus): number {
   return STATUS_RANK[s];
 }
 
-export function sortHealthItems(items: HealthItem[]): HealthItem[] {
+function sortHealthItems(items: HealthItem[]): HealthItem[] {
   return [...items].sort((a, b) => {
     const dr = STATUS_RANK[a.status] - STATUS_RANK[b.status];
     if (dr !== 0) return dr;

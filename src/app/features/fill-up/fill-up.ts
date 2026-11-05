@@ -25,16 +25,7 @@ import { isRealFillUp } from '../../domain/setup-checklist';
 import { I18n } from '../../i18n/i18n';
 import type { MsgKey } from '../../i18n/en';
 import { countryFuelPrices, getCoords, nearbyPoi, type NearbyPoi } from '../../data/remote';
-import { takeSharedFillImage } from '../../pwa/share-target';
-import {
-  bestReceiptPick,
-  parseReceiptText,
-  receiptMathOk,
-  type ReceiptCandidates,
-  type ReceiptPick,
-} from '../../domain/receipt-ocr';
-import { readPumpFromBlob } from '../../domain/pump-lcd';
-import { ocrReceiptImage } from '../../domain/receipt-ocr-worker';
+import { type ReceiptPick } from '../../domain/receipt-ocr';
 import { ConfirmBar } from '../../ui/confirm-bar';
 import { DateField } from '../../ui/date-field';
 import { buildGradeOptions, FuelGradeSelector } from '../../ui/fuel-grade-selector';
@@ -43,6 +34,9 @@ import { PageHeader } from '../../ui/page-header';
 import { PrimaryButton } from '../../ui/primary-button';
 import { ReceiptPreview } from '../../ui/receipt-preview';
 import { TextField } from '../../ui/text-field';
+import { FillUpOcrCards } from './fill-up-ocr-cards';
+import { FillUpScan } from './fill-up-scan';
+import { FillUpScanState } from './fill-up-scan-state';
 
 const GRADE_KEYS: Record<FuelGrade, MsgKey> = {
   gasoline92: 'home.fuel92',
@@ -67,7 +61,10 @@ type LogMode = 'fuel' | 'charge';
     PrimaryButton,
     ConfirmBar,
     RouterLink,
+    FillUpScan,
+    FillUpOcrCards,
   ],
+  providers: [FillUpScanState],
   templateUrl: './fill-up.html',
   styleUrl: './fill-up.scss',
 })
@@ -75,6 +72,7 @@ export class FillUpPage {
   readonly i18n = inject(I18n);
   readonly db = inject(Db);
   readonly router = inject(Router);
+  readonly scan = inject(FillUpScanState);
   private readonly route = inject(ActivatedRoute);
 
   readonly distanceKm = signal('');
@@ -102,9 +100,6 @@ export class FillUpPage {
   readonly fuelPrices = signal<Awaited<ReturnType<typeof countryFuelPrices>>>(null);
   readonly manualUnitPrice = signal('');
   readonly nextDueBanner = signal(false);
-  /** Image from PWA share_target (?shared=1) — feeds OCR in F1. */
-  readonly sharedPreviewUrl = signal<string | null>(null);
-  readonly sharedBlob = signal<Blob | null>(null);
   readonly logMode = signal<LogMode>('fuel');
   readonly chargeOdo = signal('');
   readonly chargeKWh = signal('');
@@ -114,11 +109,6 @@ export class FillUpPage {
   readonly chargeKWhError = signal('');
   readonly chargeCostError = signal('');
   readonly editChargeId = signal<string | null>(null);
-  readonly ocrBusy = signal(false);
-  readonly ocrError = signal('');
-  readonly ocrCandidates = signal<ReceiptCandidates | null>(null);
-  readonly ocrPick = signal<ReceiptPick>({});
-  readonly ocrStage = signal<'idle' | 'review'>('idle');
   readonly softStation = signal<NearbyPoi | null>(null);
   readonly softStationDismissed = signal(false);
 
@@ -250,8 +240,6 @@ export class FillUpPage {
     return kWhPer100Km({ kWh, distanceKm: d > 0 ? d : undefined });
   });
 
-  readonly ocrMath = computed(() => receiptMathOk(this.ocrPick()));
-
   private canSaveCharge(): boolean {
     const odo = Number(this.chargeOdo());
     const kWh = Number(this.chargeKWh());
@@ -287,9 +275,8 @@ export class FillUpPage {
         this.chargeOdo.set(String(car.currentOdometer));
       }
     }
-    if (this.route.snapshot.queryParamMap.get('shared') === '1') {
-      void this.loadSharedImage();
-    }
+    this.scan.onApply = (pick) => this.applyReceiptPick(pick);
+    this.scan.init();
     void this.maybeSoftStation();
   }
 
@@ -339,132 +326,8 @@ export class FillUpPage {
     this.logMode.set(mode);
   }
 
-  private async loadSharedImage(): Promise<void> {
-    const shared = await takeSharedFillImage();
-    if (!shared) {
-      return;
-    }
-    this.clearSharedImage();
-    this.sharedBlob.set(shared.blob);
-    this.sharedPreviewUrl.set(shared.objectUrl);
-  }
-
-  clearSharedImage(): void {
-    const url = this.sharedPreviewUrl();
-    if (url) {
-      URL.revokeObjectURL(url);
-    }
-    this.sharedPreviewUrl.set(null);
-    this.sharedBlob.set(null);
-  }
-
-  async onScanFile(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = '';
-    if (!file) {
-      return;
-    }
-    await this.runOcr(file);
-  }
-
-  async scanSharedOrPick(): Promise<void> {
-    const blob = this.sharedBlob();
-    if (blob) {
-      await this.runOcr(blob);
-      return;
-    }
-    document.getElementById('receipt-scan-input')?.click();
-  }
-
-  pickFromGallery(): void {
-    document.getElementById('receipt-gallery-input')?.click();
-  }
-
-  private async runOcr(image: Blob): Promise<void> {
-    this.ocrBusy.set(true);
-    this.ocrError.set('');
-    this.ocrStage.set('idle');
-    const show = (candidates: ReceiptCandidates, pick: ReceiptPick) => {
-      this.ocrCandidates.set(candidates);
-      this.ocrPick.set(pick);
-      this.ocrStage.set('review');
-      if (!this.sharedPreviewUrl()) {
-        this.sharedBlob.set(image);
-        this.sharedPreviewUrl.set(URL.createObjectURL(image));
-      }
-    };
-    try {
-      const lcd = await readPumpFromBlob(image).catch(() => null);
-      if (lcd) {
-        show(
-          {
-            liters: [lcd.liters],
-            unitPrice: [lcd.unitPrice],
-            total: [lcd.total],
-            raw: lcd.raw,
-            labels: {
-              liters: [lcd.liters],
-              unitPrice: [lcd.unitPrice],
-              total: [lcd.total],
-            },
-          },
-          { liters: lcd.liters, unitPrice: lcd.unitPrice, total: lcd.total },
-        );
-        return;
-      }
-      const text = await ocrReceiptImage(image);
-      const candidates = parseReceiptText(text);
-      show(candidates, bestReceiptPick(candidates));
-    } catch {
-      this.ocrError.set(this.i18n.t('fillUp.scanFailed'));
-    } finally {
-      this.ocrBusy.set(false);
-    }
-  }
-
-  setOcrLiters(v: string): void {
-    const n = Number(v);
-    this.ocrPick.update((p) => ({
-      ...p,
-      liters: Number.isFinite(n) && n > 0 ? n : undefined,
-    }));
-  }
-
-  ocrLitersStr(): string {
-    const n = this.ocrPick().liters;
-    return n != null ? String(n) : '';
-  }
-
-  ocrPriceStr(): string {
-    const n = this.ocrPick().unitPrice;
-    return n != null ? String(n) : '';
-  }
-
-  ocrTotalStr(): string {
-    const n = this.ocrPick().total;
-    return n != null ? String(n) : '';
-  }
-
-  setOcrPrice(v: string): void {
-    const n = Number(v);
-    this.ocrPick.update((p) => ({
-      ...p,
-      unitPrice: Number.isFinite(n) && n > 0 ? n : undefined,
-    }));
-  }
-
-  setOcrTotal(v: string): void {
-    const n = Number(v);
-    this.ocrPick.update((p) => ({
-      ...p,
-      total: Number.isFinite(n) && n > 0 ? n : undefined,
-    }));
-  }
-
-  /** Apply OCR pick into the form — never auto-saves. */
-  applyOcrPick(): void {
-    const pick = this.ocrPick();
+  /** Merge an applied OCR pick into the form — never auto-saves. */
+  private applyReceiptPick(pick: ReceiptPick): void {
     if (pick.liters != null) {
       this.liters.set(String(pick.liters));
       this.onLitersChange();
@@ -475,14 +338,6 @@ export class FillUpPage {
         this.fuelGrade.set('custom');
       }
     }
-    this.ocrStage.set('idle');
-  }
-
-  discardOcr(): void {
-    this.ocrStage.set('idle');
-    this.ocrCandidates.set(null);
-    this.ocrPick.set({});
-    this.ocrError.set('');
   }
 
   loadCharge(id: string): void {

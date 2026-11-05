@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   computed,
   ElementRef,
@@ -88,6 +89,7 @@ export function monthCells(
 
 @Component({
   selector: 'app-date-field',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [SelectField],
   templateUrl: './date-field.html',
   styleUrl: './date-field.scss',

@@ -1,0 +1,41 @@
+@if (scan.sharedPreviewUrl(); as imgUrl) {
+  <section class="card shared-receipt" [attr.aria-label]="i18n.t('fillUp.sharedImage')">
+    <p class="hint" role="status">{{ i18n.t('fillUp.sharedImageReady') }}</p>
+    <img class="shared-receipt__img" [src]="imgUrl" alt="" />
+    <button type="button" class="ghost-btn" (click)="scan.clearSharedImage()">
+      {{ i18n.t('fillUp.clearShared') }}
+    </button>
+  </section>
+}
+
+@if (scan.stage() === 'review' && scan.candidates()) {
+  <section class="card ocr-review" [attr.aria-label]="i18n.t('fillUp.ocrReview')">
+    <h2 class="ocr-review__title">{{ i18n.t('fillUp.ocrReview') }}</h2>
+    <app-numeric-field
+      [label]="i18n.t('fillUp.liters')"
+      [value]="scan.litersStr()"
+      (valueChange)="scan.setLiters($event)"
+    />
+    <app-numeric-field
+      [label]="i18n.t('fillUp.unitPrice')"
+      [value]="scan.priceStr()"
+      (valueChange)="scan.setPrice($event)"
+    />
+    <app-numeric-field
+      [label]="i18n.t('fillUp.total')"
+      [value]="scan.totalStr()"
+      (valueChange)="scan.setTotal($event)"
+    />
+    @if (scan.math() === true) {
+      <p class="hint" role="status">{{ i18n.t('fillUp.ocrMathOk') }}</p>
+    } @else if (scan.math() === false) {
+      <p class="error-state" role="alert">{{ i18n.t('fillUp.ocrMathBad') }}</p>
+    }
+    <div class="ocr-review__actions">
+      <app-primary-button [label]="i18n.t('fillUp.ocrApply')" (pressed)="scan.apply()" />
+      <button type="button" class="ghost-btn" (click)="scan.discard()">
+        {{ i18n.t('fillUp.ocrDiscard') }}
+      </button>
+    </div>
+  </section>
+}

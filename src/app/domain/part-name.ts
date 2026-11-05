@@ -1,5 +1,5 @@
 /** Normalize part names for duplicate detection (decision 84A). */
-export function normalizePartName(raw: string): string {
+function normalizePartName(raw: string): string {
   return raw
     .normalize('NFKC')
     .trim()
@@ -14,7 +14,7 @@ export function partNamesMatch(a: string, b: string): boolean {
 }
 
 /** System parts persist i18n keys (`parts.shockStrut`) in `otherLabel` / `name`. */
-export function isStoredMessageKey(value: string): boolean {
+function isStoredMessageKey(value: string): boolean {
   return value.startsWith('parts.') || value.startsWith('maintenance.');
 }
 

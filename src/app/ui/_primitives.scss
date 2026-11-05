@@ -50,9 +50,6 @@ a {
   padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
 }
 
-.shell--setup {
-  padding-bottom: var(--space-4);
-}
 
 .stack {
   display: flex;
@@ -208,23 +205,7 @@ a {
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--cta) 40%, transparent);
 }
 
-.label-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin: 0;
-}
 
-.label-row svg {
-  width: 16px;
-  height: 16px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  flex-shrink: 0;
-}
 
 .due-card {
   display: flex;
@@ -272,8 +253,7 @@ a {
   gap: 6px;
 }
 
-.input,
-.file-pick {
+.input {
   min-height: var(--tap);
   border: var(--border-width) solid var(--input-border);
   border-radius: var(--radius);
@@ -285,9 +265,6 @@ a {
     box-shadow var(--motion) var(--ease);
 }
 
-.file-pick {
-  position: relative;
-}
 
 .input {
   appearance: none;
@@ -312,14 +289,11 @@ textarea.input {
   resize: vertical;
 }
 
-.input:hover,
-.file-pick:hover {
+.input:hover {
   border-color: color-mix(in srgb, var(--cta) 40%, var(--muted));
 }
 
-.input:focus,
-.input:focus-visible,
-.file-pick:focus-within {
+.input:focus, .input:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
   box-shadow:
@@ -336,47 +310,11 @@ textarea.input {
   font-size: 0.85rem;
 }
 
-.receipt-line {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-3);
-  padding-block: var(--space-3);
-  border-bottom: 1px dashed color-mix(in srgb, var(--paper-muted) 35%, transparent);
-  color: var(--paper-text);
-  font-size: 0.9rem;
-}
 
-.receipt-line:last-child {
-  border-bottom: 0;
-  padding-block-end: 0;
-}
 
-.receipt-line--total {
-  font-weight: 600;
-}
 
-.receipt-line--total strong {
-  font-variant-numeric: tabular-nums;
-  font-size: clamp(1.5rem, 6vw, 1.85rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-}
 
-.hero-number {
-  font-variant-numeric: tabular-nums;
-  font-size: var(--type-hero);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.05;
-  margin: 0;
-}
 
-.section-block {
-  display: grid;
-  gap: var(--space-3);
-}
 
 .disclosure {
   padding: var(--space-3) var(--space-4);
@@ -451,10 +389,6 @@ textarea.input {
   height: 52px;
 }
 
-.skeleton--metric {
-  height: 28px;
-  width: 4.5rem;
-}
 
 @keyframes shimmer {
   0% {
@@ -465,12 +399,6 @@ textarea.input {
   }
 }
 
-.period-metric strong,
-.ledger-row__cost,
-.metric-card__value,
-.period-card__total {
-  font-variant-numeric: tabular-nums;
-}
 
 .chip {
   display: inline-flex;
@@ -488,17 +416,6 @@ textarea.input {
   color: var(--fuel);
 }
 
-.ai-badge {
-  flex-shrink: 0;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--cta) 16%, var(--surface));
-  color: var(--cta);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
 
 .metric-flash {
   animation: metric-flash var(--motion-fast) var(--ease-out);

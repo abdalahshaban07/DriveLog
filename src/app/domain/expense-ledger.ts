@@ -37,7 +37,7 @@ function monthsBack(n: number, from: Date = new Date()): DateOnly {
   return `${y}-${m}-${day}`;
 }
 
-export function periodFilterStart(
+function periodFilterStart(
   period: LedgerPeriodFilter,
   customFrom?: DateOnly,
 ): DateOnly | null {

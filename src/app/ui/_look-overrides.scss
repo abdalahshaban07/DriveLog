@@ -1,22 +1,36 @@
-html[data-theme='contrast'] .input,
-html[data-theme='contrast'] .file-pick {
+/* Contrast theme must beat every look. This file loads after _looks.scss,
+   so same-specificity rules here win the cascade (source order). Per-look
+   contrast blocks in _looks.scss are higher-specificity exceptions and stay. */
+html[data-theme='contrast'] {
+  --bg: #000000;
+  --surface: #121212;
+  --well: #000000;
+  --hairline: color-mix(in srgb, var(--text) 40%, transparent);
+  --input-border: color-mix(in srgb, var(--text) 70%, transparent);
+  --aura-1: #2a2000;
+  --aura-2: #101010;
+  --mesh-canvas: none;
+  --fill-surface: var(--surface);
+  --fill-well: var(--well);
+  --fill-paper: var(--paper);
+  --btn-bg: var(--cta);
+  --cta-surface: var(--cta);
+  --nav-fill: var(--bg);
+  --nav-inset: 0px;
+  --nav-shadow: none;
+  --nav-active-shadow: none;
+}
+
+html[data-theme='contrast'] .input {
   border-width: 2px;
   border-color: color-mix(in srgb, var(--text) 70%, transparent);
 }
 
-html[data-theme='contrast'] .receipt-line {
-  border-bottom-width: 2px;
-  border-bottom-color: color-mix(in srgb, var(--text) 55%, transparent);
-}
 
-html[data-theme='contrast'] :focus-visible,
-html[data-theme='contrast'] .input:focus,
-html[data-theme='contrast'] .input:focus-visible,
-html[data-theme='contrast'] .file-pick:focus-within {
+html[data-theme='contrast'] :focus-visible, html[data-theme='contrast'] .input:focus, html[data-theme='contrast'] .input:focus-visible {
   outline-width: 3px;
 }
 
-html[data-look='neo'] .tab-on-fuel,
 html[data-look='neo'] .section-tabs__link--on {
   color: var(--cta-text);
 }
@@ -28,13 +42,7 @@ html[data-look='neo'] .chip {
   box-shadow: var(--raise-1);
 }
 
-html[data-look='neo'] .cta,
-html[data-look='neo'] .card,
-html[data-look='neo'] .due-card,
-html[data-look='neo'] .nav,
-html[data-look='neo'] .input,
-html[data-look='neo'] .file-pick,
-html[data-look='neo'] .disclosure {
+html[data-look='neo'] .cta, html[data-look='neo'] .card, html[data-look='neo'] .due-card, html[data-look='neo'] .nav, html[data-look='neo'] .input, html[data-look='neo'] .disclosure {
   border-color: var(--ink);
   box-shadow: var(--raise-1);
 }

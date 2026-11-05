@@ -29,7 +29,7 @@ export function nextFuelTipKey(currentKey: MsgKey, db: Db): MsgKey {
   return candidates[idx]!;
 }
 
-export function contextualFuelTipKey(db: Db): MsgKey {
+function contextualFuelTipKey(db: Db): MsgKey {
   const car = db.car();
   if (!car) {
     return FUEL_TIP_KEYS[0]!;

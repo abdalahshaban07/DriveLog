@@ -8,7 +8,7 @@ export function nextTargetKm(odometer: number, interval = MILESTONE_INTERVAL_KM)
   return Math.ceil(odometer / interval) * interval;
 }
 
-export function defaultTasks(): MaintenanceTask[] {
+function defaultTasks(): MaintenanceTask[] {
   const kinds = ['oil', 'filter', 'tires', 'brakes', 'labor'] as const;
   return kinds.map((kind) => ({
     id: crypto.randomUUID(),
@@ -32,7 +32,7 @@ export function seedMilestone(
   };
 }
 
-export function kmRemaining(targetKm: number, currentOdometer: number): number {
+function kmRemaining(targetKm: number, currentOdometer: number): number {
   return Math.max(0, targetKm - currentOdometer);
 }
 
@@ -48,12 +48,6 @@ export function taskKmRemaining(
     return Math.max(0, task.lastDoneKm + task.intervalKm - currentOdometer);
   }
   return kmRemaining(milestone.targetKm, currentOdometer);
-}
-
-export function sortMilestones(
-  milestones: readonly MaintenanceMilestone[],
-): MaintenanceMilestone[] {
-  return [...milestones].sort((a, b) => a.targetKm - b.targetKm);
 }
 
 export function completeTask(

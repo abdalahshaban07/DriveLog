@@ -1419,6 +1419,33 @@ export const en = {
   'pageLine.chartsBetterPeriod': '{period}: consumption is lower than usual.',
   'pageLine.chartsFlat': 'Consumption in this period is in your usual range.',
   'pageLine.chartsFlatPeriod': '{period}: consumption is in your usual range.',
+
+  // Local coach: human voice — variants, leads, prev month, suggestion chip.
+  'advisor.answer.spendPrev': 'Last month you spent about {total} {currency}.',
+  'advisor.answer.spendBody_v2': 'You put about {total} {currency} into the car this period.',
+  'advisor.answer.spendSplit_v2':
+    'For {car} this period: about {total} {currency} — {fuel} fuel, {maintenance} maintenance, {breakdown} breakdowns, {other} other.',
+  'advisor.answer.spendAll_v2':
+    'Lifetime on this car: {total} {currency} ({fuel} fuel, {maintenance} maintenance, {breakdown} breakdowns, {other} other).',
+  'advisor.answer.breakdownLast_v2': 'The last one was "{title}" on {date}. {count} in total.',
+  'advisor.answer.breakdownBody_v2':
+    '{count} breakdowns on record — worth watching the pattern.',
+  'advisor.answer.maintLogBody_v2': '{count} service entries since you started logging.',
+  'advisor.answer.partHistoryLast_v2': 'Last {part} work: {date} at {km} km.',
+  'advisor.answer.partHistoryCount_v2': '{part}: {count} entries in the log.',
+  'advisor.answer.priorityBody_v2': '{part} is {status} — it goes first.',
+  'advisor.answer.partStatusBody_v2': 'Right now {part} is {status}.',
+  'advisor.answer.fuelDelta_v2':
+    'Last tank {l100}, the one before {prev} — a {delta} change.',
+  'advisor.answer.budgetBody_v2': 'The budget looks {status} this period.',
+  'advisor.answer.adviceBody_v2':
+    'Small habit, big difference: check your last log before changing anything.',
+  'advisor.answer.reserveBody_v2': 'A sensible cushion is about {amount} {currency}.',
+  'advisor.answer.upcomingBody_v2': 'About {amount} {currency} may be needed soon.',
+  'advisor.lead.repeatPart': 'Note: the {part} has been serviced more than once lately.',
+  'advisor.lead.secondFault': '{count} breakdowns lately — that is more than usual.',
+  'advisor.lead.budgetHigh': 'Costs are outrunning the budget a bit this month.',
+  'assistant.suggest.next': 'You can ask next:',
 } as const;
 
 export type MsgKey = keyof typeof en;
