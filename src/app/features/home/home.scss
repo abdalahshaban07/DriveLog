@@ -788,20 +788,6 @@
   background: color-mix(in srgb, var(--ok) 14%, var(--fill-well));
 }
 
-.coming {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-  margin-block-end: var(--space-4);
-  padding-block: var(--space-3);
-  border-block: 1px solid var(--hairline);
-  color: inherit;
-  text-decoration: none;
-}
-
-
-
 .fuel-use {
   margin-block-start: var(--space-3);
   padding-block-start: var(--space-3);
