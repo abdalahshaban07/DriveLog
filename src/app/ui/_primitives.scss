@@ -183,26 +183,29 @@ a {
   grid-template-columns: repeat(2, 1fr);
   gap: 4px;
   padding: 4px;
-  border-radius: var(--radius);
+  border-radius: 999px;
   background: var(--fill-well);
 }
 
 .seg__btn {
   min-height: calc(var(--tap) - 8px);
   border: 0;
-  border-radius: calc(var(--radius) - 4px);
+  border-radius: 999px;
   background: transparent;
   color: var(--muted);
-  font-weight: 700;
+  font-weight: 600;
+  cursor: pointer;
   transition:
     color var(--motion) var(--ease),
-    background var(--motion) var(--ease);
+    background var(--motion) var(--ease),
+    box-shadow var(--motion) var(--ease);
 }
 
 .seg__btn--on {
-  background: var(--fill-surface);
+  background: var(--fill-paper);
   color: var(--text);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--cta) 40%, transparent);
+  font-weight: 700;
+  box-shadow: var(--shadow-soft);
 }
 
 

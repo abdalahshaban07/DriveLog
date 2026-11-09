@@ -3,6 +3,7 @@ import type { Maintenance, VehicleDocument } from './models';
 import {
   buildUpcoming,
   upcomingDocTitle,
+  upcomingKmLabel,
   upcomingMeta,
   upcomingStatusLabel,
   upcomingTitle,
@@ -120,5 +121,13 @@ describe('upcoming labels', () => {
     expect(upcomingStatusLabel(item({ dueDate: dayOffset(-2) }), 0, t)).toBe('vault.daysOver(2)');
     expect(upcomingStatusLabel(item({ kmOnly: true, dueKm: 1400 }), 1000, t)).toBe('home.kmLeft(400)');
     expect(upcomingStatusLabel(item({ kmOnly: true, dueKm: 900 }), 1000, t)).toBe('home.kmOver(100)');
+  });
+
+  it('exposes the km side separately for dual-metric rows', () => {
+    const dual = item({ dueDate: dayOffset(10), dueKm: 1400 });
+    expect(upcomingStatusLabel(dual, 1000, t)).toBe('vault.daysLeft(10)');
+    expect(upcomingKmLabel(dual, 1000, t)).toBe('home.kmLeft(400)');
+    expect(upcomingKmLabel(item({ dueDate: dayOffset(10) }), 1000, t)).toBe('');
+    expect(upcomingKmLabel(item({ kmOnly: true, dueKm: 900 }), 1000, t)).toBe('home.kmOver(100)');
   });
 });

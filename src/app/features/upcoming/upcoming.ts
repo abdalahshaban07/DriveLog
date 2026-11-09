@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
 import {
   buildUpcoming,
+  upcomingKmLabel,
   upcomingMeta,
   upcomingStatusLabel,
   upcomingTitle,
@@ -54,6 +55,20 @@ export class UpcomingPage {
 
   statusLabel(item: UpcomingItem): string {
     return upcomingStatusLabel(item, this.db.car()?.currentOdometer ?? 0, this.translate);
+  }
+
+  kmSub(item: UpcomingItem): string {
+    return item.dueDate && item.dueKm != null
+      ? upcomingKmLabel(item, this.db.car()?.currentOdometer ?? 0, this.translate)
+      : '';
+  }
+
+  kind(item: UpcomingItem): 'service' | 'paper' {
+    return item.maintenanceId ? 'service' : 'paper';
+  }
+
+  query(item: UpcomingItem): Record<string, string> | null {
+    return item.maintenanceId ? { id: item.maintenanceId } : null;
   }
 
   private readonly translate = (key: string, params?: Record<string, number>): string =>

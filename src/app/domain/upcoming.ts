@@ -237,10 +237,19 @@ export function upcomingStatusLabel(
     const n = Math.abs(days);
     return days < 0 ? t('vault.daysOver', { days: n }) : t('vault.daysLeft', { days: n });
   }
-  if (item.dueKm != null) {
-    const left = item.dueKm - odometer;
-    const n = Math.abs(left);
-    return left < 0 ? t('home.kmOver', { km: n }) : t('home.kmLeft', { km: n });
+  return upcomingKmLabel(item, odometer, t);
+}
+
+/** Km side of a due item — shown beside the day count when both exist. */
+export function upcomingKmLabel(
+  item: UpcomingItem,
+  odometer: number,
+  t: UpcomingT,
+): string {
+  if (item.dueKm == null) {
+    return '';
   }
-  return '';
+  const left = item.dueKm - odometer;
+  const n = Math.abs(left);
+  return left < 0 ? t('home.kmOver', { km: n }) : t('home.kmLeft', { km: n });
 }

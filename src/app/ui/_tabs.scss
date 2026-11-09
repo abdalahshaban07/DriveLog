@@ -1,6 +1,6 @@
 .section-tabs {
   display: flex;
-  gap: var(--space-2);
+  gap: 4px;
   margin-block-end: var(--space-4);
   overflow-x: auto;
   overflow-y: hidden;
@@ -47,6 +47,7 @@
 
 .section-tabs__link--on {
   color: var(--text);
+  font-weight: 700;
   background: var(--tab-btn-on-bg, transparent);
   box-shadow: var(--tab-btn-on-shadow, var(--tab-btn-shadow, none));
 }

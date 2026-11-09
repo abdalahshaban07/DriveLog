@@ -33,7 +33,7 @@ import type {
 } from '../../domain/models';
 import { buildMonthShare, monthShareIsEmpty } from '../../domain/month-share';
 import { buildMonthOutlook } from '../../domain/recommendations';
-import { buildUpcoming, upcomingMeta, upcomingStatusLabel, upcomingTitle, type UpcomingItem } from '../../domain/upcoming';
+import { buildUpcoming, upcomingKmLabel, upcomingMeta, upcomingStatusLabel, upcomingTitle, type UpcomingItem } from '../../domain/upcoming';
 import { SAMPLE_CAR_ID } from '../../domain/sample-data';
 import {
   buildSetupChecklist,
@@ -424,6 +424,20 @@ export class HomePage {
 
   comingStatus(item: UpcomingItem): string {
     return upcomingStatusLabel(item, this.db.car()?.currentOdometer ?? 0, this.comingTranslate);
+  }
+
+  comingKmSub(item: UpcomingItem): string {
+    return item.dueDate && item.dueKm != null
+      ? upcomingKmLabel(item, this.db.car()?.currentOdometer ?? 0, this.comingTranslate)
+      : '';
+  }
+
+  comingKind(item: UpcomingItem): 'service' | 'paper' {
+    return item.maintenanceId ? 'service' : 'paper';
+  }
+
+  comingQuery(item: UpcomingItem): Record<string, string> | null {
+    return item.maintenanceId ? { id: item.maintenanceId } : null;
   }
 
   private readonly comingTranslate = (key: string, params?: Record<string, number>): string =>
