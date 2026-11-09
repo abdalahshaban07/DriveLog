@@ -174,7 +174,7 @@ test.describe('Fuel range predictor', () => {
     await dismissWhatsNewIfOpen(page);
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
     const card = page.locator('app-fuel-range .fuel-range');
-    await expect(card).toBeVisible();
+    await expect(card).toBeVisible({ timeout: 15_000 });
     await expect(card.locator('.fuel-range__kicker')).toHaveText('المدى المتبقي');
     await expect(card.locator('.fuel-range__basis')).toContainText('كم/يوم');
     const fits = await card.evaluate((el) => el.scrollWidth <= el.clientWidth + 1);

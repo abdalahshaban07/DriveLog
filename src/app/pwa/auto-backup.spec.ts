@@ -138,6 +138,20 @@ describe('AutoBackup', () => {
     expect(updateBackupState).not.toHaveBeenCalled();
   });
 
+  it('a locked old file does not fail a written backup', async () => {
+    const dir = makeFakeDir();
+    for (let i = 0; i < BACKUP_KEEP + 2; i++) {
+      dir.files.set(`drivelog-backup-2020-01-${String(i + 1).padStart(2, '0')}.json`, '{}');
+    }
+    dir.removeEntry.mockRejectedValue(new DOMException('locked', 'NoModificationAllowedError'));
+    link(dir);
+    configure(picker);
+
+    expect(await service.backUpNow()).toBe(true);
+    expect(backupState()?.lastBackupAt).toBeTruthy();
+    expect(dir.files.has(backupFileName(new Date(), false))).toBe(true);
+  });
+
   it('check() writes on boot when a week has elapsed', async () => {
     const dir = makeFakeDir();
     const old = new Date(Date.now() - 8 * 86_400_000).toISOString();

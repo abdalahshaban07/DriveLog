@@ -109,7 +109,7 @@ export function estimateFuelRange(
     l100: Math.round(l100 * 10) / 10,
     capacity,
     basedOnDays: span,
-    low: daysLeft <= RANGE_LOW_DAYS,
+    low: daysLeft <= RANGE_LOW_DAYS || kmLeft <= 0,
     empty: kmLeft <= 0,
   };
 }

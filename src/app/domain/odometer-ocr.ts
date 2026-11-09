@@ -20,13 +20,14 @@ const RUN = /\d+(?:[.,]\d+)*/g;
 /** ISO and numeric calendar dates leave a 4-digit year that is not an odometer. */
 function stripDates(text: string): string {
   return text
-    .replace(/\b\d{4}-\d{1,2}-\d{1,2}\b/g, ' ')
-    .replace(/\b\d{1,2}[/.]\d{1,2}[/.]\d{2,4}\b/g, ' ');
+    .replace(/\b\d{4}[-/.]\d{1,2}[-/.]\d{1,2}\b/g, ' ')
+    .replace(/\b\d{1,2}[/.]\d{1,2}[/.]\d{2,4}\b/g, ' ')
+    .replace(/\b\d{1,2}-\d{1,2}-\d{2,4}\b/g, ' ');
 }
 
 /** Some clusters print comma thousands; mechanical ones print leading zeros. */
 function normalizeGroups(text: string): string {
-  return text.replace(/(\d),(\d{3})(?!\d)/g, '$1$2');
+  return text.replace(/,(?=\d{3}(?!\d))/g, '');
 }
 
 export function parseOdometerText(raw: string): OdometerCandidates {

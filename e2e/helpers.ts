@@ -60,6 +60,8 @@ export async function ensureEnglishUi(page: Page): Promise<void> {
   const root = page.locator('html');
   if ((await root.getAttribute('lang')) === 'en') return;
   await page.goto('/settings');
+  // Let boot finish so a late whats-new sheet lands inside the dismiss window.
+  await page.locator('h1').first().waitFor({ state: 'visible', timeout: 15_000 });
   await dismissWhatsNewIfOpen(page);
   // The first run may be Arabic; reach English through either label.
   await page.getByRole('button', { name: /^(Language|اللغة)$/ }).click();

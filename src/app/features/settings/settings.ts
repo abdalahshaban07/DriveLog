@@ -286,11 +286,15 @@ export class SettingsPage {
   async onFile(event: Event): Promise<void> {
     this.importError.set('');
     this.importOk.set(false);
+    this.pendingImport.set(null);
     this.pendingDestructive.set(null);
     this.pendingEncrypted.set(null);
     this.decryptPass.set('');
     this.decryptError.set('');
-    const file = (event.target as HTMLInputElement).files?.[0];
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    // Allow re-selecting the same file after a cancel or failed import.
+    input.value = '';
     this.importFileName.set(file?.name ?? '');
     if (!file) {
       return;
@@ -382,7 +386,6 @@ export class SettingsPage {
 
   async runImport(mode: 'replace' | 'merge'): Promise<void> {
     const backup = this.pendingImport();
-    this.pendingImport.set(null);
     if (!backup) {
       return;
     }
@@ -392,6 +395,7 @@ export class SettingsPage {
       } else {
         await this.db.importMerge(backup);
       }
+      this.pendingImport.set(null);
       this.importOk.set(true);
       this.currency.set(this.db.settings().currency);
       this.syncCarFields();

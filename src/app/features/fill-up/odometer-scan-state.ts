@@ -93,6 +93,11 @@ export class OdometerScanState implements OnDestroy {
     this.applied.set(false);
     this.stage.set('idle');
     this.candidates.set(null);
+    const prev = this.previewUrl();
+    if (prev) {
+      URL.revokeObjectURL(prev);
+    }
+    this.previewUrl.set(null);
     try {
       const text = await this.ocr(image);
       if (token !== this.runId) {

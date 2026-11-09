@@ -775,16 +775,19 @@ export class Db {
     const day = todayDateOnly();
     const snap = snapshotFromBoard(board, day);
     const previous = this._fuelPriceHistoryAll();
-    const { history, changed } = mergeSnapshot(previous, snap);
+    const { changed } = mergeSnapshot(previous, snap);
     if (!changed) {
       return [];
     }
     await this.put('fuelPriceHistory', snap);
-    const keptIds = new Set(history.map((h) => h.id));
-    const removed = previous.filter((h) => !keptIds.has(h.id));
+    // Re-read after the await: a concurrent recording may have landed meanwhile.
+    const current = this._fuelPriceHistoryAll();
+    const { history: fresh } = mergeSnapshot(current, snap);
+    const keptIds = new Set(fresh.map((h) => h.id));
+    const removed = current.filter((h) => !keptIds.has(h.id));
     await Promise.all(removed.map((h) => this.deleteKey('fuelPriceHistory', h.id)));
-    this._fuelPriceHistoryAll.set(history);
-    return latestChanges(history, board.countryCode, day);
+    this._fuelPriceHistoryAll.set(fresh);
+    return latestChanges(fresh, board.countryCode, day);
   }
 
   async addCustomType(name: string): Promise<AddCustomTypeResult> {
@@ -1507,9 +1510,10 @@ export class Db {
       (x) => x.updatedAt,
     );
     const merged = [...carMap.values()];
+    // Keep the local car: a merge must never silently swap the active vehicle.
     const car =
-      merged.find((c) => c.id === backup.settings.activeCarId) ??
       merged.find((c) => c.id === this._settings().activeCarId) ??
+      merged.find((c) => c.id === backup.settings.activeCarId) ??
       this._car() ??
       merged[0] ??
       null;

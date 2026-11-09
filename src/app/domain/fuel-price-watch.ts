@@ -30,8 +30,13 @@ const HISTORY_CAP = 60;
 /** Older alerts are stale news; the card stays silent. */
 const ALERT_MAX_AGE_DAYS = 45;
 
+/** Boards occasionally carry 0 or negative placeholders; those are not prices. */
+function sanePrice(v: number | null): number | null {
+  return v != null && Number.isFinite(v) && v > 0 ? v : null;
+}
+
 export function boardHasPrices(board: CountryFuelPrices): boolean {
-  return WATCHED_GRADES.some((g) => board[g] != null);
+  return WATCHED_GRADES.some((g) => sanePrice(board[g]) != null);
 }
 
 export function snapshotFromBoard(
@@ -44,10 +49,10 @@ export function snapshotFromBoard(
     countryCode: cc,
     day,
     currency: board.currency,
-    gasoline92: board.gasoline92,
-    gasoline95: board.gasoline95,
-    diesel: board.diesel,
-    solar: board.solar,
+    gasoline92: sanePrice(board.gasoline92),
+    gasoline95: sanePrice(board.gasoline95),
+    diesel: sanePrice(board.diesel),
+    solar: sanePrice(board.solar),
   };
 }
 
@@ -148,10 +153,16 @@ export function lastFillImpact(
     return null;
   }
   const byGrade = new Map(hikes.map((c) => [c.grade, c]));
+  // Legacy diesel fills match the solar board and vice versa — same fuel grade.
+  const alias = (g: WatchedGrade): WatchedGrade =>
+    g === 'diesel' ? 'solar' : g === 'solar' ? 'diesel' : g;
   let best: FillUp | null = null;
+  let bestChange: PriceChange | null = null;
   for (const f of fills) {
     const change =
-      f.fuelGrade && f.fuelGrade !== 'custom' ? byGrade.get(f.fuelGrade) : undefined;
+      f.fuelGrade && f.fuelGrade !== 'custom'
+        ? byGrade.get(f.fuelGrade) ?? byGrade.get(alias(f.fuelGrade))
+        : undefined;
     if (!change || (f.currency ?? currency) !== currency || f.date >= change.day) {
       continue;
     }
@@ -161,12 +172,13 @@ export function lastFillImpact(
       (f.date === best.date && f.createdAt > best.createdAt)
     ) {
       best = f;
+      bestChange = change;
     }
   }
-  if (!best?.fuelGrade || best.fuelGrade === 'custom') {
+  if (!best || !bestChange) {
     return null;
   }
-  const change = byGrade.get(best.fuelGrade)!;
+  const change = bestChange;
   const amount = Math.round(best.liters * change.delta * 100) / 100;
   if (amount <= 0) {
     return null;

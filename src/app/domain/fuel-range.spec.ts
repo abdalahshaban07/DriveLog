@@ -158,6 +158,18 @@ describe('estimateFuelRange', () => {
     expect(est.low).toBe(true);
   });
 
+  it('nudges at zero km left even when the slow pace says days remain', () => {
+    const fills = [
+      fill({ odometer: 8000, liters: 40, date: day(2000) }),
+      fill({ odometer: 8500, liters: 45, date: day(10) }),
+    ];
+    const est = estimateFuelRange({ ...car, currentOdometer: 9054 }, fills, NOW)!;
+    expect(est.kmLeft).toBe(0);
+    expect(est.empty).toBe(true);
+    expect(est.daysLeft).toBeGreaterThan(RANGE_LOW_DAYS);
+    expect(est.low).toBe(true);
+  });
+
   it('treats an odometer rollback after the last full as a still-full tank', () => {
     const est = estimateFuelRange({ ...car, currentOdometer: 8400 }, baseFills(), NOW)!;
     expect(est.litersLeft).toBe(50);

@@ -27,6 +27,7 @@ describe('odometer-ocr', () => {
 
   it('normalizes comma thousands', () => {
     expect(bestOdometerPick(parseOdometerText('ODO 45,000 km'))).toBe(45000);
+    expect(bestOdometerPick(parseOdometerText('ODO 1,234,567 km'))).toBe(1234567);
   });
 
   it('drops decimal trip meters and keeps the whole odometer', () => {
@@ -54,6 +55,11 @@ describe('odometer-ocr', () => {
   it('strips camera date stamps and times', () => {
     const c = parseOdometerText('2026-11-08\n08/11/2026\nNovember 8, 2026 at 1:47 AM\n45000');
     expect(c.values).toEqual([45000]);
+  });
+
+  it('strips slash-ISO and dash-DMY date stamps too', () => {
+    expect(parseOdometerText('2026/11/08\n1500').values).toEqual([1500]);
+    expect(parseOdometerText('8-11-2026\n1500').values).toEqual([1500]);
   });
 
   it('ignores prices and totals from a receipt in the same photo', () => {

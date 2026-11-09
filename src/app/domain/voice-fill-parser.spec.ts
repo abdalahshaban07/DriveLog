@@ -23,16 +23,16 @@ describe('voice-fill-parser', () => {
     expect(v.fuelGrade).toBe('gasoline95');
   });
 
-  it('reads Arabic short km and diesel', () => {
+  it('reads Arabic short km and maps solar to the selectable diesel-grade', () => {
     const v = parseVoiceFill('٣٥ لتر، ٤٢٠ كم، سولار');
     expect(v.liters).toBe(35);
     expect(v.distanceKm).toBe(420);
-    expect(v.fuelGrade).toBe('diesel');
+    expect(v.fuelGrade).toBe('solar');
   });
 
   it('reads a grade-only utterance', () => {
     expect(parseVoiceFill('بنزين ٩٢').fuelGrade).toBe('gasoline92');
-    expect(parseVoiceFill('diesel').fuelGrade).toBe('diesel');
+    expect(parseVoiceFill('diesel').fuelGrade).toBe('solar');
     expect(parseVoiceFill('95 octane').fuelGrade).toBe('gasoline95');
   });
 
@@ -61,5 +61,22 @@ describe('voice-fill-parser', () => {
   it('returns empty for silence or unrelated speech', () => {
     expect(hasVoiceFill(parseVoiceFill(''))).toBe(false);
     expect(hasVoiceFill(parseVoiceFill('hello how are you'))).toBe(false);
+  });
+
+  it('does not read a per-liter price as the volume', () => {
+    const v = parseVoiceFill('40 liters, price per liter 13.5');
+    expect(v.liters).toBe(40);
+    expect(parseVoiceFill('سعر اللتر ١٣٫٥').liters).toBeUndefined();
+  });
+
+  it('does not read an odometer value as trip distance', () => {
+    const v = parseVoiceFill('40 liters, odometer 45000 km');
+    expect(v.liters).toBe(40);
+    expect(v.distanceKm).toBeUndefined();
+    expect(parseVoiceFill('عداد ٤٥٠٠٠ كم').distanceKm).toBeUndefined();
+  });
+
+  it('reads comma thousands as one number', () => {
+    expect(parseVoiceFill('drove 1,200 km').distanceKm).toBe(1200);
   });
 });

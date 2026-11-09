@@ -130,8 +130,9 @@ export class AutoBackup {
       const writable = await file.createWritable();
       await writable.write(payload);
       await writable.close();
-      await this.prune(dir);
+      // Stamp before pruning: a locked old file must not fail a written backup.
       await this.db.updateBackupState({ lastBackupAt: now.toISOString() });
+      await this.prune(dir);
       return true;
     } catch {
       return false;
@@ -181,7 +182,11 @@ export class AutoBackup {
       names.push(entry.name);
     }
     for (const name of pruneBackupNames(names)) {
-      await dir.removeEntry(name);
+      try {
+        await dir.removeEntry(name);
+      } catch {
+        // Locked file or a same-named directory; retry on the next backup.
+      }
     }
   }
 }

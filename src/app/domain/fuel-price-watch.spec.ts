@@ -73,6 +73,20 @@ describe('snapshotFromBoard', () => {
     ).toBe(false);
     expect(boardHasPrices(board({ gasoline95: null }))).toBe(true);
   });
+
+  it('coerces zero, negative, and non-finite placeholders to null', () => {
+    const s = snapshotFromBoard(
+      board({ gasoline92: 0, gasoline95: -1, diesel: NaN, solar: 10 }),
+      '2026-11-08',
+    );
+    expect(s.gasoline92).toBeNull();
+    expect(s.gasoline95).toBeNull();
+    expect(s.diesel).toBeNull();
+    expect(s.solar).toBe(10);
+    expect(
+      boardHasPrices(board({ solar: 0, diesel: 0, gasoline92: 0, gasoline95: 0 })),
+    ).toBe(false);
+  });
 });
 
 describe('mergeSnapshot', () => {
@@ -207,6 +221,26 @@ describe('lastFillImpact', () => {
       '2026-11-08',
     );
     expect(lastFillImpact(drops, [fill()], 'EGP')).toBeNull();
+  });
+
+  it('matches legacy diesel fills against a solar hike and vice versa', () => {
+    const solarHike = latestChanges(
+      [snap('2026-10-17'), snap('2026-11-08', { solar: 12 })],
+      'EG',
+      '2026-11-08',
+    );
+    const impact = lastFillImpact(solarHike, [fill({ fuelGrade: 'diesel' })], 'EGP');
+    expect(impact).not.toBeNull();
+    expect(impact!.grade).toBe('solar');
+    expect(impact!.amount).toBe(80);
+    const dieselHike = latestChanges(
+      [snap('2026-10-17'), snap('2026-11-08', { diesel: 13 })],
+      'EG',
+      '2026-11-08',
+    );
+    expect(
+      lastFillImpact(dieselHike, [fill({ fuelGrade: 'solar' })], 'EGP')!.grade,
+    ).toBe('diesel');
   });
 });
 

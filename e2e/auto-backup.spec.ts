@@ -130,6 +130,14 @@ test('passphrase encrypts the copy; import decrypts it end to end', async ({ pag
   await section.getByRole('button', { name: 'Save passphrase' }).click();
   await expect(section.getByText('Passphrase saved')).toBeVisible();
   await section.getByRole('button', { name: 'Back up now' }).click();
+  // The folder-link step's "Backup saved" can still be on screen; wait for the file.
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        [...(window.__backupFiles?.keys() ?? [])].some((n) => n.endsWith('.json.enc')),
+      ),
+    )
+    .toBe(true);
   await expect(section.getByText('Backup saved', { exact: true })).toBeVisible();
 
   const enc = await page.evaluate(() => {
