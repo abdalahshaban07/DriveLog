@@ -200,8 +200,34 @@
               }
             </ul>
           </section>
-        } @else if (upcoming().length) {
-          <a class="needs-jump" routerLink="/upcoming">{{ i18n.t('home.upcoming') }}</a>
+        } @else if (upcomingTop().length) {
+          <section class="coming" [attr.aria-label]="i18n.t('home.upcoming')">
+            <header class="coming__head">
+              <h2 class="coming__title">{{ i18n.t('home.upcoming') }}</h2>
+              @if (upcomingMore()) {
+                <a class="coming__all" routerLink="/upcoming">{{ i18n.t('home.seeMore') }}</a>
+              }
+            </header>
+            <ul class="coming__list">
+              @for (item of upcomingTop(); track item.id) {
+                <li>
+                  <a class="coming__link" [routerLink]="item.route">
+                    <app-due-row
+                      [title]="comingTitle(item)"
+                      [meta]="comingMeta(item)"
+                      [statusLabel]="comingStatus(item)"
+                      [status]="item.status"
+                    />
+                  </a>
+                </li>
+              }
+            </ul>
+            @if (upcomingMore()) {
+              <a class="coming__more" routerLink="/upcoming">
+                {{ i18n.t('home.seeAllUpcoming', { count: upcoming().length }) }}
+              </a>
+            }
+          </section>
         }
 
         @if (healthAttention() > 0) {

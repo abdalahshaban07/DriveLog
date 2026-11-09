@@ -80,6 +80,8 @@ export const ar: Record<MsgKey, string> = {
   'home.vehicleStatus': 'حالة العربية',
   'home.needsYou': 'محتاجك',
   'home.upcoming': 'الجاي',
+  'home.seeMore': 'عرض المزيد',
+  'home.seeAllUpcoming': 'عرض الكل ({count})',
   'home.shareMonth': 'شارك الشهر',
   'home.shareMonthCopied': 'اتنسخ',
   'home.shareMonthFailed': 'مشاركتها ما تمتش',

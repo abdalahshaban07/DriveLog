@@ -78,6 +78,8 @@ export const en = {
   'home.vehicleStatus': 'Vehicle status',
   'home.needsYou': 'Needs you',
   'home.upcoming': 'Coming up',
+  'home.seeMore': 'See more',
+  'home.seeAllUpcoming': 'See all {count}',
   'home.shareMonth': 'Share month',
   'home.shareMonthCopied': 'Copied',
   'home.shareMonthFailed': 'Couldn’t share',

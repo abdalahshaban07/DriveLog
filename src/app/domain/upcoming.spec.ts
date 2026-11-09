@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { Maintenance, VehicleDocument } from './models';
-import { buildUpcoming } from './upcoming';
+import {
+  buildUpcoming,
+  upcomingDocTitle,
+  upcomingMeta,
+  upcomingStatusLabel,
+  upcomingTitle,
+  type UpcomingItem,
+} from './upcoming';
 
 const today = '2026-10-08';
 
@@ -74,5 +81,44 @@ describe('buildUpcoming', () => {
       maintenance: [],
     });
     expect(fromCar.map((item) => item.id)).toEqual(['car-license']);
+  });
+});
+
+describe('upcoming labels', () => {
+  const t = (key: string, params?: Record<string, number>): string =>
+    params ? `${key}(${Object.values(params).join(',')})` : key;
+
+  function item(partial: Partial<UpcomingItem>): UpcomingItem {
+    return { id: 'x', route: '/maintenance', status: 'dueSoon', kmOnly: false, ...partial };
+  }
+
+  function dayOffset(days: number): string {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${m}-${dd}`;
+  }
+
+  it('titles maintenance rows through the catalog and docs through their kind', () => {
+    const rows = [maint({ id: 'm1', otherLabel: 'Gearbox oil' })];
+    expect(upcomingTitle(item({ maintenanceId: 'm1' }), rows, [], t)).toBe('Gearbox oil');
+    expect(upcomingTitle(item({ maintenanceId: 'missing' }), rows, [], t)).toBe('');
+    expect(upcomingTitle(item({ docKind: 'license' }), [], [], t)).toBe('vault.kind.license');
+    expect(upcomingDocTitle('other', '  ', t)).toBe('vault.kind.other');
+    expect(upcomingDocTitle('other', 'Toll pass', t)).toBe('Toll pass');
+  });
+
+  it('formats the due date as meta and leaves km-only rows empty', () => {
+    expect(upcomingMeta(item({ dueDate: '2026-11-01' }), (d) => `on:${d}`)).toBe('on:2026-11-01');
+    expect(upcomingMeta(item({ kmOnly: true, dueKm: 1400 }), (d) => d)).toBe('');
+  });
+
+  it('labels day windows and km remaining in both directions', () => {
+    expect(upcomingStatusLabel(item({ dueDate: dayOffset(0) }), 0, t)).toBe('vault.dueToday');
+    expect(upcomingStatusLabel(item({ dueDate: dayOffset(3) }), 0, t)).toBe('vault.daysLeft(3)');
+    expect(upcomingStatusLabel(item({ dueDate: dayOffset(-2) }), 0, t)).toBe('vault.daysOver(2)');
+    expect(upcomingStatusLabel(item({ kmOnly: true, dueKm: 1400 }), 1000, t)).toBe('home.kmLeft(400)');
+    expect(upcomingStatusLabel(item({ kmOnly: true, dueKm: 900 }), 1000, t)).toBe('home.kmOver(100)');
   });
 });

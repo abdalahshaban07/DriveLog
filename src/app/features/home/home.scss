@@ -457,14 +457,54 @@
 }
 
 .needs,
-.needs-jump {
+.coming {
   margin-block-end: var(--space-4);
 }
 
-.needs-jump {
+.coming__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-block-end: var(--space-2);
+}
+
+.coming__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.coming__all {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.coming__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.coming__link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.coming__more {
   display: flex;
   align-items: center;
+  justify-content: center;
   min-height: var(--tap);
+  margin-block-start: var(--space-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
   font-weight: 700;
   color: inherit;
   text-decoration: none;
@@ -554,6 +594,28 @@
   border-radius: 999px;
   overflow: hidden;
   background: var(--fill-well);
+}
+
+.stack-bar__seg {
+  display: block;
+  min-width: 3px;
+}
+
+/* Category hues double as the legend swatches so rows map to bar segments. */
+.stack-bar__seg--fuel {
+  background: var(--fuel);
+}
+
+.stack-bar__seg--maint {
+  background: var(--mint);
+}
+
+.stack-bar__seg--break {
+  background: var(--stop);
+}
+
+.stack-bar__seg--other {
+  background: var(--muted);
 }
 
 

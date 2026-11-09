@@ -33,7 +33,7 @@ import type {
 } from '../../domain/models';
 import { buildMonthShare, monthShareIsEmpty } from '../../domain/month-share';
 import { buildMonthOutlook } from '../../domain/recommendations';
-import { buildUpcoming } from '../../domain/upcoming';
+import { buildUpcoming, upcomingMeta, upcomingStatusLabel, upcomingTitle, type UpcomingItem } from '../../domain/upcoming';
 import { SAMPLE_CAR_ID } from '../../domain/sample-data';
 import {
   buildSetupChecklist,
@@ -45,6 +45,7 @@ import { rangeBoundsForPreset, type HistoryRangePreset } from '../../domain/expo
 import { pageLinePeriod, type PageLineId } from '../../domain/page-line';
 import { homeHealthSummary } from '../../domain/vehicle-facts';
 import { I18n } from '../../i18n/i18n';
+import { DueRow } from '../../ui/due-row';
 import { HealthRow } from '../../ui/health-row/health-row';
 import type { MsgKey } from '../../i18n/en';
 import { InstallPwa } from '../../pwa/install-pwa';
@@ -93,6 +94,7 @@ interface PaperLine {
     PriceWatchCard,
     QuickLog,
     HealthRow,
+    DueRow,
     WeatherTipCard,
     PageLine,
   ],
@@ -386,6 +388,9 @@ export class HomePage {
       registrationExpiry: car.registrationExpiry,
     });
   });
+  /** Home shows the next three; the full list lives on /upcoming. */
+  readonly upcomingTop = computed(() => this.upcoming().slice(0, 3));
+  readonly upcomingMore = computed(() => this.upcoming().length > 3);
   /** Liters so far vs the same days last month, with a reason when we can name one. */
   readonly fuelUse = computed(() => fuelUseCompare(this.db.fillUps()));
   readonly healthSummary = computed(() => homeHealthSummary(this.db));
@@ -408,6 +413,21 @@ export class HomePage {
         route: '/vault',
       }));
   });
+
+  comingTitle(item: UpcomingItem): string {
+    return upcomingTitle(item, this.db.maintenance(), this.db.catalog(), this.comingTranslate);
+  }
+
+  comingMeta(item: UpcomingItem): string {
+    return upcomingMeta(item, (day) => this.i18n.formatDate(day));
+  }
+
+  comingStatus(item: UpcomingItem): string {
+    return upcomingStatusLabel(item, this.db.car()?.currentOdometer ?? 0, this.comingTranslate);
+  }
+
+  private readonly comingTranslate = (key: string, params?: Record<string, number>): string =>
+    this.i18n.t(key as MsgKey, params);
 
   constructor() {
     this.route.queryParamMap.subscribe((params) => {

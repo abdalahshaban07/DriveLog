@@ -1,5 +1,7 @@
 import { DUE_SOON_DAYS, DUE_SOON_KM } from '../core/config';
 import { compareDateOnly, todayDateOnly } from './dues';
+import { maintenanceRecordLabel, type NamedPart } from './part-name';
+import { daysUntilExpiry } from './vehicle-docs';
 import type {
   DateOnly,
   DueStatus,
@@ -170,4 +172,75 @@ export function buildUpcoming(input: {
     }
     return a.id.localeCompare(b.id);
   });
+}
+
+export type UpcomingT = (key: string, params?: Record<string, number>) => string;
+
+export function upcomingTitle(
+  item: UpcomingItem,
+  maintenance: readonly Maintenance[],
+  catalog: readonly NamedPart[],
+  t: UpcomingT,
+): string {
+  if (item.maintenanceId) {
+    const row = maintenance.find((m) => m.id === item.maintenanceId);
+    if (row) {
+      return maintenanceRecordLabel(row, catalog, t);
+    }
+  }
+  if (item.docKind) {
+    return upcomingDocTitle(item.docKind, item.docLabel, t);
+  }
+  return '';
+}
+
+export function upcomingDocTitle(
+  kind: VehicleDocKind,
+  label: string | undefined,
+  t: UpcomingT,
+): string {
+  switch (kind) {
+    case 'license':
+      return t('vault.kind.license');
+    case 'registration':
+      return t('vault.kind.registration');
+    case 'insurance':
+      return t('vault.kind.insurance');
+    case 'inspection':
+      return t('vault.kind.inspection');
+    case 'other':
+      return label?.trim() || t('vault.kind.other');
+    default: {
+      const _never: never = kind;
+      return _never;
+    }
+  }
+}
+
+export function upcomingMeta(
+  item: UpcomingItem,
+  formatDate: (day: DateOnly) => string,
+): string {
+  return item.dueDate ? formatDate(item.dueDate) : '';
+}
+
+export function upcomingStatusLabel(
+  item: UpcomingItem,
+  odometer: number,
+  t: UpcomingT,
+): string {
+  if (item.dueDate) {
+    const days = daysUntilExpiry(item.dueDate);
+    if (days === 0) {
+      return t('vault.dueToday');
+    }
+    const n = Math.abs(days);
+    return days < 0 ? t('vault.daysOver', { days: n }) : t('vault.daysLeft', { days: n });
+  }
+  if (item.dueKm != null) {
+    const left = item.dueKm - odometer;
+    const n = Math.abs(left);
+    return left < 0 ? t('home.kmOver', { km: n }) : t('home.kmLeft', { km: n });
+  }
+  return '';
 }

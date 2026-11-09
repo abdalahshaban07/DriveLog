@@ -18,7 +18,7 @@ function isStoredMessageKey(value: string): boolean {
   return value.startsWith('parts.') || value.startsWith('maintenance.');
 }
 
-type NamedPart = { id: string; labelKey?: string; name?: string };
+export type NamedPart = { id: string; labelKey?: string; name?: string };
 
 export function partDefinitionLabel(part: NamedPart, t: (key: string) => string): string {
   if (part.labelKey) return t(part.labelKey);
