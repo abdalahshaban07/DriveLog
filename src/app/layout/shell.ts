@@ -8,11 +8,12 @@ import {
 } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { filter, fromEvent, map, merge, skip, startWith } from 'rxjs';
+import { filter, fromEvent, map, merge, skip } from 'rxjs';
 import { Db } from '../data/db';
 import { I18n } from '../i18n/i18n';
 import { HolidayReminder } from '../pwa/holiday-reminder';
 import { HealthReminder } from '../pwa/health-reminder';
+import { AutoBackup } from '../pwa/auto-backup';
 import { InstallPwa } from '../pwa/install-pwa';
 import { WhatsNew } from '../pwa/whats-new';
 import { UpdateModal } from '../ui/update-modal';
@@ -32,24 +33,28 @@ export class Shell {
   private readonly install = inject(InstallPwa);
   private readonly holidayReminder = inject(HolidayReminder);
   private readonly healthReminder = inject(HealthReminder);
+  private readonly autoBackup = inject(AutoBackup);
 
   readonly updateDismissed = signal(false);
   /** ponytail: browser online flag only — no probe ping */
   readonly online = signal(typeof navigator === 'undefined' ? true : navigator.onLine);
 
+  /** Null until the first NavigationEnd: boot must not flash home chrome on /setup. */
   private readonly url = toSignal(
     this.router.events.pipe(
       filter((e): e is NavigationEnd => e instanceof NavigationEnd),
-      map((e) => e.urlAfterRedirects),
-      startWith(this.router.url),
+      map((e): string | null => e.urlAfterRedirects),
     ),
-    { initialValue: this.router.url },
+    { initialValue: null as string | null },
   );
 
-  readonly showNav = computed(() => !this.url().startsWith('/setup'));
+  readonly showNav = computed(() => {
+    const url = this.url();
+    return url !== null && !url.startsWith('/setup');
+  });
   /** Bottom-nav section for pages reached through in-section tabs. */
   readonly section = computed(() => {
-    const path = this.url().split(/[?#]/)[0];
+    const path = (this.url() ?? '').split(/[?#]/)[0];
     if (path === '/upcoming') return 'home';
     if (/^\/(fuel|around|fill-up|history\/fill-ups)(\/|$)/.test(path)) return 'fuel';
     if (/^\/(maintenance|history\/maintenance)(\/|$)/.test(path)) return 'maintenance';
@@ -59,7 +64,10 @@ export class Shell {
   readonly showUpdate = this.updateReady;
   /** Notes wait until this build is running, so Later does not open the same sheet again. */
   readonly showNotes = computed(
-    () => !this.install.updateReady() && (this.whatsNew.visible() || this.whatsNew.manualOpen()),
+    () =>
+      this.showNav() &&
+      !this.install.updateReady() &&
+      (this.whatsNew.visible() || this.whatsNew.manualOpen()),
   );
   readonly modalTitle = computed(() => this.i18n.t('update.available'));
   readonly notesTitle = computed(() => this.i18n.t('update.whatsNew'));
@@ -83,6 +91,7 @@ export class Shell {
     afterNextRender(() => {
       void this.holidayReminder.check();
       void this.healthReminder.check();
+      void this.autoBackup.check();
     });
   }
 

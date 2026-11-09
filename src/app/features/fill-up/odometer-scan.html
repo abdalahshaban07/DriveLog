@@ -1,0 +1,51 @@
+<div class="odo-scan" [attr.aria-busy]="odo.busy()">
+  <input
+    id="odo-scan-input"
+    class="sr-only"
+    type="file"
+    accept="image/*"
+    capture="environment"
+    (change)="odo.onScanFile($event)"
+  />
+  <input
+    id="odo-gallery-input"
+    class="sr-only"
+    type="file"
+    accept="image/*"
+    (change)="odo.onScanFile($event)"
+  />
+  <div class="odo-scan__actions">
+    <button
+      type="button"
+      class="odo-tile"
+      [disabled]="odo.busy()"
+      (click)="odo.scanWithCamera()"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 17a8 8 0 1 1 16 0" />
+        <path d="M12 17l4-6" />
+        <circle cx="12" cy="17" r="1.3" />
+      </svg>
+      <span>{{ odo.busy() ? i18n.t('fillUp.odoScanBusy') : i18n.t('fillUp.odoScan') }}</span>
+    </button>
+    @if (odo.busy()) {
+      <button type="button" class="odo-cancel" (click)="odo.cancel()">
+        {{ i18n.t('fillUp.odoScanCancel') }}
+      </button>
+    } @else {
+      <button type="button" class="odo-tile" (click)="odo.pickFromGallery()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3.5" y="5" width="17" height="14" rx="2" />
+          <path d="M3.5 15.5 7.7 12l3.4 2.6 2.6-1.8 6.8 4.6" />
+        </svg>
+        <span>{{ i18n.t('fillUp.scanGallery') }}</span>
+      </button>
+    }
+  </div>
+  @if (odo.error()) {
+    <p class="error-state" role="alert">{{ odo.error() }}</p>
+  }
+  @if (odo.applied()) {
+    <p class="odo-scan__applied" role="status">{{ i18n.t('fillUp.odoApplied') }}</p>
+  }
+</div>

@@ -23,6 +23,27 @@ export const LOOKS: readonly Look[] = [
 ] as const;
 export const DEFAULT_LOOK: Look = 'receipt';
 export type FuelGrade = 'gasoline92' | 'gasoline95' | 'diesel' | 'solar' | 'custom';
+/** Grades with an official board price; `custom` has none and is never watched. */
+export type WatchedGrade = Exclude<FuelGrade, 'custom'>;
+export const WATCHED_GRADES: readonly WatchedGrade[] = [
+  'gasoline92',
+  'gasoline95',
+  'diesel',
+  'solar',
+] as const;
+
+/** One observed official price level per country per day (change-point history). */
+export interface FuelPriceSnapshot {
+  /** `${countryCode}:${day}` — one row per country per day. */
+  id: string;
+  countryCode: string;
+  day: DateOnly;
+  currency: string;
+  gasoline92: number | null;
+  gasoline95: number | null;
+  diesel: number | null;
+  solar: number | null;
+}
 export type UnitSystem = 'metric';
 export type MaintenanceType = 'oil' | 'filter' | 'tires' | 'brakes' | 'other';
 export type BreakdownCategory = 'mechanical' | 'electrical' | 'other';
@@ -312,7 +333,7 @@ export interface Settings {
   unitSystem: UnitSystem;
   installBannerDismissed: boolean;
   remindersEnabled: boolean;
-  /** Active vehicle when multiple cars exist. */
+  /** The vehicle in use (single-car app). */
   activeCarId?: string;
   /** Opt-in dusk theme suggestion around sunset. */
   duskAssistEnabled?: boolean;
@@ -346,6 +367,10 @@ export interface Settings {
   notifyMaintenance?: boolean;
   notifyBudget?: boolean;
   notifyForecast?: boolean;
+  /** Official fuel-price change notifications. Default on when undefined. */
+  notifyFuelPrices?: boolean;
+  /** Change-event key the user dismissed on Home; a new event re-shows the card. */
+  priceAlertDismissedKey?: string;
   /** Cached fuel tip text + day key. */
   fuelTipText?: string;
   fuelTipDay?: DateOnly;
@@ -457,6 +482,20 @@ export interface BackupFile {
   vehicleDocuments?: VehicleDocument[];
   preTripChecks?: PreTripCheck[];
   chargeSessions?: ChargeSession[];
+  fuelPriceHistory?: FuelPriceSnapshot[];
+}
+
+/** Local auto-backup meta; never exported. The handle persists via IndexedDB. */
+export interface BackupState {
+  id: string;
+  directoryName?: string;
+  directoryHandle?: FileSystemDirectoryHandle;
+  /** ISO timestamp of the last successful auto/manual folder backup. */
+  lastBackupAt?: string;
+  /** ISO timestamp of the last weekly fallback reminder. */
+  lastReminderAt?: string;
+  /** Optional passphrase encrypting auto-backup files; stays on-device. */
+  passphrase?: string;
 }
 
 export const MAINTENANCE_TYPES: readonly MaintenanceType[] = [

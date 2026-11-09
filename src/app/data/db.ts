@@ -4,6 +4,7 @@ import {
   signal,
 } from '@angular/core';
 import {
+  BACKUP_STATE_STORE,
   BACKUP_VERSION,
   DB_NAME,
   DB_VERSION,
@@ -14,6 +15,15 @@ import {
   DEFAULT_UNIT_SYSTEM,
   SCHEMA_STORES,
 } from '../core/config';
+import type { CountryFuelPrices } from './remote';
+import { todayDateOnly } from '../domain/dues';
+import {
+  boardHasPrices,
+  latestChanges,
+  mergeSnapshot,
+  snapshotFromBoard,
+  type PriceChange,
+} from '../domain/fuel-price-watch';
 import {
   knownOdometer,
 } from '../domain/economy';
@@ -45,11 +55,13 @@ import {
 import {
   DEFAULT_LOOK,
   type BackupFile,
+  type BackupState,
   type Breakdown,
   type Car,
   type ChargeSession,
   type ExpensePeriod,
   type FillUp,
+  type FuelPriceSnapshot,
   type HealthNotificationState,
   type Maintenance,
   type MaintenanceMilestone,
@@ -67,6 +79,7 @@ import {
   carDocFields,
   normalizeCar,
   normalizeFillUp,
+  normalizeFuelPriceSnapshot,
   normalizeMaintenance,
   normalizeExpensePeriod,
   normalizeBreakdown,
@@ -98,6 +111,7 @@ function defaultSettings(): Settings {
     notifyMaintenance: true,
     notifyBudget: true,
     notifyForecast: true,
+    notifyFuelPrices: true,
   };
 }
 
@@ -117,6 +131,7 @@ type DbSnapshot = {
   vehicleDocuments: VehicleDocument[];
   preTripChecks: PreTripCheck[];
   chargeSessions: ChargeSession[];
+  fuelPriceHistory: FuelPriceSnapshot[];
 };
 
 @Injectable({ providedIn: 'root' })
@@ -137,6 +152,8 @@ export class Db {
   private readonly _vehicleDocumentsAll = signal<VehicleDocument[]>([]);
   private readonly _preTripChecksAll = signal<PreTripCheck[]>([]);
   private readonly _chargeSessionsAll = signal<ChargeSession[]>([]);
+  private readonly _fuelPriceHistoryAll = signal<FuelPriceSnapshot[]>([]);
+  private readonly _backupState = signal<BackupState | null>(null);
   private readonly _error = signal<string | null>(null);
   private readonly _savedFlash = signal(false);
 
@@ -181,6 +198,10 @@ export class Db {
   readonly chargeSessions = computed(() =>
     this.filterForActiveCar(this._chargeSessionsAll(), this._car()?.id),
   );
+  /** Country-level official price history; not tied to a car. */
+  readonly fuelPriceHistory = this._fuelPriceHistoryAll.asReadonly();
+  /** Auto-backup folder link + cadence; local meta, never exported. */
+  readonly backupState = this._backupState.asReadonly();
   readonly catalog = computed(() => mergePartCatalog(this._partsAll()));
   readonly error = this._error.asReadonly();
   readonly savedFlash = this._savedFlash.asReadonly();
@@ -207,6 +228,8 @@ export class Db {
         vehicleDocsRaw,
         preTripRaw,
         chargeRaw,
+        priceHistoryRaw,
+        backupStateRaw,
       ] = await Promise.all([
         this.getAll<Car>(db, 'car'),
         this.getAll<Settings & { id?: string }>(db, 'settings').then(
@@ -224,6 +247,8 @@ export class Db {
         this.getAll<VehicleDocument>(db, 'vehicleDocuments'),
         this.getAll<PreTripCheck>(db, 'preTripChecks'),
         this.getAll<ChargeSession>(db, 'chargeSessions'),
+        this.getAll<FuelPriceSnapshot>(db, 'fuelPriceHistory'),
+        this.getAll<BackupState>(db, BACKUP_STATE_STORE),
       ]);
 
       let settings = normalizeSettings(settingsRaw);
@@ -288,6 +313,9 @@ export class Db {
       let docRows = vehicleDocsRaw.map(normalizeVehicleDocument);
       const preTripRows = preTripRaw.map(normalizePreTripCheck);
       const chargeRows = chargeRaw.map(normalizeChargeSession);
+      const priceHistoryRows = priceHistoryRaw
+        .map(normalizeFuelPriceSnapshot)
+        .filter((s): s is FuelPriceSnapshot => s !== null);
 
       // Vault SSOT: seed from Car license/registration when vault empty for kind.
       const vaultSeed: VehicleDocument[] = [];
@@ -362,6 +390,8 @@ export class Db {
       this._vehicleDocumentsAll.set(docRows);
       this._preTripChecksAll.set(preTripRows);
       this._chargeSessionsAll.set(chargeRows);
+      this._fuelPriceHistoryAll.set(priceHistoryRows);
+      this._backupState.set(backupStateRaw[0] ?? null);
       if (active) {
         this.recalcOdometer();
       }
@@ -395,6 +425,10 @@ export class Db {
           if (!db.objectStoreNames.contains(store)) {
             db.createObjectStore(store, { keyPath: 'id' });
           }
+        }
+        // Meta store outside SCHEMA_STORES: import/wipe never clears the folder link.
+        if (!db.objectStoreNames.contains(BACKUP_STATE_STORE)) {
+          db.createObjectStore(BACKUP_STATE_STORE, { keyPath: 'id' });
         }
       };
       req.onsuccess = () => resolve(req.result);
@@ -483,6 +517,9 @@ export class Db {
       for (const c of data.chargeSessions) {
         tx.objectStore('chargeSessions').put(c);
       }
+      for (const s of data.fuelPriceHistory) {
+        tx.objectStore('fuelPriceHistory').put(s);
+      }
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
@@ -505,6 +542,7 @@ export class Db {
     this._vehicleDocumentsAll.set(data.vehicleDocuments);
     this._preTripChecksAll.set(data.preTripChecks);
     this._chargeSessionsAll.set(data.chargeSessions);
+    this._fuelPriceHistoryAll.set(data.fuelPriceHistory);
     if (data.car) {
       this.recalcOdometer();
     }
@@ -605,18 +643,6 @@ export class Db {
     this._car.set(car);
     this._settings.set(settings);
     this._expensePeriodsAll.set([...this._expensePeriodsAll(), period]);
-  }
-
-  async switchCar(id: string): Promise<void> {
-    const next = this._cars().find((c) => c.id === id);
-    if (!next) {
-      return;
-    }
-    const settings: Settings = { ...this._settings(), activeCarId: id };
-    await this.put('settings', { id: 'settings', ...settings });
-    this._car.set(next);
-    this._settings.set(settings);
-    this.recalcOdometer();
   }
 
   /** Install first-run demo car + rows and flag sampleMode. */
@@ -726,6 +752,39 @@ export class Db {
     }
     await this.put('settings', { id: 'settings', ...next });
     this._settings.set(next);
+  }
+
+  /** Merge auto-backup meta (folder link, cadence, passphrase); never exported. */
+  async updateBackupState(
+    patch: Partial<Omit<BackupState, 'id'>>,
+  ): Promise<void> {
+    const next: BackupState = {
+      ...(this._backupState() ?? { id: 'backupState' }),
+      ...patch,
+      id: 'backupState',
+    };
+    await this.put(BACKUP_STATE_STORE, next);
+    this._backupState.set(next);
+  }
+
+  /** Persist a fetched official board; returns newly detected grade changes. */
+  async recordFuelPrices(board: CountryFuelPrices): Promise<PriceChange[]> {
+    if (!boardHasPrices(board)) {
+      return [];
+    }
+    const day = todayDateOnly();
+    const snap = snapshotFromBoard(board, day);
+    const previous = this._fuelPriceHistoryAll();
+    const { history, changed } = mergeSnapshot(previous, snap);
+    if (!changed) {
+      return [];
+    }
+    await this.put('fuelPriceHistory', snap);
+    const keptIds = new Set(history.map((h) => h.id));
+    const removed = previous.filter((h) => !keptIds.has(h.id));
+    await Promise.all(removed.map((h) => this.deleteKey('fuelPriceHistory', h.id)));
+    this._fuelPriceHistoryAll.set(history);
+    return latestChanges(history, board.countryCode, day);
   }
 
   async addCustomType(name: string): Promise<AddCustomTypeResult> {
@@ -1232,6 +1291,7 @@ export class Db {
       vehicleDocuments: this._vehicleDocumentsAll(),
       preTripChecks: this._preTripChecksAll(),
       chargeSessions: this._chargeSessionsAll(),
+      fuelPriceHistory: this._fuelPriceHistoryAll(),
     };
   }
 
@@ -1247,6 +1307,7 @@ export class Db {
       version !== 3 &&
       version !== 4 &&
       version !== 5 &&
+      version !== 6 &&
       version !== BACKUP_VERSION
     ) {
       throw new Error('backup.unsupportedVersion');
@@ -1303,6 +1364,11 @@ export class Db {
     const chargeSessions = Array.isArray(obj['chargeSessions'])
       ? (obj['chargeSessions'] as ChargeSession[]).map(normalizeChargeSession)
       : [];
+    const fuelPriceHistory = Array.isArray(obj['fuelPriceHistory'])
+      ? (obj['fuelPriceHistory'] as unknown[])
+          .map(normalizeFuelPriceSnapshot)
+          .filter((s): s is FuelPriceSnapshot => s !== null)
+      : [];
     return {
       version: BACKUP_VERSION,
       exportedAt: String(obj['exportedAt'] ?? nowIso()),
@@ -1323,14 +1389,15 @@ export class Db {
       vehicleDocuments: vehicleDocuments.length ? vehicleDocuments : undefined,
       preTripChecks: preTripChecks.length ? preTripChecks : undefined,
       chargeSessions: chargeSessions.length ? chargeSessions : undefined,
+      fuelPriceHistory: fuelPriceHistory.length ? fuelPriceHistory : undefined,
     };
   }
 
+  /** Single-car app: import only the active (or first) vehicle from a backup. */
   private carsFromBackup(backup: BackupFile): Car[] {
-    if (backup.cars?.length) {
-      return backup.cars;
-    }
-    return backup.car ? [backup.car] : [];
+    const all = backup.cars?.length ? backup.cars : backup.car ? [backup.car] : [];
+    const one = all.find((c) => c.id === backup.settings.activeCarId) ?? all[0];
+    return one ? [one] : [];
   }
 
   async importReplace(backup: BackupFile): Promise<void> {
@@ -1356,6 +1423,7 @@ export class Db {
       vehicleDocuments: backup.vehicleDocuments ?? [],
       preTripChecks: backup.preTripChecks ?? [],
       chargeSessions: backup.chargeSessions ?? [],
+      fuelPriceHistory: backup.fuelPriceHistory ?? [],
     });
   }
 
@@ -1428,19 +1496,25 @@ export class Db {
       (x) => x.id,
       (x) => x.updatedAt,
     );
+    const priceMap = new Map(this._fuelPriceHistoryAll().map((s) => [s.id, s]));
+    for (const s of backup.fuelPriceHistory ?? []) {
+      priceMap.set(s.id, s);
+    }
     const carMap = mergeByUpdatedAt(
       this._cars(),
       this.carsFromBackup(backup),
       (x) => x.id,
       (x) => x.updatedAt,
     );
-    const cars = [...carMap.values()];
+    const merged = [...carMap.values()];
     const car =
-      cars.find((c) => c.id === backup.settings.activeCarId) ??
-      cars.find((c) => c.id === this._settings().activeCarId) ??
+      merged.find((c) => c.id === backup.settings.activeCarId) ??
+      merged.find((c) => c.id === this._settings().activeCarId) ??
       this._car() ??
-      cars[0] ??
+      merged[0] ??
       null;
+    // Single-car app: keep only the selected vehicle after a merge.
+    const cars = car ? [car] : [];
     const prevTypes = this._settings().customMaintenanceTypes ?? [];
     const incomingTypes = backup.settings.customMaintenanceTypes ?? [];
     const {
@@ -1472,6 +1546,7 @@ export class Db {
       vehicleDocuments: [...docMap.values()],
       preTripChecks: [...preTripMap.values()],
       chargeSessions: [...chargeMap.values()],
+      fuelPriceHistory: [...priceMap.values()],
     });
   }
 
@@ -1493,6 +1568,7 @@ export class Db {
       vehicleDocuments: [],
       preTripChecks: [],
       chargeSessions: [],
+      fuelPriceHistory: [],
     });
   }
 

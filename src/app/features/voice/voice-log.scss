@@ -1,0 +1,195 @@
+:host {
+  display: block;
+}
+
+.voice-log {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.voice-log__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.voice-mic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--fuel) 9%, transparent);
+  color: inherit;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition:
+    background var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out),
+    transform var(--motion-fast) var(--ease-out);
+}
+
+.voice-mic svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.voice-mic:hover {
+  background: color-mix(in srgb, var(--fuel) 16%, transparent);
+  border-color: color-mix(in srgb, var(--fuel) 50%, transparent);
+}
+
+.voice-mic:active {
+  transform: scale(0.98);
+}
+
+.voice-mic:focus-visible {
+  outline: 2px solid var(--fuel);
+  outline-offset: 2px;
+}
+
+.voice-mic--live {
+  border-color: color-mix(in srgb, var(--fuel) 65%, transparent);
+  background: color-mix(in srgb, var(--fuel) 18%, transparent);
+  color: var(--fuel);
+}
+
+.voice-mic--live svg {
+  animation: voice-pulse 1.4s var(--ease-out) infinite;
+}
+
+@keyframes voice-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.92);
+  }
+}
+
+.voice-ghost {
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-radius: calc(var(--radius) - 4px);
+  background: transparent;
+  color: inherit;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.voice-ghost:focus-visible {
+  outline: 2px solid var(--fuel);
+  outline-offset: 2px;
+}
+
+.voice-log__hint {
+  margin: 0;
+  color: color-mix(in srgb, currentColor 62%, transparent);
+  font-size: 0.8rem;
+}
+
+.voice-log__live {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.voice-error {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: calc(var(--radius) - 4px);
+  border: 1px solid color-mix(in srgb, var(--stop) 45%, transparent);
+  background: color-mix(in srgb, var(--stop) 9%, transparent);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.voice-review {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--fuel) 35%, transparent);
+  border-block-start: 2px solid color-mix(in srgb, var(--fuel) 65%, transparent);
+  background: color-mix(in srgb, var(--fuel) 6%, transparent);
+}
+
+.voice-review__title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.voice-review__heard {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+.voice-review__heard-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, currentColor 60%, transparent);
+}
+
+.voice-review__quote {
+  font-size: 0.9rem;
+  font-style: italic;
+  overflow-wrap: anywhere;
+}
+
+.voice-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.voice-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--fuel) 45%, transparent);
+  background: color-mix(in srgb, var(--fuel) 14%, transparent);
+  font-weight: 700;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.voice-review__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-mic,
+  .voice-mic:active {
+    transition: none;
+    transform: none;
+  }
+
+  .voice-mic--live svg {
+    animation: none;
+  }
+}

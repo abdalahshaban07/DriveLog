@@ -73,7 +73,9 @@ describe('HomePage', () => {
             vehicleDocuments: () => [],
             preTripChecks: () => [],
             chargeSessions: () => [],
+            fuelPriceHistory: () => [],
             snapshotCurrency: () => 'EGP',
+            updateSettings: async () => undefined,
           },
         },
         {

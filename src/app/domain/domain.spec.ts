@@ -1119,8 +1119,9 @@ describe('remote parsers', () => {
 describe('backup version', () => {
   it('keeps backup version and IDB version as separate constants', async () => {
     const { BACKUP_VERSION, DB_VERSION } = await import('../core/config');
-    expect(BACKUP_VERSION).toBe(6);
-    expect(DB_VERSION).toBe(6);
+    expect(BACKUP_VERSION).toBe(7);
+    // v8 adds the backupState meta store; the backup file format stays v7.
+    expect(DB_VERSION).toBe(8);
   });
 });
 

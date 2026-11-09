@@ -14,6 +14,7 @@ import { todayDateOnly } from '../../domain/dues';
 import { latestEconomy } from '../../domain/economy';
 import {
   TANK_FALLBACK,
+  baseOdometerForDistance,
   computeOdometerFromDistance,
   previousFillForCar,
   validateFillDistance,
@@ -37,6 +38,12 @@ import { TextField } from '../../ui/text-field';
 import { FillUpOcrCards } from './fill-up-ocr-cards';
 import { FillUpScan } from './fill-up-scan';
 import { FillUpScanState } from './fill-up-scan-state';
+import { OdometerScan } from './odometer-scan';
+import { OdometerReview } from './odometer-review';
+import { OdometerScanState } from './odometer-scan-state';
+import { VoiceLog } from '../voice/voice-log';
+import { VoiceLogState } from '../voice/voice-log-state';
+import { PriceWatch } from '../../pwa/price-watch';
 
 const GRADE_KEYS: Record<FuelGrade, MsgKey> = {
   gasoline92: 'home.fuel92',
@@ -63,8 +70,11 @@ type LogMode = 'fuel' | 'charge';
     RouterLink,
     FillUpScan,
     FillUpOcrCards,
+    OdometerScan,
+    OdometerReview,
+    VoiceLog,
   ],
-  providers: [FillUpScanState],
+  providers: [FillUpScanState, OdometerScanState, VoiceLogState],
   templateUrl: './fill-up.html',
   styleUrl: './fill-up.scss',
 })
@@ -73,6 +83,9 @@ export class FillUpPage {
   readonly db = inject(Db);
   readonly router = inject(Router);
   readonly scan = inject(FillUpScanState);
+  readonly odoScan = inject(OdometerScanState);
+  readonly voice = inject(VoiceLogState);
+  private readonly priceWatch = inject(PriceWatch);
   private readonly route = inject(ActivatedRoute);
 
   readonly distanceKm = signal('');
@@ -277,6 +290,31 @@ export class FillUpPage {
     }
     this.scan.onApply = (pick) => this.applyReceiptPick(pick);
     this.scan.init();
+    this.odoScan.context = () => {
+      const car = this.db.car();
+      return {
+        base: car
+          ? baseOdometerForDistance(car, this.db.fillUps(), this.editId() ?? undefined)
+          : 0,
+        current: car?.currentOdometer ?? 0,
+        chargeMode: this.logMode() === 'charge',
+      };
+    };
+    this.odoScan.onApply = (km) => this.applyOdometerPick(km);
+    this.voice.onApply = (fill) => {
+      if (fill.liters != null) {
+        this.liters.set(String(fill.liters));
+        this.onLitersChange();
+      }
+      if (fill.distanceKm != null) {
+        this.distanceKm.set(String(fill.distanceKm));
+        this.distanceTouched.set(true);
+        this.onDistanceChange();
+      }
+      if (fill.fuelGrade) {
+        this.fuelGrade.set(fill.fuelGrade);
+      }
+    };
     void this.maybeSoftStation();
   }
 
@@ -340,6 +378,22 @@ export class FillUpPage {
     }
   }
 
+  /** Merge a confirmed odometer scan into the form — never auto-saves. */
+  private applyOdometerPick(km: number): void {
+    if (this.logMode() === 'charge') {
+      this.chargeOdo.set(String(km));
+      return;
+    }
+    const car = this.db.car();
+    if (!car) {
+      return;
+    }
+    const base = baseOdometerForDistance(car, this.db.fillUps(), this.editId() ?? undefined);
+    this.distanceKm.set(String(Math.max(0, km - base)));
+    this.distanceTouched.set(true);
+    this.onDistanceChange();
+  }
+
   loadCharge(id: string): void {
     const row = this.db.chargeSessions().find((c) => c.id === id);
     if (!row) {
@@ -360,7 +414,11 @@ export class FillUpPage {
     this.pricesReady.set(false);
     try {
       const cc = countryFromCurrency(this.db.settings().currency);
-      this.fuelPrices.set(await countryFuelPrices(cc));
+      const board = await countryFuelPrices(cc);
+      this.fuelPrices.set(board);
+      if (board) {
+        void this.priceWatch.record(board);
+      }
       if (!this.fuelGrade() && this.gradeOptions().length) {
         this.fuelGrade.set(this.gradeOptions()[0]!.grade);
       } else if (!this.fuelGrade() && this.lastUnit()) {

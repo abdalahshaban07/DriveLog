@@ -15,7 +15,7 @@
 .wrap::after {
   content: '';
   position: absolute;
-  inset-inline-end: 20px;
+  inset-inline-end: 8px;
   inset-block-start: 50%;
   width: 1.25rem;
   height: 1.25rem;
@@ -29,7 +29,10 @@
 }
 
 .date {
-  padding-inline: 16px 52px;
+  /* Narrow pair columns: keep the full native value clear of the cal icon. */
+  padding-inline: 10px 32px;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .wrap:has(.date:hover)::after,

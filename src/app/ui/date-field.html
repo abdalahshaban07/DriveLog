@@ -5,6 +5,7 @@
       class="input date"
       type="date"
       [id]="inputId"
+      [attr.lang]="i18n.language()"
       [value]="value()"
       [attr.aria-invalid]="!!error()"
       [attr.aria-describedby]="describedBy()"

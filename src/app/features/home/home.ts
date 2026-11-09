@@ -52,6 +52,8 @@ import { PageHeader } from '../../ui/page-header';
 import { PageLine } from '../../ui/page-line/page-line';
 import { PeriodRange } from '../../ui/period-range';
 import { InstallCard } from './cards/install-card/install-card';
+import { FuelRangeCard } from './cards/fuel-range/fuel-range';
+import { PriceWatchCard } from './cards/price-watch/price-watch';
 import { QuickLog } from './cards/quick-log/quick-log';
 import { WeatherTipCard } from './cards/weather-tip/weather-tip';
 import { SampleBanner } from './cards/sample-banner/sample-banner';
@@ -87,6 +89,8 @@ interface PaperLine {
     SampleBanner,
     SetupChecklist,
     InstallCard,
+    FuelRangeCard,
+    PriceWatchCard,
     QuickLog,
     HealthRow,
     WeatherTipCard,
@@ -192,6 +196,40 @@ export class HomePage {
   readonly fuelPulse = computed(() => fuelBoard(this.db.fillUps()));
   readonly pulseSpark = computed(() =>
     sparklineGeometry(this.fuelPulse().series, 360, 84, this.fuelPulse().overallL100),
+  );
+  /** Instrument-cluster facts under the hero: cost/km plus this month's distance and liters. */
+  readonly pulseFacts = computed(
+    (): { id: string; label: string; value: string; unit?: string; hint?: string }[] => {
+      const board = this.fuelPulse();
+      const month = this.i18n.t('home.monthSpend');
+      const facts: { id: string; label: string; value: string; unit?: string; hint?: string }[] = [];
+      if (board.costPerKm != null && board.costPerKm > 0) {
+        facts.push({
+          id: 'cost',
+          label: this.i18n.t('home.costPerKm'),
+          value: this.formatCostPerKm(board.costPerKm),
+        });
+      }
+      if (board.monthKm > 0) {
+        facts.push({
+          id: 'km',
+          label: this.i18n.t('home.useDistance'),
+          value: this.i18n.formatNumber(Math.round(board.monthKm), { maximumFractionDigits: 0 }),
+          unit: this.i18n.t('common.km'),
+          hint: month,
+        });
+      }
+      if (board.monthLiters > 0) {
+        facts.push({
+          id: 'liters',
+          label: this.i18n.t('home.useLiters'),
+          value: this.i18n.formatNumber(board.monthLiters, { maximumFractionDigits: 1 }),
+          unit: this.i18n.t('common.liters'),
+          hint: month,
+        });
+      }
+      return facts;
+    },
   );
   readonly sampleMode = computed(() => this.db.settings().sampleMode === true);
   readonly hasRealFills = computed(() => this.db.fillUps().some(isRealFillUp));
@@ -852,12 +890,6 @@ export class HomePage {
       queryParamsHandling: 'merge',
       replaceUrl: true,
     });
-  }
-
-  async switchCar(id: string): Promise<void> {
-    if (id !== this.activeCarId()) {
-      await this.db.switchCar(id);
-    }
   }
 }
 

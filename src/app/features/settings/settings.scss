@@ -150,6 +150,45 @@ button.line:active {
   font-weight: 400;
 }
 
+.decrypt-box {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.decrypt-box .line__sub {
+  margin: 0;
+  white-space: normal;
+}
+
+.decrypt-box__actions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.auto-backup__hint {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.auto-backup__pass {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.auto-backup__pass .line__sub {
+  margin: 0;
+  white-space: normal;
+}
+
+.auto-backup__pass .ghost-btn {
+  justify-self: start;
+}
+
 .soon-block {
   display: grid;
   gap: var(--space-2);

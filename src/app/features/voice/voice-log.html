@@ -1,0 +1,76 @@
+@if (voice.supported()) {
+  <div class="voice-log" [attr.aria-busy]="voice.listening()">
+    @if (voice.stage() === 'review') {
+      @let parsed = voice.parsed();
+      <section class="voice-review" [attr.aria-label]="i18n.t('voice.reviewTitle')">
+        <h3 class="voice-review__title">{{ i18n.t('voice.reviewTitle') }}</h3>
+        @if (voice.transcript(); as heard) {
+          <p class="voice-review__heard">
+            <span class="voice-review__heard-label">{{ i18n.t('voice.heard') }}</span>
+            <span class="voice-review__quote">{{ heard }}</span>
+          </p>
+        }
+        @if (parsed) {
+          <div class="voice-chips">
+            @if (parsed.liters != null) {
+              <span class="voice-chip">
+                {{ i18n.formatUnit(parsed.liters, 'common.liters', 1) }}
+              </span>
+            }
+            @if (parsed.distanceKm != null) {
+              <span class="voice-chip">
+                {{ i18n.formatUnit(parsed.distanceKm, 'common.km', 0) }}
+              </span>
+            }
+            @if (parsed.fuelGrade; as g) {
+              <span class="voice-chip">{{ gradeLabel(g) }}</span>
+            }
+          </div>
+        }
+        <div class="voice-review__actions">
+          <app-primary-button
+            [label]="i18n.t('fillUp.ocrApply')"
+            (pressed)="voice.confirm()"
+          />
+          <button type="button" class="voice-ghost" (click)="voice.cancel()">
+            {{ i18n.t('common.cancel') }}
+          </button>
+        </div>
+      </section>
+    } @else {
+      <div class="voice-log__row">
+        <button
+          type="button"
+          class="voice-mic"
+          [class.voice-mic--live]="voice.listening()"
+          [attr.aria-pressed]="voice.listening()"
+          (click)="toggle()"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="9" y="3" width="6" height="11" rx="3" />
+            <path d="M5 11a7 7 0 0 0 14 0" />
+            <path d="M12 18v3" />
+          </svg>
+          <span>
+            {{ voice.listening() ? i18n.t('voice.listening') : i18n.t('voice.button') }}
+          </span>
+        </button>
+        @if (voice.listening()) {
+          <button type="button" class="voice-ghost" (click)="voice.cancel()">
+            {{ i18n.t('common.cancel') }}
+          </button>
+        }
+      </div>
+      @if (voice.listening()) {
+        @if (voice.transcript(); as live) {
+          <p class="voice-log__live" role="status" aria-live="polite">{{ live }}</p>
+        }
+      } @else if (!voice.error()) {
+        <p class="voice-log__hint">{{ i18n.t('voice.hint') }}</p>
+      }
+      @if (voice.error(); as err) {
+        <p class="voice-error" role="alert">{{ i18n.t(err) }}</p>
+      }
+    }
+  </div>
+}

@@ -23,6 +23,7 @@ import {
   type ChargeSession,
   type ExpensePeriod,
   type FillUp,
+  type FuelPriceSnapshot,
   type HealthNotificationState,
   type Look,
   type Maintenance,
@@ -347,6 +348,10 @@ export function normalizeSettings(raw: unknown): Settings {
     notifyMaintenance: o.notifyMaintenance === false ? false : true,
     notifyBudget: o.notifyBudget === false ? false : true,
     notifyForecast: o.notifyForecast === false ? false : true,
+    notifyFuelPrices: o.notifyFuelPrices === false ? false : true,
+    priceAlertDismissedKey: o.priceAlertDismissedKey
+      ? String(o.priceAlertDismissedKey)
+      : undefined,
     fuelTipText: o.fuelTipText ? String(o.fuelTipText) : undefined,
     fuelTipDay: o.fuelTipDay ? String(o.fuelTipDay) : undefined,
     healthInsightText: o.healthInsightText ? String(o.healthInsightText) : undefined,
@@ -355,6 +360,35 @@ export function normalizeSettings(raw: unknown): Settings {
     registrationExpiry: o.registrationExpiry
       ? String(o.registrationExpiry)
       : undefined,
+  };
+}
+
+/** Price snapshots are country-level; drop rows without a valid day/code. */
+export function normalizeFuelPriceSnapshot(raw: unknown): FuelPriceSnapshot | null {
+  const o = raw as Partial<FuelPriceSnapshot> | null;
+  if (
+    !o ||
+    typeof o.countryCode !== 'string' ||
+    !/^[A-Za-z]{2}$/.test(o.countryCode) ||
+    typeof o.day !== 'string' ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(o.day)
+  ) {
+    return null;
+  }
+  const cc = o.countryCode.toUpperCase();
+  const price = (v: unknown): number | null => {
+    const n = Number(v);
+    return v != null && Number.isFinite(n) && n > 0 ? n : null;
+  };
+  return {
+    id: `${cc}:${o.day}`,
+    countryCode: cc,
+    day: o.day,
+    currency: typeof o.currency === 'string' ? o.currency : '',
+    gasoline92: price(o.gasoline92),
+    gasoline95: price(o.gasoline95),
+    diesel: price(o.diesel),
+    solar: price(o.solar),
   };
 }
 

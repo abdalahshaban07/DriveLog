@@ -3,6 +3,8 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { signal } from '@angular/core';
 import { FillUpPage } from './fill-up';
+import { ODOMETER_OCR } from './odometer-scan-state';
+import { VOICE_RECOGNITION, type VoiceResultEvent } from '../voice/voice-log-state';
 import { Db } from '../../data/db';
 import { I18n } from '../../i18n/i18n';
 import { routes } from '../../app.routes';
@@ -51,9 +53,32 @@ describe('FillUpPage', () => {
   const updateSettings = vi.fn(async (patch: Record<string, unknown>) => {
     settings.update((s) => ({ ...s, ...patch }));
   });
+  const ocrMock = vi.fn<(image: Blob) => Promise<string>>(async () => 'ODO 10500 km');
+
+  const makeFakeRec = () => ({
+    lang: '',
+    continuous: false,
+    interimResults: false,
+    start: vi.fn(),
+    stop: vi.fn(),
+    abort: vi.fn(),
+    onresult: null as ((e: VoiceResultEvent) => void) | null,
+    onerror: null as ((e: { error: string }) => void) | null,
+    onend: null as (() => void) | null,
+  });
+  let recs: ReturnType<typeof makeFakeRec>[] = [];
+  const voiceFactory = vi.fn(() => {
+    const r = makeFakeRec();
+    recs.push(r);
+    return r;
+  });
 
   beforeEach(async () => {
     fillUps.set([]);
+    recs = [];
+    voiceFactory.mockClear();
+    ocrMock.mockClear();
+    ocrMock.mockResolvedValue('ODO 10500 km');
     settings.set({
       currency: 'EGP',
       language: 'en',
@@ -67,6 +92,8 @@ describe('FillUpPage', () => {
       imports: [FillUpPage],
       providers: [
         provideRouter(routes),
+        { provide: ODOMETER_OCR, useValue: ocrMock },
+        { provide: VOICE_RECOGNITION, useValue: voiceFactory },
         {
           provide: Db,
           useValue: {
@@ -269,5 +296,84 @@ describe('FillUpPage', () => {
     expect(facts).toContain('400');
     expect(facts).toContain('Shell');
     expect(root.querySelectorAll('.scan-tile')).toHaveLength(2);
+  });
+
+  it('scans an odometer photo into the distance field through review confirm', async () => {
+    const fixture = TestBed.createComponent(FillUpPage);
+    const page = fixture.componentInstance;
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelectorAll('.odo-tile')).toHaveLength(2);
+
+    const blob = new Blob(['photo'], { type: 'image/png' });
+    const input = { files: [blob], value: '' } as unknown as HTMLInputElement;
+    page.odoScan.onScanFile({ target: input } as unknown as Event);
+    await new Promise((r) => setTimeout(r, 0));
+    fixture.detectChanges();
+
+    expect(page.odoScan.stage()).toBe('review');
+    expect(page.odoScan.pick()).toBe('10500');
+    expect(page.odoScan.derivedDistance()).toBe(500);
+    const review = root.querySelector('app-odometer-review .odo-review');
+    expect(review).toBeTruthy();
+    expect(review?.textContent).toContain('500');
+
+    page.odoScan.apply();
+    fixture.detectChanges();
+    expect(page.distanceKm()).toBe('500');
+    expect(page.odoScan.applied()).toBe(true);
+    expect(root.querySelector('app-odometer-review .odo-review')).toBeNull();
+    expect(root.querySelector('.odo-scan__applied')).toBeTruthy();
+  });
+
+  it('writes a scanned odometer straight into the charge field', async () => {
+    const fixture = TestBed.createComponent(FillUpPage);
+    const page = fixture.componentInstance;
+    fixture.detectChanges();
+    page.setLogMode('charge');
+    fixture.detectChanges();
+
+    const blob = new Blob(['photo'], { type: 'image/png' });
+    const input = { files: [blob], value: '' } as unknown as HTMLInputElement;
+    page.odoScan.onScanFile({ target: input } as unknown as Event);
+    await new Promise((r) => setTimeout(r, 0));
+    fixture.detectChanges();
+    expect(page.odoScan.derivedDistance()).toBeNull();
+    page.odoScan.apply();
+    fixture.detectChanges();
+    expect(page.chargeOdo()).toBe('10500');
+    expect(page.distanceKm()).toBe('');
+  });
+
+  it('fills liters, distance, and grade from a confirmed voice utterance', () => {
+    const fixture = TestBed.createComponent(FillUpPage);
+    const page = fixture.componentInstance;
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(page.voice.supported()).toBe(true);
+    expect(root.querySelector('app-voice-log .voice-mic')).toBeTruthy();
+
+    page.voice.start();
+    fixture.detectChanges();
+    expect(page.voice.listening()).toBe(true);
+    const rec = recs.at(-1)!;
+    rec.onresult?.({
+      resultIndex: 0,
+      results: [{ isFinal: true, 0: { transcript: '40 liters 500 km gasoline 95' } }],
+    });
+    rec.onend?.();
+    fixture.detectChanges();
+
+    expect(page.voice.stage()).toBe('review');
+    expect(page.voice.parsed()).toEqual({ liters: 40, distanceKm: 500, fuelGrade: 'gasoline95' });
+    expect(root.querySelector('app-voice-log .voice-review')).toBeTruthy();
+
+    page.voice.confirm();
+    fixture.detectChanges();
+    expect(page.liters()).toBe('40');
+    expect(page.distanceKm()).toBe('500');
+    expect(page.fuelGrade()).toBe('gasoline95');
+    expect(page.voice.stage()).toBe('idle');
+    expect(root.querySelector('app-voice-log .voice-review')).toBeNull();
   });
 });

@@ -9,9 +9,15 @@ import {
   TANK_MIN,
 } from '../../domain/fill-up-distance';
 import { odometerInputValue } from '../../domain/odometer';
+import {
+  decryptBackup,
+  isEncryptedBackup,
+  type EncryptedBackup,
+} from '../../domain/backup-crypto';
 import { THEMES, LOOKS, type BackupFile, type Look, type Theme } from '../../domain/models';
 import type { MsgKey } from '../../i18n/en';
 import { I18n } from '../../i18n/i18n';
+import { AutoBackup } from '../../pwa/auto-backup';
 import { InstallPwa } from '../../pwa/install-pwa';
 import { Notify } from '../../pwa/notify';
 import { ConfirmBar } from '../../ui/confirm-bar';
@@ -64,6 +70,7 @@ export class SettingsPage {
   readonly notify = inject(Notify);
   readonly db = inject(Db);
   readonly router = inject(Router);
+  readonly autoBackup = inject(AutoBackup);
 
   readonly remindersLbl = 'settings-reminders';
   readonly assistantOnlineLbl = 'settings-assistant-online';
@@ -75,6 +82,7 @@ export class SettingsPage {
   readonly notifyMaintenance = computed(() => this.db.settings().notifyMaintenance !== false);
   readonly notifyBudget = computed(() => this.db.settings().notifyBudget !== false);
   readonly notifyForecast = computed(() => this.db.settings().notifyForecast !== false);
+  readonly notifyFuelPrices = computed(() => this.db.settings().notifyFuelPrices !== false);
   readonly soonPresets = SOON_PRESETS;
   readonly soonRatio = signal(snapSoonRatio(this.db.settings().soonThresholdRatio));
   readonly soonPercent = computed(() => Math.round(this.soonRatio() * 100));
@@ -94,10 +102,6 @@ export class SettingsPage {
   );
   readonly currency = signal(validCurrency(this.db.settings().currency));
   readonly restCurrencies = signal<Awaited<ReturnType<typeof restCountryCurrencies>>>([]);
-  readonly carOptions = computed(() =>
-    this.db.cars().map((c) => ({ value: c.id, label: c.nickname })),
-  );
-  readonly showCarSwitcher = computed(() => this.db.cars().length > 1);
   readonly langOptions = computed(() => [
     { value: 'en', label: this.i18n.t('settings.lang.en') },
     { value: 'ar', label: this.i18n.t('settings.lang.ar') },
@@ -119,6 +123,21 @@ export class SettingsPage {
   readonly importFileName = signal('');
   readonly importError = signal('');
   readonly importOk = signal(false);
+  readonly pendingEncrypted = signal<EncryptedBackup | null>(null);
+  readonly decryptPass = signal('');
+  readonly decryptError = signal('');
+  readonly backupPass = signal(this.autoBackup.state()?.passphrase ?? '');
+  readonly autoBusy = signal(false);
+  readonly autoBackupError = signal('');
+  readonly autoBackupOk = signal(false);
+  readonly passSaved = signal(false);
+  readonly lastBackupLabel = computed(() => {
+    const at = this.autoBackup.state()?.lastBackupAt;
+    if (!at) {
+      return this.i18n.t('backup.never');
+    }
+    return this.i18n.formatDate(new Date(at), { dateStyle: 'medium' });
+  });
 
   readonly showTankBanner = computed(() => this.db.car()?.tankCapacityLiters == null);
 
@@ -178,7 +197,7 @@ export class SettingsPage {
   }
 
   async onNotifyFlag(
-    key: 'notifyMaintenance' | 'notifyBudget' | 'notifyForecast',
+    key: 'notifyMaintenance' | 'notifyBudget' | 'notifyForecast' | 'notifyFuelPrices',
     event: Event,
   ): Promise<void> {
     const on = (event.target as HTMLInputElement).checked;
@@ -194,11 +213,6 @@ export class SettingsPage {
   async onCurrency(code: string): Promise<void> {
     this.currency.set(code);
     await this.db.updateSettings({ currency: code });
-  }
-
-  async onCar(value: string): Promise<void> {
-    await this.db.switchCar(value);
-    this.syncCarFields();
   }
 
   private syncCarFields(): void {
@@ -273,6 +287,9 @@ export class SettingsPage {
     this.importError.set('');
     this.importOk.set(false);
     this.pendingDestructive.set(null);
+    this.pendingEncrypted.set(null);
+    this.decryptPass.set('');
+    this.decryptError.set('');
     const file = (event.target as HTMLInputElement).files?.[0];
     this.importFileName.set(file?.name ?? '');
     if (!file) {
@@ -280,11 +297,87 @@ export class SettingsPage {
     }
     try {
       const text = await file.text();
-      const parsed = this.db.validateBackup(JSON.parse(text));
+      const raw: unknown = JSON.parse(text);
+      if (isEncryptedBackup(raw)) {
+        this.pendingEncrypted.set(raw);
+        return;
+      }
+      const parsed = this.db.validateBackup(raw);
       this.pendingImport.set(parsed);
     } catch {
       this.importError.set(this.i18n.t('backup.failed'));
     }
+  }
+
+  async decryptPending(): Promise<void> {
+    const enc = this.pendingEncrypted();
+    if (!enc) {
+      return;
+    }
+    this.decryptError.set('');
+    try {
+      const text = await decryptBackup(enc, this.decryptPass());
+      const parsed = this.db.validateBackup(JSON.parse(text));
+      this.pendingEncrypted.set(null);
+      this.decryptPass.set('');
+      this.pendingImport.set(parsed);
+    } catch {
+      this.decryptError.set(this.i18n.t('backup.decryptWrong'));
+    }
+  }
+
+  cancelDecrypt(): void {
+    this.pendingEncrypted.set(null);
+    this.decryptPass.set('');
+    this.decryptError.set('');
+    this.importFileName.set('');
+  }
+
+  async chooseBackupFolder(): Promise<void> {
+    this.autoBackupError.set('');
+    this.autoBackupOk.set(false);
+    this.autoBusy.set(true);
+    try {
+      const ok = await this.autoBackup.chooseFolder();
+      if (this.autoBackup.connected()) {
+        if (ok) {
+          this.autoBackupOk.set(true);
+        } else {
+          this.autoBackupError.set(this.i18n.t('backup.writeFailed'));
+        }
+      }
+    } finally {
+      this.autoBusy.set(false);
+    }
+  }
+
+  async runAutoBackup(): Promise<void> {
+    this.autoBackupError.set('');
+    this.autoBackupOk.set(false);
+    this.autoBusy.set(true);
+    try {
+      const ok = await this.autoBackup.grantAndBackUp();
+      if (ok) {
+        this.autoBackupOk.set(true);
+      } else {
+        this.autoBackupError.set(this.i18n.t('backup.writeFailed'));
+      }
+    } finally {
+      this.autoBusy.set(false);
+    }
+  }
+
+  async saveBackupPassphrase(): Promise<void> {
+    await this.autoBackup.setPassphrase(this.backupPass().trim());
+    this.passSaved.set(true);
+  }
+
+  async stopAutoBackup(): Promise<void> {
+    await this.autoBackup.disconnect();
+    this.backupPass.set('');
+    this.autoBackupOk.set(false);
+    this.autoBackupError.set('');
+    this.passSaved.set(false);
   }
 
   async runImport(mode: 'replace' | 'merge'): Promise<void> {

@@ -66,8 +66,9 @@ for (const look of LOOKS) {
         if (dock) await assertDockClearsNav(page, dock);
 
         if (path === '/' || path === '/fuel') {
+          // Generated artifacts stay out of the served web root.
           await page.screenshot({
-            path: `public/screenshots/matrix/${look}-${theme}${path === '/' ? '-home' : '-fuel'}.png`,
+            path: `test-results/matrix/${look}-${theme}${path === '/' ? '-home' : '-fuel'}.png`,
           });
         }
       }

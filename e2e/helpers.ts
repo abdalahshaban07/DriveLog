@@ -31,9 +31,15 @@ export async function dismissWhatsNewIfOpen(page: Page): Promise<void> {
 
 /** Fresh browsers land on /setup — sample car unlocks guarded routes. */
 export async function ensureSampleCar(page: Page): Promise<void> {
+  // First-run guesses currency via ipapi.co; keep that call offline-stable.
+  await page.route('**ipapi.co/**', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: '{"currency":"EGP"}' }),
+  );
   await page.goto('/setup');
-  await dismissWhatsNewIfOpen(page);
   const sample = page.getByRole('button', { name: /sample car|تجريبية/i });
+  // Boot can lag under load: wait for setup or an already-onboarded shell.
+  await sample.or(page.locator('nav.nav')).first().waitFor({ state: 'visible', timeout: 15_000 });
+  await dismissWhatsNewIfOpen(page);
   if (await sample.isVisible().catch(() => false)) {
     await sample.click();
     await page.waitForURL((url) => !url.pathname.includes('/setup'), { timeout: 15_000 });

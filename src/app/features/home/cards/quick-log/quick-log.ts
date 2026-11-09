@@ -28,6 +28,9 @@ import type { MsgKey } from '../../../../i18n/en';
 import { buildGradeOptions } from '../../../../ui/fuel-grade-selector';
 import { NumericField } from '../../../../ui/numeric-field';
 import { PrimaryButton } from '../../../../ui/primary-button';
+import { PriceWatch } from '../../../../pwa/price-watch';
+import { VoiceLog } from '../../../voice/voice-log';
+import { VoiceLogState } from '../../../voice/voice-log-state';
 
 const GRADE_KEYS: Record<FuelGrade, MsgKey> = {
   gasoline92: 'home.fuel92',
@@ -40,7 +43,8 @@ const GRADE_KEYS: Record<FuelGrade, MsgKey> = {
 @Component({
   selector: 'app-quick-log',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NumericField, PrimaryButton, RouterLink],
+  imports: [NumericField, PrimaryButton, RouterLink, VoiceLog],
+  providers: [VoiceLogState],
   templateUrl: './quick-log.html',
   styleUrl: './quick-log.scss',
 })
@@ -48,6 +52,8 @@ export class QuickLog {
   readonly i18n = inject(I18n);
   readonly db = inject(Db);
   readonly saved = output<void>();
+  readonly voice = inject(VoiceLogState);
+  private readonly priceWatch = inject(PriceWatch);
 
   readonly distanceKm = signal('');
   readonly liters = signal('');
@@ -91,13 +97,28 @@ export class QuickLog {
   );
 
   constructor() {
+    this.voice.onApply = (fill) => {
+      if (fill.liters != null) {
+        this.liters.set(String(fill.liters));
+      }
+      if (fill.distanceKm != null) {
+        this.distanceKm.set(String(fill.distanceKm));
+      }
+      if (fill.fuelGrade) {
+        this.fuelGrade.set(fill.fuelGrade);
+      }
+    };
     void this.loadPrices();
   }
 
   async loadPrices(): Promise<void> {
     try {
       const cc = countryFromCurrency(this.db.settings().currency);
-      this.fuelPrices.set(await countryFuelPrices(cc));
+      const board = await countryFuelPrices(cc);
+      this.fuelPrices.set(board);
+      if (board) {
+        void this.priceWatch.record(board);
+      }
       if (!this.fuelGrade() && this.gradeOptions().length) {
         this.fuelGrade.set(this.gradeOptions()[0]!.grade);
       }

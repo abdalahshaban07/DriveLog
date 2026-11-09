@@ -3,8 +3,12 @@
 export const APP_VERSION = '0.1';
 
 export const DB_NAME = 'drivelog';
-export const DB_VERSION = 6;
-export const BACKUP_VERSION = 6;
+/** v8 adds the backupState meta store (auto-backup folder handle + cadence). */
+export const DB_VERSION = 8;
+export const BACKUP_VERSION = 7;
+
+/** Meta store outside SCHEMA_STORES so import/wipe never clears the folder link. */
+export const BACKUP_STATE_STORE = 'backupState';
 
 export const DUE_SOON_DAYS = 14;
 export const DUE_SOON_KM = 500;
@@ -32,6 +36,7 @@ export const SCHEMA_STORES = [
   'vehicleDocuments',
   'preTripChecks',
   'chargeSessions',
+  'fuelPriceHistory',
 ] as const;
 
 export const MILESTONE_INTERVAL_KM = 10_000;

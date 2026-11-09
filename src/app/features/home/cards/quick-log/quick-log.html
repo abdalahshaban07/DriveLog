@@ -4,6 +4,8 @@
     <a routerLink="/fill-up" class="quick-log__full">{{ i18n.t('home.quickAdd.fullForm') }}</a>
   </header>
 
+  <app-voice-log class="quick-log__voice" />
+
   <div class="quick-log__row">
     <app-numeric-field
       [label]="i18n.t('fillUp.liters')"

@@ -25,6 +25,10 @@
   text-decoration: none;
 }
 
+.quick-log__voice {
+  margin-block-end: var(--space-3);
+}
+
 .quick-log__row {
   display: grid;
   grid-template-columns: 1fr 1fr;

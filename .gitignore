@@ -38,8 +38,6 @@ yarn-error.log
 testem.log
 /typings
 __screenshots__/
-# e2e look-theme-matrix spec visual output, regenerated each run
-public/screenshots/matrix/
 /test-results/
 
 # System files

@@ -25,7 +25,7 @@ const PRICE = String.raw`price|unit|per\s*l|/\s*l|سعر`;
 const TOTAL = String.raw`total|amount|sum|sale|الإجمالي|المجموع`;
 
 /** Arabic-Indic and Persian digits → ASCII so labeled regexes can see them. */
-function westernDigits(raw: string): string {
+export function westernDigits(raw: string): string {
   return raw
     .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
     .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
@@ -33,7 +33,7 @@ function westernDigits(raw: string): string {
 }
 
 /** Drop the camera stamp and "1. Remove the nozzle" so they are not fill-up numbers. */
-function stripNoise(raw: string): string {
+export function stripNoise(raw: string): string {
   return raw
     .replace(
       /\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{1,2},?\s+\d{4}\b/gi,

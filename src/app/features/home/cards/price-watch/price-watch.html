@@ -1,0 +1,76 @@
+@if (visible()) {
+  <section class="card price-watch" role="status" [attr.aria-label]="i18n.t('priceWatch.kicker')">
+    <header class="price-watch__head">
+      <div class="price-watch__heading">
+        <p class="price-watch__kicker">{{ i18n.t('priceWatch.kicker') }}</p>
+        <h2 class="price-watch__title">
+          {{ i18n.t('priceWatch.title') }}
+          @if (sinceLabel()) {
+            <span class="price-watch__since">{{ sinceLabel() }}</span>
+          }
+        </h2>
+      </div>
+      <button
+        type="button"
+        class="price-watch__dismiss"
+        (click)="dismiss()"
+        [attr.aria-label]="i18n.t('priceWatch.dismiss')"
+      >
+        <svg
+          viewBox="0 0 16 16"
+          width="14"
+          height="14"
+          aria-hidden="true"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+        >
+          <path d="M3.5 3.5l9 9M12.5 3.5l-9 9" />
+        </svg>
+      </button>
+    </header>
+    <ul class="price-watch__rows">
+      @for (row of rows(); track row.grade) {
+        <li class="price-watch__row">
+          <div class="price-watch__copy">
+            <span class="price-watch__grade">
+              {{ row.label }}
+              <bdi
+                class="price-watch__delta"
+                [class.price-watch__delta--up]="row.up"
+                [class.price-watch__delta--down]="!row.up"
+                >{{ row.deltaLabel }}</bdi
+              >
+            </span>
+            <span class="price-watch__prices">
+              <s class="price-watch__old"><bdi>{{ row.from }}</bdi></s>
+              <bdi class="price-watch__new">{{ row.to }}</bdi>
+              <span class="price-watch__per">{{ i18n.t('common.perLiter') }}</span>
+            </span>
+          </div>
+          @if (row.spark; as spark) {
+            <svg
+              class="price-watch__spark"
+              [class.price-watch__spark--down]="!row.up"
+              [attr.viewBox]="'0 0 ' + spark.width + ' ' + spark.height"
+              preserveAspectRatio="none"
+              role="img"
+              [attr.aria-label]="row.trendLabel"
+            >
+              <path class="price-watch__spark-area" [attr.d]="spark.area" />
+              <path
+                class="price-watch__spark-line"
+                [attr.d]="spark.line"
+                vector-effect="non-scaling-stroke"
+              />
+            </svg>
+          }
+        </li>
+      }
+    </ul>
+    @if (impactLine(); as line) {
+      <p class="price-watch__impact">{{ line }}</p>
+    }
+  </section>
+}

@@ -1,16 +1,17 @@
 #!/usr/bin/env node
 /**
- * Move PaddleOCR engine chunks out of the service-worker prefetch group.
- * ponytail: matches file bytes (`cv.Mat`, `ort-wasm`), not hashed names.
- * Ceiling: a renamed OpenCV/ORT build that drops both markers stays prefetched
- * (~10MB on install). Upgrade path: stable chunk names in the Angular build.
+ * Move heavy on-demand engine chunks (PaddleOCR, pdfmake) out of the
+ * service-worker prefetch group so install stays light; they cache on first use.
+ * ponytail: matches file bytes (`cv.Mat`, `ort-wasm`, `PDFDocument`), not hashed names.
+ * Ceiling: a renamed engine build that drops its markers stays prefetched.
+ * Upgrade path: stable chunk names in the Angular build.
  */
 import { mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const MARKERS = [Buffer.from('cv.Mat'), Buffer.from('ort-wasm')];
+const MARKERS = [Buffer.from('cv.Mat'), Buffer.from('ort-wasm'), Buffer.from('PDFDocument')];
 
 export function lazyOcrUrls(ngsw, readFile) {
   const app = ngsw.assetGroups.find((g) => g.name === 'app');
@@ -29,16 +30,16 @@ export function lazyOcrUrls(ngsw, readFile) {
     (heavy ? lazy : keep).push(url);
   }
   if (lazy.length === 0) {
-    const already = ngsw.assetGroups.find((g) => g.name === 'ocr');
+    const already = ngsw.assetGroups.find((g) => g.name === 'engines');
     if (already?.urls?.length) {
       return already.urls;
     }
-    throw new Error('no PaddleOCR chunks found (cv.Mat / ort-wasm)');
+    throw new Error('no heavy engine chunks found (cv.Mat / ort-wasm / PDFDocument)');
   }
   app.urls = keep;
-  const existing = ngsw.assetGroups.find((g) => g.name === 'ocr');
+  const existing = ngsw.assetGroups.find((g) => g.name === 'engines');
   const group = existing ?? {
-    name: 'ocr',
+    name: 'engines',
     installMode: 'lazy',
     updateMode: 'lazy',
     cacheQueryOptions: { ignoreVary: true },
@@ -56,6 +57,7 @@ function selfCheck() {
   const dir = mkdtempSync(join(tmpdir(), 'ngsw-ocr-'));
   try {
     writeFileSync(join(dir, 'engine.js'), 'cv.Mat ort-wasm');
+    writeFileSync(join(dir, 'pdf.js'), 'PDFDocument pdfmake');
     writeFileSync(join(dir, 'fill.js'), 'PP-OCRv5 fill-up');
     const ngsw = {
       index: '/DriveLog/index.html',
@@ -63,12 +65,12 @@ function selfCheck() {
         {
           name: 'app',
           installMode: 'prefetch',
-          urls: ['/DriveLog/engine.js', '/DriveLog/fill.js'],
+          urls: ['/DriveLog/engine.js', '/DriveLog/fill.js', '/DriveLog/pdf.js'],
         },
       ],
     };
     const lazy = lazyOcrUrls(ngsw, (rel) => readFileSync(join(dir, rel)));
-    if (lazy.join() !== '/DriveLog/engine.js') {
+    if (lazy.join() !== '/DriveLog/engine.js,/DriveLog/pdf.js') {
       throw new Error(`unexpected lazy set: ${lazy.join()}`);
     }
     if (ngsw.assetGroups[0].urls.join() !== '/DriveLog/fill.js') {
@@ -77,9 +79,9 @@ function selfCheck() {
     const again = lazyOcrUrls(ngsw, (rel) => readFileSync(join(dir, rel)));
     if (
       again.join() !== lazy.join() ||
-      ngsw.assetGroups.filter((g) => g.name === 'ocr').length !== 1
+      ngsw.assetGroups.filter((g) => g.name === 'engines').length !== 1
     ) {
-      throw new Error('second pass duplicated the ocr group');
+      throw new Error('second pass duplicated the engines group');
     }
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -93,7 +95,7 @@ function main() {
   const ngsw = JSON.parse(readFileSync(ngswPath, 'utf8'));
   const lazy = lazyOcrUrls(ngsw, (rel) => readFileSync(join(browser, rel)));
   writeFileSync(ngswPath, JSON.stringify(ngsw, null, 2) + '\n');
-  console.log(`lazy OCR chunks: ${lazy.join(', ')}`);
+  console.log(`lazy engine chunks: ${lazy.join(', ')}`);
 }
 
 if (process.argv.includes('--self-check')) {

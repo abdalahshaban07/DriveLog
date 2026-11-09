@@ -1,0 +1,104 @@
+:host {
+  display: block;
+}
+
+.odo-review {
+  display: grid;
+  gap: var(--space-3);
+  border-block-start: 2px solid color-mix(in srgb, var(--fuel) 65%, transparent);
+}
+
+.odo-review__title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.odo-review__img {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  justify-self: start;
+  border-radius: var(--radius);
+  background: var(--fill-well);
+}
+
+.odo-review__candidates {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.odo-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.odo-chip {
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  background: var(--fill-surface);
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    background var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out);
+}
+
+.odo-chip:hover {
+  border-color: color-mix(in srgb, var(--fuel) 45%, var(--hairline));
+}
+
+.odo-chip--on {
+  background: color-mix(in srgb, var(--fuel) 16%, var(--fill-surface));
+  border-color: var(--fuel);
+}
+
+.odo-chip:focus-visible {
+  outline: 2px solid var(--fuel);
+  outline-offset: 2px;
+}
+
+.hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.odo-review__derived {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.odo-review__rollback {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: calc(var(--radius) - 4px);
+  border: 1px solid color-mix(in srgb, var(--warn) 50%, transparent);
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.odo-review__rollback--block {
+  border-color: color-mix(in srgb, var(--stop) 55%, transparent);
+  background: color-mix(in srgb, var(--stop) 10%, transparent);
+}
+
+.odo-review__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .odo-chip {
+    transition: none;
+  }
+}

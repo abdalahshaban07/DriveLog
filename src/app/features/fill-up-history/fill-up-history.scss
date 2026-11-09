@@ -22,8 +22,23 @@
 
 .history-sheet__facts {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
+}
+
+/* Money gets a full row on phones so totals never break mid-number. */
+.history-sheet__facts > div:first-child {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 768px) {
+  .history-sheet__facts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .history-sheet__facts > div:first-child {
+    grid-column: auto;
+  }
 }
 
 .history-sheet__facts strong {
@@ -31,7 +46,6 @@
   margin-block-start: 2px;
   font-size: 1.05rem;
   font-variant-numeric: tabular-nums;
-  overflow-wrap: anywhere;
 }
 
 .history-sheet__label {

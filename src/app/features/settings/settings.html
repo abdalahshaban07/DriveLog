@@ -7,15 +7,6 @@
 
   <section class="card list" [attr.aria-label]="i18n.t('settings.appearance')">
     <p class="section-label">{{ i18n.t('settings.appearance') }}</p>
-    @if (showCarSwitcher()) {
-      <app-select-field
-        class="as-row"
-        [label]="i18n.t('settings.activeCar')"
-        [options]="carOptions()"
-        [value]="db.car()?.id ?? ''"
-        (valueChange)="onCar($event)"
-      />
-    }
     <app-select-field
       class="as-row"
       [label]="i18n.t('settings.theme')"
@@ -113,11 +104,88 @@
       <span id="backup-import-hint" class="sr-only">{{ i18n.t('settings.importHint') }}</span>
     </label>
 
+    @if (pendingEncrypted()) {
+      <div class="decrypt-box">
+        <p class="line__sub">{{ i18n.t('backup.decryptHint') }}</p>
+        <app-text-field
+          [label]="i18n.t('backup.decryptPassphrase')"
+          [value]="decryptPass()"
+          type="password"
+          (valueChange)="decryptPass.set($event)"
+        />
+        @if (decryptError()) {
+          <p class="error">{{ decryptError() }}</p>
+        }
+        <div class="decrypt-box__actions">
+          <button type="button" class="cta" (click)="decryptPending()">
+            {{ i18n.t('backup.decryptImport') }}
+          </button>
+          <button type="button" class="ghost-btn" (click)="cancelDecrypt()">
+            {{ i18n.t('backup.cancel') }}
+          </button>
+        </div>
+      </div>
+    }
+
     @if (importError()) {
       <p class="error">{{ importError() }}</p>
     }
     @if (importOk()) {
       <p class="ok">{{ i18n.t('backup.done') }}</p>
+    }
+  </section>
+
+  <section class="card list" [attr.aria-label]="i18n.t('backup.autoTitle')">
+    <p class="section-label">{{ i18n.t('backup.autoTitle') }}</p>
+    @if (autoBackup.supported()) {
+      @if (autoBackup.connected()) {
+        <div class="line">
+          <span class="line__text">
+            <strong>{{ autoBackup.state()?.directoryName }}</strong>
+            <span class="line__sub">{{ i18n.t('backup.lastBackup') }}: {{ lastBackupLabel() }}</span>
+          </span>
+        </div>
+        <button type="button" class="line" [disabled]="autoBusy()" (click)="runAutoBackup()">
+          <span class="line__text">
+            <strong>{{ i18n.t('backup.now') }}</strong>
+          </span>
+        </button>
+        <div class="auto-backup__pass">
+          <app-text-field
+            [label]="i18n.t('backup.passphrase')"
+            [value]="backupPass()"
+            type="password"
+            (valueChange)="backupPass.set($event); passSaved.set(false)"
+          />
+          <p class="line__sub">{{ i18n.t('backup.passphraseHint') }}</p>
+          <button type="button" class="ghost-btn" (click)="saveBackupPassphrase()">
+            {{ i18n.t('backup.passphraseSave') }}
+          </button>
+          @if (passSaved()) {
+            <p class="ok">{{ i18n.t('backup.passphraseSaved') }}</p>
+          }
+        </div>
+        <button type="button" class="line line--danger" (click)="stopAutoBackup()">
+          <span class="line__text">
+            <strong>{{ i18n.t('backup.stop') }}</strong>
+          </span>
+        </button>
+      } @else {
+        <p class="auto-backup__hint">{{ i18n.t('backup.autoHint') }}</p>
+        <button type="button" class="line" [disabled]="autoBusy()" (click)="chooseBackupFolder()">
+          <span class="line__text">
+            <strong>{{ i18n.t('backup.chooseFolder') }}</strong>
+          </span>
+        </button>
+      }
+    } @else {
+      <p class="auto-backup__hint">{{ i18n.t('backup.unsupported') }}</p>
+    }
+    @if (autoBackupError()) {
+      <p class="error">{{ autoBackupError() }}</p>
+    }
+    @if (autoBackupOk()) {
+      <p class="ok">{{ i18n.t('backup.saved') }}</p>
     }
   </section>
 
@@ -194,6 +262,20 @@
             [checked]="notifyForecast()"
             [attr.aria-checked]="notifyForecast()"
             (change)="onNotifyFlag('notifyForecast', $event)"
+          />
+          <span class="switch__track" aria-hidden="true"></span>
+        </span>
+      </label>
+      <label class="line">
+        <span class="line__text">{{ i18n.t('settings.notifyFuelPrices') }}</span>
+        <span class="switch">
+          <input
+            type="checkbox"
+            class="switch__input"
+            role="switch"
+            [checked]="notifyFuelPrices()"
+            [attr.aria-checked]="notifyFuelPrices()"
+            (change)="onNotifyFlag('notifyFuelPrices', $event)"
           />
           <span class="switch__track" aria-hidden="true"></span>
         </span>

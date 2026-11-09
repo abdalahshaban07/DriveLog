@@ -1,6 +1,3 @@
-import pdfMake from 'pdfmake-rtl/build/pdfmake';
-import pdfVfs from 'pdfmake-rtl/build/vfs_fonts';
-
 /**
  * Shared print chrome for every DriveLog PDF.
  * Night Receipt on paper: ink masthead, amber rule, metric tiles, rail cards.
@@ -44,38 +41,45 @@ type PdfMakeApi = {
   };
 };
 
-let pdfApi: PdfMakeApi | null = null;
+let pdfApiPromise: Promise<PdfMakeApi> | null = null;
 
-function getPdfMake(): PdfMakeApi {
-  if (pdfApi) {
-    return pdfApi;
+/** pdfmake + font VFS stay off every page chunk until a PDF is actually built. */
+function loadPdfMake(): Promise<PdfMakeApi> {
+  if (!pdfApiPromise) {
+    pdfApiPromise = (async () => {
+      const { pdfMake, pdfVfs } = await import('./pdf-engine');
+      const pdf = pdfMake as unknown as PdfMakeApi;
+      if (typeof pdf.addVirtualFileSystem === 'function') {
+        pdf.addVirtualFileSystem(pdfVfs);
+      } else {
+        pdf.vfs = pdfVfs;
+      }
+      pdf.fonts = {
+        Roboto: {
+          normal: 'Roboto-Regular.ttf',
+          bold: 'Roboto-Medium.ttf',
+          italics: 'Roboto-Italic.ttf',
+          bolditalics: 'Roboto-MediumItalic.ttf',
+        },
+        Cairo: {
+          normal: 'Cairo-Regular.ttf',
+          bold: 'Cairo-Bold.ttf',
+          italics: 'Cairo-Regular.ttf',
+          bolditalics: 'Cairo-Bold.ttf',
+        },
+      };
+      return pdf;
+    })().catch((err: unknown) => {
+      pdfApiPromise = null;
+      throw err;
+    });
   }
-  const pdf = pdfMake as unknown as PdfMakeApi;
-  if (typeof pdf.addVirtualFileSystem === 'function') {
-    pdf.addVirtualFileSystem(pdfVfs);
-  } else {
-    pdf.vfs = pdfVfs;
-  }
-  pdf.fonts = {
-    Roboto: {
-      normal: 'Roboto-Regular.ttf',
-      bold: 'Roboto-Medium.ttf',
-      italics: 'Roboto-Italic.ttf',
-      bolditalics: 'Roboto-MediumItalic.ttf',
-    },
-    Cairo: {
-      normal: 'Cairo-Regular.ttf',
-      bold: 'Cairo-Bold.ttf',
-      italics: 'Cairo-Regular.ttf',
-      bolditalics: 'Cairo-Bold.ttf',
-    },
-  };
-  pdfApi = pdf;
-  return pdf;
+  return pdfApiPromise;
 }
 
 export async function pdfBlob(docDefinition: Record<string, unknown>): Promise<Blob> {
-  const doc = getPdfMake().createPdf(docDefinition);
+  const pdf = await loadPdfMake();
+  const doc = pdf.createPdf(docDefinition);
   if (typeof doc.getBlob === 'function') {
     return doc.getBlob();
   }

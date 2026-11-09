@@ -36,57 +36,6 @@
       [attr.aria-label]="i18n.t('home.tab.dashboard')"
     >
       @if (db.cars().length) {
-        @if (db.cars().length > 1) {
-          <div class="carousel" [attr.aria-label]="i18n.t('home.carousel.label')">
-            @for (car of db.cars(); track car.id) {
-              <button
-                type="button"
-                class="carousel__chip"
-                [class.carousel__chip--on]="car.id === activeCarId()"
-                (click)="switchCar(car.id)"
-              >
-                <span class="plate__copy">
-                  <span class="carousel__name">{{ car.nickname }}</span>
-                  @if (vehicleLine(car) || car.tankCapacityLiters) {
-                    <span class="carousel__spec">
-                      @if (vehicleLine(car); as spec) {
-                        {{ spec }}
-                      }
-                      @if (car.tankCapacityLiters) {
-                        @if (vehicleLine(car)) {
-                          ·
-                        }
-                        {{ i18n.formatUnit(car.tankCapacityLiters, 'common.liters', 0) }}
-                      }
-                    </span>
-                  }
-                  @if (car.plate?.trim()) {
-                    <span class="plate__tag">{{ car.plate }}</span>
-                  }
-                  <span class="plate__papers">
-                    @for (paper of paperLines(car); track paper.id) {
-                      <span
-                        class="plate__paper"
-                        [class.plate__paper--soon]="paper.tone === 'soon'"
-                        [class.plate__paper--overdue]="paper.tone === 'overdue'"
-                      >
-                        <span>{{ paper.name }}</span>
-                        <span>{{ paper.value }}</span>
-                      </span>
-                    }
-                  </span>
-                </span>
-                <span class="plate__odo">
-                  <strong>{{
-                    i18n.formatNumber(car.currentOdometer, { maximumFractionDigits: 0 })
-                  }}</strong>
-                  <span>{{ i18n.t('common.km') }}</span>
-                </span>
-              </button>
-            }
-          </div>
-        }
-
         @if (sampleMode()) {
           <app-sample-banner (clear)="clearSample()" />
         }
@@ -195,7 +144,27 @@
               </div>
             }
           </a>
+          @if (pulseFacts().length) {
+            <dl class="pulse__facts">
+              @for (fact of pulseFacts(); track fact.id) {
+                <div class="pulse__fact">
+                  <dt class="pulse__fact-label">{{ fact.label }}</dt>
+                  <dd class="pulse__fact-value">
+                    <bdi>{{ fact.value }}</bdi>
+                    @if (fact.unit) {
+                      <span class="pulse__fact-unit">{{ fact.unit }}</span>
+                    }
+                  </dd>
+                  @if (fact.hint) {
+                    <span class="pulse__fact-hint">{{ fact.hint }}</span>
+                  }
+                </div>
+              }
+            </dl>
+          }
         </section>
+
+        <app-fuel-range />
 
         @if (!hasRealFills() && !sampleMode()) {
           <a routerLink="/fill-up" class="ghost-cta">{{ i18n.t('home.ghost.cta') }}</a>
@@ -204,6 +173,8 @@
         @if (showQuickLog()) {
           <app-quick-log (saved)="onQuickSaved()" />
         }
+
+        <app-price-watch />
 
         @if (attention().length) {
           <section class="needs" [attr.aria-label]="i18n.t('home.needsYou')">

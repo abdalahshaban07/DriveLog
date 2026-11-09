@@ -1,0 +1,45 @@
+@if (estimate(); as est) {
+  <section
+    class="card fuel-range"
+    [class.fuel-range--low]="est.low"
+    [attr.aria-label]="i18n.t('fuelRange.aria')"
+  >
+    <div class="fuel-range__head">
+      <p class="fuel-range__kicker">{{ i18n.t('fuelRange.kicker') }}</p>
+      <p class="fuel-range__basis">{{ basis() }}</p>
+    </div>
+    <p class="fuel-range__figures">
+      <span class="fuel-range__km">
+        ≈ <bdi>{{ kmLabel() }}</bdi>
+        <span class="fuel-range__unit">{{ i18n.t('common.km') }}</span>
+      </span>
+      <span class="fuel-range__sep" aria-hidden="true">·</span>
+      <span class="fuel-range__days">{{ daysLabel() }}</span>
+    </p>
+    <div class="fuel-range__gauge-row">
+      <div
+        class="fuel-range__gauge"
+        role="meter"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        [attr.aria-valuenow]="pct()"
+        [attr.aria-label]="gaugeLabel()"
+      >
+        <span class="fuel-range__gauge-fill" [style.inline-size.%]="pct()"></span>
+        <span class="fuel-range__tick fuel-range__tick--1" aria-hidden="true"></span>
+        <span class="fuel-range__tick fuel-range__tick--2" aria-hidden="true"></span>
+        <span class="fuel-range__tick fuel-range__tick--3" aria-hidden="true"></span>
+      </div>
+      <span class="fuel-range__pct"><bdi>{{ pctLabel() }}</bdi>%</span>
+    </div>
+    @if (est.low) {
+      <div class="fuel-range__nudge" role="status">
+        <p class="fuel-range__nudge-copy">
+          <strong>{{ nudgeTitle() }}</strong>
+          <span>{{ nudgeBody() }}</span>
+        </p>
+        <a routerLink="/fill-up" class="cta fuel-range__cta">{{ i18n.t('fuelRange.cta') }}</a>
+      </div>
+    }
+  </section>
+}

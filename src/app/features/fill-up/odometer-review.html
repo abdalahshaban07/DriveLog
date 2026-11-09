@@ -1,0 +1,71 @@
+@if (odo.stage() === 'review') {
+  <section class="card odo-review" [attr.aria-label]="i18n.t('fillUp.odoReview')">
+    <h2 class="odo-review__title">{{ i18n.t('fillUp.odoReview') }}</h2>
+    @if (odo.previewUrl(); as url) {
+      <img class="odo-review__img" [src]="url" alt="" />
+    }
+    <app-numeric-field
+      [label]="i18n.t('fillUp.odoReading')"
+      [value]="odo.pick()"
+      (valueChange)="odo.setPick($event)"
+    />
+    @if (odo.candidates(); as c) {
+      @if (c.values.length > 1) {
+        <div class="odo-review__candidates">
+          <span class="label">{{ i18n.t('fillUp.odoCandidates') }}</span>
+          <div
+            class="odo-chips"
+            role="group"
+            [attr.aria-label]="i18n.t('fillUp.odoCandidates')"
+          >
+            @for (v of c.values; track v) {
+              <button
+                type="button"
+                class="odo-chip"
+                [class.odo-chip--on]="odo.pickNum() === v"
+                [attr.aria-pressed]="odo.pickNum() === v"
+                (click)="odo.selectCandidate(v)"
+              >
+                {{ i18n.formatNumber(v, { maximumFractionDigits: 0 }) }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+    }
+    <p class="hint">{{ i18n.t('fillUp.odoReviewHint') }}</p>
+    @let dist = odo.derivedDistance();
+    @if (dist !== null) {
+      <p class="hint odo-review__derived" role="status">
+        {{
+          i18n.t('fillUp.odoSinceLast', {
+            km: i18n.formatNumber(dist, { maximumFractionDigits: 0 }),
+          })
+        }}
+      </p>
+    }
+    @if (odo.rollbackKm() > 0) {
+      <p
+        class="odo-review__rollback"
+        [class.odo-review__rollback--block]="odo.blocked()"
+        role="alert"
+      >
+        {{
+          i18n.t('fillUp.odoBelowCurrent', {
+            km: i18n.formatNumber(odo.rollbackKm(), { maximumFractionDigits: 0 }),
+          })
+        }}
+      </p>
+    }
+    <div class="odo-review__actions">
+      <app-primary-button
+        [label]="i18n.t('fillUp.odoApply')"
+        [disabled]="!odo.canApply()"
+        (pressed)="odo.apply()"
+      />
+      <button type="button" class="ghost-btn" (click)="odo.cancel()">
+        {{ i18n.t('common.cancel') }}
+      </button>
+    </div>
+  </section>
+}

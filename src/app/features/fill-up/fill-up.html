@@ -102,9 +102,12 @@
         }
       </dl>
     }
+
+    <app-odometer-scan />
   </section>
 
   <app-fill-up-ocr-cards />
+  <app-odometer-review />
 
   @if (logMode() === 'fuel' && softStation() && !softStationDismissed()) {
     <section class="card soft-station" role="status" aria-live="polite">
@@ -132,6 +135,7 @@
 
   @if (logMode() === 'fuel') {
     <section class="console card receipt-slip" [attr.aria-label]="i18n.t('fillUp.title')">
+      <app-voice-log />
       <div class="console__pair">
         <app-date-field
           [label]="i18n.t('fillUp.date')"
