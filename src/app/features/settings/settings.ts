@@ -3,11 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
 import { restCountryCurrencies } from '../../data/remote';
 import { listCurrencyOptions, validCurrency } from '../../domain/currencies';
-import {
-  maxLoggedOdometer,
-  TANK_MAX,
-  TANK_MIN,
-} from '../../domain/fill-up-distance';
+import { TANK_MAX, TANK_MIN } from '../../domain/fill-up-distance';
 import { odometerInputValue } from '../../domain/odometer';
 import {
   decryptBackup,
@@ -141,14 +137,6 @@ export class SettingsPage {
 
   readonly showTankBanner = computed(() => this.db.car()?.tankCapacityLiters == null);
 
-  readonly odometerFloor = computed(() => {
-    const car = this.db.car();
-    if (!car) {
-      return 0;
-    }
-    return maxLoggedOdometer(car, this.db.fillUps(), this.db.maintenance(), this.db.breakdowns());
-  });
-
   constructor() {
     void this.loadRestCurrencies();
   }
@@ -259,11 +247,6 @@ export class SettingsPage {
     const n = Number(value);
     if (!Number.isFinite(n) || n <= 0) {
       this.odometerError.set(this.i18n.t('setup.err.odometer'));
-      return;
-    }
-    const floor = this.odometerFloor();
-    if (n < floor) {
-      this.odometerError.set(this.i18n.t('settings.err.odometerFloor'));
       return;
     }
     this.odometerError.set('');
