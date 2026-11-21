@@ -1,3 +1,5 @@
+import { clearFormDrafts } from './form-draft';
+import { maintenanceChanged, normalizeMaintenanceRevision, type MaintenanceRevision } from '../domain/maintenance-revision';
 import {
   Injectable,
   computed,
@@ -121,6 +123,7 @@ type DbSnapshot = {
   settings: Settings;
   fillUps: FillUp[];
   maintenance: Maintenance[];
+  maintenanceRevisions?: MaintenanceRevision[];
   expensePeriods: ExpensePeriod[];
   breakdowns: Breakdown[];
   otherExpenses: OtherExpense[];
@@ -141,6 +144,8 @@ export class Db {
   private readonly _car = signal<Car | null>(null);
   private readonly _settings = signal<Settings>(defaultSettings());
   private readonly _fillUpsAll = signal<FillUp[]>([]);
+  private readonly _maintenanceRevisions = signal<MaintenanceRevision[]>([]);
+  readonly maintenanceRevisions = this._maintenanceRevisions.asReadonly();
   private readonly _maintenanceAll = signal<Maintenance[]>([]);
   private readonly _expensePeriodsAll = signal<ExpensePeriod[]>([]);
   private readonly _breakdownsAll = signal<Breakdown[]>([]);
@@ -251,6 +256,7 @@ export class Db {
         this.getAll<BackupState>(db, BACKUP_STATE_STORE),
       ]);
 
+      this._maintenanceRevisions.set((await this.getAll<MaintenanceRevision>(db, 'maintenanceRevisions')).map(normalizeMaintenanceRevision));
       let settings = normalizeSettings(settingsRaw);
       let cars = carsRaw.map(normalizeCar);
       const migrationTarget =
@@ -487,6 +493,7 @@ export class Db {
       for (const m of data.maintenance) {
         tx.objectStore('maintenance').put(m);
       }
+      for (const revision of data.maintenanceRevisions ?? []) tx.objectStore('maintenanceRevisions').put(revision);
       for (const p of data.expensePeriods) {
         tx.objectStore('expensePeriods').put(p);
       }
@@ -524,6 +531,7 @@ export class Db {
       tx.onerror = () => reject(tx.error);
     });
     this.applySnapshot(data);
+    try { clearFormDrafts(); } catch { /* Ledger restore succeeds even when draft storage is blocked. */ }
   }
 
   private applySnapshot(data: DbSnapshot): void {
@@ -532,6 +540,7 @@ export class Db {
     this._settings.set(data.settings);
     this._fillUpsAll.set(data.fillUps);
     this._maintenanceAll.set(data.maintenance);
+    this._maintenanceRevisions.set(data.maintenanceRevisions ?? []);
     this._expensePeriodsAll.set(data.expensePeriods);
     this._breakdownsAll.set(data.breakdowns);
     this._otherExpensesAll.set(data.otherExpenses);
@@ -881,19 +890,34 @@ export class Db {
       dueDate: input.dueDate,
       partDefinitionId: input.partDefinitionId ?? existing?.partDefinitionId,
       recordType: input.recordType ?? existing?.recordType,
-      measurements: input.measurements ?? existing?.measurements,
-      condition: input.condition ?? existing?.condition,
-      partModel: input.partModel?.trim() || existing?.partModel,
-      partNumber: input.partNumber?.trim() || existing?.partNumber,
+      measurements: Object.prototype.hasOwnProperty.call(input, 'measurements') ? input.measurements : existing?.measurements,
+      condition: Object.prototype.hasOwnProperty.call(input, 'condition') ? input.condition : existing?.condition,
+      // Omitted fields are unchanged; an explicitly emptied form field is cleared.
+      partModel: Object.prototype.hasOwnProperty.call(input, 'partModel')
+        ? input.partModel?.trim() || undefined
+        : existing?.partModel,
+      partNumber: Object.prototype.hasOwnProperty.call(input, 'partNumber') ? input.partNumber?.trim() || undefined : existing?.partNumber,
       currency: input.currency ?? existing?.currency ?? this.snapshotCurrency(),
-      observations: input.observations ?? existing?.observations,
+      observations: Object.prototype.hasOwnProperty.call(input, 'observations') ? input.observations : existing?.observations,
       odometerRollbackAcknowledged:
         input.odometerRollbackAcknowledged ?? existing?.odometerRollbackAcknowledged,
-      ...maintenanceDetailFields(input),
+      ...maintenanceDetailFields({ ...existing, ...input }),
       createdAt: existing?.createdAt ?? ts,
       updatedAt: ts,
     };
-    await this.put('maintenance', row);
+    const revision: MaintenanceRevision | undefined = existing && maintenanceChanged(existing, row)
+      ? { id: crypto.randomUUID(), maintenanceId: existing.id, carId: existing.carId,
+          savedAt: ts, snapshot: structuredClone(existing) } : undefined;
+    const db = await this.open();
+    await new Promise<void>((resolve,reject) => {
+      const tx = db.transaction(['maintenance', 'maintenanceRevisions'], 'readwrite');
+      if (revision) tx.objectStore('maintenanceRevisions').put(revision);
+      tx.objectStore('maintenance').put(row);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+    if (revision) this._maintenanceRevisions.update(rows => [...rows,revision]);
     const list = this._maintenanceAll().filter((m) => m.id !== row.id).concat(row);
     this._maintenanceAll.set(list);
 
@@ -1020,6 +1044,20 @@ export class Db {
     this._healthNotificationStateAll.set(
       this._healthNotificationStateAll().filter((n) => n.id !== row.id).concat(row),
     );
+  }
+
+  async restoreMaintenanceRevision(revisionId: string): Promise<void> {
+    const revision = this._maintenanceRevisions().find(row => row.id === revisionId);
+    const current = revision && this.maintenance().find(row => row.id === revision.maintenanceId);
+    if (!revision || !current) throw new Error('revision.missing');
+    await this.saveMaintenance({ ...revision.snapshot, id: current.id, carId: current.carId,
+      partModel: revision.snapshot.partModel, condition: revision.snapshot.condition,
+      measurements: revision.snapshot.measurements, partNumber: revision.snapshot.partNumber,
+      observations: revision.snapshot.observations,
+      centerName: revision.snapshot.centerName, technicianName: revision.snapshot.technicianName,
+      partBrand: revision.snapshot.partBrand, partCost: revision.snapshot.partCost,
+      laborCost: revision.snapshot.laborCost,
+    });
   }
 
   async deleteMaintenance(id: string): Promise<void> {
@@ -1284,6 +1322,7 @@ export class Db {
       settings,
       fillUps: this._fillUpsAll(),
       maintenance: this._maintenanceAll(),
+      maintenanceRevisions: this._maintenanceRevisions(),
       expensePeriods: this._expensePeriodsAll(),
       breakdowns: this._breakdownsAll(),
       otherExpenses: this._otherExpensesAll(),
@@ -1311,6 +1350,7 @@ export class Db {
       version !== 4 &&
       version !== 5 &&
       version !== 6 &&
+      version !== 7 &&
       version !== BACKUP_VERSION
     ) {
       throw new Error('backup.unsupportedVersion');
@@ -1321,6 +1361,8 @@ export class Db {
     if (!obj['settings'] || typeof obj['settings'] !== 'object') {
       throw new Error('backup.invalid');
     }
+    const maintenanceRevisions = Array.isArray(obj['maintenanceRevisions'])
+      ? obj['maintenanceRevisions'].map(value => { const r = normalizeMaintenanceRevision(value); return {...r,snapshot:normalizeMaintenance(r.snapshot)}; }) : [];
     const fillUps = (obj['fillUps'] as FillUp[]).map(normalizeFillUp);
     const maintenance = (obj['maintenance'] as Maintenance[]).map(normalizeMaintenance);
     const settings = normalizeSettings(obj['settings']);
@@ -1380,6 +1422,7 @@ export class Db {
       settings,
       fillUps,
       maintenance,
+      maintenanceRevisions,
       expensePeriods: expensePeriods.length ? expensePeriods : undefined,
       breakdowns: breakdowns.length ? breakdowns : undefined,
       otherExpenses: otherExpenses.length ? otherExpenses : undefined,
@@ -1416,6 +1459,7 @@ export class Db {
       settings,
       fillUps: backup.fillUps,
       maintenance: backup.maintenance,
+      maintenanceRevisions: backup.maintenanceRevisions ?? [],
       expensePeriods: backup.expensePeriods ?? [],
       breakdowns: backup.breakdowns ?? [],
       otherExpenses: backup.otherExpenses ?? [],
@@ -1540,6 +1584,7 @@ export class Db {
       settings,
       fillUps: [...fillMap.values()],
       maintenance: [...maintMap.values()],
+      maintenanceRevisions: [...new Map([...this._maintenanceRevisions(), ...(backup.maintenanceRevisions ?? [])].map(row => [row.id,row])).values()],
       expensePeriods: [...periodMap.values()],
       breakdowns: [...breakdownMap.values()],
       otherExpenses: [...otherMap.values()],
@@ -1668,4 +1713,4 @@ export class Db {
     this._savedFlash.set(true);
     setTimeout(() => this._savedFlash.set(false), 2200);
   }
-}
+      }
