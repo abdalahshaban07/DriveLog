@@ -437,7 +437,7 @@ export class HomePage {
   }
 
   comingQuery(item: UpcomingItem): Record<string, string> | null {
-    return item.maintenanceId ? { id: item.maintenanceId } : null;
+    return item.maintenanceId ? { serviceFor: item.maintenanceId } : null;
   }
 
   private readonly comingTranslate = (key: string, params?: Record<string, number>): string =>
@@ -976,4 +976,4 @@ function fuelUseWhyKey(direction: 'up' | 'down', reason: FuelUseReason): MsgKey 
 function plateRun(plate: string): string {
   const rtl = /[\u0590-\u08FF]/.test(plate);
   return `${rtl ? '\u2067' : '\u2066'}${plate}\u2069`;
-}
+    }
