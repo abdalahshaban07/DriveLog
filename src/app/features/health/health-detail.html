@@ -76,7 +76,7 @@
         [queryParams]="{ partId: it.partDefinitionId }"
         class="health-detail__cta"
       >
-        {{ i18n.t('health.detail.logService') }}
+        {{ i18n.t(it.partDefinitionId === engineOilId ? 'maint.newOilChange' : 'maint.newService') }}
       </a>
       @if (it.partDefinitionId !== routineId) {
         <button type="button" class="health-detail__archive" (click)="archive()">
@@ -88,4 +88,4 @@
     <app-page-header [title]="i18n.t('health.title')" [showBack]="true" (back)="router.navigateByUrl('/health')" />
     <p class="empty-state">{{ i18n.t('health.empty') }}</p>
   }
-</div>
+    </div>
