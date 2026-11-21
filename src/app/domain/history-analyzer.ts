@@ -1,3 +1,4 @@
+import { compareServiceRecords, resetsServiceDue } from './maintenance-lifecycle';
 import { HISTORY_CONSISTENCY_RATIO } from '../core/config';
 import { confidenceFromGaps, median } from './maintenance-calc';
 import type { Confidence, Maintenance, MaintenanceRecordType } from './models';
@@ -37,10 +38,7 @@ export function estimateIntervalFromHistory(
   }
   if (!gaps.length) return null;
 
-  const { confidence, gapsUsed, excluded } = confidenceFromGaps(
-    gaps,
-    HISTORY_CONSISTENCY_RATIO,
-  );
+  const { confidence, gapsUsed, excluded } = confidenceFromGaps(gaps, HISTORY_CONSISTENCY_RATIO);
   if (!gapsUsed.length) return null;
   const intervalKm = Math.round(median(gapsUsed));
   if (!(intervalKm > 0)) return null;
@@ -58,12 +56,7 @@ export function lastResetRecord(
   partDefinitionId: string,
 ): Maintenance | null {
   const rows = records
-    .filter(
-      (m) =>
-        m.partDefinitionId === partDefinitionId &&
-        m.recordType &&
-        RESET_TYPES.includes(m.recordType),
-    )
-    .sort((a, b) => b.date.localeCompare(a.date) || b.odometer - a.odometer);
+    .filter((m) => m.partDefinitionId === partDefinitionId && resetsServiceDue(m))
+    .sort((a, b) => compareServiceRecords(b, a));
   return rows[0] ?? null;
 }
