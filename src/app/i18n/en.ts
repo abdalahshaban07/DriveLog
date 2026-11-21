@@ -338,7 +338,8 @@ export const en = {
   'backup.done': 'Backup restored',
   'backup.failed': 'Import failed. Your data was not changed.',
   'backup.autoTitle': 'Auto backup',
-  'backup.autoHint': 'Saves a weekly copy to a folder you pick. Keeps the latest 4.',
+  'backup.autoHint':
+    'Saves a copy to a folder you pick: right away, then about weekly when you open the app and the folder still allows it. Keeps the latest 4.',
   'backup.chooseFolder': 'Choose backup folder',
   'backup.lastBackup': 'Last backup',
   'backup.never': 'Never',
@@ -352,6 +353,7 @@ export const en = {
   'backup.writeFailed': 'Could not write the backup. Check folder access and try again.',
   'backup.unsupported':
     "This browser can't save to folders automatically. Use Export to keep a copy.",
+  'backup.overdue': 'Backup overdue. Save a copy now to keep your data safe.',
   'backup.reminderTitle': 'Time to back up',
   'backup.reminderBody': 'Open DriveLog and back up your data from Settings.',
   'backup.decryptHint': 'This file is encrypted. Enter its passphrase to import.',
