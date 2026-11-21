@@ -125,6 +125,8 @@ export class SettingsPage {
   readonly backupPass = signal(this.autoBackup.state()?.passphrase ?? '');
   readonly autoBusy = signal(false);
   readonly autoBackupError = signal('');
+  /** Visible only after a reminder-toggle write has actually persisted. */
+  readonly settingsSaved = signal(false);
   readonly autoBackupOk = signal(false);
   readonly passSaved = signal(false);
   readonly lastBackupLabel = computed(() => {
@@ -177,6 +179,7 @@ export class SettingsPage {
   async onReminders(event: Event): Promise<void> {
     const on = (event.target as HTMLInputElement).checked;
     await this.db.updateSettings({ remindersEnabled: on });
+    this.flashSettingsSaved();
   }
 
   async onAssistantOnline(event: Event): Promise<void> {
@@ -190,6 +193,12 @@ export class SettingsPage {
   ): Promise<void> {
     const on = (event.target as HTMLInputElement).checked;
     await this.db.updateSettings({ [key]: on });
+    this.flashSettingsSaved();
+  }
+
+  private flashSettingsSaved(): void {
+    this.settingsSaved.set(true);
+    setTimeout(() => this.settingsSaved.set(false), 2000);
   }
 
   async setSoonPreset(ratio: number): Promise<void> {
