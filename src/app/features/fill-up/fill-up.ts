@@ -1,3 +1,4 @@
+import { FormDrafts, bindFormDraft } from '../../data/form-draft';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
@@ -79,6 +80,8 @@ type LogMode = 'fuel' | 'charge';
   styleUrl: './fill-up.scss',
 })
 export class FillUpPage {
+  readonly drafts = inject(FormDrafts);
+  draft: ReturnType<typeof bindFormDraft> | null = null;
   readonly i18n = inject(I18n);
   readonly db = inject(Db);
   readonly router = inject(Router);
@@ -253,6 +256,11 @@ export class FillUpPage {
     return kWhPer100Km({ kWh, distanceKm: d > 0 ? d : undefined });
   });
 
+  discardDraft(): void {
+    this.draft?.clear();
+    window.location.reload();
+  }
+
   private canSaveCharge(): boolean {
     const odo = Number(this.chargeOdo());
     const kWh = Number(this.chargeKWh());
@@ -288,14 +296,30 @@ export class FillUpPage {
         this.chargeOdo.set(String(car.currentOdometer));
       }
     }
+    this.draft = bindFormDraft(
+      this.drafts,
+      `fill:${this.db.car()?.id ?? ''}:${chargeId ? chargeId + ':' + this.db.chargeSessions().find((r) => r.id === chargeId)?.updatedAt : id ? id + ':' + this.db.fillUps().find((r) => r.id === id)?.updatedAt : 'new'}`,
+      {
+        distanceKm: this.distanceKm,
+        liters: this.liters,
+        fuelGrade: this.fuelGrade,
+        date: this.date,
+        placeLabel: this.placeLabel,
+        note: this.note,
+        manualUnitPrice: this.manualUnitPrice,
+        logMode: this.logMode,
+        chargeOdo: this.chargeOdo,
+        chargeKWh: this.chargeKWh,
+        chargeCost: this.chargeCost,
+        chargeDistance: this.chargeDistance,
+      },
+    );
     this.scan.onApply = (pick) => this.applyReceiptPick(pick);
     this.scan.init();
     this.odoScan.context = () => {
       const car = this.db.car();
       return {
-        base: car
-          ? baseOdometerForDistance(car, this.db.fillUps(), this.editId() ?? undefined)
-          : 0,
+        base: car ? baseOdometerForDistance(car, this.db.fillUps(), this.editId() ?? undefined) : 0,
         current: car?.currentOdometer ?? 0,
         chargeMode: this.logMode() === 'charge',
       };
@@ -562,6 +586,7 @@ export class FillUpPage {
       }
       await this.db.deleteChargeSession(cid);
       this.confirmDelete.set(false);
+      this.draft?.clear();
       await this.router.navigateByUrl('/history/fill-ups');
       return;
     }
@@ -655,6 +680,7 @@ export class FillUpPage {
         lat: selected?.lat,
         lon: selected?.lon,
       });
+      this.draft?.clear();
       if (wasFirstReal && !sampleMode) {
         if (!this.db.settings().firstRealFillAt) {
           await this.db.updateSettings({
@@ -664,6 +690,7 @@ export class FillUpPage {
         this.resetFormAfterFirstSave();
         this.nextDueBanner.set(true);
       } else {
+        this.draft?.clear();
         await this.router.navigateByUrl('/fuel');
       }
     } finally {
@@ -713,6 +740,7 @@ export class FillUpPage {
         placeLabel: this.placeLabel().trim() || undefined,
         note: this.note().trim() || undefined,
       });
+      this.draft?.clear();
       await this.router.navigateByUrl('/history/fill-ups');
     } finally {
       this.saving.set(false);
