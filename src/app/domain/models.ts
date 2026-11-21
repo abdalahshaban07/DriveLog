@@ -464,6 +464,7 @@ export interface ChargeSession {
 }
 
 export interface BackupFile {
+  maintenanceRevisions?: import('./maintenance-revision').MaintenanceRevision[];
   version: number;
   exportedAt: string;
   /** Legacy single-car field; prefer `cars` when present. */
