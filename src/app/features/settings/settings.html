@@ -145,6 +145,9 @@
             <span class="line__sub">{{ i18n.t('backup.lastBackup') }}: {{ lastBackupLabel() }}</span>
           </span>
         </div>
+        @if (autoBackup.overdue()) {
+          <p class="error">{{ i18n.t('backup.overdue') }}</p>
+        }
         <button type="button" class="line" [disabled]="autoBusy()" (click)="runAutoBackup()">
           <span class="line__text">
             <strong>{{ i18n.t('backup.now') }}</strong>
@@ -313,6 +316,10 @@
         </p>
       </div>
     }
+      @if (settingsSaved()) {
+      <p class="ok" role="status">{{ i18n.t('common.saved') }}</p>
+    }
+
   </section>
 
   <section class="card list" [attr.aria-label]="i18n.t('settings.assistantSection')">
@@ -443,4 +450,4 @@
       (cancelled)="pendingDestructive.set(null)"
     />
   }
-</div>
+    </div>

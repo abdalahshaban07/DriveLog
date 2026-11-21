@@ -21,28 +21,37 @@ export class Notify {
     return Notification.requestPermission();
   }
 
-  async notifyDue(item: DueItem, title: string, body: string): Promise<void> {
-    this.show(title, body, item.id);
+  /** True only when a notification actually reached the user. */
+  async notifyDue(item: DueItem, title: string, body: string): Promise<boolean> {
+    return this.show(title, body, item.id);
   }
 
   /** Generic tagged notification (health/budget/forecast). */
-  showGeneric(title: string, body: string, tag: string): void {
-    this.show(title, body, tag);
+  showGeneric(title: string, body: string, tag: string): Promise<boolean> {
+    return this.show(title, body, tag);
   }
 
   /** Deploy / new-version ping (tag = update so it replaces prior update toasts). */
-  notifyUpdate(title: string, body: string): void {
-    this.show(title, body, 'drivelog-update');
+  notifyUpdate(title: string, body: string): Promise<boolean> {
+    return this.show(title, body, 'drivelog-update');
   }
 
-  private show(title: string, body: string, tag: string): void {
+  private async show(title: string, body: string, tag: string): Promise<boolean> {
     if (!this.supported() || Notification.permission !== 'granted') {
-      return;
+      return false;
     }
     try {
+      // Page-context `new Notification` throws on Android; the service worker
+      // registration is the reliable path there and fine everywhere else.
+      const registration = await navigator.serviceWorker?.getRegistration();
+      if (registration) {
+        await registration.showNotification(title, { body, tag });
+        return true;
+      }
       new Notification(title, { body, tag });
+      return true;
     } catch {
-      /* ignore */
+      return false;
     }
   }
 }

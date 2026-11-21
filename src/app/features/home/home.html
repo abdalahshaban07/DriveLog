@@ -57,6 +57,13 @@
           }
         }
 
+        @if (backupOverdue()) {
+          <a routerLink="/settings" class="vault-nudge backup-nudge" role="alert">
+            <span class="backup-nudge__text">{{ i18n.t('backup.overdue') }}</span>
+            <strong class="backup-nudge__cta">{{ i18n.t('backup.now') }}</strong>
+          </a>
+        }
+
         <section
           #glanceStrip
           class="pulse"
@@ -517,4 +524,4 @@
       </section>
     </section>
   }
-</div>
+          </div>

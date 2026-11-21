@@ -106,7 +106,7 @@ test('choose folder writes a dated copy and shows status', async ({ page }) => {
   const files = await page.evaluate(() => [...(window.__backupFiles?.entries() ?? [])]);
   expect(files.length).toBe(1);
   expect(files[0]![0]).toMatch(/^drivelog-backup-\d{4}-\d{2}-\d{2}\.json$/);
-  expect(JSON.parse(files[0]![1]).version).toBe(7);
+  expect(JSON.parse(files[0]![1]).version).toBe(8); // BACKUP_VERSION
 
   await section.getByRole('button', { name: 'Back up now' }).click();
   await expect(section.getByText('Backup saved', { exact: true })).toBeVisible();
@@ -196,5 +196,47 @@ test('auto backup reads correctly in Arabic RTL', async ({ page }) => {
   const ar = autoSection(page, 'نسخ احتياطي تلقائي');
   await expect(ar.getByText('احفظ نسخة دلوقتي')).toBeVisible();
   await shotSection(page, 'نسخ احتياطي تلقائي', '.qa/auto-backup-ar.png');
+  await expectNoAppErrors(issues);
+});
+test('overdue backup warns on home and in settings', async ({ page }) => {
+  const issues = watchConsole(page);
+  await stubPicker(page, true);
+  await openSettings(page);
+
+  const section = autoSection(page);
+  await section.getByRole('button', { name: 'Choose backup folder' }).click();
+  await expect(section.getByText('My Backups')).toBeVisible();
+
+  // Age the last copy beyond the weekly cadence, then reload.
+  await page.evaluate(async () => {
+    const req = indexedDB.open('drivelog');
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    const tx = db.transaction('backupState', 'readwrite');
+    const store = tx.objectStore('backupState');
+    const getReq = store.get('backupState');
+    const record = await new Promise<Record<string, unknown>>((resolve, reject) => {
+      getReq.onsuccess = () => resolve(getReq.result as Record<string, unknown>);
+      getReq.onerror = () => reject(getReq.error);
+    });
+    record['lastBackupAt'] = new Date(Date.now() - 8 * 86_400_000).toISOString();
+    store.put(record);
+    await new Promise<void>((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  });
+
+  await page.goto('/');
+  await dismissWhatsNewIfOpen(page);
+  const banner = page.getByRole('alert').filter({ hasText: /Backup overdue/i });
+  await expect(banner).toBeVisible();
+  await banner.screenshot({ path: '.qa/backup-overdue-home.png' });
+  await banner.click();
+  await expect(page).toHaveURL(/\/settings/);
+  await expect(autoSection(page).getByText(/Backup overdue/i)).toBeVisible();
+  await shotSection(page, 'Auto backup', '.qa/backup-overdue-settings.png');
   await expectNoAppErrors(issues);
 });

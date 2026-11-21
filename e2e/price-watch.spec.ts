@@ -136,6 +136,10 @@ test.describe('Fuel price watch', () => {
     await expect(toggle).toBeChecked();
     await toggle.click();
     await expect(toggle).not.toBeChecked();
+    // The native switch flips before the async write lands; the Saved status
+    // only appears after the settings row is actually persisted, so waiting
+    // for it proves the value being reloaded is the committed one.
+    await expect(page.getByRole('status').filter({ hasText: 'Saved' })).toBeVisible();
     await page.reload();
     await dismissWhatsNewIfOpen(page);
     await expect(page.getByRole('switch', { name: 'Fuel price notifications' })).not.toBeChecked();

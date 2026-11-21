@@ -92,6 +92,12 @@ export class Shell {
       void this.holidayReminder.check();
       void this.healthReminder.check();
       void this.autoBackup.check();
+      // A kept-open PWA can cross the weekly boundary without a cold start.
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          void this.autoBackup.check();
+        }
+      });
     });
   }
 
@@ -106,4 +112,4 @@ export class Shell {
   dismissNotes(): void {
     void this.whatsNew.dismiss();
   }
-}
+        }
