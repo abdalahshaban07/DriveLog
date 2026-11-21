@@ -50,6 +50,11 @@ export class AutoBackup {
   readonly state = this.db.backupState;
   readonly connected = computed(() => this.state()?.directoryHandle != null);
   readonly passphraseSet = computed(() => Boolean(this.state()?.passphrase));
+  /** Folder linked and the weekly copy is due; drives in-app overdue warnings. */
+  readonly overdue = computed(() => {
+    const state = this.state();
+    return state?.directoryHandle != null && isWeeklyDue(state.lastBackupAt, new Date());
+  });
 
   /** Link a user-picked folder, then write the first copy immediately. */
   async chooseFolder(): Promise<boolean> {
@@ -91,19 +96,24 @@ export class AutoBackup {
     } catch {
       return; // folder removed or handle revoked
     }
+    const backupDue = isWeeklyDue(state?.lastBackupAt, now);
     if (perm === 'granted') {
-      if (isWeeklyDue(state?.lastBackupAt, now)) {
+      if (backupDue) {
         await this.backUpNow();
       }
       return;
     }
-    if (isWeeklyDue(state?.lastReminderAt, now)) {
-      this.notify.showGeneric(
+    // Write access needs a gesture. Nudge at most weekly, only while a copy is
+    // due, and only count a reminder that actually reached the user.
+    if (backupDue && isWeeklyDue(state?.lastReminderAt, now)) {
+      const shown = await this.notify.showGeneric(
         this.i18n.t('backup.reminderTitle'),
         this.i18n.t('backup.reminderBody'),
         'drivelog-backup',
       );
-      await this.db.updateBackupState({ lastReminderAt: now.toISOString() });
+      if (shown) {
+        await this.db.updateBackupState({ lastReminderAt: now.toISOString() });
+      }
     }
   }
 
