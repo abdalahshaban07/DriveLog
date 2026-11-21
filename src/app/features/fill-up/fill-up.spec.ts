@@ -74,6 +74,7 @@ describe('FillUpPage', () => {
   });
 
   beforeEach(async () => {
+    localStorage.clear();
     fillUps.set([]);
     recs = [];
     voiceFactory.mockClear();
