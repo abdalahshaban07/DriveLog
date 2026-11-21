@@ -125,13 +125,6 @@
   padding-block-start: var(--space-1);
 }
 
-.dock {
-  position: fixed;
-  z-index: 90;
-  inset-inline: max(var(--space-4), calc((100% - var(--shell)) / 2 + var(--space-4)));
-  bottom: var(--dock-offset, calc(var(--nav-height) + var(--space-2)));
-}
-
 .section-title {
   margin: 0;
   font-size: 1rem;
@@ -152,9 +145,10 @@
 
 .maint-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
+  padding-block: var(--space-3);
   border-block-end: 1px solid var(--hairline);
 }
 
@@ -164,7 +158,7 @@
 
 .maint-row__link {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr);
   gap: var(--space-3);
   align-items: center;
   min-height: var(--tap);
@@ -211,15 +205,19 @@
 }
 
 .maint-row__cost {
+  grid-column: 2;
+  justify-self: start;
+  overflow-wrap: anywhere;
   font-variant-numeric: tabular-nums;
   font-size: 0.95rem;
 }
 
 .maint-row__icons {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
 }
 
 .icon-action {
@@ -262,4 +260,71 @@
   .icon-action:active {
     transform: none;
   }
+}
+
+.maint-form__intro {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.maint-form__hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.65;
+}
+
+.maint-form__new {
+  color: var(--fuel);
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+  justify-self: start;
+  min-height: 44px;
+  white-space: normal;
+  text-align: start;
+}
+
+.maint-row__new {
+  margin-inline-end: auto;
+  max-width: calc(100% - 104px);
+  min-height: 44px;
+  padding: var(--space-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--fuel);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+}
+
+.maint-row__new:focus-visible {
+  outline: 2px solid var(--fuel);
+  outline-offset: 2px;
+}
+
+.maint-row__body strong {
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+
+.maint-form input,
+.maint-form textarea {
+  scroll-margin-block: 120px;
+}
+
+.revision-entry {
+  padding-block: var(--space-3);
+  border-block-start: 1px solid var(--hairline);
+  overflow-wrap: anywhere;
+}
+.revision-entry p {
+  margin-block: var(--space-2);
+  line-height: 1.6;
+}
+.revision-entry button {
+  min-height: 44px;
+  color: var(--fuel);
 }
