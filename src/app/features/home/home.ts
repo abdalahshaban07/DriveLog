@@ -48,6 +48,7 @@ import { I18n } from '../../i18n/i18n';
 import { DueRow } from '../../ui/due-row';
 import { HealthRow } from '../../ui/health-row/health-row';
 import type { MsgKey } from '../../i18n/en';
+import { AutoBackup } from '../../pwa/auto-backup';
 import { InstallPwa } from '../../pwa/install-pwa';
 import { PageHeader } from '../../ui/page-header';
 import { PageLine } from '../../ui/page-line/page-line';
@@ -107,6 +108,7 @@ export class HomePage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly install = inject(InstallPwa);
+  private readonly autoBackup = inject(AutoBackup);
   private readonly glanceStrip = viewChild<ElementRef<HTMLElement>>('glanceStrip');
 
   readonly view = signal<HomeView>('dashboard');
@@ -318,6 +320,8 @@ export class HomePage {
     return nextDueItem(items);
   });
   readonly nextVaultDoc = computed(() => nextExpiringDoc(this.db.vehicleDocuments()));
+  /** Linked backup folder with a stale weekly copy. */
+  readonly backupOverdue = this.autoBackup.overdue;
   /** At most one dismissible nudge on the dashboard, highest priority first. */
   readonly nudge = computed((): 'checklist' | 'vault' | 'install' | null => {
     if (this.showChecklist()) return 'checklist';
@@ -976,4 +980,4 @@ function fuelUseWhyKey(direction: 'up' | 'down', reason: FuelUseReason): MsgKey 
 function plateRun(plate: string): string {
   const rtl = /[\u0590-\u08FF]/.test(plate);
   return `${rtl ? '\u2067' : '\u2066'}${plate}\u2069`;
-    }
+        }
