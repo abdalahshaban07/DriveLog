@@ -68,7 +68,7 @@ export class UpcomingPage {
   }
 
   query(item: UpcomingItem): Record<string, string> | null {
-    return item.maintenanceId ? { id: item.maintenanceId } : null;
+    return item.maintenanceId ? { serviceFor: item.maintenanceId } : null;
   }
 
   private readonly translate = (key: string, params?: Record<string, number>): string =>

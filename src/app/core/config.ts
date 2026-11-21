@@ -3,9 +3,9 @@
 export const APP_VERSION = '0.1';
 
 export const DB_NAME = 'drivelog';
-/** v8 adds the backupState meta store (auto-backup folder handle + cadence). */
-export const DB_VERSION = 8;
-export const BACKUP_VERSION = 7;
+/** v9 adds prospective maintenance revision snapshots. */
+export const DB_VERSION = 9;
+export const BACKUP_VERSION = 8;
 
 /** Meta store outside SCHEMA_STORES so import/wipe never clears the folder link. */
 export const BACKUP_STATE_STORE = 'backupState';
@@ -26,6 +26,7 @@ export const SCHEMA_STORES = [
   'settings',
   'fillUps',
   'maintenance',
+  'maintenanceRevisions',
   'expensePeriods',
   'breakdowns',
   'otherExpenses',

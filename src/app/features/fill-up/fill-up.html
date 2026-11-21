@@ -13,11 +13,18 @@
     (back)="router.navigateByUrl('/fuel')"
   />
 
-  <div
-    class="log-mode"
-    role="radiogroup"
-    [attr.aria-label]="i18n.t('fillUp.modeLabel')"
-  >
+  @if (draft?.restored()) {
+    <section class="card stack" role="status" style="padding: 16px">
+      <p>{{ i18n.t('draft.restored') }}</p>
+      <button type="button" class="ghost" (click)="discardDraft()">
+        {{ i18n.t('draft.discard') }}
+      </button>
+    </section>
+  }
+  @if (drafts.failed()) {
+    <p role="alert">{{ i18n.t('draft.failed') }}</p>
+  }
+  <div class="log-mode" role="radiogroup" [attr.aria-label]="i18n.t('fillUp.modeLabel')">
     <button
       type="button"
       role="radio"
@@ -41,22 +48,14 @@
   </div>
 
   @if (nextDueBanner()) {
-    <section
-      class="card next-due-banner"
-      role="status"
-      aria-live="polite"
-    >
+    <section class="card next-due-banner" role="status" aria-live="polite">
       <h2 class="next-due-banner__title">{{ i18n.t('fillUp.nextDue.title') }}</h2>
       <p class="next-due-banner__body">{{ i18n.t('fillUp.nextDue.body') }}</p>
       <div class="next-due-banner__actions">
         <a routerLink="/maintenance" class="next-due-banner__cta">{{
           i18n.t('fillUp.nextDue.action')
         }}</a>
-        <button
-          type="button"
-          class="next-due-banner__dismiss"
-          (click)="dismissNextDueBanner()"
-        >
+        <button type="button" class="next-due-banner__dismiss" (click)="dismissNextDueBanner()">
           {{ i18n.t('fillUp.nextDue.dismiss') }}
         </button>
       </div>
@@ -207,10 +206,7 @@
             [(value)]="fuelGrade"
           />
           @if (needsManualPrice()) {
-            <app-numeric-field
-              [label]="i18n.t('fillUp.unitPrice')"
-              [(value)]="manualUnitPrice"
-            />
+            <app-numeric-field [label]="i18n.t('fillUp.unitPrice')" [(value)]="manualUnitPrice" />
           }
         }
       </div>
@@ -303,10 +299,7 @@
         [(value)]="chargeOdo"
         [error]="chargeOdoError()"
       />
-      <app-numeric-field
-        [label]="i18n.t('charge.distanceKm')"
-        [(value)]="chargeDistance"
-      />
+      <app-numeric-field [label]="i18n.t('charge.distanceKm')" [(value)]="chargeDistance" />
       <app-numeric-field
         [label]="i18n.t('charge.kWh')"
         [(value)]="chargeKWh"
@@ -348,15 +341,11 @@
 
   @if (confirmDelete()) {
     <app-confirm-bar
-      [message]="
-        logMode() === 'charge' ? i18n.t('charge.deleteWarn') : i18n.t('fillUp.deleteWarn')
-      "
-      [confirmLabel]="
-        logMode() === 'charge' ? i18n.t('charge.delete') : i18n.t('fillUp.delete')
-      "
+      [message]="logMode() === 'charge' ? i18n.t('charge.deleteWarn') : i18n.t('fillUp.deleteWarn')"
+      [confirmLabel]="logMode() === 'charge' ? i18n.t('charge.delete') : i18n.t('fillUp.delete')"
       [cancelLabel]="i18n.t('common.cancel')"
       (confirmed)="doDelete()"
       (cancelled)="confirmDelete.set(false)"
     />
   }
-</div>
+  </div>

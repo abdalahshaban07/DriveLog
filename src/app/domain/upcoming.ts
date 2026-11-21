@@ -1,14 +1,9 @@
+import { activeMaintenanceDueRecords } from './maintenance-lifecycle';
 import { DUE_SOON_DAYS, DUE_SOON_KM } from '../core/config';
 import { compareDateOnly, todayDateOnly } from './dues';
 import { maintenanceRecordLabel, type NamedPart } from './part-name';
 import { daysUntilExpiry } from './vehicle-docs';
-import type {
-  DateOnly,
-  DueStatus,
-  Maintenance,
-  VehicleDocKind,
-  VehicleDocument,
-} from './models';
+import type { DateOnly, DueStatus, Maintenance, VehicleDocKind, VehicleDocument } from './models';
 
 /** Dated rows inside this window, plus anything already overdue. */
 const UPCOMING_DAYS = 90;
@@ -94,7 +89,7 @@ export function buildUpcoming(input: {
   const today = input.today ?? todayDateOnly();
   const items: UpcomingItem[] = [];
 
-  for (const row of input.maintenance) {
+  for (const row of activeMaintenanceDueRecords(input.maintenance)) {
     const dated = !!row.dueDate && dateInHorizon(row.dueDate, today);
     const byKm = row.dueKm != null && kmInHorizon(row.dueKm, input.odometer);
     if (!dated && !byKm) {
@@ -217,18 +212,11 @@ export function upcomingDocTitle(
   }
 }
 
-export function upcomingMeta(
-  item: UpcomingItem,
-  formatDate: (day: DateOnly) => string,
-): string {
+export function upcomingMeta(item: UpcomingItem, formatDate: (day: DateOnly) => string): string {
   return item.dueDate ? formatDate(item.dueDate) : '';
 }
 
-export function upcomingStatusLabel(
-  item: UpcomingItem,
-  odometer: number,
-  t: UpcomingT,
-): string {
+export function upcomingStatusLabel(item: UpcomingItem, odometer: number, t: UpcomingT): string {
   if (item.dueDate) {
     const days = daysUntilExpiry(item.dueDate);
     if (days === 0) {
@@ -241,15 +229,11 @@ export function upcomingStatusLabel(
 }
 
 /** Km side of a due item — shown beside the day count when both exist. */
-export function upcomingKmLabel(
-  item: UpcomingItem,
-  odometer: number,
-  t: UpcomingT,
-): string {
+export function upcomingKmLabel(item: UpcomingItem, odometer: number, t: UpcomingT): string {
   if (item.dueKm == null) {
     return '';
   }
   const left = item.dueKm - odometer;
   const n = Math.abs(left);
   return left < 0 ? t('home.kmOver', { km: n }) : t('home.kmLeft', { km: n });
-}
+                 }

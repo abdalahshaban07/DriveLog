@@ -1,16 +1,22 @@
+import { FormDrafts, bindFormDraft } from '../../data/form-draft';
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  ElementRef,
+  Injector,
+  runInInjectionContext,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Db } from '../../data/db';
 import { publicHolidays } from '../../data/remote';
 import { countryFromCurrency } from '../../domain/country';
 import { buildDueItems, todayDateOnly } from '../../domain/dues';
 import { firstDueHolidayNudge, type PublicHoliday } from '../../domain/holidays';
+import { SYSTEM_ENGINE_OIL_ID } from '../../domain/part-catalog';
 import { legacyTypeForPart } from '../../domain/health-migration';
 import { dueItemLabel, maintenanceRecordLabel, partDefinitionLabel } from '../../domain/part-name';
 import { sampleDiscoveryHoliday } from '../../domain/sample-data';
@@ -55,14 +61,56 @@ import { TextField } from '../../ui/text-field';
   styleUrl: './maintenance.scss',
 })
 export class MaintenancePage {
+  readonly drafts = inject(FormDrafts);
+  draft: ReturnType<typeof bindFormDraft> | null = null;
   readonly i18n = inject(I18n);
   readonly db = inject(Db);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly injector = inject(Injector);
+  private readonly serviceForm = viewChild<ElementRef<HTMLElement>>('serviceForm');
 
   readonly sectionTabs: SectionTab[] = [
     { labelKey: 'maint.title', link: '/maintenance' },
     { labelKey: 'section.history', link: '/history/maintenance' },
   ];
+
+  readonly pendingRestore = signal<string | null>(null);
+  readonly restoreError = signal(false);
+  readonly revisions = computed(() =>
+    this.db
+      .maintenanceRevisions()
+      .filter(
+        (r) => r.maintenanceId === this.editId() && (!r.carId || r.carId === this.db.car()?.id),
+      )
+      .sort((a, b) => b.savedAt.localeCompare(a.savedAt)),
+  );
+
+  revisionTime(value: string): string {
+    return this.i18n.formatDate(new Date(value), {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  }
+
+  async restoreRevision(): Promise<void> {
+    const id = this.pendingRestore();
+    this.pendingRestore.set(null);
+    if (!id) return;
+    this.restoreError.set(false);
+    try {
+      await this.db.restoreMaintenanceRevision(id);
+      const row = this.db.maintenance().find((m) => m.id === this.editId());
+      this.draft?.clear();
+      if (row) this.startEdit(row);
+    } catch {
+      this.restoreError.set(true);
+    }
+  }
 
   readonly partId = signal('');
   /** Persisted for budget/routine; no UI — default service, preserve on edit. */
@@ -95,6 +143,10 @@ export class MaintenancePage {
       value,
       label: this.i18n.t(`maint.condition.${value}` as MsgKey),
     })),
+  );
+
+  readonly newServiceLabel = computed(() =>
+    this.i18n.t(this.partId() === SYSTEM_ENGINE_OIL_ID ? 'maint.newOilChange' : 'maint.newService'),
   );
 
   readonly canSave = computed(() => !!this.partId());
@@ -144,12 +196,55 @@ export class MaintenancePage {
   constructor() {
     const id = this.route.snapshot.queryParamMap.get('id');
     const partQ = this.route.snapshot.queryParamMap.get('partId');
+    const serviceFor = this.route.snapshot.queryParamMap.get('serviceFor');
+    if (serviceFor && !id) {
+      const previous = this.db.maintenance().find((m) => m.id === serviceFor);
+      if (previous) {
+        const part =
+          previous.partDefinitionId ??
+          this.db.catalog().find((p) => {
+            const legacy = legacyTypeForPart(p);
+            return legacy.type === previous.type && legacy.otherLabel === previous.otherLabel;
+          })?.id;
+        if (part) this.partId.set(part);
+      }
+    }
     if (partQ) this.partId.set(partQ);
     if (id) {
       const row = this.db.maintenance().find((m) => m.id === id);
       if (row) this.startEdit(row);
     }
+    this.bindDraft();
     void this.loadHolidays();
+  }
+
+  private bindDraft(): void {
+    this.draft?.stop();
+    this.draft = runInInjectionContext(this.injector, () =>
+      bindFormDraft(
+        this.drafts,
+        `maintenance:${this.db.car()?.id ?? ''}:${this.editId() ? this.editId() + ':' + this.db.maintenance().find((m) => m.id === this.editId())?.updatedAt : 'new'}`,
+        {
+          partId: this.partId,
+          cost: this.cost,
+          odometer: this.odometer,
+          date: this.date,
+          note: this.note,
+          dueKm: this.dueKm,
+          dueDate: this.dueDate,
+          partModel: this.partModel,
+          condition: this.condition,
+        },
+      ),
+    );
+  }
+
+  discardDraft(): void {
+    this.draft?.clear();
+    const row = this.db.maintenance().find((m) => m.id === this.editId());
+    this.resetForm();
+    if (row) this.startEdit(row);
+    else this.bindDraft();
   }
 
   private async loadHolidays(): Promise<void> {
@@ -226,7 +321,28 @@ export class MaintenancePage {
     this.costError.set('');
   }
 
+  /** A real new service keeps only the part, never the old cost or service details. */
+  startNewService(partId = ''): void {
+    this.draft?.stop();
+    this.resetForm();
+    this.partId.set(partId);
+    this.bindDraft();
+    this.serviceForm()?.nativeElement.focus();
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: partId ? { partId } : {},
+      replaceUrl: true,
+    });
+  }
+
+  newServiceFor(row: Maintenance): string {
+    return this.i18n.t(
+      row.partDefinitionId === SYSTEM_ENGINE_OIL_ID ? 'maint.newOilChange' : 'maint.newService',
+    );
+  }
+
   startEdit(row: Maintenance): void {
+    this.draft?.stop();
     this.editId.set(row.id);
     this.partId.set(row.partDefinitionId ?? '');
     this.recordType.set(row.recordType ?? 'service');
@@ -238,6 +354,7 @@ export class MaintenancePage {
     this.dueDate.set(row.dueDate ?? '');
     this.partModel.set(row.partModel ?? '');
     this.condition.set(row.condition ?? '');
+    if (this.draft) this.bindDraft();
   }
 
   async save(): Promise<void> {
@@ -291,7 +408,8 @@ export class MaintenancePage {
       ) {
         await this.db.updateSettings({ firstDueAt: new Date().toISOString() });
       }
-      this.resetForm();
+      this.draft?.clear();
+      this.startNewService();
     } finally {
       this.saving.set(false);
     }

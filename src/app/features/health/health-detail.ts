@@ -3,7 +3,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
 import { Db } from '../../data/db';
-import { ROUTINE_CHECK_PART_ID } from '../../domain/part-catalog';
+import { ROUTINE_CHECK_PART_ID, SYSTEM_ENGINE_OIL_ID } from '../../domain/part-catalog';
 import { lifeRemainingPct, type HealthItem } from '../../domain/vehicle-health';
 import { homeHealthSummary } from '../../domain/vehicle-facts';
 import type { HealthSource } from '../../domain/models';
@@ -23,6 +23,7 @@ export class HealthDetailPage {
   readonly db = inject(Db);
   readonly router = inject(Router);
   readonly routineId = ROUTINE_CHECK_PART_ID;
+  readonly engineOilId = SYSTEM_ENGINE_OIL_ID;
   private readonly route = inject(ActivatedRoute);
   readonly partId = toSignal(this.route.paramMap.pipe(map((p) => p.get('partId') ?? '')), {
     initialValue: '',
@@ -73,4 +74,4 @@ export class HealthDetailPage {
       void this.router.navigateByUrl('/health');
     }
   }
-}
+                                        }

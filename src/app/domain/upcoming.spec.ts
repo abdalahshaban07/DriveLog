@@ -23,7 +23,9 @@ function maint(partial: Partial<Maintenance> & Pick<Maintenance, 'id'>): Mainten
   };
 }
 
-function doc(partial: Partial<VehicleDocument> & Pick<VehicleDocument, 'id' | 'kind' | 'expiryDate'>): VehicleDocument {
+function doc(
+  partial: Partial<VehicleDocument> & Pick<VehicleDocument, 'id' | 'kind' | 'expiryDate'>,
+): VehicleDocument {
   return {
     carId: 'c1',
     createdAt: '2026-01-01T00:00:00.000Z',
@@ -42,9 +44,9 @@ describe('buildUpcoming', () => {
         doc({ id: 'far', kind: 'inspection', expiryDate: '2027-05-01' }),
       ],
       maintenance: [
-        maint({ id: 'late', dueDate: '2026-09-01' }),
-        maint({ id: 'soon', dueDate: '2026-11-01' }),
-        maint({ id: 'far', dueDate: '2027-02-01' }),
+        maint({ id: 'late', partDefinitionId: 'part-a', dueDate: '2026-09-01' }),
+        maint({ id: 'soon', partDefinitionId: 'part-b', dueDate: '2026-11-01' }),
+        maint({ id: 'far', partDefinitionId: 'part-c', dueDate: '2027-02-01' }),
         maint({ id: 'km-soon', dueKm: 1400, type: 'filter' }),
         maint({ id: 'km-far', dueKm: 2000, type: 'tires' }),
         maint({ id: 'km-over', dueKm: 900, type: 'brakes' }),
@@ -119,8 +121,12 @@ describe('upcoming labels', () => {
     expect(upcomingStatusLabel(item({ dueDate: dayOffset(0) }), 0, t)).toBe('vault.dueToday');
     expect(upcomingStatusLabel(item({ dueDate: dayOffset(3) }), 0, t)).toBe('vault.daysLeft(3)');
     expect(upcomingStatusLabel(item({ dueDate: dayOffset(-2) }), 0, t)).toBe('vault.daysOver(2)');
-    expect(upcomingStatusLabel(item({ kmOnly: true, dueKm: 1400 }), 1000, t)).toBe('home.kmLeft(400)');
-    expect(upcomingStatusLabel(item({ kmOnly: true, dueKm: 900 }), 1000, t)).toBe('home.kmOver(100)');
+    expect(upcomingStatusLabel(item({ kmOnly: true, dueKm: 1400 }), 1000, t)).toBe(
+      'home.kmLeft(400)',
+    );
+    expect(upcomingStatusLabel(item({ kmOnly: true, dueKm: 900 }), 1000, t)).toBe(
+      'home.kmOver(100)',
+    );
   });
 
   it('exposes the km side separately for dual-metric rows', () => {

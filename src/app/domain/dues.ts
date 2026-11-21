@@ -1,12 +1,6 @@
+import { activeMaintenanceDueRecords } from './maintenance-lifecycle';
 import { DUE_SOON_DAYS, DUE_SOON_KM } from '../core/config';
-import type {
-  Car,
-  DateOnly,
-  DueItem,
-  DueStatus,
-  Maintenance,
-  Settings,
-} from './models';
+import type { Car, DateOnly, DueItem, DueStatus, Maintenance, Settings } from './models';
 
 function parseDateOnly(value: DateOnly): { y: number; m: number; d: number } {
   const [y, m, d] = value.split('-').map(Number);
@@ -40,10 +34,7 @@ function addDays(date: DateOnly, days: number): DateOnly {
   return todayDateOnly(dt);
 }
 
-function statusForDate(
-  dueDate: DateOnly,
-  today: DateOnly,
-): DueStatus {
+function statusForDate(dueDate: DateOnly, today: DateOnly): DueStatus {
   if (compareDateOnly(today, dueDate) >= 0) {
     return 'overdue';
   }
@@ -109,7 +100,7 @@ export function buildDueItems(
     }
   }
 
-  for (const m of maintenance) {
+  for (const m of activeMaintenanceDueRecords(maintenance)) {
     if (m.dueKm == null && !m.dueDate) {
       continue;
     }
