@@ -74,6 +74,7 @@ describe('HomePage', () => {
             preTripChecks: () => [],
             chargeSessions: () => [],
             fuelPriceHistory: () => [],
+            backupState: () => null,
             snapshotCurrency: () => 'EGP',
             updateSettings: async () => undefined,
           },
