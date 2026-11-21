@@ -417,6 +417,42 @@
   letter-spacing: -0.03em;
 }
 
+/* Backup overdue: readable sentence + clear action; stacked on phones. */
+.backup-nudge {
+  flex-wrap: wrap;
+  row-gap: var(--space-2);
+}
+
+.backup-nudge__text {
+  color: var(--paper-text);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.backup-nudge__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap);
+  padding-inline: var(--space-4);
+  border-radius: calc(var(--radius) - 4px);
+  background: var(--cta);
+  color: var(--cta-text);
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: normal;
+  letter-spacing: normal;
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  .backup-nudge {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+}
+
 .vault-nudge__label {
   color: var(--paper-muted);
   font-size: 0.72rem;
