@@ -2,10 +2,18 @@
   <app-page-header [title]="i18n.t('maint.title')">
     <app-page-line page="maintenance" />
   </app-page-header>
-  <app-section-tabs
-    [tabs]="sectionTabs"
-    [ariaLabel]="i18n.t('maint.title')"
-  />
+  @if (draft?.restored()) {
+    <section class="card stack" role="status" style="padding: 16px">
+      <p>{{ i18n.t('draft.restored') }}</p>
+      <button type="button" class="ghost" (click)="discardDraft()">
+        {{ i18n.t('draft.discard') }}
+      </button>
+    </section>
+  }
+  @if (drafts.failed()) {
+    <p role="alert">{{ i18n.t('draft.failed') }}</p>
+  }
+  <app-section-tabs [tabs]="sectionTabs" [ariaLabel]="i18n.t('maint.title')" />
 
   @if (holidayNudge(); as h) {
     <p class="maint-holiday" role="status" aria-live="polite">
@@ -37,15 +45,32 @@
     </section>
   }
 
-  <section class="card card--paper stack maint-form" [attr.aria-label]="i18n.t('maint.add')">
+  <section
+    #serviceForm
+    tabindex="-1"
+    class="card card--paper stack maint-form"
+    [attr.aria-label]="i18n.t('maint.add')"
+  >
     @if (editId()) {
       <div class="maint-form__edit" role="status">
         <p class="maint-form__edit-label">{{ i18n.t('maint.editing') }}</p>
-        <button type="button" class="ghost" (click)="resetForm()">
+        <button type="button" class="ghost" (click)="startNewService()">
           {{ i18n.t('maint.cancelEdit') }}
         </button>
       </div>
     }
+
+    <div class="maint-form__intro">
+      @if (editId()) {
+        <p class="maint-form__hint">{{ i18n.t('maint.editHint') }}</p>
+        <button type="button" class="ghost maint-form__new" (click)="startNewService(partId())">
+          + {{ newServiceLabel() }}
+        </button>
+      } @else {
+        <h2 class="section-title">{{ newServiceLabel() }}</h2>
+        <p class="maint-form__hint">{{ i18n.t('maint.newHint') }}</p>
+      }
+    </div>
 
     <div class="maint-form__essentials">
       <app-select-field
@@ -84,27 +109,62 @@
     </div>
     <div class="maint-form__pair">
       <app-numeric-field [label]="i18n.t('maint.dueKm')" [(value)]="dueKm" />
-      <app-date-field
-        [label]="i18n.t('maint.dueDate')"
-        [(value)]="dueDate"
-        mode="due"
-      />
+      <app-date-field [label]="i18n.t('maint.dueDate')" [(value)]="dueDate" mode="due" />
     </div>
-    <app-text-field
-      [label]="i18n.t('maint.step.notes')"
-      [(value)]="note"
-      [multiline]="true"
-    />
+    <app-text-field [label]="i18n.t('maint.step.notes')" [(value)]="note" [multiline]="true" />
   </section>
 
-  <div class="maint-form__save dock">
+  <div class="maint-form__save">
     <app-primary-button
-      [label]="i18n.t('maint.save')"
+      [label]="editId() ? i18n.t('maint.saveCorrection') : i18n.t('maint.saveNewService')"
       [disabled]="!canSave() || saving()"
       [stretch]="true"
       (pressed)="save()"
     />
   </div>
+
+  @if (editId()) {
+    <section
+      class="card stack revisions"
+      style="padding: 16px"
+      [attr.aria-label]="i18n.t('revision.title')"
+    >
+      <h2 class="section-title">{{ i18n.t('revision.title') }}</h2>
+      @if (!revisions().length) {
+        <p>{{ i18n.t('revision.empty') }}</p>
+      }
+      @for (revision of revisions(); track revision.id) {
+        <div class="revision-entry">
+          <strong>{{ revisionTime(revision.savedAt) }}</strong>
+          <p>{{ i18n.t('revision.date') }}: {{ i18n.formatDate(revision.snapshot.date) }}</p>
+          <p>
+            {{ revision.snapshot.partModel || rowLabel(revision.snapshot) }} ·
+            {{ formatMoney(revision.snapshot.cost) }}
+          </p>
+          <p>
+            {{ i18n.formatNumber(revision.snapshot.odometer, { maximumFractionDigits: 0 }) }}
+            {{ i18n.t('common.km') }}
+          </p>
+          <button type="button" class="ghost" (click)="pendingRestore.set(revision.id)">
+            {{ i18n.t('revision.restore') }}
+          </button>
+        </div>
+      }
+      @if (restoreError()) {
+        <p role="alert">{{ i18n.t('revision.failed') }}</p>
+      }
+    </section>
+  }
+  @if (pendingRestore()) {
+    <app-confirm-bar
+      [message]="i18n.t('revision.confirm')"
+      [confirmLabel]="i18n.t('revision.restore')"
+      [cancelLabel]="i18n.t('common.cancel')"
+      [destructive]="false"
+      (confirmed)="restoreRevision()"
+      (cancelled)="pendingRestore.set(null)"
+    />
+  }
 
   <h2 class="section-title">{{ i18n.t('maint.list') }}</h2>
   @if (history().length === 0) {
@@ -121,7 +181,9 @@
             <span class="maint-row__body">
               <strong>{{ rowLabel(m) }}</strong>
               <span class="maint-km">
-                <bdi dir="ltr">{{ i18n.formatNumber(m.odometer, { maximumFractionDigits: 0 }) }}</bdi>
+                <bdi dir="ltr">{{
+                  i18n.formatNumber(m.odometer, { maximumFractionDigits: 0 })
+                }}</bdi>
                 {{ i18n.t('common.km') }}
               </span>
             </span>
@@ -132,8 +194,15 @@
           <div class="maint-row__icons">
             <button
               type="button"
+              class="maint-row__new"
+              (click)="startNewService(m.partDefinitionId)"
+            >
+              + {{ newServiceFor(m) }}
+            </button>
+            <button
+              type="button"
               class="icon-action"
-              [attr.aria-label]="i18n.t('common.edit')"
+              [attr.aria-label]="i18n.t('maint.correctRecord')"
               (click)="startEdit(m)"
             >
               <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -171,4 +240,4 @@
       (cancelled)="pendingDelete.set(null)"
     />
   }
-</div>
+    </div>
