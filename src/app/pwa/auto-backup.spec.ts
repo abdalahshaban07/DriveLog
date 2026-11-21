@@ -64,7 +64,7 @@ describe('AutoBackup', () => {
         settings: {},
       }) as unknown as BackupFile,
   );
-  const showGeneric = vi.fn();
+  const showGeneric = vi.fn(async () => true);
   let picker: ReturnType<typeof vi.fn<() => Promise<BackupDirectoryHandle | null>>>;
   let service: AutoBackup;
 
@@ -186,6 +186,47 @@ describe('AutoBackup', () => {
     showGeneric.mockClear();
     await service.check();
     expect(showGeneric).not.toHaveBeenCalled();
+  });
+
+  it('check() does not count a reminder that never reached the user', async () => {
+    const dir = makeFakeDir('prompt');
+    link(dir);
+    showGeneric.mockResolvedValue(false);
+    configure(picker);
+
+    await service.check();
+    expect(showGeneric).toHaveBeenCalledTimes(1);
+    expect(backupState()?.lastReminderAt).toBeUndefined();
+
+    // Not stamped, so the next app open tries again instead of waiting a week.
+    await service.check();
+    expect(showGeneric).toHaveBeenCalledTimes(2);
+  });
+
+  it('check() does not remind while the last copy is fresh', async () => {
+    const dir = makeFakeDir('prompt');
+    link(dir, { lastBackupAt: new Date().toISOString() });
+    configure(picker);
+
+    await service.check();
+    expect(dir.getFileHandle).not.toHaveBeenCalled();
+    expect(showGeneric).not.toHaveBeenCalled();
+  });
+
+  it('overdue tracks the linked folder and weekly cadence', () => {
+    configure(picker);
+    expect(service.overdue()).toBe(false);
+
+    const dir = makeFakeDir();
+    link(dir, { lastBackupAt: new Date().toISOString() });
+    expect(service.overdue()).toBe(false);
+
+    link(dir, { lastBackupAt: new Date(Date.now() - 8 * 86_400_000).toISOString() });
+    expect(service.overdue()).toBe(true);
+
+    // Linked but never backed up counts as overdue.
+    link(dir, { lastBackupAt: undefined });
+    expect(service.overdue()).toBe(true);
   });
 
   it('encrypts the copy when a passphrase is set', async () => {
