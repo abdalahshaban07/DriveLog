@@ -56,7 +56,7 @@ describe('carPassportToPdf Arabic', () => {
       { car, fillUps: [], documents: [], maintenance },
       {
         title: 'جواز سفر السيارة',
-        generatedPrefix: 'تاريخ الإنشاء',
+        generatedPrefix: 'اتعمل يوم',
         vehicle: 'العربية',
         odometer: 'العداد',
         economy: 'الاستهلاك',
@@ -79,7 +79,7 @@ describe('carPassportToPdf Arabic', () => {
       { car, fillUps: [], documents: [], maintenance },
       {
         title: 'جواز سفر السيارة',
-        generatedPrefix: 'تاريخ الإنشاء',
+        generatedPrefix: 'اتعمل يوم',
         vehicle: 'العربية',
         odometer: 'العداد',
         economy: 'الاستهلاك',
