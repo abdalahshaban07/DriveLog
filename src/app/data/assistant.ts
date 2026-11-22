@@ -27,9 +27,11 @@ import { canRemoteAssistantCall, recordRemoteAssistantCall } from './assistant-r
 import type { Db } from './db';
 import { fetchOpenAiChat, OpenAiChatError, type OpenAiChatMessage } from './openai-chat';
 
-const GATEWAY_TIMEOUT_MS = 15_000;
+const GATEWAY_TIMEOUT_MS = 8_000;
+/** Total budget for one question's chain, so stacked timeouts cannot stall the reply. */
+const CHAIN_BUDGET_MS = 40_000;
 /** Wait out a short 429. A longer Retry-After moves on so the question does not stall. */
-const RETRY_WAIT_CAP_S = 15;
+const RETRY_WAIT_CAP_S = 10;
 
 const REDACTED = 'redacted_' + 'thinking';
 const THINK = 'th' + 'ink';
@@ -103,6 +105,17 @@ function browserMayReachGateway(): boolean {
   return typeof navigator === 'undefined' || navigator.onLine !== false;
 }
 
+/**
+ * Answers computed from the records stay on-device: the model could only
+ * rephrase a number it does not have, and the wait is not worth it.
+ */
+function isComputedLocal(read: AdvisorRead): boolean {
+  if (read.intent === 'SERVICE_LIST' || read.intent === 'PART_COST' || read.intent === 'SPEND_COMPARE') {
+    return true;
+  }
+  return read.intent === 'SPENDING_TREND' && read.window === 'range';
+}
+
 type ChainResult = {
   reply: string | null;
   sawHttp: boolean;
@@ -115,11 +128,13 @@ async function tryChain(
   signal?: AbortSignal,
 ): Promise<ChainResult> {
   const skipBaseUrls = new Set<string>();
+  const startedAt = Date.now();
   let sawHttp = false;
   let reply: string | null = null;
 
   for (const gw of gateways) {
     if (signal?.aborted || skipBaseUrls.has(gw.baseUrl)) continue;
+    if (Date.now() - startedAt >= CHAIN_BUDGET_MS) break;
     const controller = new AbortController();
     const onAbort = () => controller.abort();
     signal?.addEventListener('abort', onAbort);
@@ -249,7 +264,7 @@ export async function fetchChatReply(
     localCoachAnswer(q, loaded.facts, loaded.logs, asMsg, read, format);
 
   const localReply = local();
-  if (intentHint || localReply.card) return localReply;
+  if (intentHint || localReply.card || isComputedLocal(read)) return localReply;
 
   if (isAssistantOnline(db) && canRemoteAssistantCall() && browserMayReachGateway()) {
     const remote = await tryRemoteChat(
