@@ -3,6 +3,7 @@ import {
   readAdvisor,
   type AdvisorIntent,
   type AdvisorPart,
+  type AdvisorRange,
   type AdvisorRead,
 } from './advisor-intent';
 import type { Affordability, BudgetHealth } from './budget-engine';
@@ -42,6 +43,8 @@ export type CoachServiceHit = {
   date: string;
   odometer: number;
   partDefinitionId?: string;
+  /** Maintenance cost; null when the record has no price. */
+  amount?: number | null;
 };
 
 export type CoachSpendHit = {
@@ -73,6 +76,8 @@ export type CoachLogs = {
   /** Newest first. */
   services?: readonly CoachServiceHit[];
   lastSpend?: CoachSpendHit | null;
+  /** Every spend row across buckets, newest first, for named date windows. */
+  spends?: readonly CoachSpendHit[];
   /** Calendar month, same window as the home month card. */
   monthProjected?: number | null;
   monthPrevious?: number;
@@ -169,6 +174,84 @@ function partParams(item: HealthItem, t: Translate): Record<string, string | num
 
 function round1(value: number): number {
   return Math.round(value * 10) / 10;
+}
+
+export type ResolvedWindow = { from: string; to: string; label: string };
+
+function isoDay(d: Date): string {
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+function monthKey(month: number): MsgKey {
+  return `advisor.month.${month}` as MsgKey;
+}
+
+function resolveRange(range: AdvisorRange, t: Translate, now: Date): ResolvedWindow {
+  switch (range.kind) {
+    case 'yearToDate': {
+      return {
+        from: `${now.getFullYear()}-01-01`,
+        to: isoDay(now),
+        label: t('advisor.window.yearToDate'),
+      };
+    }
+    case 'month': {
+      // The nearest past occurrence: a future month means last year.
+      const year = range.month > now.getMonth() + 1 ? now.getFullYear() - 1 : now.getFullYear();
+      const from = `${year}-${String(range.month).padStart(2, '0')}-01`;
+      const lastDay = new Date(year, range.month, 0);
+      const to = isoDay(lastDay > now ? now : lastDay);
+      const name = t(monthKey(range.month));
+      return {
+        from,
+        to,
+        label: year === now.getFullYear() ? name : `${name} ${year}`,
+      };
+    }
+    case 'lastMonths': {
+      const from = new Date(now.getFullYear(), now.getMonth() - (range.count - 1), 1);
+      return {
+        from: isoDay(from),
+        to: isoDay(now),
+        label: t('advisor.window.lastMonths', { count: range.count }),
+      };
+    }
+    default: {
+      const _e: never = range;
+      return _e;
+    }
+  }
+}
+
+/** Date bounds for the asked window, or null when the question is unbounded. */
+function resolveWindow(read: AdvisorRead, t: Translate, now = new Date()): ResolvedWindow | null {
+  switch (read.window) {
+    case 'period': {
+      const from = new Date(now.getFullYear(), now.getMonth(), 1);
+      return { from: isoDay(from), to: isoDay(now), label: t('advisor.window.thisMonth') };
+    }
+    case 'prev': {
+      const first = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const last = new Date(now.getFullYear(), now.getMonth(), 0);
+      return { from: isoDay(first), to: isoDay(last), label: t('advisor.window.lastMonth') };
+    }
+    case 'range':
+      return read.range ? resolveRange(read.range, t, now) : null;
+    case 'all':
+    case 'last':
+      return null;
+    default: {
+      const _e: never = read.window;
+      return _e;
+    }
+  }
+}
+
+function inWindow<T extends { date: string }>(rows: readonly T[], bounds: ResolvedWindow | null): T[] {
+  if (!bounds) return [...rows];
+  return rows.filter((row) => row.date >= bounds.from && row.date <= bounds.to);
 }
 
 function adviceBodyKey(question: string): MsgKey {
@@ -371,6 +454,81 @@ export function askLocal(
       return answer('advisor.answer.maintLogTitle', 'advisor.answer.maintLogBody', {
         count: logs.maintenanceCount,
       });
+    case 'SERVICE_LIST': {
+      const services = logs.services ?? [];
+      const pool = read.part ? services.filter((hit) => hit.kind === read.part) : services;
+      const partName = read.part ? partKindLabel(read.part, t) : undefined;
+      if (!pool.length) {
+        return partName
+          ? answer('advisor.answer.serviceListTitle', 'advisor.answer.serviceListEmptyPart', {
+              part: partName,
+            })
+          : answer('advisor.answer.serviceListTitle', 'advisor.answer.serviceListEmpty');
+      }
+      const top = pool.slice(0, read.count ?? 3);
+      const list = top.map((hit) => `${serviceLabel(hit, t)} · ${hit.date}`).join('\n');
+      return answer('advisor.answer.serviceListTitle', 'advisor.answer.serviceListBody', {
+        count: top.length,
+        list,
+      });
+    }
+    case 'PART_COST': {
+      const services = logs.services ?? [];
+      const pool = read.part ? services.filter((hit) => hit.kind === read.part) : services;
+      const partName = read.part ? partKindLabel(read.part, t) : t('advisor.bucket.maintenance');
+      const bounds = resolveWindow(read, t);
+      const label = bounds?.label ?? t('advisor.window.all');
+      const rows = inWindow(pool, bounds);
+      if (!rows.length) {
+        return answer('advisor.answer.partCostTitle', 'advisor.answer.partCostNone', {
+          window: label,
+          part: partName,
+        });
+      }
+      const priced = rows.filter((hit) => hit.amount != null);
+      if (!priced.length) {
+        return answer('advisor.answer.partCostTitle', 'advisor.answer.partCostUnknown', {
+          window: label,
+          part: partName,
+          count: rows.length,
+        });
+      }
+      const total = priced.reduce((sum, hit) => sum + (hit.amount ?? 0), 0);
+      return answer('advisor.answer.partCostTitle', 'advisor.answer.partCostBody', {
+        window: label,
+        part: partName,
+        total: Math.round(total),
+        currency: logs.currency,
+        count: priced.length,
+        date: priced[0]!.date,
+      });
+    }
+    case 'SPEND_COMPARE': {
+      const current = logs.periodTotal;
+      const prev = logs.monthPrevious ?? 0;
+      if (current <= 0 && prev <= 0) {
+        return answer('advisor.answer.compareTitle', 'advisor.answer.compareEmpty');
+      }
+      if (prev <= 0) {
+        return answer('advisor.answer.compareTitle', 'advisor.answer.compareNoPrev', {
+          total: Math.round(current),
+          currency: logs.currency,
+        });
+      }
+      const pct = Math.round(((current - prev) / prev) * 100);
+      const bodyKey =
+        pct > 3
+          ? 'advisor.answer.compareUp'
+          : pct < -3
+            ? 'advisor.answer.compareDown'
+            : 'advisor.answer.compareFlat';
+      return answer('advisor.answer.compareTitle', bodyKey, {
+        total: Math.round(current),
+        prev: Math.round(prev),
+        pct: Math.abs(pct),
+        currency: logs.currency,
+      });
+    }
     case 'BREAKDOWN': {
       const last = logs.lastBreakdown;
       if (read.window !== 'all' && last?.title) {
@@ -385,6 +543,22 @@ export function askLocal(
       });
     }
     case 'SPENDING_TREND': {
+      if (read.window === 'range' && logs.spends) {
+        const bounds = resolveWindow(read, t);
+        const rows = inWindow(logs.spends, bounds);
+        const label = bounds?.label ?? t('advisor.window.all');
+        if (!rows.length) {
+          return answer('advisor.answer.spendTitle', 'advisor.answer.spendRangeEmpty', {
+            window: label,
+          });
+        }
+        const total = rows.reduce((sum, row) => sum + row.amount, 0);
+        return answer('advisor.answer.spendTitle', 'advisor.answer.spendRange', {
+          window: label,
+          total: Math.round(total),
+          currency: logs.currency,
+        });
+      }
       if (read.window === 'prev') {
         return answer('advisor.answer.spendTitle', 'advisor.answer.spendPrev', {
           total: Math.round(logs.monthPrevious ?? 0),
@@ -489,4 +663,4 @@ export function coachLead(
     return { key: 'advisor.lead.budgetHigh', params: {} };
   }
   return null;
-}
+          }
