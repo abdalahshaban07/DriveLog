@@ -362,7 +362,7 @@ const EN_MONTHS: Record<string, number> = {
 
 /** A named date window: «من أول السنة»، «آخر ٣ شهور»، «في مارس». */
 function detectRange(text: string): AdvisorRange | undefined {
-  if (/من\s*اول\s*السن[هة]|من\s*بداي[هة]\s*السن[هة]|this\s*year|year\s*to\s*date|\bytd\b/.test(text)) {
+  if (/من\s*اول\s*السن[هة]|من\s*بداي[هة]\s*السن[هة]|السن[هة]\s*دي|العام\s*ده|هذا\s*العام|this\s*year|year\s*to\s*date|\bytd\b/.test(text)) {
     return { kind: 'yearToDate' };
   }
   if (/اخر\s*شهرين/.test(text)) return { kind: 'lastMonths', count: 2 };
@@ -536,4 +536,4 @@ export function forcedAdvisorRead(raw: string, intent: AdvisorIntent): AdvisorRe
 /** FAQ chips already name the intent; that hint wins over the regex. */
 export function intentFromFaqKey(key: MsgKey): AdvisorIntent | undefined {
   return FAQ_INTENT[key];
-    }
+}

@@ -163,6 +163,8 @@ describe('named windows, lists, and compares', () => {
 
   it('reads «من أول السنة» and named months', () => {
     expect(readAdvisor('صرفت كام من أول السنة').range).toEqual({ kind: 'yearToDate' });
+    expect(readAdvisor('صرفت كام السنة دي').range).toEqual({ kind: 'yearToDate' });
+    expect(readAdvisor('كام صرفت على الكاوتش السنة دي؟').range).toEqual({ kind: 'yearToDate' });
     expect(readAdvisor('صرفت كام في مارس').range).toEqual({ kind: 'month', month: 3 });
     expect(readAdvisor('مصاريف اغسطس').range).toEqual({ kind: 'month', month: 8 });
     expect(readAdvisor('what did I spend in march').range).toEqual({ kind: 'month', month: 3 });
