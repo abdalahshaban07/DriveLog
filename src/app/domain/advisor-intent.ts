@@ -14,17 +14,29 @@ export type AdvisorIntent =
   | 'FUEL_SPENDING'
   | 'SPENDING_TREND'
   | 'PART_STATUS'
+  | 'PART_COST'
+  | 'SERVICE_LIST'
+  | 'SPEND_COMPARE'
   | 'COACH_ADVICE'
   | 'UNSUPPORTED';
 
 export type AdvisorPart = 'oil' | 'tires' | 'brakes';
 
-export type AdvisorWindow = 'period' | 'all' | 'last' | 'prev';
+export type AdvisorWindow = 'period' | 'all' | 'last' | 'prev' | 'range';
+
+/** A date window the question names. Years resolve against "today" at answer time. */
+export type AdvisorRange =
+  | { kind: 'yearToDate' }
+  | { kind: 'month'; month: number }
+  | { kind: 'lastMonths'; count: number };
 
 export type AdvisorRead = {
   intent: AdvisorIntent;
   part?: AdvisorPart;
   window: AdvisorWindow;
+  range?: AdvisorRange;
+  /** «آخر ٣ صيانات» — how many rows to list. */
+  count?: number;
 };
 
 const RULES: { intent: AdvisorIntent; patterns: RegExp[] }[] = [
@@ -62,6 +74,15 @@ const RULES: { intent: AdvisorIntent; patterns: RegExp[] }[] = [
   {
     intent: 'PART_HISTORY',
     patterns: [/history/i, /تاريخ/],
+  },
+  {
+    intent: 'SERVICE_LIST',
+    patterns: [
+      /last\s+\d*\s*(services?|maintenance|repairs?)/i,
+      /recent\s+(services?|maintenance|repairs?)/i,
+      /اخر\s*([0-9٠-٩]+\s*)?(صيان|خدم)/,
+      /(صيانات|خدمات)\s*الاخير/,
+    ],
   },
   {
     intent: 'MAINT_LOG',
@@ -249,6 +270,115 @@ function detectPart(text: string): AdvisorPart | undefined {
   return PART_RULES.find((rule) => rule.re.test(text))?.part;
 }
 
+const ARABIC_DIGITS = '٠١٢٣٤٥٦٧٨٩';
+
+/** Western + Eastern Arabic digits → a plain number. */
+function parseDigits(raw: string): number | undefined {
+  const western = raw.replace(/[٠-٩]/g, (d) => String(ARABIC_DIGITS.indexOf(d)));
+  const n = Number.parseInt(western, 10);
+  return Number.isFinite(n) && n > 0 ? n : undefined;
+}
+
+const WORD_NUMBERS: Record<string, number> = {
+  واحد: 1,
+  واحده: 1,
+  اتنين: 2,
+  تنين: 2,
+  تلاته: 3,
+  تلات: 3,
+  اربعه: 4,
+  خمسه: 5,
+  سته: 6,
+  سبعه: 7,
+  تمنيه: 8,
+  تسعه: 9,
+  عشره: 10,
+};
+
+const COUNT_WORD = /([0-9]+|[٠-٩]+|اتنين|تنين|تلاته?|اربعه|خمسه|سته|سبعه|تمنيه|تسعه|عشره)/;
+
+function parseCount(raw: string | undefined): number | undefined {
+  if (!raw) return undefined;
+  if (/[0-9٠-٩]/.test(raw)) return parseDigits(raw);
+  return WORD_NUMBERS[raw];
+}
+
+/** «آخر ٣ / تلاتة / صيانتين» — digits, number words, and the dual form. */
+function detectCount(text: string): number | undefined {
+  if (/صيانتين|خدمتين|سجلتين|شهرين/.test(text)) return 2;
+  const match = text.match(COUNT_WORD);
+  const n = parseCount(match?.[1]);
+  return n == null ? undefined : Math.min(n, 10);
+}
+
+const AR_MONTHS: readonly string[] = [
+  'يناير',
+  'فبراير',
+  'مارس',
+  'ابريل',
+  'مايو',
+  'يونيو',
+  'يونيه',
+  'يوليو',
+  'يوليه',
+  'اغسطس',
+  'سبتمبر',
+  'اكتوبر',
+  'نوفمبر',
+  'ديسمبر',
+];
+
+const AR_MONTH_INDEX: Record<string, number> = {
+  يناير: 1,
+  فبراير: 2,
+  مارس: 3,
+  ابريل: 4,
+  مايو: 5,
+  يونيو: 6,
+  يونيه: 6,
+  يوليو: 7,
+  يوليه: 7,
+  اغسطس: 8,
+  سبتمبر: 9,
+  اكتوبر: 10,
+  نوفمبر: 11,
+  ديسمبر: 12,
+};
+
+// No "may": the modal verb false-positives constantly ("it may be time").
+const EN_MONTHS: Record<string, number> = {
+  january: 1,
+  february: 2,
+  march: 3,
+  april: 4,
+  june: 6,
+  july: 7,
+  august: 8,
+  september: 9,
+  october: 10,
+  november: 11,
+  december: 12,
+};
+
+/** A named date window: «من أول السنة»، «آخر ٣ شهور»، «في مارس». */
+function detectRange(text: string): AdvisorRange | undefined {
+  if (/من\s*اول\s*السن[هة]|من\s*بداي[هة]\s*السن[هة]|this\s*year|year\s*to\s*date|\bytd\b/.test(text)) {
+    return { kind: 'yearToDate' };
+  }
+  if (/اخر\s*شهرين/.test(text)) return { kind: 'lastMonths', count: 2 };
+  const last = text.match(new RegExp(`اخر\\s*${COUNT_WORD.source}\\s*شه?ور|last\\s+(\\d+)\\s*months?`));
+  if (last) {
+    const count = parseCount(last[1] ?? last[2]);
+    if (count != null) return { kind: 'lastMonths', count: Math.min(count, 24) };
+  }
+  for (const month of AR_MONTHS) {
+    if (text.includes(month)) return { kind: 'month', month: AR_MONTH_INDEX[month]! };
+  }
+  const en = text.match(/\b(january|february|march|april|june|july|august|september|october|november|december)\b/);
+  if (en) return { kind: 'month', month: EN_MONTHS[en[1]!]! };
+  return undefined;
+}
+
 function detectWindow(text: string): AdvisorWindow | undefined {
   const hits: { window: AdvisorWindow; score: number }[] = [];
   const prev = text.match(/اللي\s*فات|الشهر\s*الماضي|previous|last\s*month/);
@@ -272,6 +402,7 @@ function defaultWindow(intent: AdvisorIntent): AdvisorWindow {
     case 'RECOMMENDED_RESERVE':
     case 'AFFORDABILITY':
     case 'MAINT_LOG':
+    case 'SPEND_COMPARE':
     case 'MAINTENANCE_PRIORITY':
     case 'UPCOMING_MAINTENANCE':
     case 'BUDGET_HEALTH':
@@ -280,6 +411,10 @@ function defaultWindow(intent: AdvisorIntent): AdvisorWindow {
     case 'COACH_ADVICE':
     case 'UNSUPPORTED':
       return 'period';
+    case 'PART_COST':
+      return 'all';
+    case 'SERVICE_LIST':
+      return 'last';
     default: {
       const _e: never = intent;
       return _e;
@@ -308,26 +443,37 @@ function isAdviceAsk(raw: string): boolean {
   const text = normalizeAdvisorText(raw);
   return (
     /ازاي\s*(احسن|حسن|وفر|اوفر|تقلل|انقص|نظبط|أظبط|اغير|غير|اختار|اعرف)/.test(text) ||
-    /احسن|تحسين|نصيح|راي|ارشد|how (do|can|to)|improve|\btip\b|advice|what should|best way/.test(text)
+    /احسن|تحسين|نصيح|ارشد|how (do|can|to)|improve|\btip\b|advice|what should|best way/.test(text) ||
+    /(^|\s)رايك?(\s|$)/.test(text)
   );
 }
 
 /** A spend word next to a part word asks for that part's cost history. */
 const SPEND_WORD = /صرفت|صرف|تكلف|كام|فلوس|how much|cost|paid|spent/i;
-const STATUS_WORD = /حاله|عامل|وضع|status|health|تمام|خربان/i;
+const STATUS_WORD = /حاله|عامل|وضع|ضغط|status|health|pressure|تمام|خربان/i;
 
 function partScopedIntent(intent: AdvisorIntent, text: string, part?: AdvisorPart): AdvisorIntent {
   const scoped = withPart(intent, text, part);
-  if (scoped !== 'PART_STATUS' || !part) return scoped;
-  if (SPEND_WORD.test(text) && !STATUS_WORD.test(text)) return 'PART_HISTORY';
+  if (!part) return scoped;
+  if (
+    (scoped === 'PART_STATUS' || scoped === 'PART_HISTORY' || scoped === 'SPENDING_TREND') &&
+    SPEND_WORD.test(text) &&
+    !STATUS_WORD.test(text)
+  ) {
+    return 'PART_COST';
+  }
   return scoped;
 }
 
 /** A fuel word beside generic spend wording makes it the fuel question. */
 const FUEL_WORD = /petrol|\bgas\b|fuel|بنزين|وقود|استهلاك|بتشرب|بتاكل/;
 
+/** «قارن الشهر ده باللي فات» — a compare ask on top of the spend question. */
+const COMPARE_WORD = /قارن|مقارن[هة]?|compare|versus|\bvs\b/;
+
 function scopeIntent(intent: AdvisorIntent, text: string, part?: AdvisorPart): AdvisorIntent {
   const scoped = partScopedIntent(intent, text, part);
+  if (scoped === 'SPENDING_TREND' && COMPARE_WORD.test(text)) return 'SPEND_COMPARE';
   if (scoped === 'SPENDING_TREND' && !part && FUEL_WORD.test(text)) return 'FUEL_SPENDING';
   return scoped;
 }
@@ -337,12 +483,16 @@ export function readAdvisor(raw: string, carry?: AdvisorRead | null): AdvisorRea
   if (!text) return { intent: 'UNSUPPORTED', window: 'period' };
   if (isAdviceAsk(text)) return { intent: 'COACH_ADVICE', window: 'period' };
   const part = detectPart(text);
-  const window = detectWindow(text);
-  const carryOn = (intent: AdvisorIntent, partSlot?: AdvisorPart): AdvisorRead => ({
-    intent,
-    part: partSlot,
-    window: window ?? defaultWindow(intent),
+  const range = detectRange(text);
+  const window: AdvisorWindow | undefined = range ? 'range' : detectWindow(text);
+  const count = detectCount(text);
+  const withExtras = (read: AdvisorRead): AdvisorRead => ({
+    ...read,
+    range: range ?? read.range,
+    count: read.intent === 'SERVICE_LIST' ? (count ?? read.count) : undefined,
   });
+  const carryOn = (intent: AdvisorIntent, partSlot?: AdvisorPart): AdvisorRead =>
+    withExtras({ intent, part: partSlot, window: window ?? defaultWindow(intent) });
   if (carry && carry.intent !== 'UNSUPPORTED' && (isFollowUp(text) || window)) {
     const specific = bestIntent(text, part ? new Set(['PART_STATUS']) : undefined);
     if (specific !== 'UNSUPPORTED') {
@@ -354,12 +504,16 @@ export function readAdvisor(raw: string, carry?: AdvisorRead | null): AdvisorRea
       return carryOn(intent, part);
     }
     // A bare window shift like «والشهر اللي فات؟» keeps the last intent, new window.
-    if (isFollowUp(text) || window) {
-      return { intent: carry.intent, part: carry.part, window: window ?? carry.window };
-    }
+    return {
+      intent: carry.intent,
+      part: carry.part,
+      window: window ?? carry.window,
+      range: range ?? (window ? undefined : carry.range),
+      count: carry.intent === 'SERVICE_LIST' ? (count ?? carry.count) : undefined,
+    };
   }
   const intent = scopeIntent(bestIntent(text), text, part);
-  return { intent, part, window: window ?? defaultWindow(intent) };
+  return withExtras({ intent, part, window: window ?? defaultWindow(intent) });
 }
 
 export function detectAdvisorIntent(raw: string): AdvisorIntent {
@@ -369,14 +523,17 @@ export function detectAdvisorIntent(raw: string): AdvisorIntent {
 /** FAQ chips already chose the intent. Keep a part word from the chip text. */
 export function forcedAdvisorRead(raw: string, intent: AdvisorIntent): AdvisorRead {
   const text = normalizeAdvisorText(raw);
+  const range = detectRange(text);
   return {
     intent,
     part: detectPart(text),
-    window: detectWindow(text) ?? defaultWindow(intent),
+    window: range ? 'range' : (detectWindow(text) ?? defaultWindow(intent)),
+    range,
+    count: intent === 'SERVICE_LIST' ? detectCount(text) : undefined,
   };
 }
 
 /** FAQ chips already name the intent; that hint wins over the regex. */
 export function intentFromFaqKey(key: MsgKey): AdvisorIntent | undefined {
   return FAQ_INTENT[key];
-}
+    }

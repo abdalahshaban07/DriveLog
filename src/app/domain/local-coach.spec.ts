@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   detectAdvisorIntent,
   intentFromFaqKey,
@@ -413,3 +413,115 @@ function fault(symptom: string, date: string): Breakdown {
     updatedAt: `${date}T00:00:00.000Z`,
   };
 }
+
+describe('record answers: lists, part cost, ranges, compare', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-22T12:00:00'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('lists the newest services with dates and stays honest when empty', () => {
+    const built = buildCoachLogs(
+      'EGP',
+      { fuel: 0, maintenance: 200, breakdowns: 0, other: 0, total: 200 },
+      [],
+      [
+        service('oil', '2026-01-15', 1000),
+        service('brakes', '2026-03-01', 1800),
+        service('tires', '2026-02-10', 1500),
+      ],
+      [],
+      [],
+    );
+    const list = askLocal('آخر ٣ صيانات', facts(), built, t);
+    expect(list.bodyKey).toBe('advisor.answer.serviceListBody');
+    expect(list.params['count']).toBe(3);
+    const text = String(list.params['list']);
+    expect(text).toContain('2026-03-01');
+    expect(text.indexOf('2026-03-01')).toBeLessThan(text.indexOf('2026-02-10'));
+
+    const onlyTwo = askLocal('آخر 2 صيانة', facts(), built, t);
+    expect(onlyTwo.params['count']).toBe(2);
+
+    const empty = askLocal('آخر ٣ صيانات', facts(), { ...built, services: [] }, t);
+    expect(empty.bodyKey).toBe('advisor.answer.serviceListEmpty');
+  });
+
+  it('sums a part cost, and says when prices or records are missing', () => {
+    const manual: CoachLogs = {
+      currency: 'EGP',
+      periodTotal: 0,
+      maintenanceCount: 2,
+      breakdownCount: 0,
+      lastL100: null,
+      services: [
+        { kind: 'brakes', name: '', date: '2026-03-01', odometer: 1800, amount: 200 },
+        { kind: 'tires', name: '', date: '2026-01-01', odometer: 500, amount: null },
+      ],
+    };
+    const brakes = askLocal('كام صرفت على الفرامل', facts(), manual, t);
+    expect(brakes.bodyKey).toBe('advisor.answer.partCostBody');
+    expect(brakes.params).toMatchObject({ total: 200, currency: 'EGP', count: 1, date: '2026-03-01' });
+
+    const unknown = askLocal('كام صرفت على الكاوتش', facts(), manual, t);
+    expect(unknown.bodyKey).toBe('advisor.answer.partCostUnknown');
+    expect(unknown.params['count']).toBe(1);
+
+    const none = askLocal('كام صرفت على الزيت', facts(), manual, t);
+    expect(none.bodyKey).toBe('advisor.answer.partCostNone');
+  });
+
+  it('answers a named month and a last-months window from the spend rows', () => {
+    const built = buildCoachLogs(
+      'EGP',
+      { fuel: 0, maintenance: 0, breakdowns: 0, other: 0, total: 0 },
+      [
+        fill('a', '2026-03-05', 100, 8, 300),
+        fill('b', '2026-03-20', 100, 8, 250),
+        fill('c', '2026-09-01', 100, 8, 400),
+        fill('d', '2026-11-10', 100, 8, 100),
+      ],
+      [],
+      [],
+      [],
+    );
+    const march = askLocal('صرفت كام في مارس', facts(), built, t);
+    expect(march.bodyKey).toBe('advisor.answer.spendRange');
+    expect(march.params).toMatchObject({
+      window: 'advisor.month.3',
+      total: 550,
+      currency: 'EGP',
+    });
+
+    const lastThree = askLocal('صرفت كام آخر ٣ شهور', facts(), built, t);
+    expect(lastThree.bodyKey).toBe('advisor.answer.spendRange');
+    expect(lastThree.params['total']).toBe(500);
+
+    const empty = askLocal('صرفت كام في فبراير', facts(), built, t);
+    expect(empty.bodyKey).toBe('advisor.answer.spendRangeEmpty');
+  });
+
+  it('compares this month against last month in both directions', () => {
+    const base: CoachLogs = {
+      currency: 'EGP',
+      periodTotal: 1500,
+      maintenanceCount: 0,
+      breakdownCount: 0,
+      lastL100: null,
+      monthPrevious: 1000,
+    };
+    const up = askLocal('قارن مصروف الشهر ده باللي فات', facts(), base, t);
+    expect(up.bodyKey).toBe('advisor.answer.compareUp');
+    expect(up.params).toMatchObject({ total: 1500, prev: 1000, pct: 50 });
+
+    const flat = askLocal('قارن مصروف الشهر ده باللي فات', facts(), { ...base, periodTotal: 1010 }, t);
+    expect(flat.bodyKey).toBe('advisor.answer.compareFlat');
+
+    const noPrev = askLocal('قارن مصروف الشهر ده باللي فات', facts(), { ...base, periodTotal: 800, monthPrevious: 0 }, t);
+    expect(noPrev.bodyKey).toBe('advisor.answer.compareNoPrev');
+  });
+});
