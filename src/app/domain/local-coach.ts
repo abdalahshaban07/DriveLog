@@ -641,7 +641,7 @@ export function localCoachAnswer(
   const bodyKey = pickVariantKey(answer.bodyKey, question, params);
   const lead = coachLead(read, facts, logs, t);
   const text = [
-    t(answer.titleKey),
+    t(answer.titleKey, params),
     lead ? t(lead.key, lead.params) : '',
     t(bodyKey, params),
   ]

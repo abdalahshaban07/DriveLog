@@ -327,7 +327,7 @@ describe('askLocal', () => {
   it('uses the FAQ hint instead of the question text', () => {
     const hinted = askLocal('fuel economy', facts(), logs, t, 'BREAKDOWN');
     expect(hinted.bodyKey).toBe('advisor.answer.breakdownBody');
-    expect(hinted.params).toEqual({ count: 2 });
+    expect(hinted.params).toEqual({ breakdowns: '2 breakdowns' });
   });
 
   it('answers from the rows: split, last part, last fault, fuel delta', () => {
@@ -439,16 +439,39 @@ describe('record answers: lists, part cost, ranges, compare', () => {
     );
     const list = askLocal('آخر ٣ صيانات', facts(), built, t);
     expect(list.bodyKey).toBe('advisor.answer.serviceListBody');
-    expect(list.params['count']).toBe(3);
+    expect(list.params['listed']).toBe('3');
     const text = String(list.params['list']);
     expect(text).toContain('2026-03-01');
     expect(text.indexOf('2026-03-01')).toBeLessThan(text.indexOf('2026-02-10'));
 
     const onlyTwo = askLocal('آخر 2 صيانة', facts(), built, t);
-    expect(onlyTwo.params['count']).toBe(2);
+    expect(onlyTwo.params['listed']).toBe('2');
 
     const empty = askLocal('آخر ٣ صيانات', facts(), { ...built, services: [] }, t);
     expect(empty.bodyKey).toBe('advisor.answer.serviceListEmpty');
+  });
+
+  it('uses Egyptian count grammar in Arabic record phrases', () => {
+    const arT = (key: MsgKey) => (key === 'common.km' ? 'كم' : key);
+    const withTires = (n: number): CoachLogs => ({
+      currency: 'EGP',
+      periodTotal: 0,
+      maintenanceCount: n,
+      breakdownCount: 0,
+      lastL100: null,
+      services: Array.from({ length: n }, (_, i) => ({
+        kind: 'tires',
+        name: '',
+        date: `2026-01-${String(i + 1).padStart(2, '0')}`,
+        odometer: 500 + i,
+        amount: 100,
+      })),
+    });
+    const ask = (n: number) => askLocal('كام صرفت على الكاوتش', facts(), withTires(n), arT).params['records'];
+    expect(ask(1)).toBe('سجل واحد');
+    expect(ask(2)).toBe('سجلين');
+    expect(ask(5)).toBe('٥ سجلات');
+    expect(ask(12)).toBe('١٢ سجل');
   });
 
   it('sums a part cost, and says when prices or records are missing', () => {
@@ -465,11 +488,11 @@ describe('record answers: lists, part cost, ranges, compare', () => {
     };
     const brakes = askLocal('كام صرفت على الفرامل', facts(), manual, t);
     expect(brakes.bodyKey).toBe('advisor.answer.partCostBody');
-    expect(brakes.params).toMatchObject({ total: 200, currency: 'EGP', count: 1, date: '2026-03-01' });
+    expect(brakes.params).toMatchObject({ total: 200, currency: 'EGP', records: '1 record', date: '2026-03-01' });
 
     const unknown = askLocal('كام صرفت على الكاوتش', facts(), manual, t);
     expect(unknown.bodyKey).toBe('advisor.answer.partCostUnknown');
-    expect(unknown.params['count']).toBe(1);
+    expect(unknown.params['records']).toBe('1 record');
 
     const none = askLocal('كام صرفت على الزيت', facts(), manual, t);
     expect(none.bodyKey).toBe('advisor.answer.partCostNone');
