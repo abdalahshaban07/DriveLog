@@ -358,6 +358,38 @@ function focusPart(question: string, items: readonly HealthItem[]): HealthItem |
   );
 }
 
+const AR_DIGITS = '٠١٢٣٤٥٦٧٨٩';
+
+function arNum(n: number): string {
+  return String(n).replace(/\d/g, (d) => AR_DIGITS[Number(d)]!);
+}
+
+type CountForms = { one: string; dual: string; few: string; many: string; enOne: string; enMany: string };
+
+/** Egyptian count grammar: واحد / اتنين (dual) / ٣-١٠ (plural) / ١١+ (singular), with Eastern digits. */
+function countPhrase(n: number, t: Translate, f: CountForms): string {
+  if (t('common.km') !== 'كم') return n === 1 ? `1 ${f.enOne}` : `${n} ${f.enMany}`;
+  if (n === 1) return f.one;
+  if (n === 2) return f.dual;
+  if (n <= 10) return `${arNum(n)} ${f.few}`;
+  return `${arNum(n)} ${f.many}`;
+}
+
+const RECORD_FORMS: CountForms = { one: 'سجل واحد', dual: 'سجلين', few: 'سجلات', many: 'سجل', enOne: 'record', enMany: 'records' };
+const MAINT_RECORD_FORMS: CountForms = { one: 'سجل صيانة واحد', dual: 'سجلين صيانة', few: 'سجلات صيانة', many: 'سجل صيانة', enOne: 'maintenance record', enMany: 'maintenance records' };
+const OP_FORMS: CountForms = { one: 'عملية واحدة', dual: 'عمليتين', few: 'عمليات', many: 'عملية', enOne: 'entry', enMany: 'entries' };
+const BREAKDOWN_FORMS: CountForms = { one: 'عطل واحد', dual: 'عطلين', few: 'أعطال', many: 'عطل', enOne: 'breakdown', enMany: 'breakdowns' };
+const SERVICE_ENTRY_FORMS: CountForms = { one: 'صيانة واحدة', dual: 'صيانتين', few: 'صيانات', many: 'صيانة', enOne: 'service entry', enMany: 'service entries' };
+
+/** «آخر X» line: Arabic keeps the dual, English stays numeric. */
+function listedPhrase(n: number, t: Translate): string {
+  if (t('common.km') !== 'كم') return String(n);
+  if (n === 1) return 'واحدة';
+  if (n === 2) return 'اتنين';
+  if (n <= 10) return `${arNum(n)} صيانات`;
+  return `${arNum(n)} صيانة`;
+}
+
 export function askLocal(
   question: string,
   facts: AdvisorFacts,
@@ -442,17 +474,20 @@ export function askLocal(
       }
       if (read.part && logs.services) {
         return answer('advisor.answer.partHistoryTitle', 'advisor.answer.partHistoryCount', {
-          count: pool.length,
+          records: countPhrase(pool.length, t, MAINT_RECORD_FORMS),
+          ops: countPhrase(pool.length, t, OP_FORMS),
           part: partKindLabel(read.part, t),
         });
       }
       return answer('advisor.answer.partHistoryTitle', 'advisor.answer.partHistoryBody', {
-        count: logs.maintenanceCount,
+        records: countPhrase(logs.maintenanceCount, t, MAINT_RECORD_FORMS),
+        services: countPhrase(logs.maintenanceCount, t, SERVICE_ENTRY_FORMS),
       });
     }
     case 'MAINT_LOG':
       return answer('advisor.answer.maintLogTitle', 'advisor.answer.maintLogBody', {
-        count: logs.maintenanceCount,
+        records: countPhrase(logs.maintenanceCount, t, MAINT_RECORD_FORMS),
+        services: countPhrase(logs.maintenanceCount, t, SERVICE_ENTRY_FORMS),
       });
     case 'SERVICE_LIST': {
       const services = logs.services ?? [];
@@ -468,7 +503,7 @@ export function askLocal(
       const top = pool.slice(0, read.count ?? 3);
       const list = top.map((hit) => `${serviceLabel(hit, t)} · ${hit.date}`).join('\n');
       return answer('advisor.answer.serviceListTitle', 'advisor.answer.serviceListBody', {
-        count: top.length,
+        listed: listedPhrase(top.length, t),
         list,
       });
     }
@@ -490,7 +525,7 @@ export function askLocal(
         return answer('advisor.answer.partCostTitle', 'advisor.answer.partCostUnknown', {
           window: label,
           part: partName,
-          count: rows.length,
+          records: countPhrase(rows.length, t, RECORD_FORMS),
         });
       }
       const total = priced.reduce((sum, hit) => sum + (hit.amount ?? 0), 0);
@@ -499,7 +534,7 @@ export function askLocal(
         part: partName,
         total: Math.round(total),
         currency: logs.currency,
-        count: priced.length,
+        records: countPhrase(priced.length, t, RECORD_FORMS),
         date: priced[0]!.date,
       });
     }
@@ -535,11 +570,11 @@ export function askLocal(
         return answer('advisor.answer.breakdownTitle', 'advisor.answer.breakdownLast', {
           title: last.title,
           date: last.date,
-          count: logs.breakdownCount,
+          breakdowns: countPhrase(logs.breakdownCount, t, BREAKDOWN_FORMS),
         });
       }
       return answer('advisor.answer.breakdownTitle', 'advisor.answer.breakdownBody', {
-        count: logs.breakdownCount,
+        breakdowns: countPhrase(logs.breakdownCount, t, BREAKDOWN_FORMS),
       });
     }
     case 'SPENDING_TREND': {
@@ -663,4 +698,4 @@ export function coachLead(
     return { key: 'advisor.lead.budgetHigh', params: {} };
   }
   return null;
-          }
+                               }
