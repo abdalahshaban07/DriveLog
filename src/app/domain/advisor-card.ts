@@ -210,6 +210,9 @@ export function buildAnswerCard(
       return reserveCard(facts, logs, t, format);
     case 'AFFORDABILITY':
     case 'MAINT_LOG':
+    case 'PART_COST':
+    case 'SERVICE_LIST':
+    case 'SPEND_COMPARE':
     case 'COACH_ADVICE':
     case 'UNSUPPORTED':
       return null;
@@ -328,8 +331,8 @@ function spendCard(
   t: Translate,
   format: CardFormat,
 ): AnswerCard | null {
-  // No prev-month card template exists; the text answer owns that window.
-  if (read.window === 'prev') return null;
+  // No prev-month or named-range card template exists; the text answer owns those windows.
+  if (read.window === 'prev' || read.window === 'range') return null;
   if (read.window === 'last') {
     const last = logs.lastSpend;
     if (!last) return null;
@@ -704,4 +707,4 @@ function rank(status: HealthStatus): number {
       return _e;
     }
   }
-}
+                               }
