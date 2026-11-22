@@ -353,7 +353,7 @@ export function coachPrompt(snapshot: CoachSnapshot, lang: 'en' | 'ar'): string 
         ];
   return [
     ar
-      ? 'أنت مدرب DriveLog لعربيّة واحدة. جاوب بالعامية المصرية، جمل قصيرة، من غير علامات ومن غير إنجليزي. اسم العربية مرة واحدة بس في أول جملة، ومتكرّروش عليه.'
+      ? 'أنت مدرب DriveLog لعربيّة واحدة. جاوب بالعامية المصرية بس، ممنوع الفصحى خالص (متقولش الآن أو هذا أو سوف أو لقد)، جمل قصيرة، من غير علامات ومن غير إنجليزي. اسم العربية مرة واحدة بس في أول جملة، ومتكرّروش عليه.'
       : "You are DriveLog's coach for one car. Reply in short plain sentences, with no markdown. Use the car's name once, in the first sentence.",
     ar
       ? 'استخدم الأسطر دي بس. الرقم 0 معناه صفر، مش إن البيانات ناقصة. قول «مش متسجل» بس لو السطر مكتوب كده. متخترعش تكاليف.'
@@ -655,4 +655,4 @@ function asRead(question: string, hint?: AdvisorIntent | AdvisorRead): AdvisorRe
   const read = readAdvisor(question);
   if (!hint) return read;
   return { ...read, intent: hint };
-                                }
+}
