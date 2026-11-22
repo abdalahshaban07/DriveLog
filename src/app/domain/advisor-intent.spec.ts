@@ -20,7 +20,7 @@ const CORPUS: [string, ReturnType<typeof detectAdvisorIntent>][] = [
   ['what is the monthly total', 'SPENDING_TREND'],
   ['how many records do I have logged', 'MAINT_LOG'],
   ['history of the brakes', 'PART_HISTORY'],
-  ['how much did I pay for brakes', 'PART_HISTORY'],
+  ['how much did I pay for brakes', 'PART_COST'],
   ['which battery status do I have', 'PART_STATUS'],
   // Egyptian Arabic — dialect spellings after folding.
   ['السيارة واقفة من الصبح', 'BREAKDOWN'],
@@ -100,7 +100,7 @@ describe('advisor intent corpus', () => {
 
   it('combines part + spend + window in one question', () => {
     const read = readAdvisor('كام صرفت على الفرامل الشهر ده');
-    expect(read.intent).toBe('PART_HISTORY');
+    expect(read.intent).toBe('PART_COST');
     expect(read.part).toBe('brakes');
     expect(read.window).toBe('period');
   });
@@ -131,7 +131,7 @@ describe('follow-up carry', () => {
   it('carries intent + part when only the window shifts', () => {
     const brakes = readAdvisor('كام صرفت على الفرامل الشهر ده');
     expect(readAdvisor('والشهر اللي فات؟', brakes)).toMatchObject({
-      intent: 'PART_HISTORY',
+      intent: 'PART_COST',
       part: 'brakes',
       window: 'prev',
     });
@@ -145,6 +145,59 @@ describe('follow-up carry', () => {
   it('reads the same intent through tashkeel and tatweel', () => {
     expect(readAdvisor('البَنْزين زاد').intent).toBe('FUEL_SPENDING');
     expect(readAdvisor('الفرامـــل').intent).toBe('PART_STATUS');
+  });
+});
+
+describe('named windows, lists, and compares', () => {
+  it('reads «آخر ٣ شهور» as a ranged spend window with Eastern digits', () => {
+    expect(readAdvisor('صرفت كام آخر ٣ شهور')).toMatchObject({
+      intent: 'SPENDING_TREND',
+      window: 'range',
+      range: { kind: 'lastMonths', count: 3 },
+    });
+    expect(readAdvisor('spending over the last 2 months')).toMatchObject({
+      window: 'range',
+      range: { kind: 'lastMonths', count: 2 },
+    });
+  });
+
+  it('reads «من أول السنة» and named months', () => {
+    expect(readAdvisor('صرفت كام من أول السنة').range).toEqual({ kind: 'yearToDate' });
+    expect(readAdvisor('صرفت كام في مارس').range).toEqual({ kind: 'month', month: 3 });
+    expect(readAdvisor('مصاريف اغسطس').range).toEqual({ kind: 'month', month: 8 });
+    expect(readAdvisor('what did I spend in march').range).toEqual({ kind: 'month', month: 3 });
+  });
+
+  it('reads «آخر ٣ صيانات» as a counted service list', () => {
+    expect(readAdvisor('آخر ٣ صيانات')).toMatchObject({ intent: 'SERVICE_LIST', count: 3 });
+    expect(readAdvisor('آخر صيانتين كاوتش')).toMatchObject({
+      intent: 'SERVICE_LIST',
+      part: 'tires',
+      count: 2,
+    });
+    expect(readAdvisor('last 2 services')).toMatchObject({ intent: 'SERVICE_LIST', count: 2 });
+  });
+
+  it('reads a part spend ask as the part cost', () => {
+    expect(readAdvisor('كام صرفت على الكاوتش')).toMatchObject({
+      intent: 'PART_COST',
+      part: 'tires',
+    });
+    expect(readAdvisor('الزيت كلفني كام').intent).toBe('PART_COST');
+  });
+
+  it('reads a month compare ask', () => {
+    expect(readAdvisor('قارن مصروف الشهر ده باللي فات').intent).toBe('SPEND_COMPARE');
+    expect(readAdvisor('compare my spending').intent).toBe('SPEND_COMPARE');
+  });
+
+  it('clears the carried range when the follow-up names a new window', () => {
+    const ranged = readAdvisor('صرفت كام آخر ٣ شهور');
+    expect(readAdvisor('والشهر اللي فات؟', ranged)).toMatchObject({
+      intent: 'SPENDING_TREND',
+      window: 'prev',
+      range: undefined,
+    });
   });
 });
 
