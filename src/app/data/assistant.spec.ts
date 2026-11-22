@@ -112,6 +112,19 @@ describe('fetchChatReply', () => {
     expect(hourCount()).toBe(0);
   });
 
+  it('answers record-computed questions locally without calling the model', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    for (const q of ['آخر ٣ صيانات', 'كام صرفت على الكاوتش', 'قارن المصروف', 'صرفت كام في مارس']) {
+      const reply = await fetchChatReply(mockDb(true), q, 'ar', (k) => k);
+      expect(reply.source).toBe('local');
+      expect(reply.remoteFailed).toBeUndefined();
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(hourCount()).toBe(0);
+  });
+
   it('sends a how-to question online instead of the fuel card', async () => {
     const fetchMock = vi.fn().mockResolvedValue(okChat('ظبط ضغط الكاوتش ومتسيّبش العربية تدور.'));
     vi.stubGlobal('fetch', fetchMock);
