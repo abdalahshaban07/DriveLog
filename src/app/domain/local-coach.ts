@@ -176,6 +176,7 @@ export function buildCoachLogs(
     date: record.date,
     odometer: record.odometer,
     partDefinitionId: record.partDefinitionId,
+    amount: record.cost ?? null,
   }));
   const lastBreak = newest(breakdowns)[0];
   const spends: CoachSpendHit[] = [
@@ -232,6 +233,11 @@ export function buildCoachLogs(
         ? { title: lastBreak.symptom.trim().slice(0, 80), date: lastBreak.date }
         : null,
     services,
+    spends: newest(spends).map((hit) => ({
+      bucket: hit.bucket,
+      amount: hit.amount,
+      date: hit.date,
+    })),
     lastSpend: lastSpend
       ? { bucket: lastSpend.bucket, amount: lastSpend.amount, date: lastSpend.date }
       : null,
@@ -587,6 +593,9 @@ const SUGGESTION_BY_INTENT: Partial<Record<AdvisorIntent, AdvisorFaqKey>> = {
   RECOMMENDED_RESERVE: 'assistant.faq.budget',
   AFFORDABILITY: 'assistant.faq.reserve',
   BREAKDOWN: 'assistant.faq.upcoming',
+  SERVICE_LIST: 'assistant.faq.upcoming',
+  PART_COST: 'assistant.faq.oilLast',
+  SPEND_COMPARE: 'assistant.faq.period',
   COACH_ADVICE: 'assistant.faq.period',
 };
 
@@ -646,4 +655,4 @@ function asRead(question: string, hint?: AdvisorIntent | AdvisorRead): AdvisorRe
   const read = readAdvisor(question);
   if (!hint) return read;
   return { ...read, intent: hint };
-}
+                                }
