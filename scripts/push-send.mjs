@@ -10,10 +10,11 @@
  * Node 22.18+ runs the shared TypeScript file directly.
  */
 import { createSign } from 'node:crypto';
-import { parseDevice, planDevice } from '../src/app/domain/push-schedule.ts';
+import { formatPush, parseDevice, planDevice, todayInTimeZone } from '../src/app/domain/push-schedule.ts';
 
 const PROJECT = process.env.FIREBASE_PROJECT_ID ?? '';
 const BASE = process.env.FIRESTORE_BASE ?? 'https://firestore.googleapis.com';
+const APP_URL = process.env.APP_URL ?? 'https://abdalahshaban07.github.io/DriveLog/';
 const DRY = process.env.DRY_RUN === '1';
 const root = `${BASE}/v1/projects/${PROJECT}/databases/(default)/documents/devices`;
 
@@ -72,6 +73,23 @@ async function listDevices(token) {
 
 const str = (f) => f?.stringValue;
 
+/** The notification a phone shows: app name + item type, days left, DriveLog icon, opens the due list. */
+export function notificationPayload(reminder, today, lang) {
+  const text = formatPush(reminder, today, lang);
+  return JSON.stringify({
+    notification: {
+      title: text.title,
+      body: text.body,
+      tag: reminder.id,
+      icon: `${APP_URL}icons/icon-192x192.png`,
+      badge: `${APP_URL}icons/badge-96.png`,
+      lang: lang === 'en' ? 'en' : 'ar',
+      dir: lang === 'en' ? 'ltr' : 'rtl',
+      data: { onActionClick: { default: { operation: 'navigateLastFocusedOrOpen', url: `${APP_URL}upcoming` } } },
+    },
+  });
+}
+
 export async function main({ now = process.env.FAKE_NOW ? new Date(process.env.FAKE_NOW) : new Date(), sender } = {}) {
   const token = await accessToken();
   let send = sender;
@@ -97,7 +115,7 @@ export async function main({ now = process.env.FAKE_NOW ? new Date(process.env.F
     } catch {
       continue;
     }
-    const device = parseDevice({ tz: str(fields.tz), reminders: str(fields.reminders), sent: str(fields.sent) });
+    const device = parseDevice({ tz: str(fields.tz), lang: str(fields.lang), reminders: str(fields.reminders), sent: str(fields.sent) });
     if (process.env.TEST_PUSH === '2') {
       if (!id.startsWith(process.env.ONLY_DEVICE ?? '#')) { continue; }
       let list = [];
@@ -110,7 +128,7 @@ export async function main({ now = process.env.FAKE_NOW ? new Date(process.env.F
       const pick = list.find((r) => r.id.startsWith('maint-') && r.id.includes('.soon.')) ?? list[0];
       if (pick) {
         try {
-          await send(sub, JSON.stringify({ notification: { title: pick.title, body: pick.body, tag: 'sample-' + pick.id, icon: 'icons/icon-192.png' } }));
+          await send(sub, notificationPayload(pick, todayInTimeZone(device.tz, now), device.lang));
           console.log(`sample sent kind=${pick.id.split('.')[0].slice(0, 5)}`);
           summary.sent += 1;
         } catch (err) { console.log(`sample failed status=${err?.statusCode}`); }
@@ -144,15 +162,7 @@ export async function main({ now = process.env.FAKE_NOW ? new Date(process.env.F
         console.log(`dry-run: would send "${reminder.title}" (${reminder.id}) to ${id.slice(0, 6)}`);
         continue;
       }
-      const payload = JSON.stringify({
-        notification: {
-          title: reminder.title,
-          body: reminder.body,
-          tag: reminder.id,
-          icon: 'icons/icon-192.png',
-          data: { onActionClick: { default: { operation: 'navigateLastFocusedOrOpen', url: './' } } },
-        },
-      });
+      const payload = notificationPayload(reminder, plan.today, device.lang);
       try {
         await send(sub, payload);
         delivered.add(reminder.id);

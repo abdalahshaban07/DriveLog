@@ -86,3 +86,25 @@ describe('push schedule', () => {
     ]);
   });
 });
+
+import { formatPush } from './push-schedule';
+
+describe('formatPush', () => {
+  const soon = { id: 'maint-abc.soon.2026-12-05', fireOn: '2026-11-21', expireOn: '2026-12-04', title: 't', body: 'فرامل' };
+  it('says item type, days left and the due date in Arabic', () => {
+    const r = formatPush(soon, '2026-11-27', 'ar');
+    expect(r.title).toBe('DriveLog · صيانة قرّبت');
+    expect(r.body).toContain('فرامل');
+    expect(r.body).toContain('فاضل 8 أيام');
+  });
+  it('handles overdue and today', () => {
+    const od = { ...soon, id: 'maint-abc.overdue.2026-11-25' };
+    expect(formatPush(od, '2026-11-27', 'ar').body).toContain('فات يومين');
+    expect(formatPush(od, '2026-11-25', 'ar').body).toContain('النهاردة');
+    expect(formatPush(od, '2026-11-27', 'ar').title).toContain('عدّت ميعادها');
+  });
+  it('works in English and keeps old reminders readable', () => {
+    expect(formatPush(soon, '2026-12-04', 'en').body).toContain('1 day left');
+    expect(formatPush({ ...soon, id: 'weird' }, '2026-11-27', 'ar').title).toBe('t');
+  });
+});
