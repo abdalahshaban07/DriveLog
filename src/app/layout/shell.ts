@@ -30,12 +30,11 @@ export class Shell {
   readonly db = inject(Db);
   readonly whatsNew = inject(WhatsNew);
   private readonly router = inject(Router);
-  private readonly install = inject(InstallPwa);
+  readonly install = inject(InstallPwa);
   private readonly holidayReminder = inject(HolidayReminder);
   private readonly healthReminder = inject(HealthReminder);
   private readonly autoBackup = inject(AutoBackup);
 
-  readonly updateDismissed = signal(false);
   /** ponytail: browser online flag only — no probe ping */
   readonly online = signal(typeof navigator === 'undefined' ? true : navigator.onLine);
 
@@ -60,16 +59,10 @@ export class Shell {
     if (/^\/(maintenance|history\/maintenance)(\/|$)/.test(path)) return 'maintenance';
     return null;
   });
-  readonly updateReady = computed(() => this.install.updateReady() && !this.updateDismissed());
-  readonly showUpdate = this.updateReady;
   /** Notes wait until this build is running, so Later does not open the same sheet again. */
   readonly showNotes = computed(
-    () =>
-      this.showNav() &&
-      !this.install.updateReady() &&
-      (this.whatsNew.visible() || this.whatsNew.manualOpen()),
+    () => this.showNav() && (this.whatsNew.visible() || this.whatsNew.manualOpen()),
   );
-  readonly modalTitle = computed(() => this.i18n.t('update.available'));
   readonly notesTitle = computed(() => this.i18n.t('update.whatsNew'));
   readonly releaseId = computed(() => this.whatsNew.displayVersion);
 
@@ -99,14 +92,6 @@ export class Shell {
         }
       });
     });
-  }
-
-  reload(): void {
-    void this.install.applyUpdate();
-  }
-
-  dismissUpdate(): void {
-    this.updateDismissed.set(true);
   }
 
   dismissNotes(): void {

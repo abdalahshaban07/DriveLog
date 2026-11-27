@@ -148,7 +148,11 @@
 
   @if (statusKey()) {
     <p class="assistant__status" role="status" aria-live="polite">
-      {{ i18n.t(statusKey()!) }}
+      @if (statusKey() === 'assistant.waiting') {
+        {{ i18n.t('assistant.waiting', { n: waitSec() }) }}
+      } @else {
+        {{ i18n.t(statusKey()!) }}
+      }
       @if (statusKey() === 'assistant.localOnly' || statusKey() === 'assistant.network') {
         <a routerLink="/settings">{{ i18n.t('assistant.openSettings') }}</a>
       }

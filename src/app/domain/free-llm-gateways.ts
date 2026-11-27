@@ -12,6 +12,10 @@
  * keyless CORS-open provider found - the 45s per-IP anonymous cooldown is
  * surfaced to the user as a busy message instead of a silent fallback.
  * Swap an entry when a provider dies or starts asking for a key.
+ *
+ * Pollinations' anonymous tier refuses a second question within 45s with
+ * HTTP 402 (not 429) plus a Retry-After header, so a quota answer is handled
+ * as "busy, wait N seconds" - never as an outage.
  */
 
 export type FreeLlmGateway = {
@@ -91,6 +95,69 @@ export function writeAssistantRemoteDown(
     } else {
       storage.removeItem(REMOTE_DOWN_KEY);
     }
+  } catch {
+    // private mode / quota
+  }
+}
+
+/** 402 = payment/quota required (Pollinations free tier), 429 = rate limited. */
+export const QUOTA_HTTP_STATUSES: readonly number[] = [402, 429];
+
+const REPLY_CACHE_KEY = 'drivelog.assistant.replies.v1';
+/** A repeated question with unchanged car data gets the same answer, free. */
+export const REPLY_CACHE_TTL_MS = 60 * 60 * 1000;
+const REPLY_CACHE_MAX = 8;
+
+type CachedReply = { readonly k: string; readonly t: number; readonly text: string };
+
+/** Stable key for one exact prompt, so changed car data never reuses an answer. */
+export function replyCacheKey(
+  lang: string,
+  messages: readonly { readonly role: string; readonly content: string }[],
+): string {
+  const joined = messages.map((m) => `${m.role}:${m.content}`).join('\n');
+  let hash = 5381;
+  for (let i = 0; i < joined.length; i++) {
+    hash = ((hash << 5) + hash + joined.charCodeAt(i)) | 0;
+  }
+  return `${lang}:${(hash >>> 0).toString(36)}:${joined.length}`;
+}
+
+export function readCachedReply(
+  storage: Storage | null,
+  key: string,
+  now = Date.now(),
+): string | null {
+  if (!storage) return null;
+  try {
+    const list = JSON.parse(storage.getItem(REPLY_CACHE_KEY) ?? '[]') as CachedReply[];
+    if (!Array.isArray(list)) return null;
+    const hit = list.find(
+      (entry) =>
+        entry &&
+        entry.k === key &&
+        typeof entry.text === 'string' &&
+        now - entry.t <= REPLY_CACHE_TTL_MS,
+    );
+    return hit ? hit.text : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeCachedReply(
+  storage: Storage | null,
+  key: string,
+  text: string,
+  now = Date.now(),
+): void {
+  if (!storage) return;
+  try {
+    const raw = storage.getItem(REPLY_CACHE_KEY);
+    const parsed = raw ? (JSON.parse(raw) as CachedReply[]) : [];
+    const list = Array.isArray(parsed) ? parsed : [];
+    const next = [{ k: key, t: now, text }, ...list.filter((entry) => entry && entry.k !== key)];
+    storage.setItem(REPLY_CACHE_KEY, JSON.stringify(next.slice(0, REPLY_CACHE_MAX)));
   } catch {
     // private mode / quota
   }

@@ -3,8 +3,12 @@ import {
   ASSISTANT_THINKING_MAX_TOKENS,
   bumpFreeLlmCursor,
   freeGatewaysFrom,
+  QUOTA_HTTP_STATUSES,
+  readCachedReply,
   readFreeLlmCursor,
+  replyCacheKey,
   writeAssistantRemoteDown,
+  writeCachedReply,
   type FreeLlmGateway,
 } from '../domain/free-llm-gateways';
 import {
@@ -27,11 +31,15 @@ import { canRemoteAssistantCall, recordRemoteAssistantCall } from './assistant-r
 import type { Db } from './db';
 import { fetchOpenAiChat, OpenAiChatError, type OpenAiChatMessage } from './openai-chat';
 
-const GATEWAY_TIMEOUT_MS = 8_000;
-/** Total budget for one question's chain, so stacked timeouts cannot stall the reply. */
-const CHAIN_BUDGET_MS = 40_000;
-/** Wait out a short 429. A longer Retry-After moves on so the question does not stall. */
-const RETRY_WAIT_CAP_S = 10;
+/** Mobile networks answer in 6-9s; 8s cut real replies off. */
+const GATEWAY_TIMEOUT_MS = 15_000;
+/** Total budget for one question's chain, including one quota wait. */
+const CHAIN_BUDGET_MS = 90_000;
+/** Wait out the free tier's 45s cooldown instead of dropping to a local answer. */
+const RETRY_WAIT_CAP_S = 50;
+
+/** Told how long the wait will be, so the screen can say it instead of going quiet. */
+export type WaitNotice = (seconds: number) => void;
 
 const REDACTED = 'redacted_' + 'thinking';
 const THINK = 'th' + 'ink';
@@ -130,6 +138,7 @@ async function tryChain(
   messages: readonly OpenAiChatMessage[],
   lang: 'en' | 'ar',
   signal?: AbortSignal,
+  onWait?: WaitNotice,
 ): Promise<ChainResult> {
   const skipBaseUrls = new Set<string>();
   const retriedBusy = new Set<string>();
@@ -167,13 +176,16 @@ async function tryChain(
       if (err instanceof OpenAiChatError && err.code === 'network') {
         skipBaseUrls.add(gw.baseUrl);
       } else if (err instanceof OpenAiChatError && err.status != null) {
-        if (err.status === 429) {
-          const wait = err.retryAfter ?? 45;
+        if (QUOTA_HTTP_STATUSES.includes(err.status)) {
+          // Free tiers answer a quota refusal with 402 + Retry-After. That is
+          // "busy for N seconds", not an outage: wait it out, then ask again.
+          const wait = Math.ceil(err.retryAfter ?? 45);
           retryAfterSec = Math.max(retryAfterSec ?? 0, wait);
           if (wait <= RETRY_WAIT_CAP_S && !retriedBusy.has(gw.baseUrl)) {
             retriedBusy.add(gw.baseUrl);
+            onWait?.(wait);
             await waitSeconds(wait, signal);
-            i--; // same gateway, one retry after its short cooldown
+            i--; // same gateway, one retry after its cooldown
             continue;
           }
         } else {
@@ -204,7 +216,7 @@ function coachMessages(
 
 export type FreeChainReply = {
   readonly text: string | null;
-  /** Set when every gateway refused as busy (HTTP 429). */
+  /** Set when every gateway refused as busy (HTTP 402 quota or 429). */
   readonly retryAfterSec: number | null;
 };
 
@@ -213,19 +225,25 @@ export async function fetchFreeChain(
   lang: 'en' | 'ar',
   messages: readonly OpenAiChatMessage[],
   signal?: AbortSignal,
+  onWait?: WaitNotice,
 ): Promise<FreeChainReply> {
   const storage = typeof localStorage !== 'undefined' ? localStorage : null;
+  const cacheKey = replyCacheKey(lang, messages);
+  const cached = readCachedReply(storage, cacheKey);
+  if (cached) return { text: cached, retryAfterSec: null };
   const chain = await tryChain(
     freeGatewaysFrom(readFreeLlmCursor(storage)),
     messages,
     lang,
     signal,
+    onWait,
   );
   bumpFreeLlmCursor(storage);
 
   if (chain.reply) {
     recordRemoteAssistantCall();
     writeAssistantRemoteDown(storage, false);
+    writeCachedReply(storage, cacheKey, chain.reply);
   } else if (chain.sawDown) {
     writeAssistantRemoteDown(storage, true);
   }
@@ -237,8 +255,9 @@ async function tryRemoteChat(
   question: string,
   lang: 'en' | 'ar',
   history: readonly ChatMessage[],
+  onWait?: WaitNotice,
 ): Promise<FreeChainReply> {
-  return fetchFreeChain(lang, coachMessages(snapshot, question, lang, history));
+  return fetchFreeChain(lang, coachMessages(snapshot, question, lang, history), undefined, onWait);
 }
 
 /**
@@ -271,6 +290,7 @@ export async function fetchChatReply(
   history: readonly ChatMessage[] = [],
   carry: AdvisorRead | null = null,
   format?: CardFormat,
+  onWait?: WaitNotice,
 ): Promise<CoachReply> {
   const q = question.trim();
   if (!q) {
@@ -299,6 +319,7 @@ export async function fetchChatReply(
       q,
       lang,
       history,
+      onWait,
     );
     if (remote.text) return { text: remote.text, source: 'remote' };
     if (remote.retryAfterSec != null) {

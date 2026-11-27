@@ -66,6 +66,8 @@ export class AssistantPage {
   readonly busy = signal(false);
   readonly reply = signal<ShownReply | null>(null);
   readonly statusKey = signal<MsgKey | null>(null);
+  /** Seconds the online coach asked us to wait before it can answer. */
+  readonly waitSec = signal(0);
   /** Sticky while the online gateways fail on HTTP; cleared by the next good reply. */
   readonly remoteDown = signal(
     readAssistantRemoteDown(typeof localStorage !== 'undefined' ? localStorage : null),
@@ -259,6 +261,11 @@ export class AssistantPage {
           liters: (value) =>
             this.i18n.formatNumber(value, { maximumFractionDigits: 1, minimumFractionDigits: 0 }),
           date: (iso) => this.i18n.formatDate(iso, { day: 'numeric', month: 'short' }),
+        },
+        (seconds) => {
+          // A free-tier quota refusal is a wait, not a dead coach: say so.
+          this.waitSec.set(Math.ceil(seconds));
+          this.statusKey.set('assistant.waiting');
         },
       );
 

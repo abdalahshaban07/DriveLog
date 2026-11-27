@@ -912,6 +912,8 @@ export const en = {
   'assistant.network': 'Could not reach the coach — showing a local answer.',
   'assistant.rateLimited': 'Online limit reached for now — local answer. Try again in a few minutes.',
   'assistant.busy': 'The online coach is busy right now — ask again in about {n} seconds.',
+  'assistant.waiting':
+    'The free online coach is busy — holding your question for about {n} seconds, then answering.',
   'assistant.localOnly': 'Online assistant is off — using on-device answers.',
   'assistant.remoteDown':
     'The online coach is unreachable right now — answers stay on-device until it is back.',

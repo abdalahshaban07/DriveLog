@@ -77,15 +77,7 @@
         {{ i18n.t('common.saved') }}
       </p>
     }
-    @if (showUpdate()) {
-      <app-update-modal
-        [title]="modalTitle()"
-        [releaseId]="releaseId()"
-        [isUpdate]="true"
-        (later)="dismissUpdate()"
-        (updateNow)="reload()"
-      />
-    } @else if (showNotes()) {
+    @if (showNotes()) {
       <app-update-modal
         [title]="notesTitle()"
         [releaseId]="releaseId()"

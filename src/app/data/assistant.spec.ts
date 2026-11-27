@@ -355,15 +355,72 @@ describe('fetchChatReply', () => {
   });
 
   it('answers with a busy hint when the gateway is rate-limiting (429)', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(httpStatus(429, '45'));
+    const fetchMock = vi.fn().mockResolvedValue(httpStatus(429, '120'));
     vi.stubGlobal('fetch', fetchMock);
 
     const reply = await fetchChatReply(mockDb(true), 'fuel', 'en', (k, p) => `L:${k}:${p?.['n'] ?? ''}`);
 
     expect(reply.source).toBe('local');
-    expect(reply.text).toBe('L:assistant.busy:45');
+    expect(reply.text).toBe('L:assistant.busy:120');
     expect(reply.remoteFailed).toBeUndefined();
     expect(hourCount()).toBe(0);
+  });
+
+  it('answers with a busy hint when the free tier demands payment (402) beyond the wait cap', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(httpStatus(402, '600'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const reply = await fetchChatReply(mockDb(true), 'fuel', 'en', (k, p) => `L:${k}:${p?.['n'] ?? ''}`);
+
+    expect(reply.source).toBe('local');
+    expect(reply.text).toBe('L:assistant.busy:600');
+    expect(reply.remoteFailed).toBeUndefined();
+    expect(readAssistantRemoteDown(localStorage)).toBe(false);
+  });
+
+  it('waits out a free-tier quota refusal (402) and answers online', async () => {
+    vi.useFakeTimers();
+    try {
+      const onWait = vi.fn();
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(httpStatus(402, '30'))
+        .mockResolvedValueOnce(okChat('remote-ok'));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const pending = fetchChatReply(
+        mockDb(true),
+        'fuel',
+        'en',
+        (k) => k,
+        undefined,
+        [],
+        null,
+        undefined,
+        onWait,
+      );
+      await vi.advanceTimersByTimeAsync(30_000);
+      const reply = await pending;
+
+      expect(reply).toEqual({ text: 'remote-ok', source: 'remote' });
+      expect(onWait).toHaveBeenCalledWith(30);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(readAssistantRemoteDown(localStorage)).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('reuses a cached answer for the same question and car, without another call', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okChat('remote-ok'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const first = await fetchChatReply(mockDb(true), 'fuel', 'en', (k) => k);
+    const second = await fetchChatReply(mockDb(true), 'fuel', 'en', (k) => k);
+
+    expect(first).toEqual({ text: 'remote-ok', source: 'remote' });
+    expect(second).toEqual({ text: 'remote-ok', source: 'remote' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('spends no device slot on dead gateways and keeps a sticky down flag', async () => {
