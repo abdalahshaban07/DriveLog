@@ -10,6 +10,10 @@ on:
         description: 'Only log what would be sent'
         type: boolean
         default: false
+      test_push:
+        description: 'Send a test notification to every subscribed device'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -41,5 +45,6 @@ jobs:
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
           VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
           NODE_PATH: ${{ runner.temp }}/wp/node_modules
+          TEST_PUSH: ${{ inputs.test_push && '1' || '0' }}
           DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
         run: node scripts/push-send.mjs

@@ -98,6 +98,22 @@ export async function main({ now = process.env.FAKE_NOW ? new Date(process.env.F
       continue;
     }
     const device = parseDevice({ tz: str(fields.tz), reminders: str(fields.reminders), sent: str(fields.sent) });
+    if (process.env.TEST_PUSH === '1') {
+      let host = '?';
+      try { host = new URL(sub.endpoint).host; } catch {}
+      let count = '?';
+      try { count = JSON.parse(str(fields.reminders) ?? '[]').length; } catch {}
+      console.log(`test device ${id.slice(0, 6)} host=${host} updatedAt=${str(fields.updatedAt)} reminders=${count}`);
+      try {
+        await send(sub, JSON.stringify({ notification: { title: 'تجربة تنبيه DriveLog', body: 'لو شايف الرسالة دي يبقى التنبيهات شغالة والتطبيق مقفول', tag: 'drivelog-test', icon: 'icons/icon-192.png' } }));
+        summary.sent += 1;
+        console.log(`test sent ${id.slice(0, 6)}`);
+      } catch (err) {
+        console.log(`test failed ${id.slice(0, 6)} status=${err?.statusCode}`);
+        summary.failed += 1;
+      }
+      continue;
+    }
     const plan = planDevice(device, now);
     if (!plan.toSend.length) {
       continue;
