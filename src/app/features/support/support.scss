@@ -230,6 +230,14 @@
   font-weight: 700;
   text-decoration: none;
   border-block-end: 1px solid color-mix(in srgb, var(--fuel) 75%, transparent);
+  position: relative;
+}
+
+/* 44px tap area without changing the look. */
+.faq__go::after {
+  content: '';
+  position: absolute;
+  inset: -13px -6px;
 }
 
 .faq__go:focus-visible {
