@@ -18,6 +18,7 @@ export type AdvisorIntent =
   | 'SERVICE_LIST'
   | 'SPEND_COMPARE'
   | 'COACH_ADVICE'
+  | 'CAR_SUMMARY'
   | 'UNSUPPORTED';
 
 export type AdvisorPart = 'oil' | 'tires' | 'brakes';
@@ -409,6 +410,7 @@ function defaultWindow(intent: AdvisorIntent): AdvisorWindow {
     case 'SPENDING_TREND':
     case 'PART_STATUS':
     case 'COACH_ADVICE':
+    case 'CAR_SUMMARY':
     case 'UNSUPPORTED':
       return 'period';
     case 'PART_COST':
@@ -471,6 +473,13 @@ const FUEL_WORD = /petrol|\bgas\b|fuel|بنزين|وقود|استهلاك|بتش
 /** «قارن الشهر ده باللي فات» — a compare ask on top of the spend question. */
 const COMPARE_WORD = /قارن|مقارن[هة]?|compare|versus|\bvs\b/;
 
+/**
+ * «ملخص عن العربية» — a whole-car catch-up, the one thing a driver asks first.
+ * Normalized text only: ة→ه, أ→ا, so patterns stay bare.
+ */
+const SUMMARY_WORD =
+  /ملخص|موجز|نظره عامه|نظره سريعه|حاله العربيه|حاله السياره|العربيه عامله ايه|عربيتي عامله ايه|summary|overview|catch me up|how('s| is) my car/;
+
 function scopeIntent(intent: AdvisorIntent, text: string, part?: AdvisorPart): AdvisorIntent {
   const scoped = partScopedIntent(intent, text, part);
   if (scoped === 'SPENDING_TREND' && COMPARE_WORD.test(text)) return 'SPEND_COMPARE';
@@ -482,6 +491,7 @@ export function readAdvisor(raw: string, carry?: AdvisorRead | null): AdvisorRea
   const text = normalizeAdvisorText(raw);
   if (!text) return { intent: 'UNSUPPORTED', window: 'period' };
   if (isAdviceAsk(text)) return { intent: 'COACH_ADVICE', window: 'period' };
+  if (SUMMARY_WORD.test(text)) return { intent: 'CAR_SUMMARY', window: 'period' };
   const part = detectPart(text);
   const range = detectRange(text);
   const window: AdvisorWindow | undefined = range ? 'range' : detectWindow(text);

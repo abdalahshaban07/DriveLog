@@ -379,6 +379,7 @@ export const ar: Record<MsgKey, string> = {
   'common.kmPerL': 'كم/ل',
   'common.perLiter': '/ل',
   'common.km': 'كم',
+  'common.l100': 'لتر/١٠٠ كم',
   'date.clear': 'مسح',
   'date.today': 'النهاردة',
   'date.month': 'الشهر',
@@ -1295,6 +1296,9 @@ export const ar: Record<MsgKey, string> = {
   'advisor.answer.reserveBody':
     'حط حوالي {amount} {currency} احتياطي من تاريخ الصيانة والتكاليف الجاية.',
   'advisor.answer.reserveUnknown': 'لسه مفيش بيانات كفاية لاقتراح احتياطي.',
+  'advisor.answer.summaryTitle': 'ملخص العربية',
+  'advisor.answer.summaryBody': 'مصروف الشهر {spend} {currency}. آخر استهلاك {l100}. وأقرب حاجة {due}.',
+  'advisor.answer.summaryNoDue': 'كل حاجة تمام',
   'advisor.answer.priorityTitle': 'أولوية الصيانة',
   'advisor.answer.priorityBody': '{part} حالته {status}.',
   'advisor.answer.priorityEmpty': 'مفيش حاجة مستحقة دلوقتي.',

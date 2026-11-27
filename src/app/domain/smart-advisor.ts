@@ -407,6 +407,21 @@ export function askLocal(
             amount: Math.round(facts.recommendedReserve),
             currency: logs.currency,
           });
+    case 'CAR_SUMMARY': {
+      // The catch-up answer a driver actually asks for: money, fuel, what's next.
+      const due = facts.healthItems.find((item) => item.status !== 'good');
+      return answer('advisor.answer.summaryTitle', 'advisor.answer.summaryBody', {
+        spend: Math.round(logs.periodTotal),
+        currency: logs.currency,
+        l100:
+          logs.lastL100 == null
+            ? t('assistant.card.notRecorded')
+            : `${round1(logs.lastL100)} ${t('common.l100')}`,
+        due: due
+          ? `${partLabel(due, t)} ${t(statusKey(due.status))}`
+          : t('advisor.answer.summaryNoDue'),
+      });
+    }
     case 'MAINTENANCE_PRIORITY': {
       const item = read.part
         ? itemForPart(read.part, facts.healthItems)

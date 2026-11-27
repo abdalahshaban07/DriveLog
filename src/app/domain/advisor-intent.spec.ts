@@ -324,3 +324,34 @@ describe('coach human layer', () => {
     expect(reply.text).toContain('car=Tiko');
   });
 });
+
+describe('car summary intent', () => {
+  it('reads a whole-car catch-up as CAR_SUMMARY, not UNSUPPORTED', () => {
+    for (const q of [
+      'ملخص عن العربيه',
+      'ملخص سريع',
+      'العربية عاملة ايه؟',
+      'summary',
+      'how is my car doing',
+    ]) {
+      expect(readAdvisor(q).intent).toBe('CAR_SUMMARY');
+    }
+  });
+
+  it('answers the summary on-device with the real numbers', () => {
+    const reply = localCoachAnswer(
+      'ملخص عن العربيه',
+      { ...facts(), healthItems: [{ part: 'brakes', status: 'soon' } as never] },
+      logs({ periodTotal: 1862, lastL100: 8.4 }),
+      t,
+    );
+    expect(reply.source).toBe('local');
+    expect(reply.text).toContain('spend=1862');
+    expect(reply.text).toContain('l100=8.4');
+  });
+
+  it('says nothing is due when every part is good', () => {
+    const reply = localCoachAnswer('ملخص عن العربيه', facts(), logs(), t);
+    expect(reply.text).toContain('advisor.answer.summaryNoDue');
+  });
+});

@@ -214,6 +214,7 @@ export function buildAnswerCard(
     case 'SERVICE_LIST':
     case 'SPEND_COMPARE':
     case 'COACH_ADVICE':
+    case 'CAR_SUMMARY':
     case 'UNSUPPORTED':
       return null;
     default: {

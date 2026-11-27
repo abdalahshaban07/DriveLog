@@ -388,6 +388,7 @@ export const en = {
   'common.kmPerL': 'km/L',
   'common.perLiter': '/L',
   'common.km': 'km',
+  'common.l100': 'L/100 km',
   'date.clear': 'Clear',
   'date.today': 'Today',
   'date.month': 'Month',
@@ -1314,6 +1315,9 @@ export const en = {
   'advisor.answer.reserveBody':
     'Set aside about {amount} {currency} from your history and upcoming costs.',
   'advisor.answer.reserveUnknown': 'Not enough data to recommend a reserve yet.',
+  'advisor.answer.summaryTitle': 'Car summary',
+  'advisor.answer.summaryBody': 'This month: {spend} {currency}. Last fuel use {l100}. Next up {due}.',
+  'advisor.answer.summaryNoDue': 'nothing due',
   'advisor.answer.priorityTitle': 'Maintenance priority',
   'advisor.answer.priorityBody': '{part} is {status}.',
   'advisor.answer.priorityEmpty': 'Nothing is due right now.',

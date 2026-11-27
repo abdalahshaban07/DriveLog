@@ -127,7 +127,12 @@ function browserMayReachGateway(): boolean {
  * rephrase a number it does not have, and the wait is not worth it.
  */
 function isComputedLocal(read: AdvisorRead): boolean {
-  if (read.intent === 'SERVICE_LIST' || read.intent === 'PART_COST' || read.intent === 'SPEND_COMPARE') {
+  if (
+    read.intent === 'SERVICE_LIST' ||
+    read.intent === 'PART_COST' ||
+    read.intent === 'SPEND_COMPARE' ||
+    read.intent === 'CAR_SUMMARY'
+  ) {
     return true;
   }
   return read.intent === 'SPENDING_TREND' && read.window === 'range';
