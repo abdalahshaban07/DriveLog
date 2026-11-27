@@ -11,6 +11,8 @@
       [value]="displayValue()"
       [attr.aria-invalid]="!!error()"
       [attr.aria-describedby]="describedBy()"
+      role="combobox"
+      aria-haspopup="dialog"
       [attr.aria-expanded]="opened()"
       [attr.aria-controls]="opened() ? calId : null"
       (click)="onInputClick($event)"
