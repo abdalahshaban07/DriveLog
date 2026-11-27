@@ -187,7 +187,7 @@
 }
 
 .pass__delta[data-tone='down'] {
-  color: var(--ok);
+  color: var(--ok-ink, var(--ok));
 }
 
 .pass__sheet {

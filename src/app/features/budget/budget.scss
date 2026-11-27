@@ -302,7 +302,7 @@
 }
 
 .budget__note--ok {
-  color: var(--ok);
+  color: var(--ok-ink, var(--ok));
   font-weight: 700;
 }
 

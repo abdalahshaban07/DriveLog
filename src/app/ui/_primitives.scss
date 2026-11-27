@@ -416,7 +416,7 @@ textarea.input {
 
 .chip--fuel {
   background: color-mix(in srgb, var(--fuel) 14%, var(--surface));
-  color: var(--fuel);
+  color: var(--fuel-ink, var(--fuel));
 }
 
 
