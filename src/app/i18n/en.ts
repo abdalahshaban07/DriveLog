@@ -567,15 +567,15 @@ export const en = {
   'legal.title': 'Privacy & Terms',
   'legal.privacyHeading': 'Privacy',
   'legal.privacy.p1':
-    'Your vehicle logs stay on this device in IndexedDB. DriveLog does not require a user account for fill-ups, maintenance, or settings.',
+    'All your records (fill-ups, maintenance, expenses, documents and settings) are saved on your phone only. There is no account, and nobody on our side can see them. Clearing site data or tapping "Start from scratch" erases them.',
   'legal.privacy.p2':
-    'Location is requested only when you use Around or nearby stations. Optional public feeds (maps, fuel prices, weather, holidays) run when those features need them. The service worker may cache the app shell for offline use.',
+    'Some things go online by themselves: the weather on the home screen uses your approximate location (worked out from your internet address) and sends it to a weather service. When you first open the app it finds your country for the currency, and it fetches fuel prices and public holidays. Any service it contacts can see your internet address, like any website. There is no switch to turn the weather off right now. Your exact location (GPS) is asked for in Around, and sometimes for the weather if the city lookup fails. You can block it in your browser settings.',
   'legal.privacy.p3':
-    'Export and import are started by you. DriveLog does not sell your logs. Clearing site data or using Start from scratch removes local records from this browser.',
+    'Export and import only happen when you start them. We do not sell your data, and the app has no ads and no tracking tools.',
   'legal.privacy.p5':
-    'Background reminders ("when the app is closed") are optional and only run when you turn them on. We store in a free Firebase (Google) project: a random device id, your browser push-service address, time zone and language, and due dates with the item name (for example "Brakes" or "License"). No name, plate or location. Turning the setting off deletes your data from there. To guess your country or city, the app may ask an IP-lookup service (geojs.io and ipapi.co) when location is unavailable.',
+    '"When the app is closed" alerts are optional. When you turn them on, we send a free reminder service (from Google) your license and maintenance due dates and the name of each, with a random code for your phone, your time zone and language, and it goes through your browser\'s notification service. No name, plate or location. When you turn it off in Settings, it is deleted from there. Kilometer reminders stay on your phone only.',
   'legal.privacy.p4':
-    'The AI assistant is optional and can be turned off in Settings. When it is on, your question, the recent chat, and a summary of your logs are sent to free AI providers (Pollinations, with ch.at and flm.stonech.at as backups) to write the reply. No name, plate, VIN, or GPS is included. Free providers may use what is sent to improve their models. AI answers can be wrong — treat them as suggestions, not mechanical advice.',
+    'The AI assistant is optional. When you turn it on, your question, the recent chat and a summary of your car (no name, plate, VIN or location) are sent to free AI services outside the app so they can reply. Those services may keep and use what is sent. Answers can be wrong, so treat them as suggestions. Turn it off in Settings > AI assistant.',
   'legal.termsHeading': 'Terms',
   'legal.terms.p1':
     'DriveLog is a personal fuel and maintenance utility provided as-is. It is not mechanical, legal, or financial advice.',
