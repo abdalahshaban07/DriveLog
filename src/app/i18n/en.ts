@@ -976,8 +976,6 @@ export const en = {
   'settings.assistantApiKey': 'API key',
   'settings.assistantBaseUrl': 'API base URL',
   'settings.assistantModel': 'Model',
-  'settings.assistantHint':
-    'Uses free public gateways with no API key (Pollinations, then ch.at, then flm). Your question and a summary of your car (no name, VIN, plate or location) are sent to these third parties, which may log them. Many questions are answered on the device and never sent. Off = local answers only.',
   'setup.plate': 'Plate number (optional)',
   'setup.license': 'License expiry (optional)',
   'setup.registration': 'Registration expiry (optional)',

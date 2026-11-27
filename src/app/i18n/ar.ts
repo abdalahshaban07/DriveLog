@@ -957,8 +957,6 @@ export const ar: Record<MsgKey, string> = {
   'settings.assistantApiKey': 'مفتاح API',
   'settings.assistantBaseUrl': 'رابط API',
   'settings.assistantModel': 'النموذج',
-  'settings.assistantHint':
-    'بوابات عامة مجانية من غير مفتاح (Pollinations ثم ch.at ثم flm). سؤالك وملخص عربيتك (من غير الاسم أو الشاسيه أو اللوحة أو الموقع) بيتبعتوا لجهات خارجية ممكن تسجّله. أسئلة كتير بتتجاوب من الجهاز من غير ما تتبعت. مطفي = إجابات محلية بس.',
   'setup.plate': 'رقم اللوحة (اختياري)',
   'setup.license': 'انتهاء الرخصة (اختياري)',
   'setup.registration': 'انتهاء الترخيص (اختياري)',
