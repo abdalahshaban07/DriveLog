@@ -63,22 +63,38 @@ export function freeGatewaysFrom(start: number): readonly FreeLlmGateway[] {
 }
 
 const REMOTE_DOWN_KEY = 'drivelog.assistant.remote-down';
+/** A stored down flag expires: a stale outage must not banner forever. */
+const REMOTE_DOWN_TTL_MS = 15 * 60 * 1000;
 
-/** Sticky "online is down" flag: set on a failed HTTP attempt, cleared on the next good reply. */
-export function readAssistantRemoteDown(storage: Storage | null): boolean {
+/**
+ * Sticky "online is down" flag: set (with a timestamp) on a failed HTTP
+ * attempt, cleared on the next good reply, expired after REMOTE_DOWN_TTL_MS.
+ */
+export function readAssistantRemoteDown(storage: Storage | null, now = Date.now()): boolean {
   if (!storage) return false;
   try {
-    return storage.getItem(REMOTE_DOWN_KEY) === '1';
+    const raw = storage.getItem(REMOTE_DOWN_KEY);
+    if (raw === null) return false;
+    const at = Number(raw);
+    if (!Number.isFinite(at) || now - at > REMOTE_DOWN_TTL_MS) {
+      storage.removeItem(REMOTE_DOWN_KEY);
+      return false;
+    }
+    return true;
   } catch {
     return false;
   }
 }
 
-export function writeAssistantRemoteDown(storage: Storage | null, down: boolean): void {
+export function writeAssistantRemoteDown(
+  storage: Storage | null,
+  down: boolean,
+  now = Date.now(),
+): void {
   if (!storage) return;
   try {
     if (down) {
-      storage.setItem(REMOTE_DOWN_KEY, '1');
+      storage.setItem(REMOTE_DOWN_KEY, String(now));
     } else {
       storage.removeItem(REMOTE_DOWN_KEY);
     }
