@@ -2,16 +2,27 @@ import { Injectable, computed, effect, signal } from '@angular/core';
 import { Db } from '../data/db';
 import type { Theme } from '../domain/models';
 import { DEFAULT_LOOK } from '../domain/models';
-import { en, type MsgKey } from './en';
+import type { MsgKey } from './en';
 
 type Table = Record<MsgKey, string>;
 
-// Keep the Arabic dictionary out of the initial chunk; en ships eager as the
-// fallback (ar covers every MsgKey, so the fallback only shows pre-load).
+// Both dictionaries stay out of the initial chunk. The app initializer waits for
+// the active one (I18n.preload) so no key ever renders before its text exists.
 let arLoader: Promise<Table> | null = null;
 function loadArTable(): Promise<Table> {
   arLoader ??= import('./ar').then((m) => m.ar);
   return arLoader;
+}
+let enLoader: Promise<Table> | null = null;
+let enLoaded: Table | null = null;
+function loadEnTable(): Promise<Table> {
+  enLoader ??= import('./en').then((m) => (enLoaded = m.en));
+  return enLoader;
+}
+/** Tests and the e2e harness hand over the English table synchronously. */
+export function primeEnglishTable(table: Table): void {
+  enLoaded = table;
+  enLoader = Promise.resolve(table);
 }
 
 function systemPrefersDark(): boolean {
@@ -50,6 +61,7 @@ export class I18n {
   private readonly lang = signal<'en' | 'ar'>('ar');
   private readonly systemDark = signal(systemPrefersDark());
   private readonly arTable = signal<Table | null>(null);
+  private readonly enTable = signal<Table | null>(enLoaded);
 
   readonly language = this.lang.asReadonly();
   readonly dir = computed(() => (this.lang() === 'ar' ? 'rtl' : 'ltr'));
@@ -58,6 +70,7 @@ export class I18n {
     // Warm the lazy Arabic dictionary immediately; views that call t() re-render
     // via the arTable signal once it lands.
     loadArTable().then((table) => this.arTable.set(table)).catch(() => undefined);
+    loadEnTable().then((table) => this.enTable.set(table)).catch(() => undefined);
     globalThis.matchMedia?.('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
       this.systemDark.set(e.matches);
     });
@@ -89,8 +102,9 @@ export class I18n {
   }
 
   t(key: MsgKey, params?: Record<string, string | number>): string {
+    const en = this.enTable();
     const table = this.lang() === 'ar' ? (this.arTable() ?? en) : en;
-    let text: string = table[key] ?? en[key] ?? key;
+    let text: string = table?.[key] ?? en?.[key] ?? key;
     const resolved = params ? this.formatParams(params) : undefined;
     if (resolved) {
       for (const [k, v] of Object.entries(resolved)) {
@@ -161,6 +175,13 @@ export class I18n {
     const locale = this.lang() === 'ar' ? 'ar-EG-u-nu-arab' : 'en-GB';
     const date = typeof value === 'string' ? new Date(`${value}T12:00:00`) : value;
     return new Intl.DateTimeFormat(locale, options).format(date);
+  }
+
+  /** Resolves once the dictionaries the first render needs have loaded. */
+  async preload(): Promise<void> {
+    const [en, ar] = await Promise.all([loadEnTable(), loadArTable()]);
+    this.enTable.set(en);
+    this.arTable.set(ar);
   }
 
   async setLanguage(language: 'en' | 'ar'): Promise<void> {

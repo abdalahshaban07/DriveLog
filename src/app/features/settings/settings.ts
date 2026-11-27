@@ -262,7 +262,7 @@ export class SettingsPage {
     await this.db.updateCar({ currentOdometer: n });
   }
 
-  exportBackup(): void {
+  exportBackup(prefix = 'drivelog-backup'): void {
     const data = this.db.exportBackup();
     const blob = new Blob([JSON.stringify(data, null, 2)], {
       type: 'application/json',
@@ -270,7 +270,9 @@ export class SettingsPage {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `drivelog-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    const d = new Date();
+    const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    a.download = `${prefix}-${day}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -382,6 +384,10 @@ export class SettingsPage {
       return;
     }
     try {
+      // Safety copy of what is on the device now, before anything is changed.
+      if (this.db.fillUps().length || this.db.maintenance().length || this.db.car()) {
+        this.exportBackup('drivelog-before-import');
+      }
       if (mode === 'replace') {
         await this.db.importReplace(backup);
       } else {

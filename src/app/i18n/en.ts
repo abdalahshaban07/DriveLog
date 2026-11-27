@@ -342,7 +342,7 @@ export const en = {
   'backup.merge': 'Merge with existing data',
   'backup.confirm': 'How should this backup be applied?',
   'backup.cancel': 'Cancel',
-  'backup.done': 'Backup restored',
+  'backup.done': 'Backup restored. A copy of your previous data was saved to your downloads first.',
   'backup.failed': 'Import failed. Your data was not changed.',
   'backup.autoTitle': 'Auto backup',
   'backup.autoHint':
