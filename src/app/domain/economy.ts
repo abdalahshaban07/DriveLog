@@ -69,17 +69,32 @@ export function computePerFillSegments(fillUps: readonly FillUp[]): EconomySegme
   });
 
   const segments: EconomySegment[] = [];
+  // A partial top-up gets no point of its own: its liters, cost and distance carry
+  // into the next normal fill, so that fill's average covers the whole stretch.
+  let carry = null as { liters: number; cost: number; km: number; startId: string } | null;
   for (let i = 0; i < sorted.length; i++) {
     const end = sorted[i]!;
-    const distance = end.distanceKm!;
-    const start = i > 0 ? sorted[i - 1]! : end;
+    if (end.partial === true) {
+      carry = {
+        liters: (carry?.liters ?? 0) + end.liters,
+        cost: (carry?.cost ?? 0) + end.cost,
+        km: (carry?.km ?? 0) + end.distanceKm!,
+        startId: carry?.startId ?? (i > 0 ? sorted[i - 1]!.id : end.id),
+      };
+      continue;
+    }
+    const distance = end.distanceKm! + (carry?.km ?? 0);
+    const liters = end.liters + (carry?.liters ?? 0);
+    const cost = end.cost + (carry?.cost ?? 0);
+    const start = carry ? carry.startId : (i > 0 ? sorted[i - 1]!.id : end.id);
+    carry = null;
     segments.push({
-      startId: start.id,
+      startId: start,
       endId: end.id,
       distanceKm: distance,
-      litersPer100Km: (end.liters / distance) * 100,
-      costPerKm: end.cost / distance,
-      totalCost: end.cost,
+      litersPer100Km: (liters / distance) * 100,
+      costPerKm: cost / distance,
+      totalCost: cost,
     });
   }
   return segments;

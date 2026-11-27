@@ -97,6 +97,7 @@ export class FillUpPage {
   readonly date = signal(todayDateOnly());
   readonly placeLabel = signal('');
   readonly note = signal('');
+  readonly partial = signal(false);
   readonly dateError = signal('');
   readonly distanceError = signal('');
   readonly distanceWarn = signal('');
@@ -495,6 +496,7 @@ export class FillUpPage {
     this.date.set(existing.date);
     this.placeLabel.set(existing.placeLabel ?? '');
     this.note.set(existing.note ?? '');
+    this.partial.set(existing.partial === true);
     this.distanceError.set('');
     this.litersError.set('');
     this.dateError.set('');
@@ -680,6 +682,7 @@ export class FillUpPage {
         unitPrice: unit,
         fuelGrade: grade,
         tankFull: existing?.tankFull ?? false,
+        partial: this.partial() || undefined,
         distanceKm: persistDistance ? distance : undefined,
         date,
         placeLabel: station,
@@ -770,6 +773,7 @@ export class FillUpPage {
     this.date.set(todayDateOnly());
     this.placeLabel.set('');
     this.note.set('');
+    this.partial.set(false);
     this.dateError.set('');
     this.distanceError.set('');
     this.distanceWarn.set('');

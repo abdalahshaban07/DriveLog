@@ -283,6 +283,19 @@
 
       <app-text-field [label]="i18n.t('fillUp.note')" [(value)]="note" />
 
+      <label class="partial">
+        <input
+          type="checkbox"
+          class="partial__box"
+          [checked]="partial()"
+          (change)="partial.set($any($event.target).checked)"
+        />
+        <span class="partial__text">
+          <span class="partial__title">{{ i18n.t('fillUp.partial') }}</span>
+          <span class="partial__hint">{{ i18n.t('fillUp.partialHint') }}</span>
+        </span>
+      </label>
+
       <app-fill-up-scan />
     </section>
   } @else {

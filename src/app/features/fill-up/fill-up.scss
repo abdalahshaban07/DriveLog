@@ -416,3 +416,39 @@
     transform: none;
   }
 }
+
+.partial {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-block-size: 44px;
+  padding-block: var(--space-2);
+  cursor: pointer;
+}
+
+.partial__box {
+  inline-size: 24px;
+  block-size: 24px;
+  flex: none;
+  margin: 0;
+  accent-color: var(--fuel);
+}
+
+.partial__text {
+  display: grid;
+  gap: 2px;
+}
+
+.partial__title {
+  font-weight: 600;
+}
+
+.partial__hint {
+  color: var(--muted);
+  font-size: var(--type-label);
+}
+
+.partial__box:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}

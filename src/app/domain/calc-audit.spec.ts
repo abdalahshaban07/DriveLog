@@ -91,3 +91,31 @@ describe('maintenance due logic (audit)', () => {
     expect(calcIntervalStatus({ currentOdometer: 15001, today: '2026-03-01', km }).status).toBe('overdue');
   });
 });
+
+describe('partial fills', () => {
+  it('carries a partial top-up into the next full fill (hand math)', () => {
+    // 20 L top-up after 150 km (partial), then 30 L after 100 km:
+    // 50 L over 250 km = 20 L/100km, cost 280 over 250 km = 1.12 per km, one point.
+    const rows = [
+      f({ id: 'a', odometer: 1000, liters: 30, cost: 300, distanceKm: 400, date: '2026-03-01', createdAt: '2026-03-01T08:00:00.000Z' }),
+      f({ id: 'p', odometer: 1150, liters: 20, cost: 100, distanceKm: 150, partial: true, date: '2026-03-05', createdAt: '2026-03-05T08:00:00.000Z' }),
+      f({ id: 'b', odometer: 1250, liters: 30, cost: 180, distanceKm: 100, date: '2026-03-10', createdAt: '2026-03-10T08:00:00.000Z' }),
+    ];
+    const segs = computePerFillSegments(rows);
+    expect(segs.map((s) => s.endId)).toEqual(['a', 'b']);
+    const last = segs[1]!;
+    expect(last.distanceKm).toBe(250);
+    expect(last.litersPer100Km).toBeCloseTo(20, 10);
+    expect(last.totalCost).toBe(280);
+    expect(last.costPerKm).toBeCloseTo(1.12, 10);
+    expect(last.startId).toBe('a');
+  });
+
+  it('a trailing partial makes no point and loses nothing', () => {
+    const rows = [
+      f({ id: 'a', odometer: 100, liters: 10, cost: 100, distanceKm: 100, date: '2026-03-01' }),
+      f({ id: 'p', odometer: 150, liters: 5, cost: 50, distanceKm: 50, partial: true, date: '2026-03-02', createdAt: '2026-03-02T08:00:00.000Z' }),
+    ];
+    expect(computePerFillSegments(rows).map((s) => s.endId)).toEqual(['a']);
+  });
+});

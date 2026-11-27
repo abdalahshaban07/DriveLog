@@ -93,6 +93,8 @@ export interface FillUp {
   liters: number;
   cost: number;
   tankFull: boolean;
+  /** Top-up that did not fill the tank: its fuel is counted with the next full fill. */
+  partial?: boolean;
   fuelGrade?: FuelGrade;
   /** Snapshot ¢/L at log time */
   unitPrice?: number;

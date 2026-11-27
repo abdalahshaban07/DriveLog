@@ -48,20 +48,38 @@ function trendSegments(
 ): { segments: EconomySegment[]; byId: Map<string, FillUp> } {
   const sorted = [...fills].sort(byOdometer);
   const segments: EconomySegment[] = [];
+  // Partial top-ups carry their liters, cost and distance into the next normal fill.
+  let carry = null as { liters: number; cost: number; km: number; startId: string } | null;
   for (let i = 0; i < sorted.length; i++) {
     const end = sorted[i]!;
     const prev = i > 0 ? sorted[i - 1] : undefined;
-    const distance = fillDistance(end, prev);
-    if (distance <= 0 || !inWindow(end.date, window)) {
+    const own = fillDistance(end, prev);
+    if (end.partial === true) {
+      if (own > 0) {
+        carry = {
+          liters: (carry?.liters ?? 0) + end.liters,
+          cost: (carry?.cost ?? 0) + end.cost,
+          km: (carry?.km ?? 0) + own,
+          startId: carry?.startId ?? prev?.id ?? end.id,
+        };
+      }
+      continue;
+    }
+    const distance = own + (carry?.km ?? 0);
+    const liters = end.liters + (carry?.liters ?? 0);
+    const cost = end.cost + (carry?.cost ?? 0);
+    const startId = carry?.startId ?? prev?.id ?? end.id;
+    carry = null;
+    if (own <= 0 || !inWindow(end.date, window)) {
       continue;
     }
     segments.push({
-      startId: prev?.id ?? end.id,
+      startId,
       endId: end.id,
       distanceKm: distance,
-      litersPer100Km: (end.liters / distance) * 100,
-      costPerKm: end.cost / distance,
-      totalCost: end.cost,
+      litersPer100Km: (liters / distance) * 100,
+      costPerKm: cost / distance,
+      totalCost: cost,
     });
   }
   return { segments, byId: new Map(fills.map((f) => [f.id, f])) };

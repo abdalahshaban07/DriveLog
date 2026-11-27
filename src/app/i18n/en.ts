@@ -341,6 +341,8 @@ export const en = {
   'backup.replace': 'Replace existing data',
   'backup.merge': 'Merge with existing data',
   'backup.confirm': 'How should this backup be applied?',
+  'fillUp.partial': 'Partial fill (not to the top)',
+  'fillUp.partialHint': 'Its fuel is counted with your next full fill, so the average stays right.',
   'backup.cancel': 'Cancel',
   'backup.done': 'Backup restored. A copy of your previous data was saved to your downloads first.',
   'backup.failed': 'Import failed. Your data was not changed.',
