@@ -20,7 +20,7 @@ export function isWeeklyDue(lastAt: string | null | undefined, now: Date): boole
 
 /** One dated file per day; encrypted backups carry a distinct extension. */
 export function backupFileName(now: Date, encrypted: boolean): string {
-  const day = now.toISOString().slice(0, 10);
+  const day = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   return `${BACKUP_PREFIX}${day}${encrypted ? '.json.enc' : '.json'}`;
 }
 
