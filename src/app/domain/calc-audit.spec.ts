@@ -119,3 +119,13 @@ describe('partial fills', () => {
     expect(computePerFillSegments(rows).map((s) => s.endId)).toEqual(['a']);
   });
 });
+
+describe('backup import validation', () => {
+  it('rejects fill-ups with non-numeric liters or cost instead of storing NaN', async () => {
+    const { normalizeFillUp } = await import('../data/db-normalize');
+    const ok = { id: 'x', odometer: 100, liters: 10, cost: 100, tankFull: false, date: '2026-03-01', createdAt: 'c', updatedAt: 'u' };
+    expect(normalizeFillUp(ok).liters).toBe(10);
+    expect(() => normalizeFillUp({ ...ok, liters: 'abc' })).toThrow('backup.invalid');
+    expect(() => normalizeFillUp({ ...ok, cost: 'free' })).toThrow('backup.invalid');
+  });
+});

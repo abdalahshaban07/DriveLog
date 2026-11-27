@@ -147,7 +147,13 @@ export function normalizeCar(raw: unknown): Car {
 
 export function normalizeFillUp(raw: unknown): FillUp {
   const o = raw as FillUp;
-  if (!o?.id || typeof o.odometer !== 'number') {
+  if (
+    !o?.id ||
+    typeof o.odometer !== 'number' ||
+    !Number.isFinite(o.odometer) ||
+    !Number.isFinite(Number(o.liters)) ||
+    !Number.isFinite(Number(o.cost))
+  ) {
     throw new Error('backup.invalid');
   }
   return {
