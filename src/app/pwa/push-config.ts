@@ -5,9 +5,9 @@
  * project, and Firestore rules decide what a device may write.
  */
 export const PUSH_CONFIG = {
-  vapidPublicKey: '',
-  firebaseProjectId: '',
-  firebaseApiKey: '',
+  vapidPublicKey: 'BOUZsqSsxAQS5iQ5FqAMVigpBe-vqAlLVcmPbXFfgkMD2B5I90Srz04Doo_YWrfcMP7CGAN-KR3Faf80HC9Nw0Y',
+  firebaseProjectId: 'drivelog-push',
+  firebaseApiKey: 'AIzaSyDvhy_E-dY4-KasS9cXu6AxJsVaK-9U2uE',
 } as const;
 
 export function pushConfigured(): boolean {
