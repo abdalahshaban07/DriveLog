@@ -117,13 +117,14 @@ export async function main({ now = process.env.FAKE_NOW ? new Date(process.env.F
     }
     const device = parseDevice({ tz: str(fields.tz), lang: str(fields.lang), reminders: str(fields.reminders), sent: str(fields.sent) });
     if (process.env.TEST_PUSH === '2') {
-      if (!id.startsWith(process.env.ONLY_DEVICE ?? '#')) { continue; }
+      if (process.env.ONLY_DEVICE !== '*' && !id.startsWith(process.env.ONLY_DEVICE ?? '#')) { continue; }
       let list = [];
       try { list = JSON.parse(str(fields.reminders) ?? '[]'); } catch {}
       list.sort((a, b) => a.fireOn.localeCompare(b.fireOn));
+      console.log(`device ${id.slice(0, 6)} updatedAt=${str(fields.updatedAt)}`);
       console.log(`today=${now.toISOString().slice(0, 10)} tz=${str(fields.tz)} count=${list.length}`);
       for (const r of list) {
-        console.log(`R ${r.id.startsWith('maint-') ? 'maint' : r.id.split('.')[0]} ${r.id.split('.')[1]} fire=${r.fireOn} expire=${r.expireOn}`);
+        if (process.env.ONLY_DEVICE !== '*') console.log(`R ${r.id.startsWith('maint-') ? 'maint' : r.id.split('.')[0]} ${r.id.split('.')[1]} fire=${r.fireOn} expire=${r.expireOn}`);
       }
       const pick = list.find((r) => r.id.startsWith('maint-') && r.id.includes('.soon.')) ?? list[0];
       if (pick) {
