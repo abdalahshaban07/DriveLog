@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   ElementRef,
   inject,
   signal,
@@ -58,6 +59,7 @@ export class AssistantPage {
   readonly i18n = inject(I18n);
   readonly db = inject(Db);
   readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly queryInput = viewChild<ElementRef<HTMLInputElement>>('queryInput');
   private readonly answerEl = viewChild<ElementRef<HTMLElement>>('answerEl');
 
@@ -68,6 +70,8 @@ export class AssistantPage {
   readonly statusKey = signal<MsgKey | null>(null);
   /** Seconds the online coach asked us to wait before it can answer. */
   readonly waitSec = signal(0);
+  /** Ticks the wait line down every second so it never looks frozen. */
+  private waitTimer: ReturnType<typeof setInterval> | null = null;
   /** Sticky while the online gateways fail on HTTP; cleared by the next good reply. */
   readonly remoteDown = signal(
     readAssistantRemoteDown(typeof localStorage !== 'undefined' ? localStorage : null),
@@ -78,6 +82,10 @@ export class AssistantPage {
   private readonly turns = signal<ChatMessage[]>([]);
 
   readonly online = computed(() => isAssistantOnline(this.db));
+
+  constructor() {
+    this.destroyRef.onDestroy(() => this.stopWait());
+  }
 
   /** Questions the logs can actually answer, in three groups. */
   readonly faqGroups = computed((): FaqGroup[] => {
@@ -263,9 +271,9 @@ export class AssistantPage {
           date: (iso) => this.i18n.formatDate(iso, { day: 'numeric', month: 'short' }),
         },
         (seconds) => {
-          // A free-tier quota refusal is a wait, not a dead coach: say so.
-          this.waitSec.set(Math.ceil(seconds));
-          this.statusKey.set('assistant.waiting');
+          // A free-tier quota refusal is a wait, not a dead coach: say so, and
+          // count it down so a long wait visibly moves.
+          this.startWait(seconds);
         },
       );
 
@@ -299,7 +307,31 @@ export class AssistantPage {
       });
       this.scrollAnswer();
     } finally {
+      this.stopWait();
       this.busy.set(false);
+    }
+  }
+
+  private startWait(seconds: number): void {
+    this.stopWait();
+    this.waitSec.set(Math.max(1, Math.ceil(seconds)));
+    this.statusKey.set('assistant.waiting');
+    this.waitTimer = setInterval(() => {
+      const left = this.waitSec() - 1;
+      if (left <= 0) {
+        this.stopWait();
+        // The wait is over but the answer is still on its way.
+        this.statusKey.set('assistant.asking');
+        return;
+      }
+      this.waitSec.set(left);
+    }, 1000);
+  }
+
+  private stopWait(): void {
+    if (this.waitTimer !== null) {
+      clearInterval(this.waitTimer);
+      this.waitTimer = null;
     }
   }
 

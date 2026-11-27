@@ -38,7 +38,7 @@ const CHAIN_BUDGET_MS = 140_000;
 /** Wait out the free tier's 45s cooldown instead of dropping to a local answer. */
 const RETRY_WAIT_CAP_S = 50;
 /** The header rounds down and counts from the refused attempt, not the last reply. */
-const WAIT_BUFFER_S = 12;
+const WAIT_BUFFER_S = 6;
 /** Two cooldowns, so a question queued behind one other lands without losing the answer. */
 const MAX_QUOTA_WAITS = 2;
 /** One clean answer or none: a garbled reply gets a single second chance. */

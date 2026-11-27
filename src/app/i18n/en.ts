@@ -914,6 +914,7 @@ export const en = {
   'assistant.busy': 'The online coach is busy right now — ask again in about {n} seconds.',
   'assistant.waiting':
     'The free online coach is busy — holding your question for about {n} seconds, then answering.',
+  'assistant.asking': 'Asking the online coach…',
   'assistant.localOnly': 'Online assistant is off — using on-device answers.',
   'assistant.remoteDown':
     'The online coach is unreachable right now — answers stay on-device until it is back.',

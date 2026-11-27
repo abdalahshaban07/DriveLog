@@ -409,11 +409,11 @@ describe('fetchChatReply', () => {
         undefined,
         onWait,
       );
-      await vi.advanceTimersByTimeAsync(42_000);
+      await vi.advanceTimersByTimeAsync(36_000);
       const reply = await pending;
 
       expect(reply).toEqual({ text: 'remote-ok', source: 'remote' });
-      expect(onWait).toHaveBeenCalledWith(42);
+      expect(onWait).toHaveBeenCalledWith(36);
       expect(fetchMock).toHaveBeenCalledTimes(2);
       expect(readAssistantRemoteDown(localStorage)).toBe(false);
     } finally {
@@ -436,7 +436,7 @@ describe('fetchChatReply', () => {
         'en',
         (k, p) => `L:${k}:${p?.['n'] ?? ''}`,
       );
-      await vi.advanceTimersByTimeAsync(42_000);
+      await vi.advanceTimersByTimeAsync(36_000);
       const reply = await pending;
 
       expect(reply.remoteFailed).toBe(true);
