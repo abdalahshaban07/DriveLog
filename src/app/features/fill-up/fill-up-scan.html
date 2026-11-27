@@ -3,6 +3,8 @@
     id="receipt-scan-input"
     class="sr-only"
     type="file"
+    tabindex="-1"
+    aria-hidden="true"
     accept="image/*"
     capture="environment"
     (change)="scan.onScanFile($event)"
@@ -11,6 +13,8 @@
     id="receipt-gallery-input"
     class="sr-only"
     type="file"
+    tabindex="-1"
+    aria-hidden="true"
     accept="image/*"
     (change)="scan.onScanFile($event)"
   />

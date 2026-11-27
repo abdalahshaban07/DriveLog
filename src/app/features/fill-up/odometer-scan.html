@@ -3,6 +3,8 @@
     id="odo-scan-input"
     class="sr-only"
     type="file"
+    tabindex="-1"
+    aria-hidden="true"
     accept="image/*"
     capture="environment"
     (change)="odo.onScanFile($event)"
@@ -11,6 +13,8 @@
     id="odo-gallery-input"
     class="sr-only"
     type="file"
+    tabindex="-1"
+    aria-hidden="true"
     accept="image/*"
     (change)="odo.onScanFile($event)"
   />
