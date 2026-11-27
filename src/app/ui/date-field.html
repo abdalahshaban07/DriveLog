@@ -3,15 +3,16 @@
   <span class="wrap" [class.wrap--open]="opened()">
     <input
       class="input date"
-      type="date"
+      type="text"
+      readonly
+      inputmode="none"
       [id]="inputId"
       [attr.lang]="i18n.language()"
-      [value]="value()"
+      [value]="displayValue()"
       [attr.aria-invalid]="!!error()"
       [attr.aria-describedby]="describedBy()"
       [attr.aria-expanded]="opened()"
       [attr.aria-controls]="opened() ? calId : null"
-      (change)="onChange($event)"
       (click)="onInputClick($event)"
       (keydown)="onInputKey($event)"
     />

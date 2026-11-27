@@ -155,6 +155,13 @@ export class DateField {
     const n = new Date(y, m + 1, 0).getDate();
     return Array.from({ length: n }, (_, i) => fmt.format(new Date(y, m, i + 1)));
   });
+  /** Localized display text — the input is read-only; picking happens in the dialog. */
+  readonly displayValue = computed(() => {
+    const v = this.value();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return '';
+    const d = new Date(Number(v.slice(0, 4)), Number(v.slice(5, 7)) - 1, Number(v.slice(8, 10)));
+    return new Intl.DateTimeFormat(this.locale(), { dateStyle: 'medium' }).format(d);
+  });
   readonly describedBy = computed(() => {
     const ids = [
       this.hint() ? this.hintId : '',
@@ -162,10 +169,6 @@ export class DateField {
     ].filter(Boolean);
     return ids.length ? ids.join(' ') : null;
   });
-
-  onChange(event: Event): void {
-    this.value.set((event.target as HTMLInputElement).value);
-  }
 
   onInputClick(event: Event): void {
     event.preventDefault();
