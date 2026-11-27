@@ -76,7 +76,10 @@ export async function main({ now = process.env.FAKE_NOW ? new Date(process.env.F
   const token = await accessToken();
   let send = sender;
   if (!send) {
-    const mod = await import('web-push');
+    // ESM imports ignore NODE_PATH, so resolve from it explicitly (the workflow installs web-push outside the app project).
+    const { createRequire } = await import('node:module');
+    const base = process.env.NODE_PATH ? process.env.NODE_PATH.split(':')[0] + '/' : process.cwd() + '/';
+    const mod = createRequire(base).resolve ? createRequire(base)('web-push') : await import('web-push');
     const webpush = mod.default ?? mod;
     webpush.setVapidDetails(
       process.env.VAPID_SUBJECT,
