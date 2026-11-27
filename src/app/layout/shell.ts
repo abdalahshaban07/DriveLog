@@ -12,6 +12,7 @@ import { filter, fromEvent, map, merge, skip } from 'rxjs';
 import { Db } from '../data/db';
 import { I18n } from '../i18n/i18n';
 import { HolidayReminder } from '../pwa/holiday-reminder';
+import { DueReminder } from '../pwa/due-reminder';
 import { HealthReminder } from '../pwa/health-reminder';
 import { AutoBackup } from '../pwa/auto-backup';
 import { InstallPwa } from '../pwa/install-pwa';
@@ -33,6 +34,7 @@ export class Shell {
   readonly install = inject(InstallPwa);
   private readonly holidayReminder = inject(HolidayReminder);
   private readonly healthReminder = inject(HealthReminder);
+  private readonly dueReminder = inject(DueReminder);
   private readonly autoBackup = inject(AutoBackup);
 
   /** ponytail: browser online flag only — no probe ping */
@@ -82,13 +84,22 @@ export class Shell {
         document.scrollingElement?.scrollTo(0, 0);
       });
     afterNextRender(() => {
-      void this.holidayReminder.check();
-      void this.healthReminder.check();
+      const runReminders = (): void => {
+        void this.holidayReminder.check();
+        void this.healthReminder.check();
+        void this.dueReminder.check();
+      };
+      let lastReminderRun = Date.now();
+      runReminders();
       void this.autoBackup.check();
-      // A kept-open PWA can cross the weekly boundary without a cold start.
+      // A kept-open PWA can cross midnight or the weekly boundary without a cold start.
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
           void this.autoBackup.check();
+          if (Date.now() - lastReminderRun > 60 * 60 * 1000) {
+            lastReminderRun = Date.now();
+            runReminders();
+          }
         }
       });
     });

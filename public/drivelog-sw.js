@@ -36,4 +36,21 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+// Tapping a reminder opens (or focuses) the app instead of doing nothing.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    (async () => {
+      const scope = self.registration.scope;
+      const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      const open = windows.find((w) => w.url.startsWith(scope));
+      if (open) {
+        await open.focus();
+        return;
+      }
+      await self.clients.openWindow(scope);
+    })(),
+  );
+});
+
 importScripts('./ngsw-worker.js');

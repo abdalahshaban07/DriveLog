@@ -137,14 +137,9 @@ export class HealthReminder {
       }
       if (prev.lastStatus === status) continue;
       const shouldNotify = ATTENTION.has(status);
-      await this.db.saveHealthNotificationState({
-        carId,
-        partDefinitionId: item.partDefinitionId,
-        lastStatus: status,
-        lastNotifiedStatus: shouldNotify ? status : prev.lastNotifiedStatus,
-      });
+      let shown = false;
       if (shouldNotify && prev.lastNotifiedStatus !== status) {
-        this.notify.showGeneric(
+        shown = await this.notify.showGeneric(
           this.i18n.t('notify.health.title' as MsgKey),
           this.i18n.t('notify.health.body' as MsgKey, {
             status: this.i18n.t(`health.status.${status}` as MsgKey),
@@ -152,6 +147,13 @@ export class HealthReminder {
           `health-${item.partDefinitionId}`,
         );
       }
+      // A notification that did not reach the user is retried on the next open.
+      await this.db.saveHealthNotificationState({
+        carId,
+        partDefinitionId: item.partDefinitionId,
+        lastStatus: shouldNotify && !shown && prev.lastNotifiedStatus !== status ? prev.lastStatus : status,
+        lastNotifiedStatus: shouldNotify && shown ? status : prev.lastNotifiedStatus,
+      });
     }
   }
 
@@ -170,19 +172,22 @@ export class HealthReminder {
     }
     const enteringWarn =
       (health === 'HIGH' || health === 'CRITICAL') && prev.lastBudgetHealth !== health;
+    if (enteringWarn) {
+      const shown = await this.notify.showGeneric(
+        this.i18n.t('notify.budget.title' as MsgKey),
+        this.i18n.t('notify.budget.body' as MsgKey),
+        'budget-health',
+      );
+      if (!shown) {
+        return; // keep the old state so the next open retries
+      }
+    }
     await this.db.saveHealthNotificationState({
       id,
       carId,
       partDefinitionId: '__budget__',
       lastBudgetHealth: health,
     });
-    if (enteringWarn) {
-      this.notify.showGeneric(
-        this.i18n.t('notify.budget.title' as MsgKey),
-        this.i18n.t('notify.budget.body' as MsgKey),
-        'budget-health',
-      );
-    }
   }
 
   private async checkForecastTransition(
@@ -204,18 +209,21 @@ export class HealthReminder {
       return;
     }
     const rising = flag === 'watch' && prev.lastForecastFlag !== 'watch';
+    if (rising) {
+      const shown = await this.notify.showGeneric(
+        this.i18n.t('notify.forecast.title' as MsgKey),
+        this.i18n.t('notify.forecast.body' as MsgKey),
+        'forecast',
+      );
+      if (!shown) {
+        return; // keep the old state so the next open retries
+      }
+    }
     await this.db.saveHealthNotificationState({
       id,
       carId,
       partDefinitionId: '__forecast__',
       lastForecastFlag: flag,
     });
-    if (rising) {
-      this.notify.showGeneric(
-        this.i18n.t('notify.forecast.title' as MsgKey),
-        this.i18n.t('notify.forecast.body' as MsgKey),
-        'forecast',
-      );
-    }
   }
 }

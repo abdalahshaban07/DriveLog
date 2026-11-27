@@ -59,15 +59,20 @@ export class HolidayReminder {
         if (localStorage.getItem(key) === today) {
           continue;
         }
-        localStorage.setItem(key, today);
       } catch {
-        /* ignore quota */
+        /* ignore blocked storage */
       }
       const body = this.i18n.t('notify.holiday.body' as MsgKey, {
         name: holiday.localName,
         date: holiday.date,
       });
-      await this.notify.notifyDue(item, title, body);
+      if (await this.notify.notifyDue(item, title, body)) {
+        try {
+          localStorage.setItem(key, today);
+        } catch {
+          /* ignore quota */
+        }
+      }
     }
   }
 }
