@@ -269,6 +269,8 @@ export class AssistantPage {
           readAssistantRemoteDown(typeof localStorage !== 'undefined' ? localStorage : null),
         );
         this.statusKey.set('assistant.network');
+      } else if (reply.rateLimited) {
+        this.statusKey.set('assistant.rateLimited');
       } else if (!this.online()) {
         this.statusKey.set('assistant.localOnly');
       } else if (reply.source === 'remote') {

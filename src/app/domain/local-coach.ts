@@ -51,6 +51,8 @@ export type CoachReply = {
   card?: AnswerCard;
   /** The online call was attempted and returned nothing. */
   remoteFailed?: boolean;
+  /** The device rate cap blocked the online call before it started. */
+  rateLimited?: boolean;
   /** Ready FAQ questions to offer as the next tap. */
   suggestions?: readonly AdvisorFaqKey[];
 };

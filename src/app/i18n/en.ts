@@ -909,6 +909,7 @@ export const en = {
   'assistant.report': 'Report response',
   'assistant.empty': 'Coach returned an empty reply.',
   'assistant.network': 'Could not reach the coach — showing a local answer.',
+  'assistant.rateLimited': 'Online limit reached for now — local answer. Try again in a few minutes.',
   'assistant.localOnly': 'Online assistant is off — using on-device answers.',
   'assistant.remoteDown':
     'The online coach is unreachable right now — answers stay on-device until it is back.',

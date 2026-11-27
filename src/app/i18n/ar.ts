@@ -891,6 +891,7 @@ export const ar: Record<MsgKey, string> = {
   'assistant.report': 'الإبلاغ عن الرد',
   'assistant.empty': 'رد فاضي من المدرب.',
   'assistant.network': 'مقدرناش نوصل للمدرب — بنورّي إجابة محلية.',
+  'assistant.rateLimited': 'وصلت لحد الاستخدام الأونلاين دلوقتي — دي إجابة محلية. جرب تاني بعد شوية.',
   'assistant.localOnly': 'المساعد الأونلاين مطفي — بنجاوب من على الجهاز.',
   'assistant.remoteDown':
     'المساعد الأونلاين مش بيرد دلوقتي — بنجاوب من على الجهاز لحد ما يرجع.',

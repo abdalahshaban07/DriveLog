@@ -44,8 +44,9 @@ const THINK_TAG = new RegExp(`</?(?:${REDACTED}|${THINK})>`, 'gi');
 /**
  * Drop leaked thoughts. Arabic replies must be mostly Arabic — free models
  * otherwise return token salad and we would cache it for the day.
- * ponytail: letter ratio plus a cap of 2 long Latin words. A 4-word English
- * nickname can still fail the 75% bar; raise the cap if that shows up.
+ * ponytail: the bar is a 60% Arabic-letter ratio plus a cap of 4 long Latin
+ * words, tuned 2026-11-27 so valid replies that name the model in Latin
+ * ("أنا LFM من Liquid AI") pass while gibberish salads still fail.
  */
 export function usableCoachText(raw: string, lang: 'en' | 'ar'): string | null {
   const text = raw.replace(THINK_BLOCK, '').replace(THINK_TAG, '').trim();
@@ -62,7 +63,7 @@ function mostlyArabic(text: string): boolean {
   const latin = text.match(/\p{Script=Latin}/gu)?.length ?? 0;
   if (arabic === 0) return false;
   const longLatin = text.match(/\p{Script=Latin}{4,}/gu)?.length ?? 0;
-  return longLatin < 3 && arabic / (arabic + latin) >= 0.75;
+  return longLatin < 5 && arabic / (arabic + latin) >= 0.6;
 }
 
 function waitSeconds(seconds: number, signal?: AbortSignal): Promise<void> {
@@ -269,6 +270,9 @@ export async function fetchChatReply(
   const localReply = local();
   if (intentHint || localReply.card || isComputedLocal(read)) return localReply;
 
+  if (isAssistantOnline(db) && !canRemoteAssistantCall()) {
+    return { ...localReply, rateLimited: true };
+  }
   if (isAssistantOnline(db) && canRemoteAssistantCall() && browserMayReachGateway()) {
     const remote = await tryRemoteChat(
       coachSnapshot(loaded.facts, loaded.logs, loaded.totals, loaded.car, asMsg),
