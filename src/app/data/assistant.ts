@@ -37,6 +37,10 @@ const GATEWAY_TIMEOUT_MS = 15_000;
 const CHAIN_BUDGET_MS = 90_000;
 /** Wait out the free tier's 45s cooldown instead of dropping to a local answer. */
 const RETRY_WAIT_CAP_S = 50;
+/** The header rounds down; a retry a fraction early burns the whole window again. */
+const WAIT_BUFFER_S = 3;
+/** One clean answer or none: a garbled reply gets a single second chance. */
+const MAX_BAD_REPLIES = 1;
 
 /** Told how long the wait will be, so the screen can say it instead of going quiet. */
 export type WaitNotice = (seconds: number) => void;
@@ -146,6 +150,7 @@ async function tryChain(
   let sawDown = false;
   let retryAfterSec: number | null = null;
   let reply: string | null = null;
+  let badReplies = 0;
 
   for (let i = 0; i < gateways.length; i++) {
     const gw = gateways[i]!;
@@ -170,7 +175,12 @@ async function tryChain(
         reply = text;
         break;
       }
-      sawDown = true;
+      // A garbled or empty answer is not an outage: ask once more, then stay quiet.
+      if (badReplies < MAX_BAD_REPLIES) {
+        badReplies++;
+        i--;
+        continue;
+      }
     } catch (err) {
       if (signal?.aborted) break;
       if (err instanceof OpenAiChatError && err.code === 'network') {
@@ -183,13 +193,15 @@ async function tryChain(
           retryAfterSec = Math.max(retryAfterSec ?? 0, wait);
           if (wait <= RETRY_WAIT_CAP_S && !retriedBusy.has(gw.baseUrl)) {
             retriedBusy.add(gw.baseUrl);
-            onWait?.(wait);
-            await waitSeconds(wait, signal);
+            onWait?.(wait + WAIT_BUFFER_S);
+            await waitSeconds(wait + WAIT_BUFFER_S, signal);
             i--; // same gateway, one retry after its cooldown
             continue;
           }
         } else {
+          // A real outage replaces the quota hint: never report stale seconds.
           sawDown = true;
+          retryAfterSec = null;
         }
       }
     } finally {

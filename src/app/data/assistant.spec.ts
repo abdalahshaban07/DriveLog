@@ -294,13 +294,16 @@ describe('fetchChatReply', () => {
   it('drops a scrambled Arabic reply and falls back local on the only gateway', async () => {
     const salad =
       'يحتاج المحرك crk211 إلى تغيير الزيت الكامل في أقرب وقت ممكن. brú567737 حصلت على ترزياح عجلة مت Öz دوم Casting Collier 3001570 exploits restée larinda مباراة حي ميكانيكلاى. دسترسى. لا أدري.';
-    const fetchMock = vi.fn().mockResolvedValueOnce(okChat(salad));
+    const fetchMock = vi.fn().mockResolvedValue(okChat(salad));
     vi.stubGlobal('fetch', fetchMock);
 
     const reply = await fetchChatReply(mockDb(true), 'نصيحة', 'ar', (k) => k);
 
     expect(reply.source).toBe('local');
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // One clean retry, then the local answer; a garbled reply never banners.
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(reply.remoteFailed).toBe(true);
+    expect(readAssistantRemoteDown(localStorage)).toBe(false);
     const sent = JSON.parse((fetchMock.mock.calls[0]![1] as RequestInit).body as string) as {
       max_tokens: number;
       reasoning_effort?: string;
@@ -399,16 +402,54 @@ describe('fetchChatReply', () => {
         undefined,
         onWait,
       );
-      await vi.advanceTimersByTimeAsync(30_000);
+      await vi.advanceTimersByTimeAsync(33_000);
       const reply = await pending;
 
       expect(reply).toEqual({ text: 'remote-ok', source: 'remote' });
-      expect(onWait).toHaveBeenCalledWith(30);
+      expect(onWait).toHaveBeenCalledWith(33);
       expect(fetchMock).toHaveBeenCalledTimes(2);
       expect(readAssistantRemoteDown(localStorage)).toBe(false);
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('never reports a stale quota hint as busy when the retry hits an outage', async () => {
+    vi.useFakeTimers();
+    try {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(httpStatus(402, '30'))
+        .mockResolvedValueOnce(httpStatus(503));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const pending = fetchChatReply(
+        mockDb(true),
+        'fuel',
+        'en',
+        (k, p) => `L:${k}:${p?.['n'] ?? ''}`,
+      );
+      await vi.advanceTimersByTimeAsync(33_000);
+      const reply = await pending;
+
+      expect(reply.remoteFailed).toBe(true);
+      expect(reply.text.startsWith('L:assistant.busy')).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('asks once more when the answer comes back unusable', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(okChat('the fuel economy looks fine overall'))
+      .mockResolvedValueOnce(okChat('ظبط ضغط الكاوتش.'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const reply = await fetchChatReply(mockDb(true), 'ازاي احسن الاستهلاك', 'ar', (k) => k);
+
+    expect(reply).toEqual({ text: 'ظبط ضغط الكاوتش.', source: 'remote' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('reuses a cached answer for the same question and car, without another call', async () => {
