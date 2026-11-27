@@ -564,6 +564,8 @@ export const en = {
     'Location is requested only when you use Around or nearby stations. Optional public feeds (maps, fuel prices, weather, holidays) run when those features need them. The service worker may cache the app shell for offline use.',
   'legal.privacy.p3':
     'Export and import are started by you. DriveLog does not sell your logs. Clearing site data or using Start from scratch removes local records from this browser.',
+  'legal.privacy.p4':
+    'The AI assistant is optional and can be turned off in Settings. When it is on, your question, the recent chat, and a summary of your logs are sent to free AI providers (Pollinations, with OVHcloud as a backup) to write the reply. No name, plate, VIN, or GPS is included. AI answers can be wrong — treat them as suggestions, not mechanical advice.',
   'legal.termsHeading': 'Terms',
   'legal.terms.p1':
     'DriveLog is a personal fuel and maintenance utility provided as-is. It is not mechanical, legal, or financial advice.',

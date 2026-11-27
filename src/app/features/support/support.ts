@@ -153,7 +153,7 @@ const LEGAL_SECTIONS: readonly {
   {
     id: 'legal-privacy',
     headingKey: 'legal.privacyHeading',
-    bodyKeys: ['legal.privacy.p1', 'legal.privacy.p2', 'legal.privacy.p3'],
+    bodyKeys: ['legal.privacy.p1', 'legal.privacy.p2', 'legal.privacy.p3', 'legal.privacy.p4'],
   },
   {
     id: 'legal-terms',
