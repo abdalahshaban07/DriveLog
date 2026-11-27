@@ -19,8 +19,11 @@ export const appConfig: ApplicationConfig = {
     provideDriveLogErrorHandler(),
     provideRouter(routes, withViewTransitions()),
     provideAppInitializer(async () => {
-      await inject(Db).init();
-      await inject(I18n).preload();
+      // inject() only works before the first await.
+      const db = inject(Db);
+      const i18n = inject(I18n);
+      await db.init();
+      await i18n.preload();
     }),
     // Local-only records: ask the browser not to evict them. Fire and forget.
     provideAppInitializer(() => {
