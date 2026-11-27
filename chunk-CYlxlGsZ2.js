@@ -1,1 +1,0 @@
-import{zr as te}from"./chunk-CBfVpX5y.js";var a=class e{prefersReducedMotion(){return typeof matchMedia<`u`&&matchMedia(`(prefers-reduced-motion: reduce)`).matches}allowAnime(r){return!this.prefersReducedMotion()}static ɵfac=function(o){return new(o||e)};static ɵprov=te({token:e,factory:e.ɵfac,providedIn:`root`})};export{a as t};
