@@ -41,15 +41,15 @@ describe('fill-up cost', () => {
 });
 
 describe('economy', () => {
-  it('matches contract example 9 L/100km and 0.33/km', () => {
+  it('counts partial fills: 65 L over 500 km = 13 L/100km, 95/500 = 0.19 per km', () => {
     runEconomySelfCheck();
     const latest = latestEconomy([
       fill({ id: 'a', odometer: 10000, liters: 50, cost: 70, tankFull: true }),
       fill({ id: 'b', odometer: 10250, liters: 20, cost: 30, tankFull: false }),
       fill({ id: 'c', odometer: 10500, liters: 45, cost: 65, tankFull: true }),
     ]);
-    expect(latest?.litersPer100Km).toBe(9);
-    expect(latest?.costPerKm).toBe(0.33);
+    expect(latest?.litersPer100Km).toBe(13);
+    expect(latest?.costPerKm).toBe(0.19);
   });
 
   it('rollingCostPerKm aggregates per-fill segments in the window', async () => {

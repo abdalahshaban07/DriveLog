@@ -28,9 +28,9 @@ export function runEconomySelfCheck(): void {
   const latest = latestEconomy(fillUps);
   assert(!!latest, 'expected a segment');
   assert(latest!.distanceKm === 500, `distance ${latest!.distanceKm}`);
-  assert(latest!.litersPer100Km === 9, `L/100km ${latest!.litersPer100Km}`);
-  assert(latest!.totalCost === 165, `totalCost ${latest!.totalCost}`);
-  assert(latest!.costPerKm === 0.33, `cost/km ${latest!.costPerKm}`);
+  assert(latest!.litersPer100Km === 13, `L/100km ${latest!.litersPer100Km}`);
+  assert(latest!.totalCost === 95, `totalCost ${latest!.totalCost}`);
+  assert(latest!.costPerKm === 0.19, `cost/km ${latest!.costPerKm}`);
 
   assert(latestEconomy([fillUps[0]!]) === null, 'one full → null');
   assert(latestEconomy([]) === null, 'empty → null');
@@ -41,7 +41,7 @@ export function runEconomySelfCheck(): void {
     base({ id: 'd', odometer: 10900, liters: 40, cost: 50, tankFull: true }),
   ];
   const overall = overallLitersPer100Km(twoSeg);
-  assert(overall === (85 / 900) * 100, `overall ${overall}`);
+  assert(overall === (105 / 900) * 100, `overall ${overall}`);
   const last = latestEconomy(twoSeg);
   assert(last!.litersPer100Km === 10, `latest ${last!.litersPer100Km}`);
 

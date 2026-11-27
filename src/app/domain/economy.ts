@@ -9,8 +9,8 @@ function byOdometer(a: FillUp, b: FillUp): number {
 
 /**
  * Full-to-full economy.
- * Partial liters between fulls are excluded from L/100km.
- * All costs from startingFull through endingFull (inclusive) are in cost/km.
+ * Liters and cost of every fill after the starting full, through the ending full
+ * (partial top-ups included), over the odometer distance between the two fulls.
  */
 export function computeEconomySegments(fillUps: readonly FillUp[]): EconomySegment[] {
   const sorted = [...fillUps].sort(byOdometer);
@@ -31,13 +31,18 @@ export function computeEconomySegments(fillUps: readonly FillUp[]): EconomySegme
     const slice =
       startIdx >= 0 && endIdx >= startIdx ? sorted.slice(startIdx, endIdx + 1) : [];
 
-    const totalCost = slice.reduce((sum, f) => sum + f.cost, 0);
+    // Fuel and money spent since the starting full tank: every fill after it, up to
+    // and including the ending full (partial top-ups burned fuel too). The starting
+    // fill only refilled the previous stretch, so it is not counted.
+    const used = slice.slice(1);
+    const totalCost = used.reduce((sum, f) => sum + f.cost, 0);
+    const totalLiters = used.reduce((sum, f) => sum + f.liters, 0);
 
     segments.push({
       startId: start.id,
       endId: end.id,
       distanceKm: distance,
-      litersPer100Km: (end.liters / distance) * 100,
+      litersPer100Km: (totalLiters / distance) * 100,
       costPerKm: totalCost / distance,
       totalCost,
     });

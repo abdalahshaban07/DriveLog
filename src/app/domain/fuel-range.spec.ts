@@ -128,10 +128,10 @@ describe('estimateFuelRange', () => {
     expect(est.kmLeft).toBe(365);
   });
 
-  it('ignores partials before the last full', () => {
+  it('counts partials between the two fulls as fuel burned (55 L / 500 km = 11 L/100km)', () => {
     const fills = [...baseFills(), fill({ odometer: 8200, liters: 10, tankFull: false, date: day(20) })];
     const est = estimateFuelRange(car, fills, NOW)!;
-    expect(est.litersLeft).toBe(23);
+    expect(est.litersLeft).toBe(17);
   });
 
   it('clamps overfilled tanks to capacity', () => {

@@ -181,7 +181,7 @@ describe('fuel-dashboard', () => {
     ];
     const m = fuelDashboardMetrics(fills);
     expect(m.lastL100).toBe(9);
-    expect(m.costPerKm).toBeCloseTo(0.27, 2);
+    expect(m.costPerKm).toBeCloseTo(0.13, 2);
     expect(m.lastKmPerL).toBeCloseTo(100 / 9, 5);
   });
 
