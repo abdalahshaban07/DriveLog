@@ -27,7 +27,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install --no-save --no-package-lock web-push@3
+      - name: Install web-push (outside the app project)
+        run: |
+          mkdir -p "$RUNNER_TEMP/wp"
+          cd "$RUNNER_TEMP/wp"
+          npm init -y >/dev/null
+          npm install web-push@3
       - name: Send due reminders
         env:
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
@@ -35,5 +40,6 @@ jobs:
           VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
           VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
+          NODE_PATH: ${{ runner.temp }}/wp/node_modules
           DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
         run: node scripts/push-send.mjs
