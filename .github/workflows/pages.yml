@@ -24,6 +24,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Test
+        run: npm test
       - name: Generate whats-new.json
         run: |
           node scripts/generate-whats-new.mjs --self-check
