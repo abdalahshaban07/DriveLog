@@ -261,9 +261,9 @@ describe('pageLineFact', () => {
     const data = {
       today: '2026-10-10',
       fills: [
-        fill({ id: 'j', odometer: 1, liters: 10, cost: 100, tankFull: true, date: '2026-07-02' }),
-        fill({ id: 'a', odometer: 2, liters: 10, cost: 50, tankFull: true, date: '2026-08-02' }),
-        fill({ id: 'o', odometer: 3, liters: 10, cost: 40, tankFull: true, date: '2026-10-02' }),
+        fill({ id: 'j', odometer: 1000, distanceKm: 100, liters: 10, cost: 100, tankFull: true, date: '2026-07-02' }),
+        fill({ id: 'a', odometer: 1100, liters: 10, cost: 50, tankFull: true, date: '2026-08-02' }),
+        fill({ id: 'o', odometer: 1200, liters: 10, cost: 40, tankFull: true, date: '2026-10-02' }),
       ],
       maintenance: [maint({ id: 'm', type: 'brakes', date: '2026-08-15', cost: 400 })],
     };

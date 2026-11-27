@@ -25,16 +25,18 @@ export function runEconomySelfCheck(): void {
     base({ id: 'c', odometer: 10500, liters: 45, cost: 65, tankFull: true }),
   ];
 
+  // Distance comes from odometer gaps only; every fill is its own point.
   const latest = latestEconomy(fillUps);
   assert(!!latest, 'expected a segment');
-  assert(latest!.distanceKm === 500, `distance ${latest!.distanceKm}`);
-  assert(latest!.litersPer100Km === 13, `L/100km ${latest!.litersPer100Km}`);
-  assert(latest!.totalCost === 95, `totalCost ${latest!.totalCost}`);
-  assert(latest!.costPerKm === 0.19, `cost/km ${latest!.costPerKm}`);
+  assert(latest!.distanceKm === 250, `distance ${latest!.distanceKm}`);
+  assert(latest!.litersPer100Km === 18, `L/100km ${latest!.litersPer100Km}`);
+  assert(latest!.totalCost === 65, `totalCost ${latest!.totalCost}`);
+  assert(latest!.costPerKm === 0.26, `cost/km ${latest!.costPerKm}`);
 
-  assert(latestEconomy([fillUps[0]!]) === null, 'one full → null');
+  assert(latestEconomy([fillUps[0]!]) === null, 'one fill, no distance → null');
   assert(latestEconomy([]) === null, 'empty → null');
-  assert(overallLitersPer100Km(fillUps) === null, 'one segment → no overall line');
+  // 20 L over 250 km and 45 L over 250 km: 65 L over 500 km.
+  assert(overallLitersPer100Km(fillUps) === 13, `overall ${overallLitersPer100Km(fillUps)}`);
 
   const twoSeg = [
     ...fillUps,

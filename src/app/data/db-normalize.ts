@@ -167,7 +167,6 @@ export function normalizeFillUp(raw: unknown): FillUp {
     liters: Number(o.liters),
     cost: Number(o.cost),
     tankFull: Boolean(o.tankFull),
-    partial: o.partial === true ? true : undefined,
     note: o.note ? String(o.note) : undefined,
     date: String(o.date),
     lat: o.lat == null ? undefined : Number(o.lat),

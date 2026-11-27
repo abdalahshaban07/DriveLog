@@ -35,12 +35,23 @@ export function previousFillForCar(
   return [...scoped].sort(byOdometerDesc)[0]!;
 }
 
-/** Previous fill odometer or immutable setup reading. */
+/**
+ * Odometer the new distance starts from. A new fill starts from the latest fill. An
+ * edited fill starts from the fill just below it, so editing an older fill never
+ * pushes its odometer past newer ones.
+ */
 export function baseOdometerForDistance(
   car: Car,
   fillUps: readonly FillUp[],
   excludeId?: string,
 ): number {
+  const editing = excludeId ? fillUps.find((f) => f.id === excludeId) : undefined;
+  if (editing) {
+    const below = forCar(fillUps, car.id)
+      .filter((f) => f.id !== editing.id && f.odometer < editing.odometer)
+      .sort(byOdometerDesc)[0];
+    return below?.odometer ?? car.initialOdometer;
+  }
   return previousFillForCar(fillUps, car.id, excludeId)?.odometer ?? car.initialOdometer;
 }
 
@@ -50,6 +61,9 @@ export function minDistanceKm(
   fillUps: readonly FillUp[],
   excludeId?: string,
 ): number {
+  if (excludeId && fillUps.some((f) => f.id === excludeId)) {
+    return 0;
+  }
   const base = baseOdometerForDistance(car, fillUps, excludeId);
   return Math.max(0, car.currentOdometer - base);
 }
@@ -112,14 +126,25 @@ export function validateFillDistance(
     return { ok: false, errorKey: 'fillUp.err.distanceLow' };
   }
 
-  const scopedFills = excludeId
-    ? fillUps.filter((f) => f.id !== excludeId)
-    : fillUps;
-  const floor = maxLoggedOdometer(car, scopedFills, [], []);
+  const editing = excludeId ? fillUps.find((f) => f.id === excludeId) : undefined;
   const odometer =
     editingOdometer ?? computeOdometerFromDistance(car, fillUps, distanceKm, excludeId);
-  if (odometer < floor) {
-    return { ok: false, errorKey: 'settings.err.odometerFloor' };
+  if (editing) {
+    if (odometer <= baseOdometerForDistance(car, fillUps, excludeId)) {
+      return { ok: false, errorKey: 'settings.err.odometerFloor' };
+    }
+    // Stay below the next fill so odometer order (and every gap) stays intact.
+    const above = forCar(fillUps, car.id)
+      .filter((f) => f.id !== editing.id && f.odometer > editing.odometer)
+      .sort((a, b) => a.odometer - b.odometer)[0];
+    if (above && odometer >= above.odometer) {
+      return { ok: false, errorKey: 'settings.err.odometerFloor' };
+    }
+  } else {
+    const floor = maxLoggedOdometer(car, fillUps, [], []);
+    if (odometer < floor) {
+      return { ok: false, errorKey: 'settings.err.odometerFloor' };
+    }
   }
 
   if (distanceKm > DISTANCE_WARN) {

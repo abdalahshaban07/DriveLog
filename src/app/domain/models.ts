@@ -88,13 +88,12 @@ export interface FillUp {
   id: string;
   carId?: string;
   odometer: number;
-  /** Distance since previous fill (or setup); drives per-fill economy. */
+  /** Trip distance typed at log time. Calculations use odometer gaps; only the first fill falls back to this. */
   distanceKm?: number;
   liters: number;
   cost: number;
+  /** Legacy flag from old data and backups. Kept so imports round-trip; no calculation reads it. */
   tankFull: boolean;
-  /** Top-up that did not fill the tank: its fuel is counted with the next full fill. */
-  partial?: boolean;
   fuelGrade?: FuelGrade;
   /** Snapshot ¢/L at log time */
   unitPrice?: number;

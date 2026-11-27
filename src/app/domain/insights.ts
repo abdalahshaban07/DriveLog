@@ -1,4 +1,5 @@
 import { compareDateOnly } from './dues';
+import { computeEconomySegments } from './economy';
 import type { EconomySegment, FillUp, FuelGrade } from './models';
 
 export interface DateWindow {
@@ -29,59 +30,15 @@ function byOdometer(a: FillUp, b: FillUp): number {
   return a.createdAt.localeCompare(b.createdAt);
 }
 
-/** Logged trip distance, otherwise the odometer gap from the previous fill. */
-function fillDistance(end: FillUp, prev: FillUp | undefined): number {
-  const stored = end.distanceKm;
-  if (stored != null && Number.isFinite(stored) && stored > 0) {
-    return stored;
-  }
-  if (prev && end.odometer > prev.odometer) {
-    return end.odometer - prev.odometer;
-  }
-  return 0;
-}
-
-/** One point per fill. A full tank is not required. */
+/** One point per fill, distance from odometer readings only. */
 function trendSegments(
   fills: readonly FillUp[],
   window: DateWindow,
 ): { segments: EconomySegment[]; byId: Map<string, FillUp> } {
-  const sorted = [...fills].sort(byOdometer);
-  const segments: EconomySegment[] = [];
-  // Partial top-ups carry their liters, cost and distance into the next normal fill.
-  let carry = null as { liters: number; cost: number; km: number; startId: string } | null;
-  for (let i = 0; i < sorted.length; i++) {
-    const end = sorted[i]!;
-    const prev = i > 0 ? sorted[i - 1] : undefined;
-    const own = fillDistance(end, prev);
-    if (end.partial === true) {
-      if (own > 0) {
-        carry = {
-          liters: (carry?.liters ?? 0) + end.liters,
-          cost: (carry?.cost ?? 0) + end.cost,
-          km: (carry?.km ?? 0) + own,
-          startId: carry?.startId ?? prev?.id ?? end.id,
-        };
-      }
-      continue;
-    }
-    const distance = own + (carry?.km ?? 0);
-    const liters = end.liters + (carry?.liters ?? 0);
-    const cost = end.cost + (carry?.cost ?? 0);
-    const startId = carry?.startId ?? prev?.id ?? end.id;
-    carry = null;
-    if (own <= 0 || !inWindow(end.date, window)) {
-      continue;
-    }
-    segments.push({
-      startId,
-      endId: end.id,
-      distanceKm: distance,
-      litersPer100Km: (liters / distance) * 100,
-      costPerKm: cost / distance,
-      totalCost: cost,
-    });
-  }
+  const segments = computeEconomySegments(fills).filter((s) => {
+    const end = fills.find((f) => f.id === s.endId);
+    return end != null && inWindow(end.date, window);
+  });
   return { segments, byId: new Map(fills.map((f) => [f.id, f])) };
 }
 

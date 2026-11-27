@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { fuelGlimpse } from './fuel-glimpse';
 import type { FillUp } from './models';
 
+let odo = 1000;
 function fill(partial: Partial<FillUp> & Pick<FillUp, 'id' | 'date'>): FillUp {
+  odo += partial.distanceKm ?? 100;
   return {
-    odometer: 1000,
+    odometer: odo,
     liters: 10,
     cost: 200,
     tankFull: true,

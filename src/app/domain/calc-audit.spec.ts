@@ -33,10 +33,11 @@ describe('calculation audit (hand-computed fixtures)', () => {
       f({ id: 'n', odometer: 200, liters: 10, cost: 100, distanceKm: -5 }),
       f({ id: 'u', odometer: 300, liters: 10, cost: 100 }),
     ];
-    expect(computePerFillSegments(rows)).toEqual([]);
-    // No usable per-fill distance: falls back to full-to-full on the odometer (200 -> 300 km).
+    // Odometer gaps only: the first fill has no earlier reading and a bad stored distance, so no point.
+    const segs = computePerFillSegments(rows);
+    expect(segs.map((x) => x.endId)).toEqual(['n', 'u']);
+    expect(segs.every((x) => Number.isFinite(x.litersPer100Km) && x.distanceKm === 100)).toBe(true);
     expect(latestEconomy(rows)?.distanceKm).toBe(100);
-    expect(Number.isFinite(latestEconomy(rows)!.litersPer100Km)).toBe(true);
     expect(rollingCostPerKm([rows[0]!], new Date(2026, 2, 12))).toBeNull();
   });
 
@@ -92,31 +93,39 @@ describe('maintenance due logic (audit)', () => {
   });
 });
 
-describe('partial fills', () => {
-  it('carries a partial top-up into the next full fill (hand math)', () => {
-    // 20 L top-up after 150 km (partial), then 30 L after 100 km:
-    // 50 L over 250 km = 20 L/100km, cost 280 over 250 km = 1.12 per km, one point.
+describe('distance comes from odometer readings only', () => {
+  it('each fill is its own point: gap, own liters, own cost (hand math)', () => {
     const rows = [
       f({ id: 'a', odometer: 1000, liters: 30, cost: 300, distanceKm: 400, date: '2026-03-01', createdAt: '2026-03-01T08:00:00.000Z' }),
-      f({ id: 'p', odometer: 1150, liters: 20, cost: 100, distanceKm: 150, partial: true, date: '2026-03-05', createdAt: '2026-03-05T08:00:00.000Z' }),
+      f({ id: 'p', odometer: 1150, liters: 20, cost: 100, distanceKm: 150, date: '2026-03-05', createdAt: '2026-03-05T08:00:00.000Z' }),
       f({ id: 'b', odometer: 1250, liters: 30, cost: 180, distanceKm: 100, date: '2026-03-10', createdAt: '2026-03-10T08:00:00.000Z' }),
     ];
     const segs = computePerFillSegments(rows);
-    expect(segs.map((s) => s.endId)).toEqual(['a', 'b']);
-    const last = segs[1]!;
-    expect(last.distanceKm).toBe(250);
-    expect(last.litersPer100Km).toBeCloseTo(20, 10);
-    expect(last.totalCost).toBe(280);
-    expect(last.costPerKm).toBeCloseTo(1.12, 10);
-    expect(last.startId).toBe('a');
+    expect(segs.map((s) => s.endId)).toEqual(['a', 'p', 'b']);
+    expect(segs.map((s) => s.distanceKm)).toEqual([400, 150, 100]);
+    expect(segs[1]!.litersPer100Km).toBeCloseTo((20 / 150) * 100, 10);
+    expect(segs[2]!.litersPer100Km).toBeCloseTo(30, 10);
+    expect(segs[2]!.costPerKm).toBeCloseTo(1.8, 10);
+    expect(segs[2]!.startId).toBe('p');
   });
 
-  it('a trailing partial makes no point and loses nothing', () => {
+  it('a stale stored distanceKm is ignored once a previous reading exists', () => {
     const rows = [
-      f({ id: 'a', odometer: 100, liters: 10, cost: 100, distanceKm: 100, date: '2026-03-01' }),
-      f({ id: 'p', odometer: 150, liters: 5, cost: 50, distanceKm: 50, partial: true, date: '2026-03-02', createdAt: '2026-03-02T08:00:00.000Z' }),
+      f({ id: 'a', odometer: 1000, liters: 30, cost: 300, distanceKm: 400, date: '2026-03-01' }),
+      f({ id: 'b', odometer: 1200, liters: 20, cost: 200, distanceKm: 999, date: '2026-03-10', createdAt: '2026-03-10T08:00:00.000Z' }),
     ];
-    expect(computePerFillSegments(rows).map((s) => s.endId)).toEqual(['a']);
+    const segs = computePerFillSegments(rows);
+    expect(segs[1]!.distanceKm).toBe(200);
+    expect(segs[1]!.litersPer100Km).toBeCloseTo(10, 10);
+  });
+
+  it('legacy partial and tankFull flags change nothing', () => {
+    const base = [
+      f({ id: 'a', odometer: 100, liters: 10, cost: 100, date: '2026-03-01', distanceKm: 100 }),
+      f({ id: 'b', odometer: 250, liters: 12, cost: 120, date: '2026-03-02', createdAt: '2026-03-02T08:00:00.000Z' }),
+    ];
+    const flagged = base.map((r) => ({ ...r, tankFull: true, partial: true }) as typeof r);
+    expect(computePerFillSegments(flagged)).toEqual(computePerFillSegments(base));
   });
 });
 
@@ -127,5 +136,18 @@ describe('backup import validation', () => {
     expect(normalizeFillUp(ok).liters).toBe(10);
     expect(() => normalizeFillUp({ ...ok, liters: 'abc' })).toThrow('backup.invalid');
     expect(() => normalizeFillUp({ ...ok, cost: 'free' })).toThrow('backup.invalid');
+  });
+});
+
+describe('old backups with the partial flag', () => {
+  it('import keeps the row and ignores the partial flag', async () => {
+    const { normalizeFillUp } = await import('../data/db-normalize');
+    const row = normalizeFillUp({
+      id: 'x', odometer: 1000, liters: 10, cost: 100, tankFull: false, partial: true,
+      date: '2026-03-01', createdAt: '2026-03-01T00:00:00.000Z', updatedAt: '2026-03-01T00:00:00.000Z',
+    } as never);
+    expect(row).not.toBeNull();
+    expect(row!.liters).toBe(10);
+    expect('partial' in (row as object) && (row as { partial?: unknown }).partial !== undefined).toBe(false);
   });
 });

@@ -49,12 +49,9 @@ describe('estimateFuelRange', () => {
     expect(RANGE_LOW_DAYS).toBe(2);
   });
 
-  it('is null without two full fills', () => {
+  it('is null without two fills', () => {
     expect(estimateFuelRange(car, [], NOW)).toBeNull();
     expect(estimateFuelRange(car, [fill({})], NOW)).toBeNull();
-    expect(
-      estimateFuelRange(car, [fill({ tankFull: false }), fill({ odometer: 8500, tankFull: false })], NOW),
-    ).toBeNull();
   });
 
   it('is null with less than two weeks of history', () => {
@@ -121,24 +118,10 @@ describe('estimateFuelRange', () => {
     expect(est.kmLeft).toBe(200);
   });
 
-  it('counts partial top-ups after the last full', () => {
-    const fills = [...baseFills(), fill({ odometer: 8600, liters: 10, tankFull: false, date: day(5) })];
-    const est = estimateFuelRange(car, fills, NOW)!;
-    expect(est.litersLeft).toBe(33);
-    expect(est.kmLeft).toBe(365);
-  });
-
-  it('counts partials between the two fulls as fuel burned (55 L / 500 km = 11 L/100km)', () => {
+  it('counts every fill between the first and the last as fuel burned (55 L / 500 km = 11 L/100km)', () => {
     const fills = [...baseFills(), fill({ odometer: 8200, liters: 10, tankFull: false, date: day(20) })];
     const est = estimateFuelRange(car, fills, NOW)!;
     expect(est.litersLeft).toBe(17);
-  });
-
-  it('clamps overfilled tanks to capacity', () => {
-    const fills = [...baseFills(), fill({ odometer: 8600, liters: 100, tankFull: false, date: day(5) })];
-    const est = estimateFuelRange(car, fills, NOW)!;
-    expect(est.litersLeft).toBe(50);
-    expect(est.tankRatio).toBe(1);
   });
 
   it('flags low range at two days or less', () => {

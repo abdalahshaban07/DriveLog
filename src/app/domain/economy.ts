@@ -8,96 +8,46 @@ function byOdometer(a: FillUp, b: FillUp): number {
 }
 
 /**
- * Full-to-full economy.
- * Liters and cost of every fill after the starting full, through the ending full
- * (partial top-ups included), over the odometer distance between the two fulls.
+ * One segment per fill, always from odometer readings.
+ * Distance is the odometer gap to the previous fill of the same car (caller filters
+ * by car). Liters and cost are that fill's own. Only the first fill, which has no
+ * earlier reading, falls back to its stored trip distance. No full or partial tank
+ * concept: every fill is just a fill.
  */
 export function computeEconomySegments(fillUps: readonly FillUp[]): EconomySegment[] {
   const sorted = [...fillUps].sort(byOdometer);
-  const fulls = sorted.filter((f) => f.tankFull);
-  const indexById = new Map(sorted.map((f, i) => [f.id, i]));
   const segments: EconomySegment[] = [];
-
-  for (let i = 0; i < fulls.length - 1; i++) {
-    const start = fulls[i]!;
-    const end = fulls[i + 1]!;
-    const distance = end.odometer - start.odometer;
-    if (distance <= 0) {
+  for (let i = 0; i < sorted.length; i++) {
+    const end = sorted[i]!;
+    const prev = i > 0 ? sorted[i - 1] : undefined;
+    const distance = odometerDistance(end, prev);
+    if (!(distance > 0) || !(end.liters > 0) || !Number.isFinite(end.cost)) {
       continue;
     }
-
-    const startIdx = indexById.get(start.id) ?? -1;
-    const endIdx = indexById.get(end.id) ?? -1;
-    const slice =
-      startIdx >= 0 && endIdx >= startIdx ? sorted.slice(startIdx, endIdx + 1) : [];
-
-    // Fuel and money spent since the starting full tank: every fill after it, up to
-    // and including the ending full (partial top-ups burned fuel too). The starting
-    // fill only refilled the previous stretch, so it is not counted.
-    const used = slice.slice(1);
-    const totalCost = used.reduce((sum, f) => sum + f.cost, 0);
-    const totalLiters = used.reduce((sum, f) => sum + f.liters, 0);
-
     segments.push({
-      startId: start.id,
+      startId: prev?.id ?? end.id,
       endId: end.id,
       distanceKm: distance,
-      litersPer100Km: (totalLiters / distance) * 100,
-      costPerKm: totalCost / distance,
-      totalCost,
+      litersPer100Km: (end.liters / distance) * 100,
+      costPerKm: end.cost / distance,
+      totalCost: end.cost,
     });
   }
-
   return segments;
 }
 
-/** Per-fill segments for rows that store distanceKm (new model). */
+/** Odometer gap to the previous fill. The first fill has none: use its stored trip distance. */
+export function odometerDistance(end: FillUp, prev: FillUp | undefined): number {
+  if (prev) {
+    return end.odometer > prev.odometer ? end.odometer - prev.odometer : 0;
+  }
+  const stored = end.distanceKm;
+  return stored != null && Number.isFinite(stored) && stored > 0 ? stored : 0;
+}
+
+/** Same as computeEconomySegments (kept so callers read the same). */
 export function computePerFillSegments(fillUps: readonly FillUp[]): EconomySegment[] {
-  const withDistance = fillUps.filter(
-    (f) => f.distanceKm != null && Number.isFinite(f.distanceKm) && f.distanceKm! > 0,
-  );
-  if (withDistance.length === 0) {
-    return [];
-  }
-
-  const sorted = [...withDistance].sort((a, b) => {
-    const byDate = a.date.localeCompare(b.date);
-    if (byDate !== 0) {
-      return byDate;
-    }
-    return a.createdAt.localeCompare(b.createdAt);
-  });
-
-  const segments: EconomySegment[] = [];
-  // A partial top-up gets no point of its own: its liters, cost and distance carry
-  // into the next normal fill, so that fill's average covers the whole stretch.
-  let carry = null as { liters: number; cost: number; km: number; startId: string } | null;
-  for (let i = 0; i < sorted.length; i++) {
-    const end = sorted[i]!;
-    if (end.partial === true) {
-      carry = {
-        liters: (carry?.liters ?? 0) + end.liters,
-        cost: (carry?.cost ?? 0) + end.cost,
-        km: (carry?.km ?? 0) + end.distanceKm!,
-        startId: carry?.startId ?? (i > 0 ? sorted[i - 1]!.id : end.id),
-      };
-      continue;
-    }
-    const distance = end.distanceKm! + (carry?.km ?? 0);
-    const liters = end.liters + (carry?.liters ?? 0);
-    const cost = end.cost + (carry?.cost ?? 0);
-    const start = carry ? carry.startId : (i > 0 ? sorted[i - 1]!.id : end.id);
-    carry = null;
-    segments.push({
-      startId: start,
-      endId: end.id,
-      distanceKm: distance,
-      litersPer100Km: (liters / distance) * 100,
-      costPerKm: cost / distance,
-      totalCost: cost,
-    });
-  }
-  return segments;
+  return computeEconomySegments(fillUps);
 }
 
 export function latestEconomy(fillUps: readonly FillUp[]): EconomySegment | null {

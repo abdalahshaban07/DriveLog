@@ -163,4 +163,23 @@ describe('validateFillDistance', () => {
       errorKey: 'settings.err.odometerFloor',
     });
   });
+
+  it('editing an older fill starts from the fill below it, not the latest one', () => {
+    const c = car({ id: 'c1', initialOdometer: 5000, currentOdometer: 5400 });
+    const fills = [
+      fill({ id: 'a', carId: 'c1', odometer: 5100, liters: 40, cost: 50, tankFull: true }),
+      fill({ id: 'b', carId: 'c1', odometer: 5250, liters: 40, cost: 50, tankFull: true }),
+      fill({ id: 'c', carId: 'c1', odometer: 5400, liters: 40, cost: 50, tankFull: true }),
+    ];
+    expect(baseOdometerForDistance(c, fills, 'b')).toBe(5100);
+    expect(baseOdometerForDistance(c, fills, 'a')).toBe(5000);
+    expect(minDistanceKm(c, fills, 'b')).toBe(0);
+    expect(validateFillDistance(c, fills, 150, 'b')).toEqual({ ok: true });
+    // 200 km would put b at 5300, past the next fill (5400 is fine) but 320 would not.
+    expect(validateFillDistance(c, fills, 200, 'b')).toEqual({ ok: true });
+    expect(validateFillDistance(c, fills, 300, 'b')).toEqual({
+      ok: false,
+      errorKey: 'settings.err.odometerFloor',
+    });
+  });
 });

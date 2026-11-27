@@ -53,11 +53,13 @@ export function estimateFuelRange(
   if (segments.length === 0) {
     return null;
   }
-  const fulls = fills
-    .filter((f) => f.tankFull)
+  const ordered = [...fills]
     .sort((a, b) => a.odometer - b.odometer || a.createdAt.localeCompare(b.createdAt));
-  const firstFull = fulls[0]!;
-  const lastFull = fulls[fulls.length - 1]!;
+  if (ordered.length === 0) {
+    return null;
+  }
+  const firstFull = ordered[0]!;
+  const lastFull = ordered[ordered.length - 1]!;
 
   const span = daySpan(firstFull.date, todayDay(now));
   if (span < RANGE_MIN_SPAN_DAYS) {
@@ -89,13 +91,10 @@ export function estimateFuelRange(
     return null;
   }
 
-  // Tank was full at the last full fill; partials after it top it back up.
+  // The last fill is treated as a full tank of its size, capped at the tank capacity.
   const kmSince = Math.max(0, car.currentOdometer - lastFull.odometer);
-  const partials = fills
-    .filter((f) => !f.tankFull && f.odometer > lastFull.odometer && f.liters > 0)
-    .reduce((sum, f) => sum + f.liters, 0);
   const used = (kmSince * l100) / 100;
-  const remaining = Math.min(capacity, Math.max(0, capacity - used + partials));
+  const remaining = Math.min(capacity, Math.max(0, capacity - used));
 
   const rawKm = (remaining * 100) / l100;
   const kmLeft = Math.round(rawKm / 5) * 5;

@@ -374,14 +374,16 @@ describe('askLocal', () => {
   });
 });
 
+let odo = 1000;
 function fill(id: string, date: string, distanceKm: number, liters: number, cost: number): FillUp {
+  odo += distanceKm;
   return {
     id,
     date,
     distanceKm,
     liters,
     cost,
-    odometer: distanceKm,
+    odometer: odo,
     tankFull: false,
     createdAt: `${date}T00:00:00.000Z`,
     updatedAt: `${date}T00:00:00.000Z`,

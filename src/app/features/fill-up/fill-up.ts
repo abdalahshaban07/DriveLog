@@ -97,7 +97,6 @@ export class FillUpPage {
   readonly date = signal(todayDateOnly());
   readonly placeLabel = signal('');
   readonly note = signal('');
-  readonly partial = signal(false);
   readonly dateError = signal('');
   readonly distanceError = signal('');
   readonly distanceWarn = signal('');
@@ -476,18 +475,10 @@ export class FillUpPage {
       return;
     }
     this.editId.set(id);
-    if (existing.distanceKm != null) {
-      this.distanceKm.set(String(existing.distanceKm));
-      this.legacyDistanceEdit.set(false);
-    } else {
-      const prev = this.db
-        .fillUps()
-        .filter((f) => f.id !== id && (!f.carId || f.carId === car.id))
-        .sort((a, b) => b.odometer - a.odometer)[0];
-      const base = prev?.odometer ?? car.initialOdometer;
-      this.distanceKm.set(String(Math.max(0, existing.odometer - base)));
-      this.legacyDistanceEdit.set(false);
-    }
+    // Distance is the odometer gap to the fill just below, never a stored copy.
+    const base = baseOdometerForDistance(car, this.db.fillUps(), id);
+    this.distanceKm.set(String(Math.max(0, existing.odometer - base)));
+    this.legacyDistanceEdit.set(false);
     this.liters.set(String(existing.liters));
     this.fuelGrade.set(existing.fuelGrade ?? 'custom');
     if (existing.unitPrice != null && existing.unitPrice > 0) {
@@ -496,7 +487,6 @@ export class FillUpPage {
     this.date.set(existing.date);
     this.placeLabel.set(existing.placeLabel ?? '');
     this.note.set(existing.note ?? '');
-    this.partial.set(existing.partial === true);
     this.distanceError.set('');
     this.litersError.set('');
     this.dateError.set('');
@@ -655,17 +645,15 @@ export class FillUpPage {
       return;
     }
 
-    const odometer = computeOdometerFromDistance(
-      car,
-      this.db.fillUps(),
-      distance,
-      this.editId() ?? undefined,
-    );
-
     const existing = this.editId()
       ? this.db.fillUps().find((f) => f.id === this.editId())
       : undefined;
-    const persistDistance = !existing || existing.distanceKm != null || this.distanceTouched();
+    // Editing liters, price or note leaves the odometer reading untouched.
+    const odometer =
+      existing && !this.distanceTouched()
+        ? existing.odometer
+        : computeOdometerFromDistance(car, this.db.fillUps(), distance, this.editId() ?? undefined);
+    const persistDistance = true;
 
     const station = this.placeLabel().trim() || undefined;
     const selected = this.fuelNearby().find((p) => p.id === this.selectedStationId());
@@ -682,7 +670,6 @@ export class FillUpPage {
         unitPrice: unit,
         fuelGrade: grade,
         tankFull: existing?.tankFull ?? false,
-        partial: this.partial() || undefined,
         distanceKm: persistDistance ? distance : undefined,
         date,
         placeLabel: station,
@@ -773,7 +760,6 @@ export class FillUpPage {
     this.date.set(todayDateOnly());
     this.placeLabel.set('');
     this.note.set('');
-    this.partial.set(false);
     this.dateError.set('');
     this.distanceError.set('');
     this.distanceWarn.set('');

@@ -855,7 +855,6 @@ export class Db {
       fuelGrade: input.fuelGrade,
       unitPrice: input.unitPrice,
       tankFull: input.tankFull,
-      partial: input.partial === true ? true : undefined,
       note: input.note?.trim() || undefined,
       placeLabel: input.placeLabel?.trim() || undefined,
       date: input.date,
