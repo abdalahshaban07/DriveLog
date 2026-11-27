@@ -198,6 +198,9 @@ export class HealthPage {
 
   factRemain(item: HealthItem): string {
     if (item.remainingKm != null) {
+      if (item.remainingKm < 0) {
+        return this.i18n.t('health.insight.overdueKm', { n: Math.round(-item.remainingKm) });
+      }
       return this.i18n.t('health.insight.remainKm', { n: Math.round(item.remainingKm) });
     }
     if (item.remainingMonths != null) {

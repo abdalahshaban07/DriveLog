@@ -1130,6 +1130,8 @@ export const ar: Record<MsgKey, string> = {
   'health.insight.factsNext': 'بعده',
   'health.insight.factsNone': 'مفيش',
   'health.insight.remainKm': 'باقي {n} كم',
+  'health.insight.overdueKm': 'متأخر {n} كم',
+  'health.row.overdueKm': 'متأخر {n} كم',
   'health.insight.remainMonths': 'باقي {n} شهر',
   'health.insight.noRemain': 'مفيش مسافة متبقية',
   'health.insight.sourceRemote': 'لمحة من المدرب الأونلاين المجاني (محفوظة لليوم)',

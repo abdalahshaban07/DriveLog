@@ -247,6 +247,11 @@ export class HealthRow {
   readonly kmFact = computed(() => {
     const km = this.item().remainingKm;
     if (km == null) return null;
+    if (km < 0) {
+      return this.i18n.t('health.row.overdueKm', {
+        n: this.i18n.formatNumber(-km, { maximumFractionDigits: 0 }),
+      });
+    }
     return `${this.i18n.formatNumber(km, { maximumFractionDigits: 0 })} ${this.i18n.t('common.km')}`;
   });
 

@@ -1149,6 +1149,8 @@ export const en = {
   'health.insight.factsNext': 'Later',
   'health.insight.factsNone': 'none',
   'health.insight.remainKm': '{n} km left',
+  'health.insight.overdueKm': '{n} km overdue',
+  'health.row.overdueKm': '{n} km overdue',
   'health.insight.remainMonths': '{n} mo left',
   'health.insight.noRemain': 'no remaining distance recorded',
   'health.insight.sourceRemote': 'Insight from free online coach (cached today)',
