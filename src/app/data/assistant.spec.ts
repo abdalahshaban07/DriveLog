@@ -190,11 +190,7 @@ describe('fetchChatReply', () => {
 
     expect(reply.source).toBe('local');
     const urls = fetchMock.mock.calls.map((call) => String(call[0]));
-    // both Kilo models share one host; a dead host is skipped for the chain
-    expect(urls).toEqual([
-      'https://text.pollinations.ai/openai/chat/completions',
-      'https://api.kilo.ai/api/gateway/chat/completions',
-    ]);
+    expect(urls).toEqual(['https://text.pollinations.ai/openai/chat/completions']);
     expect(reply.text.startsWith('L:')).toBe(true);
     expect(hourCount()).toBe(0);
   });
@@ -295,30 +291,22 @@ describe('fetchChatReply', () => {
     expect(hourCount()).toBe(0);
   });
 
-  it('drops a scrambled Arabic reply and keeps the next gateway', async () => {
+  it('drops a scrambled Arabic reply and falls back local on the only gateway', async () => {
     const salad =
       'يحتاج المحرك crk211 إلى تغيير الزيت الكامل في أقرب وقت ممكن. brú567737 حصلت على ترزياح عجلة مت Öz دوم Casting Collier 3001570 exploits restée larinda مباراة حي ميكانيكلاى. دسترسى. لا أدري.';
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(okChat(salad))
-      .mockResolvedValueOnce(okChat('ظبط ضغط الكاوتش كل شهر عشان الاستهلاك ينزل.'));
+    const fetchMock = vi.fn().mockResolvedValueOnce(okChat(salad));
     vi.stubGlobal('fetch', fetchMock);
 
     const reply = await fetchChatReply(mockDb(true), 'نصيحة', 'ar', (k) => k);
 
-    expect(reply).toEqual({
-      text: 'ظبط ضغط الكاوتش كل شهر عشان الاستهلاك ينزل.',
-      source: 'remote',
-    });
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    const second = JSON.parse((fetchMock.mock.calls[1]![1] as RequestInit).body as string) as {
-      model: string;
+    expect(reply.source).toBe('local');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const sent = JSON.parse((fetchMock.mock.calls[0]![1] as RequestInit).body as string) as {
       max_tokens: number;
       reasoning_effort?: string;
     };
-    expect(second.model).toBe(freeGatewaysFrom(0)[1]!.model);
-    expect(second.max_tokens).toBe(ASSISTANT_THINKING_MAX_TOKENS);
-    expect(second.reasoning_effort).toBe('low');
+    expect(sent.max_tokens).toBe(ASSISTANT_THINKING_MAX_TOKENS);
+    expect(sent.reasoning_effort).toBe('low');
   });
 
   it('strips a leaked thought and still accepts the Arabic answer', async () => {
@@ -352,20 +340,30 @@ describe('fetchChatReply', () => {
     expect(headers['Authorization']).toBeUndefined();
   });
 
-  it('tries the next gateway after a timeout', async () => {
+  it('falls back to local after a timeout on the gateway', async () => {
     const fetchMock = vi
       .fn()
-      .mockRejectedValueOnce(Object.assign(new Error('aborted'), { name: 'AbortError' }))
-      .mockResolvedValueOnce(okChat('remote-ok'));
+      .mockRejectedValueOnce(Object.assign(new Error('aborted'), { name: 'AbortError' }));
     vi.stubGlobal('fetch', fetchMock);
 
-    const reply = await fetchChatReply(mockDb(true), 'fuel', 'en', (k) => k);
+    const reply = await fetchChatReply(mockDb(true), 'fuel', 'en', (k) => `L:${k}`);
 
-    expect(reply).toEqual({ text: 'remote-ok', source: 'remote' });
+    expect(reply.source).toBe('local');
     expect(fetchMock.mock.calls.map((call) => String(call[0]))).toEqual([
       'https://text.pollinations.ai/openai/chat/completions',
-      'https://api.kilo.ai/api/gateway/chat/completions',
     ]);
+  });
+
+  it('answers with a busy hint when the gateway is rate-limiting (429)', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(httpStatus(429, '45'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const reply = await fetchChatReply(mockDb(true), 'fuel', 'en', (k, p) => `L:${k}:${p?.['n'] ?? ''}`);
+
+    expect(reply.source).toBe('local');
+    expect(reply.text).toBe('L:assistant.busy:45');
+    expect(reply.remoteFailed).toBeUndefined();
+    expect(hourCount()).toBe(0);
   });
 
   it('spends no device slot on dead gateways and keeps a sticky down flag', async () => {

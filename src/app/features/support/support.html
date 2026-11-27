@@ -120,6 +120,9 @@
         <section class="about-card card card--dark" [attr.aria-label]="i18n.t('about.title')">
           <p class="about-card__eyebrow">{{ i18n.t('app.name') }}</p>
           <p class="about-card__version">{{ i18n.t('about.version', { version }) }}</p>
+          @if (buildStamp()) {
+            <p class="about-card__version">{{ i18n.t('about.build', { build: buildStamp() ?? '' }) }}</p>
+          }
           <p class="about-card__body">{{ i18n.t('about.localFirst') }}</p>
           <ul class="guide__facts">
             <li>{{ i18n.t('help.fact.device') }}</li>

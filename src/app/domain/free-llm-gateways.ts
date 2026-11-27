@@ -5,10 +5,13 @@
  * from the saved cursor and stops at the first usable reply.
  *
  * ponytail: providers picked 2026-11-27 from live probes (stillworks hourly
- * checks plus direct Arabic calls): Pollinations 168/168, Kilo openrouter/free
- * 16/16 with fluent Arabic, nemotron-3-ultra 15/16. OVH gpt-oss-20b was
- * dropped the same day: garbled Arabic output. Swap an entry when a provider
- * dies or starts asking for a key.
+ * checks plus direct Arabic calls): Pollinations 168/168, CORS-open, fluent
+ * Arabic. Kilo (api.kilo.ai) answers curl with fluent Arabic but sends no
+ * CORS headers, so browser fetches always fail; OVH gpt-oss-20b returns
+ * garbled Arabic. Both dropped the same day. Pollinations is the only
+ * keyless CORS-open provider found - the 45s per-IP anonymous cooldown is
+ * surfaced to the user as a busy message instead of a silent fallback.
+ * Swap an entry when a provider dies or starts asking for a key.
  */
 
 export type FreeLlmGateway = {
@@ -24,16 +27,6 @@ export const FREE_LLM_GATEWAYS: readonly FreeLlmGateway[] = [
     id: 'pollinations',
     baseUrl: 'https://text.pollinations.ai/openai',
     model: 'openai-fast',
-  },
-  {
-    id: 'kilo-openrouter',
-    baseUrl: 'https://api.kilo.ai/api/gateway',
-    model: 'openrouter/free',
-  },
-  {
-    id: 'kilo-nemotron',
-    baseUrl: 'https://api.kilo.ai/api/gateway',
-    model: 'nvidia/nemotron-3-ultra-550b-a55b:free',
   },
 ] as const;
 

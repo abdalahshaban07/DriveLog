@@ -195,6 +195,8 @@ export class SupportPage {
 
   readonly openFaq = signal<MsgKey | null>(null);
   readonly reachedEnd = signal(false);
+  /** Service-worker build time from ngsw.json, so the user can confirm the update reached them. */
+  readonly buildStamp = signal<string | null>(null);
   readonly contactTopic = signal<ContactTopic>('feature');
   readonly query = signal('');
   readonly faqDest = FAQ_GO;
@@ -228,6 +230,15 @@ export class SupportPage {
 
   constructor() {
     const destroyRef = inject(DestroyRef);
+    fetch('ngsw.json')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((manifest) => {
+        const ts = Number((manifest as { timestamp?: unknown } | null)?.timestamp);
+        if (Number.isFinite(ts) && ts > 0) {
+          this.buildStamp.set(new Date(ts).toLocaleString(this.i18n.language() === 'ar' ? 'ar-EG' : 'en-GB'));
+        }
+      })
+      .catch(() => undefined);
     afterNextRender(() => {
       if (this.doc !== 'legal') {
         return;

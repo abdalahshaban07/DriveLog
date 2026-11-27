@@ -570,6 +570,7 @@ export const ar: Record<MsgKey, string> = {
   'about.title': 'عن التطبيق',
   'about.lead': 'سجل وقود وصيانة للموبايل. البيانات بتفضل على جهازك.',
   'about.version': 'الإصدار {version}',
+  'about.build': 'تحديث {build}',
   'about.localFirst': 'محلي أولاً: التعبئة والصيانة والإعدادات في تخزين المتصفح ده.',
   'about.featuresLink': 'شوف قدرات سجل القيادة',
   'about.helpLink': 'المساعدة والأسئلة',
@@ -892,6 +893,7 @@ export const ar: Record<MsgKey, string> = {
   'assistant.empty': 'رد فاضي من المدرب.',
   'assistant.network': 'مقدرناش نوصل للمدرب — بنورّي إجابة محلية.',
   'assistant.rateLimited': 'وصلت لحد الاستخدام الأونلاين دلوقتي — دي إجابة محلية. جرب تاني بعد شوية.',
+  'assistant.busy': 'المساعد الأونلاين مشغول دلوقتي — اسأل تاني بعد حوالي {n} ثانية.',
   'assistant.localOnly': 'المساعد الأونلاين مطفي — بنجاوب من على الجهاز.',
   'assistant.remoteDown':
     'المساعد الأونلاين مش بيرد دلوقتي — بنجاوب من على الجهاز لحد ما يرجع.',

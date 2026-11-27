@@ -119,7 +119,10 @@ function isComputedLocal(read: AdvisorRead): boolean {
 
 type ChainResult = {
   reply: string | null;
-  sawHttp: boolean;
+  /** A gateway answered with a real failure (5xx, garbage). 429 busy is not down. */
+  sawDown: boolean;
+  /** Longest 429 cooldown seen, when every attempt was refused as busy. */
+  retryAfterSec: number | null;
 };
 
 async function tryChain(
@@ -129,11 +132,14 @@ async function tryChain(
   signal?: AbortSignal,
 ): Promise<ChainResult> {
   const skipBaseUrls = new Set<string>();
+  const retriedBusy = new Set<string>();
   const startedAt = Date.now();
-  let sawHttp = false;
+  let sawDown = false;
+  let retryAfterSec: number | null = null;
   let reply: string | null = null;
 
-  for (const gw of gateways) {
+  for (let i = 0; i < gateways.length; i++) {
+    const gw = gateways[i]!;
     if (signal?.aborted || skipBaseUrls.has(gw.baseUrl)) continue;
     if (Date.now() - startedAt >= CHAIN_BUDGET_MS) break;
     const controller = new AbortController();
@@ -150,21 +156,28 @@ async function tryChain(
         reasoningEffort: 'low',
         signal: controller.signal,
       });
-      sawHttp = true;
       const text = usableCoachText(raw, lang);
       if (text) {
         reply = text;
         break;
       }
+      sawDown = true;
     } catch (err) {
       if (signal?.aborted) break;
       if (err instanceof OpenAiChatError && err.code === 'network') {
         skipBaseUrls.add(gw.baseUrl);
       } else if (err instanceof OpenAiChatError && err.status != null) {
-        sawHttp = true;
-        const wait = err.retryAfter;
-        if (err.status === 429 && wait != null && wait <= RETRY_WAIT_CAP_S) {
-          await waitSeconds(wait, signal);
+        if (err.status === 429) {
+          const wait = err.retryAfter ?? 45;
+          retryAfterSec = Math.max(retryAfterSec ?? 0, wait);
+          if (wait <= RETRY_WAIT_CAP_S && !retriedBusy.has(gw.baseUrl)) {
+            retriedBusy.add(gw.baseUrl);
+            await waitSeconds(wait, signal);
+            i--; // same gateway, one retry after its short cooldown
+            continue;
+          }
+        } else {
+          sawDown = true;
         }
       }
     } finally {
@@ -173,7 +186,7 @@ async function tryChain(
     }
   }
 
-  return { reply, sawHttp };
+  return { reply, sawDown, retryAfterSec };
 }
 
 function coachMessages(
@@ -189,12 +202,18 @@ function coachMessages(
   ];
 }
 
+export type FreeChainReply = {
+  readonly text: string | null;
+  /** Set when every gateway refused as busy (HTTP 429). */
+  readonly retryAfterSec: number | null;
+};
+
 /** Walk the keyless gateway list. A device slot is spent only by a real reply. */
 export async function fetchFreeChain(
   lang: 'en' | 'ar',
   messages: readonly OpenAiChatMessage[],
   signal?: AbortSignal,
-): Promise<string | null> {
+): Promise<FreeChainReply> {
   const storage = typeof localStorage !== 'undefined' ? localStorage : null;
   const chain = await tryChain(
     freeGatewaysFrom(readFreeLlmCursor(storage)),
@@ -207,10 +226,10 @@ export async function fetchFreeChain(
   if (chain.reply) {
     recordRemoteAssistantCall();
     writeAssistantRemoteDown(storage, false);
-  } else if (chain.sawHttp) {
+  } else if (chain.sawDown) {
     writeAssistantRemoteDown(storage, true);
   }
-  return chain.reply;
+  return { text: chain.reply, retryAfterSec: chain.retryAfterSec };
 }
 
 async function tryRemoteChat(
@@ -218,7 +237,7 @@ async function tryRemoteChat(
   question: string,
   lang: 'en' | 'ar',
   history: readonly ChatMessage[],
-): Promise<string | null> {
+): Promise<FreeChainReply> {
   return fetchFreeChain(lang, coachMessages(snapshot, question, lang, history));
 }
 
@@ -234,10 +253,11 @@ export async function fetchFreeCoachText(
   const text = user.trim();
   if (!system.trim() || !text) return null;
   if (!canRemoteAssistantCall() || !browserMayReachGateway()) return null;
-  return fetchFreeChain(lang, [
+  const chain = await fetchFreeChain(lang, [
     { role: 'system', content: system },
     { role: 'user', content: text },
   ]);
+  return chain.text;
 }
 
 type Translate = (key: string, params?: Record<string, string | number>) => string;
@@ -280,7 +300,10 @@ export async function fetchChatReply(
       lang,
       history,
     );
-    if (remote) return { text: remote, source: 'remote' };
+    if (remote.text) return { text: remote.text, source: 'remote' };
+    if (remote.retryAfterSec != null) {
+      return { text: asMsg('assistant.busy' as MsgKey, { n: remote.retryAfterSec }), source: 'local' };
+    }
     return { ...localReply, remoteFailed: true };
   }
 

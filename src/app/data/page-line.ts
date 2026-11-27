@@ -158,7 +158,7 @@ export async function polishPageLine(input: {
     return input.source;
   }
 
-  const raw = await fetchFreeChain(
+  const chain = await fetchFreeChain(
     input.lang,
     [
       { role: 'system', content: systemPrompt(input.lang) },
@@ -167,7 +167,7 @@ export async function polishPageLine(input: {
     input.signal,
   );
   if (input.signal?.aborted) return input.source;
-  const text = raw ? usableCoachText(raw, input.lang) : null;
+  const text = chain.text ? usableCoachText(chain.text, input.lang) : null;
   const line = text ? firstSentence(text) : '';
   const next = line && rewriteKeepsFacts(input.source, line) ? line : input.source;
   writeCached(storage, input.page, input.lang, input.day, input.source, next);
