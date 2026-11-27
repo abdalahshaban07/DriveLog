@@ -150,6 +150,8 @@
     <p class="assistant__status" role="status" aria-live="polite">
       @if (statusKey() === 'assistant.waiting') {
         {{ i18n.t('assistant.waiting', { n: waitSec() }) }}
+      } @else if (statusKey() === 'assistant.sourceRemote' && answeredBy()) {
+        {{ i18n.t('assistant.sourceRemoteBy', { provider: answeredBy() }) }}
       } @else {
         {{ i18n.t(statusKey()!) }}
       }

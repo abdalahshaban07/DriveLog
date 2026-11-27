@@ -3,11 +3,15 @@ import {
   ASSISTANT_MAX_TOKENS,
   ASSISTANT_THINKING_MAX_TOKENS,
   FREE_LLM_GATEWAYS,
-  bumpFreeLlmCursor,
-  freeGatewaysFrom,
+  REPLY_CACHE_TTL_MS,
+  clearCooldown,
+  cooldownLeftSec,
   readAssistantRemoteDown,
-  readFreeLlmCursor,
+  readCachedEntry,
+  readCachedReply,
+  setCooldown,
   writeAssistantRemoteDown,
+  writeCachedReply,
 } from './free-llm-gateways';
 
 function fakeStorage(): Storage {
@@ -27,20 +31,40 @@ function fakeStorage(): Storage {
 }
 
 describe('free-llm-gateways', () => {
-  it('rotates every keyless gateway from the cursor', () => {
-    expect(FREE_LLM_GATEWAYS.map((g) => g.id)).toEqual(['pollinations']);
-    expect(FREE_LLM_GATEWAYS.map((g) => g.model)).toEqual(['openai-fast']);
-    expect(freeGatewaysFrom(0).map((g) => g.id)).toEqual(['pollinations']);
-    expect(freeGatewaysFrom(1).map((g) => g.id)).toEqual(['pollinations']);
+  it('lists Pollinations, then ch.at, then flm, all keyless', () => {
+    expect(FREE_LLM_GATEWAYS.map((g) => g.id)).toEqual(['pollinations', 'chat', 'flm']);
+    expect(FREE_LLM_GATEWAYS.map((g) => g.baseUrl)).toEqual([
+      'https://text.pollinations.ai/openai',
+      'https://ch.at/v1',
+      'https://flm.stonech.at/v1',
+    ]);
     expect(FREE_LLM_GATEWAYS.every((g) => g.apiKey === undefined)).toBe(true);
+    expect(FREE_LLM_GATEWAYS.filter((g) => g.reasoningHint).map((g) => g.id)).toEqual([
+      'pollinations',
+    ]);
     expect(ASSISTANT_MAX_TOKENS).toBe(220);
     expect(ASSISTANT_THINKING_MAX_TOKENS).toBeGreaterThan(ASSISTANT_MAX_TOKENS);
+  });
 
+  it('tracks a per-provider cooldown that expires and clears', () => {
     const storage = fakeStorage();
-    expect(readFreeLlmCursor(storage)).toBe(0);
-    bumpFreeLlmCursor(storage);
-    expect(readFreeLlmCursor(storage)).toBe(1);
-    expect(freeGatewaysFrom(readFreeLlmCursor(storage))[0]!.id).toBe('pollinations');
+    expect(cooldownLeftSec(storage, 'chat', 1000)).toBe(0);
+    setCooldown(storage, 'chat', 45, 1000);
+    expect(cooldownLeftSec(storage, 'chat', 1000)).toBe(45);
+    expect(cooldownLeftSec(storage, 'chat', 31_000)).toBe(15);
+    expect(cooldownLeftSec(storage, 'chat', 46_000)).toBe(0);
+    expect(cooldownLeftSec(storage, 'flm', 1000)).toBe(0);
+    clearCooldown(storage, 'chat');
+    expect(cooldownLeftSec(storage, 'chat', 1000)).toBe(0);
+    expect(cooldownLeftSec(null, 'chat')).toBe(0);
+  });
+
+  it('remembers which provider wrote a cached answer', () => {
+    const storage = fakeStorage();
+    writeCachedReply(storage, 'k', 'hello', 1000, 'flm');
+    expect(readCachedEntry(storage, 'k', 2000)).toEqual({ text: 'hello', provider: 'flm' });
+    expect(readCachedReply(storage, 'k', 2000)).toBe('hello');
+    expect(readCachedEntry(storage, 'k', 1000 + REPLY_CACHE_TTL_MS + 1)).toBeNull();
   });
 
   it('keeps the remote-down flag sticky until a good reply clears it', () => {

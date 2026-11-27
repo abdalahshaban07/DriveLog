@@ -2,9 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ASSISTANT_THINKING_MAX_TOKENS,
   FREE_LLM_GATEWAYS,
-  freeGatewaysFrom,
+  cooldownLeftSec,
   readAssistantRemoteDown,
-  readFreeLlmCursor,
 } from '../domain/free-llm-gateways';
 import { ASSISTANT_RATE_DAY, ASSISTANT_RATE_HOUR } from './assistant-rate-limit';
 import { fetchChatReply, fetchFreeCoachText, usableCoachText, type ChatMessage } from './assistant';
@@ -135,6 +134,7 @@ describe('fetchChatReply', () => {
     expect(reply).toEqual({
       text: 'ظبط ضغط الكاوتش ومتسيّبش العربية تدور.',
       source: 'remote',
+      provider: 'pollinations',
     });
   });
 
@@ -157,7 +157,7 @@ describe('fetchChatReply', () => {
 
     const reply = await fetchChatReply(mockDb(true), 'How is my fuel?', 'en', (k) => k);
 
-    expect(reply).toEqual({ text: 'remote-ok', source: 'remote' });
+    expect(reply).toMatchObject({ text: 'remote-ok', source: 'remote' });
     expect(fetchMock).toHaveBeenCalled();
     const [url, init] = fetchMock.mock.calls[0]!;
     expect(String(url)).toContain(FREE_LLM_GATEWAYS[0]!.baseUrl.replace(/\/+$/, ''));
@@ -190,7 +190,11 @@ describe('fetchChatReply', () => {
 
     expect(reply.source).toBe('local');
     const urls = fetchMock.mock.calls.map((call) => String(call[0]));
-    expect(urls).toEqual(['https://text.pollinations.ai/openai/chat/completions']);
+    expect(urls).toEqual([
+      'https://text.pollinations.ai/openai/chat/completions',
+      'https://ch.at/v1/chat/completions',
+      'https://flm.stonech.at/v1/chat/completions',
+    ]);
     expect(reply.text.startsWith('L:')).toBe(true);
     expect(hourCount()).toBe(0);
   });
@@ -208,7 +212,7 @@ describe('fetchChatReply', () => {
       await vi.advanceTimersByTimeAsync(13_000);
       const reply = await pending;
 
-      expect(reply).toEqual({ text: 'remote-ok', source: 'remote' });
+      expect(reply).toMatchObject({ text: 'remote-ok', source: 'remote', provider: 'chat' });
       expect(fetchMock).toHaveBeenCalledTimes(2);
       expect(hourCount()).toBe(1);
     } finally {
@@ -308,7 +312,8 @@ describe('fetchChatReply', () => {
 
     expect(reply.source).toBe('local');
     // One clean retry, then the local answer; a garbled reply never banners.
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    // One clean retry per provider, three providers.
+    expect(fetchMock).toHaveBeenCalledTimes(6);
     expect(reply.remoteFailed).toBe(true);
     expect(readAssistantRemoteDown(localStorage)).toBe(false);
     const sent = JSON.parse((fetchMock.mock.calls[0]![1] as RequestInit).body as string) as {
@@ -329,39 +334,98 @@ describe('fetchChatReply', () => {
 
     const reply = await fetchChatReply(mockDb(true), 'نصيحة', 'ar', (k) => k);
 
-    expect(reply).toEqual({ text: 'ظبط ضغط الكاوتش كل شهر.', source: 'remote' });
+    expect(reply).toMatchObject({ text: 'ظبط ضغط الكاوتش كل شهر.', source: 'remote' });
     expect(fetchMock).toHaveBeenCalledOnce();
   });
 
-  it('starts the next question on the next keyless model', async () => {
+  it('starts every question at Pollinations and sends no key', async () => {
     const fetchMock = vi.fn().mockResolvedValue(okChat('remote-ok'));
     vi.stubGlobal('fetch', fetchMock);
 
     await fetchChatReply(mockDb(true), 'fuel', 'en', (k) => k);
     await fetchChatReply(mockDb(true), 'fuel again', 'en', (k) => k);
 
-    const modelAt = (call: number) =>
-      (JSON.parse((fetchMock.mock.calls[call]![1] as RequestInit).body as string) as { model: string })
-        .model;
-    expect(modelAt(0)).toBe(freeGatewaysFrom(0)[0]!.model);
-    expect(modelAt(1)).toBe(freeGatewaysFrom(1)[0]!.model);
-    expect(readFreeLlmCursor(localStorage)).toBe(2);
+    expect(fetchMock.mock.calls.map((c) => String(c[0]))).toEqual([
+      'https://text.pollinations.ai/openai/chat/completions',
+      'https://text.pollinations.ai/openai/chat/completions',
+    ]);
     const headers = (fetchMock.mock.calls[0]![1] as RequestInit).headers as Record<string, string>;
     expect(headers['Authorization']).toBeUndefined();
+  });
+
+  it('goes straight to ch.at on a Pollinations 402, with no wait and no reasoning hint', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(httpStatus(402, '40'))
+      .mockResolvedValueOnce(okChat('from-chat'));
+    vi.stubGlobal('fetch', fetchMock);
+    const onWait = vi.fn();
+
+    const reply = await fetchChatReply(
+      mockDb(true), 'fuel', 'en', (k) => k, undefined, [], null, undefined, onWait,
+    );
+
+    expect(reply).toMatchObject({ text: 'from-chat', source: 'remote', provider: 'chat' });
+    expect(onWait).not.toHaveBeenCalled();
+    expect(String(fetchMock.mock.calls[1]![0])).toBe('https://ch.at/v1/chat/completions');
+    const body = JSON.parse((fetchMock.mock.calls[1]![1] as RequestInit).body as string) as {
+      model: string;
+      reasoning_effort?: string;
+    };
+    expect(body.model).toBe('gpt-4o');
+    expect(body.reasoning_effort).toBeUndefined();
+    // Pollinations rests for its 40s + padding; the next question skips it.
+    expect(cooldownLeftSec(localStorage, 'pollinations')).toBeGreaterThan(40);
+    fetchMock.mockClear();
+    fetchMock.mockResolvedValue(okChat('again'));
+    await fetchChatReply(mockDb(true), 'second question', 'en', (k) => k);
+    expect(String(fetchMock.mock.calls[0]![0])).toBe('https://ch.at/v1/chat/completions');
+  });
+
+  it('falls on to flm when ch.at is also refused, and reads only message.content', async () => {
+    const flmBody = {
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: 'flm-ok', reasoning: 'secret scratchpad' } }],
+      }),
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(httpStatus(402, '40'))
+      .mockResolvedValueOnce(httpStatus(429))
+      .mockResolvedValueOnce(flmBody);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const reply = await fetchChatReply(mockDb(true), 'fuel', 'en', (k) => k);
+
+    expect(reply).toMatchObject({ text: 'flm-ok', provider: 'flm' });
+    expect(reply.text).not.toContain('scratchpad');
+  });
+
+  it('skips a provider that is down and tries it again only after its rest', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValue(okChat('from-chat'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const first = await fetchChatReply(mockDb(true), 'one', 'en', (k) => k);
+    expect(first).toMatchObject({ provider: 'chat' });
+    await fetchChatReply(mockDb(true), 'two', 'en', (k) => k);
+    const urls = fetchMock.mock.calls.map((c) => String(c[0]));
+    expect(urls.filter((u) => u.includes('pollinations'))).toHaveLength(1);
   });
 
   it('falls back to local after a timeout on the gateway', async () => {
     const fetchMock = vi
       .fn()
-      .mockRejectedValueOnce(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+      .mockRejectedValue(Object.assign(new Error('aborted'), { name: 'AbortError' }));
     vi.stubGlobal('fetch', fetchMock);
 
     const reply = await fetchChatReply(mockDb(true), 'fuel', 'en', (k) => `L:${k}`);
 
     expect(reply.source).toBe('local');
-    expect(fetchMock.mock.calls.map((call) => String(call[0]))).toEqual([
-      'https://text.pollinations.ai/openai/chat/completions',
-    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it('answers with a busy hint when the gateway is rate-limiting (429)', async () => {
@@ -371,7 +435,7 @@ describe('fetchChatReply', () => {
     const reply = await fetchChatReply(mockDb(true), 'fuel', 'en', (k, p) => `L:${k}:${p?.['n'] ?? ''}`);
 
     expect(reply.source).toBe('local');
-    expect(reply.text).toBe('L:assistant.busy:120');
+    expect(reply.text).toBe('L:assistant.busy:126');
     expect(reply.remoteFailed).toBeUndefined();
     expect(hourCount()).toBe(0);
   });
@@ -383,38 +447,32 @@ describe('fetchChatReply', () => {
     const reply = await fetchChatReply(mockDb(true), 'fuel', 'en', (k, p) => `L:${k}:${p?.['n'] ?? ''}`);
 
     expect(reply.source).toBe('local');
-    expect(reply.text).toBe('L:assistant.busy:600');
+    expect(reply.text).toBe('L:assistant.busy:606');
     expect(reply.remoteFailed).toBeUndefined();
     expect(readAssistantRemoteDown(localStorage)).toBe(false);
   });
 
-  it('waits out a free-tier quota refusal (402) and answers online', async () => {
+  it('waits out the cooldown when every provider is busy, then answers online', async () => {
     vi.useFakeTimers();
     try {
       const onWait = vi.fn();
       const fetchMock = vi
         .fn()
         .mockResolvedValueOnce(httpStatus(402, '30'))
+        .mockResolvedValueOnce(httpStatus(402, '30'))
+        .mockResolvedValueOnce(httpStatus(402, '30'))
         .mockResolvedValueOnce(okChat('remote-ok'));
       vi.stubGlobal('fetch', fetchMock);
 
       const pending = fetchChatReply(
-        mockDb(true),
-        'fuel',
-        'en',
-        (k) => k,
-        undefined,
-        [],
-        null,
-        undefined,
-        onWait,
+        mockDb(true), 'fuel', 'en', (k) => k, undefined, [], null, undefined, onWait,
       );
       await vi.advanceTimersByTimeAsync(36_000);
       const reply = await pending;
 
-      expect(reply).toEqual({ text: 'remote-ok', source: 'remote' });
+      expect(reply).toMatchObject({ text: 'remote-ok', source: 'remote', provider: 'pollinations' });
       expect(onWait).toHaveBeenCalledWith(36);
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock).toHaveBeenCalledTimes(4);
       expect(readAssistantRemoteDown(localStorage)).toBe(false);
     } finally {
       vi.useRealTimers();
@@ -455,7 +513,7 @@ describe('fetchChatReply', () => {
 
     const reply = await fetchChatReply(mockDb(true), 'ازاي احسن الاستهلاك', 'ar', (k) => k);
 
-    expect(reply).toEqual({ text: 'ظبط ضغط الكاوتش.', source: 'remote' });
+    expect(reply).toMatchObject({ text: 'ظبط ضغط الكاوتش.', source: 'remote' });
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
@@ -466,8 +524,8 @@ describe('fetchChatReply', () => {
     const first = await fetchChatReply(mockDb(true), 'fuel', 'en', (k) => k);
     const second = await fetchChatReply(mockDb(true), 'fuel', 'en', (k) => k);
 
-    expect(first).toEqual({ text: 'remote-ok', source: 'remote' });
-    expect(second).toEqual({ text: 'remote-ok', source: 'remote' });
+    expect(first).toMatchObject({ text: 'remote-ok', source: 'remote' });
+    expect(second).toMatchObject({ text: 'remote-ok', source: 'remote' });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -482,10 +540,12 @@ describe('fetchChatReply', () => {
     expect(hourCount()).toBe(0);
     expect(readAssistantRemoteDown(localStorage)).toBe(true);
 
+    // Providers rest after an outage; once the rest is over the next question gets through.
+    localStorage.removeItem('drivelog.free-llm.cooldowns.v1');
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(okChat('remote-ok')));
     const recovered = await fetchChatReply(mockDb(true), 'fuel again', 'en', (k) => k);
 
-    expect(recovered).toEqual({ text: 'remote-ok', source: 'remote' });
+    expect(recovered).toMatchObject({ text: 'remote-ok', source: 'remote' });
     expect(readAssistantRemoteDown(localStorage)).toBe(false);
     expect(hourCount()).toBe(1);
   });

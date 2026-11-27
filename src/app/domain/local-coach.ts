@@ -49,6 +49,8 @@ export type CoachReply = {
   text: string;
   source: CoachSource;
   card?: AnswerCard;
+  /** Gateway id that wrote an online answer (see FREE_LLM_GATEWAYS). */
+  provider?: string;
   /** The online call was attempted and returned nothing. */
   remoteFailed?: boolean;
   /** The device rate cap blocked the online call before it started. */

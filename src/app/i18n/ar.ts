@@ -902,6 +902,7 @@ export const ar: Record<MsgKey, string> = {
   'assistant.remoteDown':
     'المساعد الأونلاين مش بيرد دلوقتي — بنجاوب من على الجهاز لحد ما يرجع.',
   'assistant.sourceRemote': 'الرد من المدرب الأونلاين المجاني.',
+  'assistant.sourceRemoteBy': 'الرد من المدرب الأونلاين المجاني ({provider}).',
   'assistant.privacy':
     'الوضع الأونلاين بيبعت ملخص عربيتك (من غير VIN) لبوابة عامة مجانية وقد يتسجّل. اطفيه من الإعدادات عشان تفضل محلي.',
   'assistant.openSettings': 'افتح الإعدادات',
@@ -955,7 +956,7 @@ export const ar: Record<MsgKey, string> = {
   'settings.assistantBaseUrl': 'رابط API',
   'settings.assistantModel': 'النموذج',
   'settings.assistantHint':
-    'بوابات عامة مجانية من غير مفتاح. ملخص العربية ممكن يطلع من الجهاز. مطفي = إجابات محلية بس.',
+    'بوابات عامة مجانية من غير مفتاح (Pollinations ثم ch.at ثم flm). سؤالك وملخص عربيتك (من غير الاسم أو الشاسيه أو اللوحة أو الموقع) بيتبعتوا لجهات خارجية ممكن تسجّله. أسئلة كتير بتتجاوب من الجهاز من غير ما تتبعت. مطفي = إجابات محلية بس.',
   'setup.plate': 'رقم اللوحة (اختياري)',
   'setup.license': 'انتهاء الرخصة (اختياري)',
   'setup.registration': 'انتهاء الترخيص (اختياري)',

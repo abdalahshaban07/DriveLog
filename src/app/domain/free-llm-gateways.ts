@@ -20,43 +20,102 @@
 
 export type FreeLlmGateway = {
   readonly id: string;
+  /** Shown under the answer so the user knows who replied. */
+  readonly label: string;
   readonly baseUrl: string;
   readonly model: string;
   /** Keyless today; kept for a future keyed provider. Sent only to its own host. */
   readonly apiKey?: string;
+  /** Only Pollinations understands the low-effort reasoning hint; others get a plain request. */
+  readonly reasoningHint: boolean;
+  /** Quota refusal without a Retry-After header: how long to leave this provider alone. */
+  readonly defaultCooldownSec: number;
 };
 
+/**
+ * Fallback order: Pollinations (best Arabic), then ch.at, then flm. A quota
+ * refusal moves straight to the next provider instead of making the user wait.
+ * ch.at and flm are community services with no SLA; flm allows 60 requests a
+ * minute and 20k a day per IP and may add a reasoning field, which we never read.
+ */
 export const FREE_LLM_GATEWAYS: readonly FreeLlmGateway[] = [
   {
     id: 'pollinations',
+    label: 'Pollinations',
     baseUrl: 'https://text.pollinations.ai/openai',
     model: 'openai-fast',
+    reasoningHint: true,
+    defaultCooldownSec: 45,
+  },
+  {
+    id: 'chat',
+    label: 'ch.at',
+    baseUrl: 'https://ch.at/v1',
+    model: 'gpt-4o',
+    reasoningHint: false,
+    defaultCooldownSec: 60,
+  },
+  {
+    id: 'flm',
+    label: 'flm',
+    baseUrl: 'https://flm.stonech.at/v1',
+    model: 'gpt-4o',
+    reasoningHint: false,
+    defaultCooldownSec: 60,
   },
 ] as const;
 
-const CURSOR_KEY = 'drivelog.free-llm.cursor';
+const COOLDOWN_KEY = 'drivelog.free-llm.cooldowns.v1';
+/** A provider that errored or timed out rests briefly before we try it again. */
+export const OUTAGE_COOLDOWN_SEC = 120;
 
-export function readFreeLlmCursor(storage: Storage | null): number {
-  if (!storage) return 0;
-  const n = Number(storage.getItem(CURSOR_KEY));
-  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
+type Cooldowns = Record<string, number>;
+
+function readCooldowns(storage: Storage | null): Cooldowns {
+  if (!storage) return {};
+  try {
+    const parsed = JSON.parse(storage.getItem(COOLDOWN_KEY) ?? '{}') as unknown;
+    return parsed && typeof parsed === 'object' ? (parsed as Cooldowns) : {};
+  } catch {
+    return {};
+  }
 }
 
-export function bumpFreeLlmCursor(storage: Storage | null): void {
+/** Seconds left on a provider's cooldown, 0 when it is free to ask. */
+export function cooldownLeftSec(storage: Storage | null, id: string, now = Date.now()): number {
+  const until = Number(readCooldowns(storage)[id]);
+  if (!Number.isFinite(until)) return 0;
+  return Math.max(0, Math.ceil((until - now) / 1000));
+}
+
+export function setCooldown(
+  storage: Storage | null,
+  id: string,
+  seconds: number,
+  now = Date.now(),
+): void {
   if (!storage) return;
   try {
-    storage.setItem(CURSOR_KEY, String(readFreeLlmCursor(storage) + 1));
+    const next: Cooldowns = {};
+    for (const [key, until] of Object.entries(readCooldowns(storage))) {
+      if (Number(until) > now) next[key] = Number(until);
+    }
+    next[id] = now + Math.max(1, seconds) * 1000;
+    storage.setItem(COOLDOWN_KEY, JSON.stringify(next));
   } catch {
     // private mode / quota
   }
 }
 
-/** Every model, starting at `start` and wrapping. A dead host is skipped by the caller. */
-export function freeGatewaysFrom(start: number): readonly FreeLlmGateway[] {
-  const n = FREE_LLM_GATEWAYS.length;
-  if (n === 0) return [];
-  const i = ((Math.floor(start) % n) + n) % n;
-  return [...FREE_LLM_GATEWAYS.slice(i), ...FREE_LLM_GATEWAYS.slice(0, i)];
+export function clearCooldown(storage: Storage | null, id: string): void {
+  if (!storage) return;
+  try {
+    const next = readCooldowns(storage);
+    delete next[id];
+    storage.setItem(COOLDOWN_KEY, JSON.stringify(next));
+  } catch {
+    // private mode / quota
+  }
 }
 
 const REMOTE_DOWN_KEY = 'drivelog.assistant.remote-down';
@@ -108,7 +167,13 @@ const REPLY_CACHE_KEY = 'drivelog.assistant.replies.v1';
 export const REPLY_CACHE_TTL_MS = 60 * 60 * 1000;
 const REPLY_CACHE_MAX = 8;
 
-type CachedReply = { readonly k: string; readonly t: number; readonly text: string };
+type CachedReply = {
+  readonly k: string;
+  readonly t: number;
+  readonly text: string;
+  /** Gateway id that wrote the answer, shown under it on a cache hit too. */
+  readonly p?: string;
+};
 
 /** Stable key for one exact prompt, so changed car data never reuses an answer. */
 export function replyCacheKey(
@@ -128,6 +193,14 @@ export function readCachedReply(
   key: string,
   now = Date.now(),
 ): string | null {
+  return readCachedEntry(storage, key, now)?.text ?? null;
+}
+
+export function readCachedEntry(
+  storage: Storage | null,
+  key: string,
+  now = Date.now(),
+): { text: string; provider?: string } | null {
   if (!storage) return null;
   try {
     const list = JSON.parse(storage.getItem(REPLY_CACHE_KEY) ?? '[]') as CachedReply[];
@@ -139,7 +212,7 @@ export function readCachedReply(
         typeof entry.text === 'string' &&
         now - entry.t <= REPLY_CACHE_TTL_MS,
     );
-    return hit ? hit.text : null;
+    return hit ? { text: hit.text, provider: hit.p } : null;
   } catch {
     return null;
   }
@@ -150,13 +223,14 @@ export function writeCachedReply(
   key: string,
   text: string,
   now = Date.now(),
+  provider?: string,
 ): void {
   if (!storage) return;
   try {
     const raw = storage.getItem(REPLY_CACHE_KEY);
     const parsed = raw ? (JSON.parse(raw) as CachedReply[]) : [];
     const list = Array.isArray(parsed) ? parsed : [];
-    const next = [{ k: key, t: now, text }, ...list.filter((entry) => entry && entry.k !== key)];
+    const next = [{ k: key, t: now, text, p: provider }, ...list.filter((entry) => entry && entry.k !== key)];
     storage.setItem(REPLY_CACHE_KEY, JSON.stringify(next.slice(0, REPLY_CACHE_MAX)));
   } catch {
     // private mode / quota

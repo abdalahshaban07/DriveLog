@@ -920,6 +920,7 @@ export const en = {
   'assistant.remoteDown':
     'The online coach is unreachable right now — answers stay on-device until it is back.',
   'assistant.sourceRemote': 'Answer from free online coach.',
+  'assistant.sourceRemoteBy': 'Answer from free online coach ({provider}).',
   'assistant.privacy':
     'Online mode sends a short vehicle summary (no VIN) to a free public gateway; it may be logged. Turn off in Settings to stay on-device.',
   'assistant.openSettings': 'Open Settings',
@@ -974,7 +975,7 @@ export const en = {
   'settings.assistantBaseUrl': 'API base URL',
   'settings.assistantModel': 'Model',
   'settings.assistantHint':
-    'Uses free public gateways with no API key. Vehicle summary may leave this device. Off = local answers only.',
+    'Uses free public gateways with no API key (Pollinations, then ch.at, then flm). Your question and a summary of your car (no name, VIN, plate or location) are sent to these third parties, which may log them. Many questions are answered on the device and never sent. Off = local answers only.',
   'setup.plate': 'Plate number (optional)',
   'setup.license': 'License expiry (optional)',
   'setup.registration': 'Registration expiry (optional)',

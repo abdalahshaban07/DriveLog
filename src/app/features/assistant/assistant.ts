@@ -1,3 +1,4 @@
+import { FREE_LLM_GATEWAYS } from '../../domain/free-llm-gateways';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -68,6 +69,8 @@ export class AssistantPage {
   readonly busy = signal(false);
   readonly reply = signal<ShownReply | null>(null);
   readonly statusKey = signal<MsgKey | null>(null);
+  /** Label of the provider that wrote the current online answer. */
+  readonly answeredBy = signal('');
   /** Seconds the online coach asked us to wait before it can answer. */
   readonly waitSec = signal(0);
   /** Ticks the wait line down every second so it never looks frozen. */
@@ -245,6 +248,7 @@ export class AssistantPage {
     if (this.busy()) return;
     this.busy.set(true);
     this.statusKey.set(null);
+    this.answeredBy.set('');
     this.reply.set(null);
 
     const read = forced ?? (intentHint
@@ -289,6 +293,9 @@ export class AssistantPage {
       } else if (!this.online()) {
         this.statusKey.set('assistant.localOnly');
       } else if (reply.source === 'remote') {
+        this.answeredBy.set(
+          FREE_LLM_GATEWAYS.find((g) => g.id === reply.provider)?.label ?? '',
+        );
         this.statusKey.set('assistant.sourceRemote');
         this.remoteDown.set(false);
       } else {

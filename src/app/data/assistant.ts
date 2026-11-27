@@ -1,12 +1,14 @@
 import {
   ASSISTANT_HISTORY_LIMIT,
   ASSISTANT_THINKING_MAX_TOKENS,
-  bumpFreeLlmCursor,
-  freeGatewaysFrom,
+  clearCooldown,
+  cooldownLeftSec,
+  FREE_LLM_GATEWAYS,
+  OUTAGE_COOLDOWN_SEC,
   QUOTA_HTTP_STATUSES,
-  readCachedReply,
-  readFreeLlmCursor,
+  readCachedEntry,
   replyCacheKey,
+  setCooldown,
   writeAssistantRemoteDown,
   writeCachedReply,
   type FreeLlmGateway,
@@ -140,86 +142,117 @@ function isComputedLocal(read: AdvisorRead): boolean {
 
 type ChainResult = {
   reply: string | null;
-  /** A gateway answered with a real failure (5xx, garbage). 429 busy is not down. */
+  /** Gateway id that wrote the reply. */
+  provider: string | null;
+  /** A gateway answered with a real failure (5xx, garbage, timeout) and none was merely busy. */
   sawDown: boolean;
-  /** Longest 429 cooldown seen, when every attempt was refused as busy. */
+  /** Shortest wait until a busy provider is free again, when every attempt was refused as busy. */
   retryAfterSec: number | null;
 };
+
+const downKey = (id: string) => `${id}:down`;
 
 async function tryChain(
   gateways: readonly FreeLlmGateway[],
   messages: readonly OpenAiChatMessage[],
   lang: 'en' | 'ar',
+  storage: Storage | null,
   signal?: AbortSignal,
   onWait?: WaitNotice,
 ): Promise<ChainResult> {
-  const skipBaseUrls = new Set<string>();
   const startedAt = Date.now();
-  let sawDown = false;
-  let retryAfterSec: number | null = null;
-  let reply: string | null = null;
-  let badReplies = 0;
   let quotaWaits = 0;
+  let outage = false;
+  let busyLeft: number | null = null;
 
-  for (let i = 0; i < gateways.length; i++) {
-    const gw = gateways[i]!;
-    if (signal?.aborted || skipBaseUrls.has(gw.baseUrl)) continue;
-    if (Date.now() - startedAt >= CHAIN_BUDGET_MS) break;
-    const controller = new AbortController();
-    const onAbort = () => controller.abort();
-    signal?.addEventListener('abort', onAbort);
-    const timer = setTimeout(() => controller.abort(), GATEWAY_TIMEOUT_MS);
-    try {
-      const raw = await fetchOpenAiChat({
-        baseUrl: gw.baseUrl,
-        model: gw.model,
-        messages,
-        apiKey: gw.apiKey,
-        maxTokens: ASSISTANT_THINKING_MAX_TOKENS,
-        reasoningEffort: 'low',
-        signal: controller.signal,
-      });
-      const text = usableCoachText(raw, lang);
-      if (text) {
-        reply = text;
-        break;
-      }
-      // A garbled or empty answer is not an outage: ask once more, then stay quiet.
-      if (badReplies < MAX_BAD_REPLIES) {
-        badReplies++;
-        i--;
+  for (;;) {
+    busyLeft = null;
+    outage = false;
+    for (const gw of gateways) {
+      if (signal?.aborted) return { reply: null, provider: null, sawDown: false, retryAfterSec: null };
+      if (Date.now() - startedAt >= CHAIN_BUDGET_MS) break;
+      const busy = cooldownLeftSec(storage, gw.id);
+      if (busy > 0) {
+        busyLeft = Math.min(busyLeft ?? busy, busy);
         continue;
       }
-    } catch (err) {
-      if (signal?.aborted) break;
-      if (err instanceof OpenAiChatError && err.code === 'network') {
-        skipBaseUrls.add(gw.baseUrl);
-      } else if (err instanceof OpenAiChatError && err.status != null) {
-        if (QUOTA_HTTP_STATUSES.includes(err.status)) {
-          // Free tiers answer a quota refusal with 402 + Retry-After. That is
-          // "busy for N seconds", not an outage: wait it out, then ask again.
-          const wait = Math.ceil(err.retryAfter ?? 45);
-          retryAfterSec = Math.max(retryAfterSec ?? 0, wait);
-          if (wait <= RETRY_WAIT_CAP_S && quotaWaits < MAX_QUOTA_WAITS) {
-            quotaWaits++;
-            onWait?.(wait + WAIT_BUFFER_S);
-            await waitSeconds(wait + WAIT_BUFFER_S, signal);
-            i--; // same gateway, one retry after its cooldown
+      if (cooldownLeftSec(storage, downKey(gw.id)) > 0) {
+        outage = true;
+        continue;
+      }
+      let badReplies = 0;
+      for (;;) {
+        const controller = new AbortController();
+        const onAbort = () => controller.abort();
+        signal?.addEventListener('abort', onAbort);
+        const timer = setTimeout(() => controller.abort(), GATEWAY_TIMEOUT_MS);
+        try {
+          const raw = await fetchOpenAiChat({
+            baseUrl: gw.baseUrl,
+            model: gw.model,
+            messages,
+            apiKey: gw.apiKey,
+            maxTokens: ASSISTANT_THINKING_MAX_TOKENS,
+            reasoningEffort: gw.reasoningHint ? 'low' : undefined,
+            signal: controller.signal,
+          });
+          const text = usableCoachText(raw, lang);
+          if (text) {
+            clearCooldown(storage, gw.id);
+            clearCooldown(storage, downKey(gw.id));
+            return { reply: text, provider: gw.id, sawDown: false, retryAfterSec: null };
+          }
+          // A garbled or empty answer is not an outage: ask once more, then next provider.
+          if (badReplies < MAX_BAD_REPLIES) {
+            badReplies++;
             continue;
           }
-        } else {
-          // A real outage replaces the quota hint: never report stale seconds.
-          sawDown = true;
-          retryAfterSec = null;
+        } catch (err) {
+          if (signal?.aborted) {
+            return { reply: null, provider: null, sawDown: false, retryAfterSec: null };
+          }
+          if (
+            err instanceof OpenAiChatError &&
+            err.status != null &&
+            QUOTA_HTTP_STATUSES.includes(err.status)
+          ) {
+            // Free tiers answer a quota refusal with 402/429 plus Retry-After. The header
+            // undershoots the real window, so pad it, and move on to the next provider now.
+            const wait = Math.ceil(err.retryAfter ?? gw.defaultCooldownSec) + WAIT_BUFFER_S;
+            setCooldown(storage, gw.id, wait);
+            busyLeft = Math.min(busyLeft ?? wait, wait);
+          } else {
+            setCooldown(storage, downKey(gw.id), OUTAGE_COOLDOWN_SEC);
+            outage = true;
+          }
+        } finally {
+          clearTimeout(timer);
+          signal?.removeEventListener('abort', onAbort);
         }
+        break;
       }
-    } finally {
-      clearTimeout(timer);
-      signal?.removeEventListener('abort', onAbort);
     }
+    // Every provider refused. Pollinations frees up in under a minute: wait that out
+    // once or twice rather than hand the user a local answer.
+    if (
+      busyLeft != null &&
+      busyLeft <= RETRY_WAIT_CAP_S + WAIT_BUFFER_S &&
+      quotaWaits < MAX_QUOTA_WAITS &&
+      Date.now() - startedAt + busyLeft * 1000 < CHAIN_BUDGET_MS
+    ) {
+      quotaWaits++;
+      onWait?.(busyLeft);
+      await waitSeconds(busyLeft, signal);
+      continue;
+    }
+    break;
   }
-
-  return { reply, sawDown, retryAfterSec };
+  return {
+    reply: null,
+    provider: null,
+    sawDown: outage && busyLeft == null,
+    retryAfterSec: busyLeft,
+  };
 }
 
 function coachMessages(
@@ -237,6 +270,8 @@ function coachMessages(
 
 export type FreeChainReply = {
   readonly text: string | null;
+  /** Gateway id that answered (also on a cache hit), for the "answered by" line. */
+  readonly provider?: string | null;
   /** Set when every gateway refused as busy (HTTP 402 quota or 429). */
   readonly retryAfterSec: number | null;
 };
@@ -250,25 +285,18 @@ export async function fetchFreeChain(
 ): Promise<FreeChainReply> {
   const storage = typeof localStorage !== 'undefined' ? localStorage : null;
   const cacheKey = replyCacheKey(lang, messages);
-  const cached = readCachedReply(storage, cacheKey);
-  if (cached) return { text: cached, retryAfterSec: null };
-  const chain = await tryChain(
-    freeGatewaysFrom(readFreeLlmCursor(storage)),
-    messages,
-    lang,
-    signal,
-    onWait,
-  );
-  bumpFreeLlmCursor(storage);
+  const cached = readCachedEntry(storage, cacheKey);
+  if (cached) return { text: cached.text, provider: cached.provider ?? null, retryAfterSec: null };
+  const chain = await tryChain(FREE_LLM_GATEWAYS, messages, lang, storage, signal, onWait);
 
   if (chain.reply) {
     recordRemoteAssistantCall();
     writeAssistantRemoteDown(storage, false);
-    writeCachedReply(storage, cacheKey, chain.reply);
+    writeCachedReply(storage, cacheKey, chain.reply, Date.now(), chain.provider ?? undefined);
   } else if (chain.sawDown) {
     writeAssistantRemoteDown(storage, true);
   }
-  return { text: chain.reply, retryAfterSec: chain.retryAfterSec };
+  return { text: chain.reply, provider: chain.provider, retryAfterSec: chain.retryAfterSec };
 }
 
 async function tryRemoteChat(
@@ -342,7 +370,9 @@ export async function fetchChatReply(
       history,
       onWait,
     );
-    if (remote.text) return { text: remote.text, source: 'remote' };
+    if (remote.text) {
+      return { text: remote.text, source: 'remote', provider: remote.provider ?? undefined };
+    }
     if (remote.retryAfterSec != null) {
       return { text: asMsg('assistant.busy' as MsgKey, { n: remote.retryAfterSec }), source: 'local' };
     }
