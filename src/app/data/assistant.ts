@@ -37,8 +37,8 @@ const GATEWAY_TIMEOUT_MS = 15_000;
 const CHAIN_BUDGET_MS = 90_000;
 /** Wait out the free tier's 45s cooldown instead of dropping to a local answer. */
 const RETRY_WAIT_CAP_S = 50;
-/** The header rounds down; a retry a fraction early burns the whole window again. */
-const WAIT_BUFFER_S = 3;
+/** The header rounds down and counts from the refused attempt, not the last reply. */
+const WAIT_BUFFER_S = 12;
 /** One clean answer or none: a garbled reply gets a single second chance. */
 const MAX_BAD_REPLIES = 1;
 
