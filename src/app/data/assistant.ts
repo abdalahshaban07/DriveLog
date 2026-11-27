@@ -33,12 +33,14 @@ import { fetchOpenAiChat, OpenAiChatError, type OpenAiChatMessage } from './open
 
 /** Mobile networks answer in 6-9s; 8s cut real replies off. */
 const GATEWAY_TIMEOUT_MS = 15_000;
-/** Total budget for one question's chain, including one quota wait. */
-const CHAIN_BUDGET_MS = 90_000;
+/** Total budget for one question's chain, including its quota waits. */
+const CHAIN_BUDGET_MS = 140_000;
 /** Wait out the free tier's 45s cooldown instead of dropping to a local answer. */
 const RETRY_WAIT_CAP_S = 50;
 /** The header rounds down and counts from the refused attempt, not the last reply. */
 const WAIT_BUFFER_S = 12;
+/** Two cooldowns, so a question queued behind one other lands without losing the answer. */
+const MAX_QUOTA_WAITS = 2;
 /** One clean answer or none: a garbled reply gets a single second chance. */
 const MAX_BAD_REPLIES = 1;
 
@@ -145,12 +147,12 @@ async function tryChain(
   onWait?: WaitNotice,
 ): Promise<ChainResult> {
   const skipBaseUrls = new Set<string>();
-  const retriedBusy = new Set<string>();
   const startedAt = Date.now();
   let sawDown = false;
   let retryAfterSec: number | null = null;
   let reply: string | null = null;
   let badReplies = 0;
+  let quotaWaits = 0;
 
   for (let i = 0; i < gateways.length; i++) {
     const gw = gateways[i]!;
@@ -191,8 +193,8 @@ async function tryChain(
           // "busy for N seconds", not an outage: wait it out, then ask again.
           const wait = Math.ceil(err.retryAfter ?? 45);
           retryAfterSec = Math.max(retryAfterSec ?? 0, wait);
-          if (wait <= RETRY_WAIT_CAP_S && !retriedBusy.has(gw.baseUrl)) {
-            retriedBusy.add(gw.baseUrl);
+          if (wait <= RETRY_WAIT_CAP_S && quotaWaits < MAX_QUOTA_WAITS) {
+            quotaWaits++;
             onWait?.(wait + WAIT_BUFFER_S);
             await waitSeconds(wait + WAIT_BUFFER_S, signal);
             i--; // same gateway, one retry after its cooldown

@@ -196,17 +196,24 @@ describe('fetchChatReply', () => {
   });
 
   it('records one rate hit when HTTP 429 is followed by a reply', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(httpStatus(429, '0'))
-      .mockResolvedValueOnce(okChat('remote-ok'));
-    vi.stubGlobal('fetch', fetchMock);
+    vi.useFakeTimers();
+    try {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(httpStatus(429, '0'))
+        .mockResolvedValueOnce(okChat('remote-ok'));
+      vi.stubGlobal('fetch', fetchMock);
 
-    const reply = await fetchChatReply(mockDb(true), 'fuel', 'en', (k) => k);
+      const pending = fetchChatReply(mockDb(true), 'fuel', 'en', (k) => k);
+      await vi.advanceTimersByTimeAsync(13_000);
+      const reply = await pending;
 
-    expect(reply).toEqual({ text: 'remote-ok', source: 'remote' });
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(hourCount()).toBe(1);
+      expect(reply).toEqual({ text: 'remote-ok', source: 'remote' });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(hourCount()).toBe(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('skips remote when online is off', async () => {
