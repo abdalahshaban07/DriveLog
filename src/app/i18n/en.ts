@@ -145,6 +145,7 @@ export const en = {
   'fillUp.err.distanceLow': 'Distance cannot be less than the logged minimum',
   'fillUp.err.distance': 'Enter a valid distance greater than zero',
   'fillUp.warn.distanceHigh': 'Unusually high distance — double-check before saving',
+  'fillUp.warn.saveAnyway': 'Save anyway',
   'fillUp.warn.overCapacity': 'Liters exceed your tank capacity',
   'maint.title': 'Maintenance',
   'maint.add': 'Add maintenance',

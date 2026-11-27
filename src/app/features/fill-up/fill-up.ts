@@ -105,6 +105,8 @@ export class FillUpPage {
   readonly saving = signal(false);
   readonly editId = signal<string | null>(null);
   readonly confirmDelete = signal(false);
+  readonly confirmDistanceHigh = signal(false);
+  private distanceHighAcked = false;
   readonly locationBusy = signal(false);
   readonly locationError = signal('');
   readonly nearbyStations = signal<NearbyPoi[]>([]);
@@ -503,6 +505,7 @@ export class FillUpPage {
 
   onDistanceChange(): void {
     this.distanceTouched.set(true);
+    this.distanceHighAcked = false;
     this.distanceError.set('');
     this.distanceWarn.set('');
     const car = this.db.car();
@@ -645,6 +648,10 @@ export class FillUpPage {
     if (!ok) {
       return;
     }
+    if (distCheck.warnKey && !this.distanceHighAcked) {
+      this.confirmDistanceHigh.set(true);
+      return;
+    }
 
     const odometer = computeOdometerFromDistance(
       car,
@@ -745,6 +752,12 @@ export class FillUpPage {
     } finally {
       this.saving.set(false);
     }
+  }
+
+  confirmDistanceSave(): void {
+    this.distanceHighAcked = true;
+    this.confirmDistanceHigh.set(false);
+    void this.save();
   }
 
   dismissNextDueBanner(): void {

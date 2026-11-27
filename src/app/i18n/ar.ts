@@ -146,6 +146,7 @@ export const ar: Record<MsgKey, string> = {
   'fillUp.err.distanceLow': 'المسافة مينفعش تبقى أقل من الحد المسجّل',
   'fillUp.err.distance': 'دخل مسافة صح أكبر من صفر',
   'fillUp.warn.distanceHigh': 'مسافة عالية مش معتادة — راجع قبل ما تحفظ',
+  'fillUp.warn.saveAnyway': 'احفظ برضه',
   'fillUp.warn.overCapacity': 'اللترات أكتر من سعة التنك',
   'maint.title': 'صيانة',
   'maint.add': 'ضيف صيانة',

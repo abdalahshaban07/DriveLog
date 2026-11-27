@@ -339,6 +339,16 @@
     />
   </div>
 
+  @if (confirmDistanceHigh()) {
+    <app-confirm-bar
+      [message]="distanceWarn()"
+      [confirmLabel]="i18n.t('fillUp.warn.saveAnyway')"
+      [cancelLabel]="i18n.t('common.cancel')"
+      [destructive]="false"
+      (confirmed)="confirmDistanceSave()"
+      (cancelled)="confirmDistanceHigh.set(false)"
+    />
+  }
   @if (confirmDelete()) {
     <app-confirm-bar
       [message]="logMode() === 'charge' ? i18n.t('charge.deleteWarn') : i18n.t('fillUp.deleteWarn')"
