@@ -98,6 +98,25 @@ export async function main({ now = process.env.FAKE_NOW ? new Date(process.env.F
       continue;
     }
     const device = parseDevice({ tz: str(fields.tz), reminders: str(fields.reminders), sent: str(fields.sent) });
+    if (process.env.TEST_PUSH === '2') {
+      if (!id.startsWith(process.env.ONLY_DEVICE ?? '#')) { continue; }
+      let list = [];
+      try { list = JSON.parse(str(fields.reminders) ?? '[]'); } catch {}
+      list.sort((a, b) => a.fireOn.localeCompare(b.fireOn));
+      console.log(`today=${now.toISOString().slice(0, 10)} tz=${str(fields.tz)} count=${list.length}`);
+      for (const r of list) {
+        console.log(`R ${r.id.startsWith('maint-') ? 'maint' : r.id.split('.')[0]} ${r.id.split('.')[1]} fire=${r.fireOn} expire=${r.expireOn}`);
+      }
+      const pick = list.find((r) => r.id.startsWith('maint-') && r.id.includes('.soon.')) ?? list[0];
+      if (pick) {
+        try {
+          await send(sub, JSON.stringify({ notification: { title: pick.title, body: pick.body, tag: 'sample-' + pick.id, icon: 'icons/icon-192.png' } }));
+          console.log(`sample sent kind=${pick.id.split('.')[0].slice(0, 5)}`);
+          summary.sent += 1;
+        } catch (err) { console.log(`sample failed status=${err?.statusCode}`); }
+      }
+      continue;
+    }
     if (process.env.TEST_PUSH === '1') {
       let host = '?';
       try { host = new URL(sub.endpoint).host; } catch {}

@@ -14,6 +14,10 @@ on:
         description: 'Send a test notification to every subscribed device'
         type: boolean
         default: false
+      only_device:
+        description: 'Debug: print reminders and send one sample to the device id prefix'
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -45,6 +49,7 @@ jobs:
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
           VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
           NODE_PATH: ${{ runner.temp }}/wp/node_modules
-          TEST_PUSH: ${{ inputs.test_push && '1' || '0' }}
+          TEST_PUSH: ${{ inputs.only_device != '' && '2' || (inputs.test_push && '1' || '0') }}
+          ONLY_DEVICE: ${{ inputs.only_device }}
           DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
         run: node scripts/push-send.mjs
