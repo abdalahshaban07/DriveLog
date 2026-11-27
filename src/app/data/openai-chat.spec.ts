@@ -174,7 +174,7 @@ describe('openai-chat', () => {
     );
     await expect(
       fetchOpenAiChat({
-        baseUrl: 'https://api.unorouter.com/v1',
+        baseUrl: 'https://llm.example.com/v1',
         model: 'k2-horizon:free',
         apiKey: 'sk-test',
         messages: [{ role: 'user', content: 'hi' }],

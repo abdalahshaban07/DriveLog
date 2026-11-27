@@ -1,31 +1,33 @@
 /**
- * UnoRouter free chat models behind one app key. Each model allows about one
- * request per minute, so a question walks the list from the saved cursor and
- * stops at the first usable reply.
+ * Keyless chat gateways for the online assistant. No shared app key: each
+ * provider rate-limits per visitor IP, so one install cannot burn a global
+ * cap and there is no key to leak or get revoked. A question walks the list
+ * from the saved cursor and stops at the first usable reply.
  *
- * ponytail: static list picked 2026-10-12 from the free text catalog (success
- * at least 85%, uptime at least 95%). Swap an id when a model leaves the catalog.
+ * ponytail: providers picked 2026-11-27 from live probes (stillworks hourly
+ * checks plus direct calls): Pollinations answered 168/168, OVH ~44%. Swap an
+ * entry when a provider dies or starts asking for a key.
  */
 
 export type FreeLlmGateway = {
   readonly id: string;
   readonly baseUrl: string;
   readonly model: string;
+  /** Keyless today; kept for a future keyed provider. Sent only to its own host. */
+  readonly apiKey?: string;
 };
 
-const UNOROUTER = 'https://api.unorouter.com/v1';
-
-/** Shared app key. Shipped in the client; every install uses the same minute cap. */
-export const FREE_LLM_API_KEY =
-  'sk-r4RRw1RTFukrlPHKFieeVgMGbhDezTzMyXmYMqSt5MDbcS9E';
-
 export const FREE_LLM_GATEWAYS: readonly FreeLlmGateway[] = [
-  { id: 'k2-horizon', baseUrl: UNOROUTER, model: 'k2-horizon:free' },
-  { id: 'typhoon', baseUrl: UNOROUTER, model: 'typhoon-v2.5-30b-a3b-instruct:free' },
-  { id: 'nemotron-super', baseUrl: UNOROUTER, model: 'nemotron-3-super-120b-a12b:free' },
-  { id: 'gpt-oss-20b', baseUrl: UNOROUTER, model: 'gpt-oss-20b:free' },
-  { id: 'nemotron-lightning', baseUrl: UNOROUTER, model: 'nemotron-3.5-lightning-30b-a3b:free' },
-  { id: 'apertus', baseUrl: UNOROUTER, model: 'apertus-v1.5-70b:free' },
+  {
+    id: 'pollinations',
+    baseUrl: 'https://text.pollinations.ai/openai',
+    model: 'openai-fast',
+  },
+  {
+    id: 'ovh',
+    baseUrl: 'https://oai.endpoints.kepler.ai.cloud.ovh.net/v1',
+    model: 'gpt-oss-20b',
+  },
 ] as const;
 
 const CURSOR_KEY = 'drivelog.free-llm.cursor';
@@ -51,6 +53,31 @@ export function freeGatewaysFrom(start: number): readonly FreeLlmGateway[] {
   if (n === 0) return [];
   const i = ((Math.floor(start) % n) + n) % n;
   return [...FREE_LLM_GATEWAYS.slice(i), ...FREE_LLM_GATEWAYS.slice(0, i)];
+}
+
+const REMOTE_DOWN_KEY = 'drivelog.assistant.remote-down';
+
+/** Sticky "online is down" flag: set on a failed HTTP attempt, cleared on the next good reply. */
+export function readAssistantRemoteDown(storage: Storage | null): boolean {
+  if (!storage) return false;
+  try {
+    return storage.getItem(REMOTE_DOWN_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function writeAssistantRemoteDown(storage: Storage | null, down: boolean): void {
+  if (!storage) return;
+  try {
+    if (down) {
+      storage.setItem(REMOTE_DOWN_KEY, '1');
+    } else {
+      storage.removeItem(REMOTE_DOWN_KEY);
+    }
+  } catch {
+    // private mode / quota
+  }
 }
 
 export const ASSISTANT_MAX_TOKENS = 220;

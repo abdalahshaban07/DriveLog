@@ -901,6 +901,8 @@ export const en = {
   'assistant.empty': 'Coach returned an empty reply.',
   'assistant.network': 'Could not reach the coach — showing a local answer.',
   'assistant.localOnly': 'Online assistant is off — using on-device answers.',
+  'assistant.remoteDown':
+    'The online coach is unreachable right now — answers stay on-device until it is back.',
   'assistant.sourceRemote': 'Answer from free online coach.',
   'assistant.privacy':
     'Online mode sends a short vehicle summary (no VIN) to a free public gateway; it may be logged. Turn off in Settings to stay on-device.',

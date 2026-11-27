@@ -13,6 +13,10 @@
       {{ i18n.t('assistant.localOnly') }}
       <a routerLink="/settings">{{ i18n.t('assistant.openSettings') }}</a>
     </p>
+  } @else if (remoteDown()) {
+    <p class="assistant__status" role="status" aria-live="polite">
+      {{ i18n.t('assistant.remoteDown') }}
+    </p>
   }
 
   <section class="ask" [attr.aria-label]="i18n.t('assistant.faqTitle')">

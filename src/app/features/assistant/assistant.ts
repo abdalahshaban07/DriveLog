@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { fetchChatReply, isAssistantOnline, type ChatMessage } from '../../data/assistant';
+import { readAssistantRemoteDown } from '../../domain/free-llm-gateways';
 import { Db } from '../../data/db';
 import {
   ADVISOR_FAQ,
@@ -65,6 +66,10 @@ export class AssistantPage {
   readonly busy = signal(false);
   readonly reply = signal<ShownReply | null>(null);
   readonly statusKey = signal<MsgKey | null>(null);
+  /** Sticky while the online gateways fail on HTTP; cleared by the next good reply. */
+  readonly remoteDown = signal(
+    readAssistantRemoteDown(typeof localStorage !== 'undefined' ? localStorage : null),
+  );
   private readonly groupId = signal<AdvisorFaqGroup>('spend');
   /** Last answered intent, so "والزيت؟" can keep or shift that slot. */
   private readonly carry = signal<AdvisorRead | null>(null);
@@ -260,11 +265,15 @@ export class AssistantPage {
       if (forced || reply.card) {
         this.statusKey.set(null);
       } else if (reply.remoteFailed) {
+        this.remoteDown.set(
+          readAssistantRemoteDown(typeof localStorage !== 'undefined' ? localStorage : null),
+        );
         this.statusKey.set('assistant.network');
       } else if (!this.online()) {
         this.statusKey.set('assistant.localOnly');
       } else if (reply.source === 'remote') {
         this.statusKey.set('assistant.sourceRemote');
+        this.remoteDown.set(false);
       } else {
         this.statusKey.set(null);
       }

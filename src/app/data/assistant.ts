@@ -1,10 +1,10 @@
 import {
   ASSISTANT_HISTORY_LIMIT,
   ASSISTANT_THINKING_MAX_TOKENS,
-  FREE_LLM_API_KEY,
   bumpFreeLlmCursor,
   freeGatewaysFrom,
   readFreeLlmCursor,
+  writeAssistantRemoteDown,
   type FreeLlmGateway,
 } from '../domain/free-llm-gateways';
 import {
@@ -144,7 +144,7 @@ async function tryChain(
         baseUrl: gw.baseUrl,
         model: gw.model,
         messages,
-        apiKey: FREE_LLM_API_KEY,
+        apiKey: gw.apiKey,
         maxTokens: ASSISTANT_THINKING_MAX_TOKENS,
         reasoningEffort: 'low',
         signal: controller.signal,
@@ -188,7 +188,7 @@ function coachMessages(
   ];
 }
 
-/** Walk the free-model list. One device slot after a reply or any HTTP status. */
+/** Walk the keyless gateway list. A device slot is spent only by a real reply. */
 export async function fetchFreeChain(
   lang: 'en' | 'ar',
   messages: readonly OpenAiChatMessage[],
@@ -203,8 +203,11 @@ export async function fetchFreeChain(
   );
   bumpFreeLlmCursor(storage);
 
-  if (chain.reply || chain.sawHttp) {
+  if (chain.reply) {
     recordRemoteAssistantCall();
+    writeAssistantRemoteDown(storage, false);
+  } else if (chain.sawHttp) {
+    writeAssistantRemoteDown(storage, true);
   }
   return chain.reply;
 }

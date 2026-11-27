@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ASSISTANT_THINKING_MAX_TOKENS,
-  FREE_LLM_API_KEY,
   FREE_LLM_GATEWAYS,
   freeGatewaysFrom,
+  readAssistantRemoteDown,
   readFreeLlmCursor,
 } from '../domain/free-llm-gateways';
 import { ASSISTANT_RATE_DAY, ASSISTANT_RATE_HOUR } from './assistant-rate-limit';
@@ -190,7 +190,10 @@ describe('fetchChatReply', () => {
 
     expect(reply.source).toBe('local');
     const urls = fetchMock.mock.calls.map((call) => String(call[0]));
-    expect(urls).toEqual(['https://api.unorouter.com/v1/chat/completions']);
+    expect(urls).toEqual([
+      'https://text.pollinations.ai/openai/chat/completions',
+      'https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/chat/completions',
+    ]);
     expect(reply.text.startsWith('L:')).toBe(true);
     expect(hourCount()).toBe(0);
   });
@@ -345,10 +348,10 @@ describe('fetchChatReply', () => {
     expect(modelAt(1)).toBe(freeGatewaysFrom(1)[0]!.model);
     expect(readFreeLlmCursor(localStorage)).toBe(2);
     const headers = (fetchMock.mock.calls[0]![1] as RequestInit).headers as Record<string, string>;
-    expect(headers['Authorization']).toBe(`Bearer ${FREE_LLM_API_KEY}`);
+    expect(headers['Authorization']).toBeUndefined();
   });
 
-  it('tries the next model on the same host after a timeout', async () => {
+  it('tries the next gateway after a timeout', async () => {
     const fetchMock = vi
       .fn()
       .mockRejectedValueOnce(Object.assign(new Error('aborted'), { name: 'AbortError' }))
@@ -359,9 +362,28 @@ describe('fetchChatReply', () => {
 
     expect(reply).toEqual({ text: 'remote-ok', source: 'remote' });
     expect(fetchMock.mock.calls.map((call) => String(call[0]))).toEqual([
-      'https://api.unorouter.com/v1/chat/completions',
-      'https://api.unorouter.com/v1/chat/completions',
+      'https://text.pollinations.ai/openai/chat/completions',
+      'https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/chat/completions',
     ]);
+  });
+
+  it('spends no device slot on dead gateways and keeps a sticky down flag', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(httpStatus(503));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const reply = await fetchChatReply(mockDb(true), 'fuel', 'en', (k) => k);
+
+    expect(reply.source).toBe('local');
+    expect(reply.remoteFailed).toBe(true);
+    expect(hourCount()).toBe(0);
+    expect(readAssistantRemoteDown(localStorage)).toBe(true);
+
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(okChat('remote-ok')));
+    const recovered = await fetchChatReply(mockDb(true), 'fuel again', 'en', (k) => k);
+
+    expect(recovered).toEqual({ text: 'remote-ok', source: 'remote' });
+    expect(readAssistantRemoteDown(localStorage)).toBe(false);
+    expect(hourCount()).toBe(1);
   });
 });
 

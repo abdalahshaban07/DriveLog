@@ -2,66 +2,57 @@ import { describe, expect, it } from 'vitest';
 import {
   ASSISTANT_MAX_TOKENS,
   ASSISTANT_THINKING_MAX_TOKENS,
-  FREE_LLM_API_KEY,
   FREE_LLM_GATEWAYS,
   bumpFreeLlmCursor,
   freeGatewaysFrom,
+  readAssistantRemoteDown,
   readFreeLlmCursor,
+  writeAssistantRemoteDown,
 } from './free-llm-gateways';
 
+function fakeStorage(): Storage {
+  const store = new Map<string, string>();
+  return {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => {
+      store.set(k, v);
+    },
+    removeItem: (k: string) => {
+      store.delete(k);
+    },
+    clear: () => store.clear(),
+    key: () => null,
+    length: 0,
+  } as Storage;
+}
+
 describe('free-llm-gateways', () => {
-  it('rotates every UnoRouter model from the cursor', () => {
-    expect(FREE_LLM_GATEWAYS.map((g) => g.id)).toEqual([
-      'k2-horizon',
-      'typhoon',
-      'nemotron-super',
-      'gpt-oss-20b',
-      'nemotron-lightning',
-      'apertus',
-    ]);
-    expect(FREE_LLM_GATEWAYS.map((g) => g.model)).toEqual([
-      'k2-horizon:free',
-      'typhoon-v2.5-30b-a3b-instruct:free',
-      'nemotron-3-super-120b-a12b:free',
-      'gpt-oss-20b:free',
-      'nemotron-3.5-lightning-30b-a3b:free',
-      'apertus-v1.5-70b:free',
-    ]);
-    expect(freeGatewaysFrom(0).map((g) => g.id)).toEqual([
-      'k2-horizon',
-      'typhoon',
-      'nemotron-super',
-      'gpt-oss-20b',
-      'nemotron-lightning',
-      'apertus',
-    ]);
-    expect(freeGatewaysFrom(4).map((g) => g.id)).toEqual([
-      'nemotron-lightning',
-      'apertus',
-      'k2-horizon',
-      'typhoon',
-      'nemotron-super',
-      'gpt-oss-20b',
-    ]);
-    expect(FREE_LLM_GATEWAYS.every((g) => g.baseUrl.includes('unorouter.com'))).toBe(true);
-    expect(FREE_LLM_API_KEY.startsWith('sk-')).toBe(true);
+  it('rotates every keyless gateway from the cursor', () => {
+    expect(FREE_LLM_GATEWAYS.map((g) => g.id)).toEqual(['pollinations', 'ovh']);
+    expect(FREE_LLM_GATEWAYS.map((g) => g.model)).toEqual(['openai-fast', 'gpt-oss-20b']);
+    expect(freeGatewaysFrom(0).map((g) => g.id)).toEqual(['pollinations', 'ovh']);
+    expect(freeGatewaysFrom(1).map((g) => g.id)).toEqual(['ovh', 'pollinations']);
+    expect(freeGatewaysFrom(2).map((g) => g.id)).toEqual(['pollinations', 'ovh']);
+    expect(FREE_LLM_GATEWAYS.every((g) => g.apiKey === undefined)).toBe(true);
     expect(ASSISTANT_MAX_TOKENS).toBe(220);
     expect(ASSISTANT_THINKING_MAX_TOKENS).toBeGreaterThan(ASSISTANT_MAX_TOKENS);
 
-    const store = new Map<string, string>();
-    const storage = {
-      getItem: (k: string) => store.get(k) ?? null,
-      setItem: (k: string, v: string) => {
-        store.set(k, v);
-      },
-      removeItem: () => undefined,
-      clear: () => store.clear(),
-      key: () => null,
-      length: 0,
-    } as Storage;
+    const storage = fakeStorage();
     expect(readFreeLlmCursor(storage)).toBe(0);
     bumpFreeLlmCursor(storage);
     expect(readFreeLlmCursor(storage)).toBe(1);
-    expect(freeGatewaysFrom(readFreeLlmCursor(storage))[0]!.id).toBe('typhoon');
+    expect(freeGatewaysFrom(readFreeLlmCursor(storage))[0]!.id).toBe('ovh');
+  });
+
+  it('keeps the remote-down flag sticky until a good reply clears it', () => {
+    const storage = fakeStorage();
+    expect(readAssistantRemoteDown(storage)).toBe(false);
+    writeAssistantRemoteDown(storage, true);
+    expect(readAssistantRemoteDown(storage)).toBe(true);
+    writeAssistantRemoteDown(storage, true);
+    expect(readAssistantRemoteDown(storage)).toBe(true);
+    writeAssistantRemoteDown(storage, false);
+    expect(readAssistantRemoteDown(storage)).toBe(false);
+    expect(readAssistantRemoteDown(null)).toBe(false);
   });
 });
