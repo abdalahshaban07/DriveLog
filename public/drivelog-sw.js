@@ -38,6 +38,10 @@ self.addEventListener('fetch', (event) => {
 
 // Tapping a reminder opens (or focuses) the app instead of doing nothing.
 self.addEventListener('notificationclick', (event) => {
+  // Push notifications carry their own click action: Angular's worker handles those.
+  if (event.notification.data && event.notification.data.onActionClick) {
+    return;
+  }
   event.notification.close();
   event.waitUntil(
     (async () => {

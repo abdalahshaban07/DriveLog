@@ -13,6 +13,7 @@ import { Db } from '../data/db';
 import { I18n } from '../i18n/i18n';
 import { HolidayReminder } from '../pwa/holiday-reminder';
 import { DueReminder } from '../pwa/due-reminder';
+import { PushSync } from '../pwa/push-sync';
 import { HealthReminder } from '../pwa/health-reminder';
 import { AutoBackup } from '../pwa/auto-backup';
 import { InstallPwa } from '../pwa/install-pwa';
@@ -35,6 +36,7 @@ export class Shell {
   private readonly holidayReminder = inject(HolidayReminder);
   private readonly healthReminder = inject(HealthReminder);
   private readonly dueReminder = inject(DueReminder);
+  private readonly pushSync = inject(PushSync);
   private readonly autoBackup = inject(AutoBackup);
 
   /** ponytail: browser online flag only — no probe ping */
@@ -92,10 +94,12 @@ export class Shell {
       let lastReminderRun = Date.now();
       runReminders();
       void this.autoBackup.check();
+      void this.pushSync.sync();
       // A kept-open PWA can cross midnight or the weekly boundary without a cold start.
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
           void this.autoBackup.check();
+          void this.pushSync.sync();
           if (Date.now() - lastReminderRun > 60 * 60 * 1000) {
             lastReminderRun = Date.now();
             runReminders();

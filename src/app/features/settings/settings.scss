@@ -333,3 +333,10 @@ button.line:active {
     transform: none;
   }
 }
+
+.line__hint {
+  display: block;
+  color: var(--muted);
+  font-size: var(--type-label);
+  font-weight: 400;
+}

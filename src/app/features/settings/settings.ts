@@ -16,6 +16,7 @@ import { I18n } from '../../i18n/i18n';
 import { AutoBackup } from '../../pwa/auto-backup';
 import { InstallPwa } from '../../pwa/install-pwa';
 import { Notify } from '../../pwa/notify';
+import { PushSync } from '../../pwa/push-sync';
 import { ConfirmBar } from '../../ui/confirm-bar';
 import { DateField } from '../../ui/date-field';
 import { NumericField } from '../../ui/numeric-field';
@@ -64,6 +65,9 @@ export class SettingsPage {
   readonly i18n = inject(I18n);
   readonly install = inject(InstallPwa);
   readonly notify = inject(Notify);
+  readonly push = inject(PushSync);
+  readonly pushOn = signal(this.push.isOn());
+  readonly pushFailed = signal(false);
   readonly db = inject(Db);
   readonly router = inject(Router);
   readonly autoBackup = inject(AutoBackup);
@@ -400,6 +404,21 @@ export class SettingsPage {
       await this.i18n.setLanguage(this.db.settings().language);
     } catch {
       this.importError.set(this.i18n.t('backup.failed'));
+    }
+  }
+
+  async onPushBackground(event: Event): Promise<void> {
+    const want = (event.target as HTMLInputElement).checked;
+    this.pushFailed.set(false);
+    if (want) {
+      const ok = await this.push.enable();
+      this.pushOn.set(ok);
+      this.pushFailed.set(!ok);
+      (event.target as HTMLInputElement).checked = ok;
+      this.notifyPerm.set(this.notify.permission());
+    } else {
+      await this.push.disable();
+      this.pushOn.set(false);
     }
   }
 
