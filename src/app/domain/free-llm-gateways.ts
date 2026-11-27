@@ -5,8 +5,10 @@
  * from the saved cursor and stops at the first usable reply.
  *
  * ponytail: providers picked 2026-11-27 from live probes (stillworks hourly
- * checks plus direct calls): Pollinations answered 168/168, OVH ~44%. Swap an
- * entry when a provider dies or starts asking for a key.
+ * checks plus direct Arabic calls): Pollinations 168/168, Kilo openrouter/free
+ * 16/16 with fluent Arabic, nemotron-3-ultra 15/16. OVH gpt-oss-20b was
+ * dropped the same day: garbled Arabic output. Swap an entry when a provider
+ * dies or starts asking for a key.
  */
 
 export type FreeLlmGateway = {
@@ -24,9 +26,14 @@ export const FREE_LLM_GATEWAYS: readonly FreeLlmGateway[] = [
     model: 'openai-fast',
   },
   {
-    id: 'ovh',
-    baseUrl: 'https://oai.endpoints.kepler.ai.cloud.ovh.net/v1',
-    model: 'gpt-oss-20b',
+    id: 'kilo-openrouter',
+    baseUrl: 'https://api.kilo.ai/api/gateway',
+    model: 'openrouter/free',
+  },
+  {
+    id: 'kilo-nemotron',
+    baseUrl: 'https://api.kilo.ai/api/gateway',
+    model: 'nvidia/nemotron-3-ultra-550b-a55b:free',
   },
 ] as const;
 

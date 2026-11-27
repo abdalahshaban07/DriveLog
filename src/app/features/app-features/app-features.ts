@@ -61,6 +61,8 @@ export const FEATURE_CATALOG: readonly FeatureGroup[] = [
       { titleKey: 'features.costGlance.title', bodyKey: 'features.costGlance.body' },
       { titleKey: 'features.efficiency.title', bodyKey: 'features.efficiency.body' },
       { titleKey: 'features.shareMonth.title', bodyKey: 'features.shareMonth.body' },
+      { titleKey: 'features.voice.title', bodyKey: 'features.voice.body' },
+      { titleKey: 'features.backup.title', bodyKey: 'features.backup.body' },
     ],
   },
 ];

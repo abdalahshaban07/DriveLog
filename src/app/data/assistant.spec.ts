@@ -190,9 +190,10 @@ describe('fetchChatReply', () => {
 
     expect(reply.source).toBe('local');
     const urls = fetchMock.mock.calls.map((call) => String(call[0]));
+    // both Kilo models share one host; a dead host is skipped for the chain
     expect(urls).toEqual([
       'https://text.pollinations.ai/openai/chat/completions',
-      'https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/chat/completions',
+      'https://api.kilo.ai/api/gateway/chat/completions',
     ]);
     expect(reply.text.startsWith('L:')).toBe(true);
     expect(hourCount()).toBe(0);
@@ -363,7 +364,7 @@ describe('fetchChatReply', () => {
     expect(reply).toEqual({ text: 'remote-ok', source: 'remote' });
     expect(fetchMock.mock.calls.map((call) => String(call[0]))).toEqual([
       'https://text.pollinations.ai/openai/chat/completions',
-      'https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/chat/completions',
+      'https://api.kilo.ai/api/gateway/chat/completions',
     ]);
   });
 

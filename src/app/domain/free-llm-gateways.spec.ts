@@ -28,11 +28,31 @@ function fakeStorage(): Storage {
 
 describe('free-llm-gateways', () => {
   it('rotates every keyless gateway from the cursor', () => {
-    expect(FREE_LLM_GATEWAYS.map((g) => g.id)).toEqual(['pollinations', 'ovh']);
-    expect(FREE_LLM_GATEWAYS.map((g) => g.model)).toEqual(['openai-fast', 'gpt-oss-20b']);
-    expect(freeGatewaysFrom(0).map((g) => g.id)).toEqual(['pollinations', 'ovh']);
-    expect(freeGatewaysFrom(1).map((g) => g.id)).toEqual(['ovh', 'pollinations']);
-    expect(freeGatewaysFrom(2).map((g) => g.id)).toEqual(['pollinations', 'ovh']);
+    expect(FREE_LLM_GATEWAYS.map((g) => g.id)).toEqual([
+      'pollinations',
+      'kilo-openrouter',
+      'kilo-nemotron',
+    ]);
+    expect(FREE_LLM_GATEWAYS.map((g) => g.model)).toEqual([
+      'openai-fast',
+      'openrouter/free',
+      'nvidia/nemotron-3-ultra-550b-a55b:free',
+    ]);
+    expect(freeGatewaysFrom(0).map((g) => g.id)).toEqual([
+      'pollinations',
+      'kilo-openrouter',
+      'kilo-nemotron',
+    ]);
+    expect(freeGatewaysFrom(1).map((g) => g.id)).toEqual([
+      'kilo-openrouter',
+      'kilo-nemotron',
+      'pollinations',
+    ]);
+    expect(freeGatewaysFrom(3).map((g) => g.id)).toEqual([
+      'pollinations',
+      'kilo-openrouter',
+      'kilo-nemotron',
+    ]);
     expect(FREE_LLM_GATEWAYS.every((g) => g.apiKey === undefined)).toBe(true);
     expect(ASSISTANT_MAX_TOKENS).toBe(220);
     expect(ASSISTANT_THINKING_MAX_TOKENS).toBeGreaterThan(ASSISTANT_MAX_TOKENS);
@@ -41,7 +61,7 @@ describe('free-llm-gateways', () => {
     expect(readFreeLlmCursor(storage)).toBe(0);
     bumpFreeLlmCursor(storage);
     expect(readFreeLlmCursor(storage)).toBe(1);
-    expect(freeGatewaysFrom(readFreeLlmCursor(storage))[0]!.id).toBe('ovh');
+    expect(freeGatewaysFrom(readFreeLlmCursor(storage))[0]!.id).toBe('kilo-openrouter');
   });
 
   it('keeps the remote-down flag sticky until a good reply clears it', () => {

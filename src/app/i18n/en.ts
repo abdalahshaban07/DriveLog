@@ -227,7 +227,8 @@ export const en = {
   'features.fuel.title': 'Fuel',
   'features.fuel.body': 'Log fill-ups, grades, and cost per liter.',
   'features.around.title': 'Around you',
-  'features.around.body': 'A Google map of nearby fuel and charge stations.',
+  'features.around.body':
+    'Nearby fuel and charge stations from a snapshot bundled with the app — works offline, opens in Google Maps when you pick one.',
   'features.maintenance.title': 'Maintenance',
   'features.maintenance.body': 'Service log plus due reminders by date or km.',
   'features.fillUp.title': 'Fill-up form',
@@ -280,6 +281,11 @@ export const en = {
     'Overdue items and the next 90 days: service, license, and vault dates.',
   'features.shareMonth.title': 'Share this month',
   'features.shareMonth.body': 'One tap sends this month’s fuel, service, and other costs as text.',
+  'features.voice.title': 'Voice logging',
+  'features.voice.body':
+    'Dictate a fill-up from Home or the fill-up form, review what was heard, then save.',
+  'features.backup.title': 'Backup & restore',
+  'features.backup.body': 'Export a JSON backup and import it back — replace or merge.',
   'settings.title': 'Settings',
   'settings.appearance': 'Appearance',
   'settings.vehicleSection': 'Vehicle',
@@ -565,7 +571,7 @@ export const en = {
   'legal.privacy.p3':
     'Export and import are started by you. DriveLog does not sell your logs. Clearing site data or using Start from scratch removes local records from this browser.',
   'legal.privacy.p4':
-    'The AI assistant is optional and can be turned off in Settings. When it is on, your question, the recent chat, and a summary of your logs are sent to free AI providers (Pollinations, with OVHcloud as a backup) to write the reply. No name, plate, VIN, or GPS is included. AI answers can be wrong — treat them as suggestions, not mechanical advice.',
+    'The AI assistant is optional and can be turned off in Settings. When it is on, your question, the recent chat, and a summary of your logs are sent to free AI providers (Pollinations, with the free Kilo gateway as a backup) to write the reply. No name, plate, VIN, or GPS is included. Free providers may use what is sent to improve their models. AI answers can be wrong — treat them as suggestions, not mechanical advice.',
   'legal.termsHeading': 'Terms',
   'legal.terms.p1':
     'DriveLog is a personal fuel and maintenance utility provided as-is. It is not mechanical, legal, or financial advice.',
