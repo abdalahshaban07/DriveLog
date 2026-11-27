@@ -1,5 +1,7 @@
 /* Night Receipt v3 — warm-charcoal night */
 @mixin dark-theme-vars {
+  --fuel-ink: var(--fuel);
+  --ok-ink: var(--mint);
   --petrol: #0e1014;
   --petrol-muted: #8a8278;
   --mint: #5cdba8;
@@ -10,7 +12,7 @@
   --card-dark-text: #f3eee4;
   --paper: #ebe4d8;
   --paper-text: #1a1814;
-  --paper-muted: #6b6358;
+  --paper-muted: #5e564b;
   --bg: #0a0a08;
   --surface: #171410;
   --well: #0e0c09;
@@ -46,6 +48,9 @@ html[data-theme='light'] {
   --mint: #3d9b72;
   --mint-bright: #4fb888;
   --fuel: #e8a317;
+  /* Text-safe amber and green for light paper (AA contrast); dark themes use the bright ones. */
+  --fuel-ink: #7a4300;
+  --ok-ink: #26704f;
   --cta: var(--fuel);
   --cta-text: #1a1814;
   --focus: var(--fuel);
@@ -54,7 +59,7 @@ html[data-theme='light'] {
   --card-dark-text: #f3eee4;
   --paper: #fff9f0;
   --paper-text: #1a1814;
-  --paper-muted: #6b6358;
+  --paper-muted: #5e564b;
 
   /* Unified metric tint */
   --metric-tint: color-mix(in srgb, var(--fuel) 10%, var(--surface));
@@ -88,7 +93,7 @@ html[data-theme='light'] {
   --surface: #fbf5ea;
   --well: #ded3bf;
   --text: #1a1814;
-  --muted: #6b6358;
+  --muted: #5e564b;
   --ok: var(--mint);
   --stop: #c44747;
   --aura-1: #dcc9a0;
@@ -171,10 +176,10 @@ html[data-theme='system'] {
   --surface: #fbf5ea;
   --well: #ded3bf;
   --text: #1a1814;
-  --muted: #6b6358;
+  --muted: #5e564b;
   --paper: #fff9f0;
   --paper-text: #1a1814;
-  --paper-muted: #6b6358;
+  --paper-muted: #5e564b;
   --ok: var(--mint);
   --stop: #c44747;
   --warn: #d97706;
@@ -200,6 +205,8 @@ html[data-theme='dark'] {
 }
 
 html[data-theme='contrast'] {
+  --fuel-ink: var(--fuel);
+  --ok-ink: var(--mint);
   --petrol: #000000;
   --petrol-muted: #c8c8c8;
   --mint: #6eecc0;
@@ -238,6 +245,8 @@ html[data-theme='contrast'] {
 }
 
 html[data-theme='dusk'] {
+  --fuel-ink: var(--fuel);
+  --ok-ink: var(--mint);
   --petrol: #141018;
   --petrol-muted: #9a9084;
   --mint: #5cdba8;
@@ -248,7 +257,7 @@ html[data-theme='dusk'] {
   --card-dark-text: #f3eee4;
   --paper: #e8e0d2;
   --paper-text: #1a1814;
-  --paper-muted: #6b6358;
+  --paper-muted: #5e564b;
   --bg: #100d0e;
   --surface: #1d1720;
   --well: #0c0a0e;

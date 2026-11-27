@@ -89,7 +89,7 @@ type GradeOption = { grade: FuelGrade; labelKey: MsgKey; price: number | null };
       letter-spacing: -0.02em;
     }
     .grades__chip--on .grades__name {
-      color: var(--fuel);
+      color: var(--fuel-ink, var(--fuel));
     }
     .grades__price {
       font-variant-numeric: tabular-nums;

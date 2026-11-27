@@ -789,7 +789,7 @@
 }
 
 .month-outlook__cell--projected strong {
-  color: var(--cta);
+  color: var(--fuel-ink, var(--cta));
 }
 
 .month-outlook__cell strong {

@@ -73,6 +73,19 @@ async function listDevices(token) {
 
 const str = (f) => f?.stringValue;
 
+/** Only real push services. A stranger can write a device doc, so never POST to an address they chose. */
+const PUSH_HOSTS = [/^fcm\.googleapis\.com$/, /^updates\.push\.services\.mozilla\.com$/, /\.push\.apple\.com$/, /\.notify\.windows\.com$/];
+export function isPushEndpoint(sub) {
+  try {
+    const u = new URL(sub?.endpoint);
+    return u.protocol === 'https:' && PUSH_HOSTS.some((re) => re.test(u.hostname));
+  } catch {
+    return false;
+  }
+}
+/** A run never handles more than this many devices, so abuse cannot burn the free quota. */
+const MAX_DEVICES = Number(process.env.MAX_DEVICES ?? 5000);
+
 /** The notification a phone shows: app name + item type, days left, DriveLog icon, opens the due list. */
 export function notificationPayload(reminder, today, lang) {
   const text = formatPush(reminder, today, lang);
@@ -108,11 +121,18 @@ export async function main({ now = process.env.FAKE_NOW ? new Date(process.env.F
   }
   const summary = { devices: 0, sent: 0, failed: 0, removed: 0 };
   for (const { id, fields } of await listDevices(token)) {
+    if (summary.devices >= MAX_DEVICES) {
+      break;
+    }
     summary.devices += 1;
     let sub;
     try {
       sub = JSON.parse(str(fields.sub) ?? '');
     } catch {
+      continue;
+    }
+    if (!isPushEndpoint(sub)) {
+      summary.failed += 1;
       continue;
     }
     const device = parseDevice({ tz: str(fields.tz), lang: str(fields.lang), reminders: str(fields.reminders), sent: str(fields.sent) });

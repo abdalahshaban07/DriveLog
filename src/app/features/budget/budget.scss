@@ -298,7 +298,7 @@
 }
 
 .budget__rung--met strong {
-  color: var(--ok);
+  color: var(--ok-ink, var(--ok));
 }
 
 .budget__note--ok {
