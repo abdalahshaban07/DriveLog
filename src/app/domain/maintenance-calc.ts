@@ -45,7 +45,9 @@ export function worseStatus(a: HealthStatus, b: HealthStatus): HealthStatus {
 /** Add calendar months to YYYY-MM-DD (79A). */
 function addMonths(date: DateOnly, months: number): DateOnly {
   const [y, m, d] = date.split('-').map(Number) as [number, number, number];
-  const dt = new Date(Date.UTC(y, m - 1 + months, d));
+  // Clamp to the last day of the target month (Jan 31 + 1 month = Feb 28, not Mar 3).
+  const lastDay = new Date(Date.UTC(y, m + months, 0)).getUTCDate();
+  const dt = new Date(Date.UTC(y, m - 1 + months, Math.min(d, lastDay)));
   const yy = dt.getUTCFullYear();
   const mm = String(dt.getUTCMonth() + 1).padStart(2, '0');
   const dd = String(dt.getUTCDate()).padStart(2, '0');
@@ -93,11 +95,12 @@ export function calcIntervalStatus(input: {
 
   if (input.months && input.months.intervalMonths > 0) {
     dueDate = addMonths(input.months.lastDate, input.months.intervalMonths);
-    remainingMonths =
-      monthsBetween(input.today, dueDate) -
-      (input.today > dueDate ? monthsBetween(dueDate, input.today) * 2 : 0);
-    // clearer: days-ish via month count from last+interval vs today
-    const elapsed = monthsBetween(input.months.lastDate, input.today);
+    // Whole months elapsed: a month only counts once the day of month is reached
+    // (Jan 31 + 6 months is due on Jul 31, not on Jul 1).
+    const dayLast = Number(input.months.lastDate.slice(8, 10));
+    const dayToday = Number(input.today.slice(8, 10));
+    const elapsed =
+      monthsBetween(input.months.lastDate, input.today) - (dayToday < dayLast ? 1 : 0);
     remainingMonths = input.months.intervalMonths - elapsed;
     const s = statusForDimension(remainingMonths, input.months.intervalMonths, soon);
     if (status === 'unknown') {
