@@ -541,4 +541,10 @@ describe('usableCoachText', () => {
     expect(usableCoachText('ما هذه शहर سنة؟', 'ar')).toBeNull();
     expect(usableCoachText('Check tire pressure.', 'en')).toBe('Check tire pressure.');
   });
+
+  it('keeps a multi-line Arabic answer (the real reply shape)', () => {
+    const reply =
+      'ديمو هاتش استهلاكها آخر مرة ١٣٫٨ لتر لكل ١٠٠ كم\n\nخفف السرعة وخليها ثابتة\nبلاش تسارع وفرملة مفاجئة\nظبط ضغط الكاوتش وافحصه\nاعمل صيانة دورية';
+    expect(usableCoachText(reply, 'ar')).toBe(reply);
+  });
 });

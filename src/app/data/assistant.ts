@@ -70,7 +70,9 @@ export function usableCoachText(raw: string, lang: 'en' | 'ar'): string | null {
 }
 
 function mostlyArabic(text: string): boolean {
-  if (/[^\p{Script=Arabic}\p{Script=Latin}\p{N}\p{P}\p{Z}\p{S}\p{M}\p{Cf}]/u.test(text)) {
+  // \p{Cc} is newlines and tabs: a multi-line answer is still Arabic. Without it
+  // every line-broken reply was thrown away and the app fell back to local.
+  if (/[^\p{Script=Arabic}\p{Script=Latin}\p{N}\p{P}\p{Z}\p{S}\p{M}\p{Cf}\p{Cc}]/u.test(text)) {
     return false;
   }
   const arabic = text.match(/\p{Script=Arabic}/gu)?.length ?? 0;
